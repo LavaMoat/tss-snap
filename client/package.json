@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/tmpfs/ecdsa-wasm",
   "dependencies": {
-    "ecdsa-wasm": "file:../pkg"
+    "ecdsa-wasm": "file:../wasm/pkg"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.0.0",

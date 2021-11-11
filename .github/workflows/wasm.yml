@@ -21,7 +21,7 @@ jobs:
           profile: minimal
           components: rustfmt
       - name: Run cargo fmt
-        run: cd server && cargo fmt --all -- --check
+        run: cd wasm && cargo fmt --all -- --check
 
   clippy:
     name: clippy
@@ -36,10 +36,10 @@ jobs:
           profile: minimal
           components: clippy
       - name: Run cargo clippy
-        run: cd server && cargo clippy --all
+        run: cd wasm && cargo clippy --all
 
-  build:
-    name: build server
+  check:
+    name: check
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -50,4 +50,4 @@ jobs:
         with:
           profile: minimal
       - name: Run cargo build
-        run: cd server && cargo build --release
+        run: cd wasm && cargo check --target wasm32-unknown-unknown
