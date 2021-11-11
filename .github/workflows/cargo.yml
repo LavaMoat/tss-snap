@@ -34,13 +34,25 @@ jobs:
       RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
-
-      # We explicitly do this to cache properly.
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           components: rustfmt
-
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    env:
+      RUST_LOG: "0"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: clippy
+      - name: Run cargo clippy
+        run: cargo clippy --all
