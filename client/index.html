@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ECDSA WASM Demo</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        display: flex;
+        align-items: center;
+          justify-content: center;
+      }
+
+      main {
+        width: 960px;
+      }
+
+      #keygen, #complete {
+        display: none;
+      }
+
+      #progress, #data, #parties-list {
+        display: none;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      div, details, p, button {
+        margin-bottom: 1em;
+      }
+
+      label {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ECDSA WASM Demo</h1>
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <script src="./index.js"></script>
+  </body>
+</html>
