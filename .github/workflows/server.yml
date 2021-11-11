@@ -40,7 +40,7 @@ jobs:
           profile: minimal
           components: rustfmt
       - name: Run cargo fmt
-        run: cargo fmt --all -- --check
+        run: cd server && cargo fmt --all -- --check
 
   clippy:
     name: clippy
@@ -55,21 +55,21 @@ jobs:
           profile: minimal
           components: clippy
       - name: Run cargo clippy
-        run: cargo clippy --all
+        run: cd server && cargo clippy --all
 
-  check-wasm:
-    name: check wasm32-unknown-unknown
-    runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-      - name: Run cargo build
-        run: cargo check --lib --target wasm32-unknown-unknown
+  #check-wasm:
+    #name: check wasm32-unknown-unknown
+    #runs-on: ubuntu-latest
+    #env:
+      #RUST_LOG: "0"
+    #steps:
+      #- uses: actions/checkout@v2
+      #- name: Install Rust
+        #uses: actions-rs/toolchain@v1
+        #with:
+          #profile: minimal
+      #- name: Run cargo build
+        #run: cargo check --target wasm32-unknown-unknown
 
   build:
     name: build server
@@ -83,4 +83,4 @@ jobs:
         with:
           profile: minimal
       - name: Run cargo build
-        run: cargo build --release
+        run: cd server && cargo build --release

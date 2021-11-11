@@ -1,9 +1,6 @@
-#[cfg(not(target_arch = "wasm32"))]
 use anyhow::Result;
-#[cfg(not(target_arch = "wasm32"))]
-use ecdsa_wasm::server::Server;
+use ecdsa_wasm_server::Server;
 
-#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> Result<()> {
     let level = std::env::var("RUST_LOG")

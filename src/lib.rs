@@ -1,8 +1,4 @@
-#![deny(warnings)]
 //use multi_party_ecdsa::*;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub mod server;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;

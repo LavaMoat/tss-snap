@@ -19,7 +19,7 @@ cd client && yarn install
 
 ```
 # Start the server on ws://localhost:3030
-cargo run
+cd server && cargo run
 # Start the client on http://localhost:8080
 cd client && yarn start
 ```
