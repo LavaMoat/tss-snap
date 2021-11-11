@@ -4,7 +4,7 @@ Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa)
 
 * `rust@1.54.0`
 * `wasm-pack@0.9.1`
-* `node@14.5.4`
+* `node@14.17.0`
 
 ## Setup
 
