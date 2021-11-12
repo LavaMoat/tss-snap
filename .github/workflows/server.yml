@@ -39,7 +39,7 @@ jobs:
         run: cd server && cargo clippy --all
 
   build:
-    name: build server
+    name: build
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"

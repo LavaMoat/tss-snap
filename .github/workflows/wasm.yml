@@ -49,5 +49,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          target: wasm32-unknown-unknown
       - name: Run cargo build
         run: cd wasm && cargo check --target wasm32-unknown-unknown
