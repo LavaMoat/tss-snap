@@ -20,9 +20,8 @@ use super::state_machine::*;
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
-static PHASES: Lazy<Vec<Phase>> = Lazy::new(|| {
-    vec![Phase::Standby, Phase::Keygen, Phase::Signing]
-});
+static PHASES: Lazy<Vec<Phase>> =
+    Lazy::new(|| vec![Phase::Standby, Phase::Keygen, Phase::Signing]);
 
 /// Parameters for key generation and signing.
 #[derive(Debug, Serialize, Deserialize)]
