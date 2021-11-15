@@ -6,9 +6,9 @@ use std::sync::{
 };
 
 use anyhow::Result;
-use once_cell::sync::Lazy;
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
-use log::{error, info, warn, trace};
+use log::{error, info, trace, warn};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -21,12 +21,7 @@ use super::state_machine::*;
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
 static PHASES: Lazy<Vec<Phase>> = Lazy::new(|| {
-    vec![
-        Phase::Idle,
-        Phase::Standby,
-        Phase::Keygen,
-        Phase::Signing,
-    ]
+    vec![Phase::Standby, Phase::Keygen, Phase::Signing]
 });
 
 /// Parameters for key generation and signing.
@@ -77,8 +72,10 @@ impl Server {
         addr: impl Into<SocketAddr>,
         params: Parameters,
     ) -> Result<()> {
-
-        let machine = PhaseIterator { phases: &PHASES, index: 0 };
+        let machine = PhaseIterator {
+            phases: &PHASES,
+            index: 0,
+        };
 
         let state = Arc::new(RwLock::new(State {
             params,
@@ -90,7 +87,7 @@ impl Server {
 
         let routes = warp::path("ws").and(warp::ws()).and(state).map(
             |ws: warp::ws::Ws, state| {
-                ws.on_upgrade(move |socket| user_connected(socket, state))
+                ws.on_upgrade(move |socket| client_connected(socket, state))
             },
         );
         warp::serve(routes).run(addr).await;
@@ -98,7 +95,7 @@ impl Server {
     }
 }
 
-async fn user_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
+async fn client_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
     let conn_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
 
     info!("connected (uid={})", conn_id);
@@ -122,13 +119,10 @@ async fn user_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
         }
     });
 
-    //tx.send(Message::text("welcome".to_string()));
-
-    // Save the sender in our list of connected users.
+    // Save the sender in our list of connected clients.
     state.write().await.clients.insert(conn_id, tx);
 
-    // Every time the user sends a message, broadcast it to
-    // all other users...
+    // Handle incoming requests from clients
     while let Some(result) = user_ws_rx.next().await {
         let msg = match result {
             Ok(msg) => msg,
@@ -137,15 +131,15 @@ async fn user_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
                 break;
             }
         };
-        user_message(conn_id, msg, &state).await;
+        client_incoming_message(conn_id, msg, &state).await;
     }
 
     // user_ws_rx stream will keep processing as long as the user stays
     // connected. Once they disconnect, then...
-    user_disconnected(conn_id, &state).await;
+    client_disconnected(conn_id, &state).await;
 }
 
-async fn user_message(
+async fn client_incoming_message(
     conn_id: usize,
     msg: Message,
     state: &Arc<RwLock<State<'_>>>,
@@ -157,13 +151,13 @@ async fn user_message(
     };
 
     match serde_json::from_str::<Request>(msg) {
-        Ok(req) => process_request(conn_id, req, &state).await,
+        Ok(req) => client_request(conn_id, req, &state).await,
         Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
     }
 }
 
 /// Process a request message from a client.
-async fn process_request(
+async fn client_request(
     conn_id: usize,
     req: Request,
     state: &Arc<RwLock<State<'_>>>,
@@ -181,12 +175,12 @@ async fn process_request(
     };
 
     if let Some(res) = response {
-        send_response(conn_id, res, state).await;
+        send_client_response(conn_id, res, state).await;
     }
 }
 
 /// Send a response to a single client.
-async fn send_response(
+async fn send_client_response(
     conn_id: usize,
     res: Response,
     state: &Arc<RwLock<State<'_>>>,
@@ -194,21 +188,18 @@ async fn send_response(
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(&res).unwrap();
         trace!("sending message {:#?}", msg);
-
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
-            // The tx is disconnected, our `user_disconnected` code
+            // The tx is disconnected, our `client_disconnected` code
             // should be happening in another task, nothing more to
             // do here.
         }
-
     } else {
         warn!("could not find tx for (uid={})", conn_id);
     }
 }
 
-async fn user_disconnected(conn_id: usize, state: &Arc<RwLock<State<'_>>>) {
+async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State<'_>>>) {
     info!("disconnected (uid={})", conn_id);
-
     // Stream closed up, so remove from the client list
     state.write().await.clients.remove(&conn_id);
 }

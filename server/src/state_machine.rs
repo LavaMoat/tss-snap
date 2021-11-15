@@ -1,7 +1,5 @@
 #[derive(Debug)]
 pub(super) enum Phase {
-    /// Waiting for the first client connection.
-    Idle,
     /// Waiting for N parties to connect.
     Standby,
     /// Generating and distributing the keys.
@@ -12,7 +10,7 @@ pub(super) enum Phase {
 
 impl Default for Phase {
     fn default() -> Self {
-        Phase::Idle
+        Phase::Standby
     }
 }
 
