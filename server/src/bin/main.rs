@@ -1,10 +1,12 @@
 use anyhow::Result;
+use ecdsa_wasm_server::{Parameters, Server};
 use structopt::StructOpt;
-use ecdsa_wasm_server::{Server, Parameters};
-
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "ecdsa-wasm-server", about = "Websocket server for the ECDSA WASM demo")]
+#[structopt(
+    name = "ecdsa-wasm-server",
+    about = "Websocket server for the ECDSA WASM demo"
+)]
 struct Options {
     /// Number of parties for key generation.
     #[structopt(short, long)]
@@ -16,7 +18,6 @@ struct Options {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-
     let opts = Options::from_args();
     println!("{:?}", opts);
 
