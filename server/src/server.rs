@@ -6,6 +6,7 @@ use std::sync::{
 };
 
 use anyhow::Result;
+use once_cell::sync::Lazy;
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use log::{error, info, warn, trace};
 use serde::{Deserialize, Serialize};
@@ -14,8 +15,19 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
+use super::state_machine::*;
+
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
+
+static PHASES: Lazy<Vec<Phase>> = Lazy::new(|| {
+    vec![
+        Phase::Idle,
+        Phase::Standby,
+        Phase::Keygen,
+        Phase::Signing,
+    ]
+});
 
 /// Parameters for key generation and signing.
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,9 +59,15 @@ enum Response {
 }
 
 #[derive(Debug)]
-struct State {
+struct State<'a> {
+    /// Initial parameters.
     params: Parameters,
+    /// Connected clients.
     clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
+    /// Current state machine phase.
+    phase: Phase,
+    /// The state machine.
+    machine: PhaseIterator<'a>,
 }
 
 pub struct Server;
@@ -59,9 +77,14 @@ impl Server {
         addr: impl Into<SocketAddr>,
         params: Parameters,
     ) -> Result<()> {
+
+        let machine = PhaseIterator { phases: &PHASES, index: 0 };
+
         let state = Arc::new(RwLock::new(State {
             params,
             clients: HashMap::new(),
+            phase: Default::default(),
+            machine,
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -75,7 +98,7 @@ impl Server {
     }
 }
 
-async fn user_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
+async fn user_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
     let conn_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
 
     info!("connected (uid={})", conn_id);
@@ -125,7 +148,7 @@ async fn user_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
 async fn user_message(
     conn_id: usize,
     msg: Message,
-    state: &Arc<RwLock<State>>,
+    state: &Arc<RwLock<State<'_>>>,
 ) {
     let msg = if let Ok(s) = msg.to_str() {
         s
@@ -143,7 +166,7 @@ async fn user_message(
 async fn process_request(
     conn_id: usize,
     req: Request,
-    state: &Arc<RwLock<State>>,
+    state: &Arc<RwLock<State<'_>>>,
 ) {
     let info = state.read().await;
     trace!("processing request {:#?}", req);
@@ -166,7 +189,7 @@ async fn process_request(
 async fn send_response(
     conn_id: usize,
     res: Response,
-    state: &Arc<RwLock<State>>,
+    state: &Arc<RwLock<State<'_>>>,
 ) {
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(&res).unwrap();
@@ -183,7 +206,7 @@ async fn send_response(
     }
 }
 
-async fn user_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
+async fn user_disconnected(conn_id: usize, state: &Arc<RwLock<State<'_>>>) {
     info!("disconnected (uid={})", conn_id);
 
     // Stream closed up, so remove from the client list
