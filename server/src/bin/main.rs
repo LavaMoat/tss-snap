@@ -1,7 +1,7 @@
-use std::net::SocketAddr;
-use std::str::FromStr;
 use anyhow::Result;
 use ecdsa_wasm::{Parameters, Server};
+use std::net::SocketAddr;
+use std::str::FromStr;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
