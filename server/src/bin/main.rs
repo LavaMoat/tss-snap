@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+use std::str::FromStr;
 use anyhow::Result;
 use ecdsa_wasm_server::{Parameters, Server};
 use structopt::StructOpt;
@@ -14,13 +16,14 @@ struct Options {
     /// Threshold for signing.
     #[structopt(short, long)]
     threshold: u16,
+    /// Bind to host:port.
+    #[structopt(short, long, default_value = "127.0.0.1:3030")]
+    bind: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let opts = Options::from_args();
-    println!("{:?}", opts);
-
     let params = Parameters {
         parties: opts.parties,
         threshold: opts.threshold,
@@ -33,6 +36,6 @@ async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", &level);
     pretty_env_logger::init();
 
-    let addr = ([127, 0, 0, 1], 3030);
-    Server::start(addr, params).await
+    let addr = SocketAddr::from_str(&opts.bind)?;
+    Server::start((addr.ip(), addr.port()), params).await
 }
