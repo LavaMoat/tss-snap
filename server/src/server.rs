@@ -6,7 +6,7 @@ use std::sync::{
 };
 
 use anyhow::Result;
-use futures_util::{FutureExt, StreamExt};
+use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use log::{error, info, warn, trace};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, RwLock};
@@ -87,6 +87,17 @@ async fn user_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     // to the websocket...
     let (tx, rx) = mpsc::unbounded_channel::<Message>();
     let mut rx = UnboundedReceiverStream::new(rx);
+
+    tokio::task::spawn(async move {
+        while let Some(message) = rx.next().await {
+            user_ws_tx
+                .send(message)
+                .unwrap_or_else(|e| {
+                    eprintln!("websocket send error: {}", e);
+                })
+                .await;
+        }
+    });
 
     //tx.send(Message::text("welcome".to_string()));
 
