@@ -1,12 +1,12 @@
 use std::net::SocketAddr;
 use std::str::FromStr;
 use anyhow::Result;
-use ecdsa_wasm_server::{Parameters, Server};
+use ecdsa_wasm::{Parameters, Server};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "ecdsa-wasm-server",
+    name = "ecdsa-wasm",
     about = "Websocket server for the ECDSA WASM demo"
 )]
 struct Options {

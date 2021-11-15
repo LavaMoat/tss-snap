@@ -11,7 +11,7 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
-
+use log::{info, warn, error};
 use serde::{Deserialize, Serialize};
 
 /// Global unique user id counter.
@@ -52,7 +52,7 @@ impl Server {
 async fn user_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     let conn_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
 
-    eprintln!("connected: {}", conn_id);
+    info!("connected (uid={})", conn_id);
 
     // Split the socket into a sender and receive of messages.
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
@@ -71,7 +71,7 @@ async fn user_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
         let msg = match result {
             Ok(msg) => msg,
             Err(e) => {
-                eprintln!("websocket error(uid={}): {}", conn_id, e);
+                error!("websocket rx error (uid={}): {}", conn_id, e);
                 break;
             }
         };
@@ -88,7 +88,7 @@ async fn user_message(conn_id: usize, msg: Message, state: &Arc<RwLock<State>>) 
 }
 
 async fn user_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
-    eprintln!("disconnected: {}", conn_id);
+    info!("disconnected (uid={})", conn_id);
 
     // Stream closed up, so remove from the client list
     state.write().await.clients.remove(&conn_id);

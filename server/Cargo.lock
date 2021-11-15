@@ -126,7 +126,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecdsa-wasm-server"
+name = "ecdsa-wasm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
