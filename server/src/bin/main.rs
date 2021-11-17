@@ -17,8 +17,8 @@ struct Options {
     #[structopt(short, long)]
     threshold: u16,
     /// Bind to host:port.
-    #[structopt(short, long, default_value = "127.0.0.1:3030")]
-    bind: String,
+    #[structopt(short, long)]
+    bind: Option<String>,
 }
 
 #[tokio::main]
@@ -36,6 +36,7 @@ async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", &level);
     pretty_env_logger::init();
 
-    let addr = SocketAddr::from_str(&opts.bind)?;
+    let bind = opts.bind.unwrap_or("127.0.0.1:3030".to_string());
+    let addr = SocketAddr::from_str(&bind)?;
     Server::start((addr.ip(), addr.port()), params).await
 }
