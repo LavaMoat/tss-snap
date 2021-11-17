@@ -38,5 +38,5 @@ async fn main() -> Result<()> {
 
     let bind = opts.bind.unwrap_or("127.0.0.1:3030".to_string());
     let addr = SocketAddr::from_str(&bind)?;
-    Server::start((addr.ip(), addr.port()), params).await
+    Server::start("demo", (addr.ip(), addr.port()), params).await
 }

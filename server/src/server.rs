@@ -68,6 +68,7 @@ pub struct Server;
 
 impl Server {
     pub async fn start(
+        path: &'static str,
         addr: impl Into<SocketAddr>,
         params: Parameters,
     ) -> Result<()> {
@@ -84,7 +85,7 @@ impl Server {
         }));
         let state = warp::any().map(move || state.clone());
 
-        let routes = warp::path("ws").and(warp::ws()).and(state).map(
+        let routes = warp::path(path).and(warp::ws()).and(state).map(
             |ws: warp::ws::Ws, state| {
                 ws.on_upgrade(move |socket| client_connected(socket, state))
             },
