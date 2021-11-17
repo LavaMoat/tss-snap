@@ -1,5 +1,17 @@
 //use multi_party_ecdsa::*;
 
+use curv::{
+    arithmetic::traits::Converter,
+    cryptographic_primitives::{
+        proofs::sigma_dlog::DLogProof, secret_sharing::feldman_vss::VerifiableSS,
+    },
+    elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
+    BigInt,
+};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
+    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
+};
+
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
@@ -26,4 +38,9 @@ macro_rules! console_log {
 pub fn start() {
     console_error_panic_hook::set_once();
     console_log!("WASM: module started.");
+}
+
+#[wasm_bindgen]
+pub fn keygen(parties: u16, threshold: u16) {
+    console_log!("generate keys (parties={}) (threshold={})", parties, threshold);
 }
