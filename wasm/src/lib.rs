@@ -43,4 +43,16 @@ pub fn start() {
 #[wasm_bindgen]
 pub fn keygen(parties: u16, threshold: u16) {
     console_log!("generate keys (parties={}) (threshold={})", parties, threshold);
+
+    let params = Parameters {
+        share_count: parties,
+        threshold,
+    };
+
+    /*
+    let (party_num_int, uuid) = match signup(&client).unwrap() {
+        PartySignup { number, uuid } => (number, uuid),
+    };
+    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
+    */
 }

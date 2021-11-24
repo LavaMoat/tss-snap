@@ -33,20 +33,29 @@ pub struct Parameters {
 /// Request from a websocket client.
 #[derive(Debug, Deserialize)]
 struct Request {
-    kind: RequestKind,
+    id: usize,
+    kind: MessageKind,
 }
 
-#[derive(Debug, Deserialize)]
-enum RequestKind {
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+enum MessageKind {
     /// Get the parameters.
     #[serde(rename = "parameters")]
     Parameters,
 }
 
+
+#[derive(Debug, Serialize)]
+struct Response {
+    id: usize,
+    kind: MessageKind,
+    data: ResponseData,
+}
+
 /// Request from a websocket client.
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
-enum Response {
+enum ResponseData {
     /// Sent when a client connects so they know
     /// the number of paramters.
     Parameters { parties: u16, threshold: u16 },
@@ -165,10 +174,14 @@ async fn client_request(
     let info = state.read().await;
     trace!("processing request {:#?}", req);
     let response: Option<Response> = match req.kind {
-        RequestKind::Parameters => {
-            let res = Response::Parameters {
-                parties: info.params.parties,
-                threshold: info.params.threshold,
+        MessageKind::Parameters => {
+            let res = Response {
+                id: req.id,
+                kind: req.kind,
+                data: ResponseData::Parameters {
+                    parties: info.params.parties,
+                    threshold: info.params.threshold,
+                }
             };
             Some(res)
         }
