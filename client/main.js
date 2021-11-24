@@ -2,11 +2,17 @@ import Worker from 'worker-loader!./worker.js';
 
 if (window.Worker) {
   const worker = new Worker('worker.js');
-  console.log('main is running with web worker support');
-
   worker.onmessage = (e) => {
-    if (e.data.type === 'ready') {
-      console.log('got ready event from web worker');
+    const {type} = e.data;
+    if (type === 'server') {
+      const {server} = e.data;
+      document.querySelector('.server span').innerText = server;
+    } else if (type === 'ready') {
+      const {parties, threshold} = e.data;
+      document.querySelector('.parties span').innerText = parties;
+      document.querySelector('.threshold span').innerText = threshold;
+
+      console.log('got ready event from web worker', parties, threshold);
     }
   }
 
