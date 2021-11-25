@@ -1,4 +1,4 @@
-name: Cargo
+name: Common
 
 on: [pull_request]
 
@@ -9,7 +9,7 @@ env:
 
 jobs:
   fmt:
-    name: common/fmt
+    name: fmt
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -24,7 +24,7 @@ jobs:
         run: cd common && cargo fmt --all -- --check
 
   clippy:
-    name: common/clippy
+    name: clippy
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -39,7 +39,7 @@ jobs:
         run: cd common && cargo clippy --all
 
   check:
-    name: common/check
+    name: check
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -53,7 +53,7 @@ jobs:
         run: cd common && cargo check
 
   check-wasm:
-    name: common/check-wasm
+    name: check-wasm
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"

@@ -1,4 +1,4 @@
-name: Cargo
+name: Server
 
 on: [pull_request]
 
@@ -9,7 +9,7 @@ env:
 
 jobs:
   fmt:
-    name: server/fmt
+    name: fmt
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -24,7 +24,7 @@ jobs:
         run: cd server && cargo fmt --all -- --check
 
   clippy:
-    name: server/clippy
+    name: clippy
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -39,7 +39,7 @@ jobs:
         run: cd server && cargo clippy --all
 
   build:
-    name: server/build
+    name: build
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"

@@ -1,4 +1,4 @@
-name: Cargo
+name: WASM
 
 on: [pull_request]
 
@@ -9,7 +9,7 @@ env:
 
 jobs:
   fmt:
-    name: wasm/fmt
+    name: fmt
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -24,7 +24,7 @@ jobs:
         run: cd wasm && cargo fmt --all -- --check
 
   clippy:
-    name: wasm/clippy
+    name: clippy
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -35,11 +35,12 @@ jobs:
         with:
           profile: minimal
           components: clippy
+          target: wasm32-unknown-unknown
       - name: Run cargo clippy
         run: cd wasm && cargo clippy --all
 
   check:
-    name: wasm/check
+    name: check
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
