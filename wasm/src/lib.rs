@@ -1,5 +1,6 @@
 //use multi_party_ecdsa::*;
 
+/*
 use curv::{
     arithmetic::traits::Converter,
     cryptographic_primitives::{
@@ -12,6 +13,7 @@ use curv::{
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
 };
+*/
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -41,6 +43,7 @@ pub fn start() {
     console_log!("WASM: module started.");
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygen(parties: u16, threshold: u16) {
     console_log!(
