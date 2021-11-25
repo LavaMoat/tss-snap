@@ -5,3 +5,12 @@ edition = "2018"
 
 [dependencies]
 serde = {version = "1", features = ["derive"]}
+getrandom = {version = "0.2", features = ["js"]}
+curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
+
+# TODO: use https://github.com/ZenGo-X/multi-party-ecdsa once
+# TODO: https://github.com/ZenGo-X/multi-party-ecdsa/pull/144 is merged
+[dependencies.multi-party-ecdsa]
+git = "https://github.com/tmpfs/multi-party-ecdsa"
+branch = "curv-0.8"
+default-features = false

@@ -168,6 +168,9 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "curv-kzen",
+ "getrandom 0.2.3",
+ "multi-party-ecdsa",
  "serde",
 ]
 
@@ -390,6 +393,7 @@ dependencies = [
  "curv-kzen",
  "getrandom 0.2.3",
  "multi-party-ecdsa",
+ "serde_json",
  "wasm-bindgen",
 ]
 

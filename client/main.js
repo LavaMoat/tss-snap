@@ -37,7 +37,6 @@ if (window.Worker) {
       console.log('main thread for worker keygen signup done', party_signup);
     }
   }
-
 } else {
   console.log('Your browser doesn\'t support web workers.');
 }

@@ -1,23 +1,6 @@
-//use multi_party_ecdsa::*;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Keys;
 
-/*
-use curv::{
-    arithmetic::traits::Converter,
-    cryptographic_primitives::{
-        proofs::sigma_dlog::DLogProof,
-        secret_sharing::feldman_vss::VerifiableSS,
-    },
-    elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
-    BigInt,
-};
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
-};
-*/
-
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Parameters;
-
-use common::PartySignup;
+use common::{into_round_entry, PartySignup, Round1Entry};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -49,24 +32,51 @@ pub fn start() {
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn keygen(parties: u16, threshold: u16, keygen_signup: JsValue) {
-    console_log!(
-        "generate keys (parties={}) (threshold={})",
-        parties,
-        threshold
+pub fn keygen_signup_entry(
+    keygen_signup: JsValue,
+) -> JsValue {
+    let PartySignup { number, uuid } =
+        keygen_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
+
+    let party_keys = Keys::create(party_num_int as usize);
+    let (bc_i, decom_i) =
+        party_keys.phase1_broadcast_phase3_proof_of_correct_key();
+
+    // This is the entry that needs to be broadcast
+    let entry = into_round_entry(
+        party_num_int,
+        "round1",
+        serde_json::to_string(&bc_i).unwrap(),
+        uuid.clone(),
     );
 
-    let params = Parameters {
-        share_count: parties,
-        threshold,
-    };
+    // Store decom_i so that Javascript can pass it back to WASM
+    // for future key generation phases
+    let round_entry = Round1Entry { entry, decom_i };
 
-    let party_signup: PartySignup = keygen_signup.into_serde().unwrap();
+    // Pass back to the Javascript so it can be broadcast to all parties
+    // via the websocket server
+    JsValue::from_serde(&round_entry).unwrap()
 
     /*
-    let (party_num_int, uuid) = match signup(&client).unwrap() {
-        PartySignup { number, uuid } => (number, uuid),
-    };
-    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
+    // send commitment to ephemeral public keys, get round 1 commitments of other parties
+    assert!(broadcast(
+        &client,
+        party_num_int,
+        "round1",
+        serde_json::to_string(&bc_i).unwrap(),
+        uuid.clone()
+    )
+    .is_ok());
+    let round1_ans_vec = poll_for_broadcasts(
+        &client,
+        party_num_int,
+        PARTIES,
+        delay,
+        "round1",
+        uuid.clone(),
+    );
     */
 }
