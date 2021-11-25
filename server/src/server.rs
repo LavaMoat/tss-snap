@@ -12,6 +12,7 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
+use uuid::Uuid;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
@@ -42,8 +43,9 @@ enum MessageKind {
     /// Get the parameters.
     #[serde(rename = "parameters")]
     Parameters,
+    #[serde(rename = "keygen_signup")]
+    KeygenSignup,
 }
-
 
 #[derive(Debug, Serialize)]
 struct Response {
@@ -58,7 +60,19 @@ struct Response {
 enum ResponseData {
     /// Sent when a client connects so they know
     /// the number of paramters.
-    Parameters { parties: u16, threshold: u16 },
+    Parameters {
+        parties: u16,
+        threshold: u16,
+    },
+    KeygenSignup {
+        party_signup: PartySignup,
+    },
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct PartySignup {
+    pub number: u16,
+    pub uuid: String,
 }
 
 #[derive(Debug)]
@@ -71,6 +85,8 @@ struct State<'a> {
     phase: Phase,
     /// The state machine.
     machine: PhaseIterator<'a>,
+    /// Current keygen signup state.
+    keygen_signup: PartySignup,
 }
 
 pub struct Server;
@@ -90,6 +106,10 @@ impl Server {
             params,
             clients: HashMap::new(),
             phase: Default::default(),
+            keygen_signup: PartySignup {
+                number: 0,
+                uuid: Uuid::new_v4().to_string(),
+            },
             machine,
         }));
         let state = warp::any().map(move || state.clone());
@@ -174,16 +194,41 @@ async fn client_request(
     let info = state.read().await;
     trace!("processing request {:#?}", req);
     let response: Option<Response> = match req.kind {
-        MessageKind::Parameters => {
-            let res = Response {
-                id: req.id,
-                kind: req.kind,
-                data: ResponseData::Parameters {
-                    parties: info.params.parties,
-                    threshold: info.params.threshold,
+        // Handshake gets the parameters the server was started with
+        MessageKind::Parameters => Some(Response {
+            id: req.id,
+            kind: req.kind,
+            data: ResponseData::Parameters {
+                parties: info.params.parties,
+                threshold: info.params.threshold,
+            },
+        }),
+        // Signup creates a PartySignup
+        MessageKind::KeygenSignup => {
+            let party_signup = {
+                let client_signup = &info.keygen_signup;
+                if client_signup.number < info.params.parties {
+                    PartySignup {
+                        number: client_signup.number + 1,
+                        uuid: client_signup.uuid.clone(),
+                    }
+                } else {
+                    PartySignup {
+                        number: 1,
+                        uuid: Uuid::new_v4().to_string(),
+                    }
                 }
             };
-            Some(res)
+
+            drop(info);
+            let mut writer = state.write().await;
+            writer.keygen_signup = party_signup.clone();
+
+            Some(Response {
+                id: req.id,
+                kind: req.kind,
+                data: ResponseData::KeygenSignup { party_signup },
+            })
         }
     };
 

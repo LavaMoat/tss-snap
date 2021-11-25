@@ -3,7 +3,8 @@
 use curv::{
     arithmetic::traits::Converter,
     cryptographic_primitives::{
-        proofs::sigma_dlog::DLogProof, secret_sharing::feldman_vss::VerifiableSS,
+        proofs::sigma_dlog::DLogProof,
+        secret_sharing::feldman_vss::VerifiableSS,
     },
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
     BigInt,
@@ -42,7 +43,11 @@ pub fn start() {
 
 #[wasm_bindgen]
 pub fn keygen(parties: u16, threshold: u16) {
-    console_log!("generate keys (parties={}) (threshold={})", parties, threshold);
+    console_log!(
+        "generate keys (parties={}) (threshold={})",
+        parties,
+        threshold
+    );
 
     let params = Parameters {
         share_count: parties,
