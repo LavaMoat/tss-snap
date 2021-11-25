@@ -108,6 +108,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -130,6 +137,7 @@ name = "ecdsa-wasm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
  "futures-util",
  "log",
  "once_cell",

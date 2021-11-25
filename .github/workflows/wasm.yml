@@ -9,7 +9,7 @@ env:
 
 jobs:
   fmt:
-    name: fmt
+    name: wasm/fmt
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -24,7 +24,7 @@ jobs:
         run: cd wasm && cargo fmt --all -- --check
 
   clippy:
-    name: clippy
+    name: wasm/clippy
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"
@@ -39,7 +39,7 @@ jobs:
         run: cd wasm && cargo clippy --all
 
   check:
-    name: check
+    name: wasm/check
     runs-on: ubuntu-latest
     env:
       RUST_LOG: "0"

@@ -15,7 +15,11 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 };
 */
 
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Parameters;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
+    Parameters,
+};
+
+use common::PartySignup;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -47,7 +51,7 @@ pub fn start() {
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn keygen(parties: u16, threshold: u16) {
+pub fn keygen(parties: u16, threshold: u16, keygen_signup: JsValue) {
     console_log!(
         "generate keys (parties={}) (threshold={})",
         parties,
@@ -58,6 +62,8 @@ pub fn keygen(parties: u16, threshold: u16) {
         share_count: parties,
         threshold,
     };
+
+    let party_signup: PartySignup = keygen_signup.into_serde().unwrap();
 
     /*
     let (party_num_int, uuid) = match signup(&client).unwrap() {

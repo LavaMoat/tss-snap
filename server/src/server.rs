@@ -18,6 +18,8 @@ use warp::Filter;
 
 use super::state_machine::*;
 
+use common::PartySignup;
+
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
@@ -67,12 +69,6 @@ enum ResponseData {
     KeygenSignup {
         party_signup: PartySignup,
     },
-}
-
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct PartySignup {
-    pub number: u16,
-    pub uuid: String,
 }
 
 #[derive(Debug)]
@@ -180,7 +176,7 @@ async fn client_incoming_message(
     };
 
     match serde_json::from_str::<Request>(msg) {
-        Ok(req) => client_request(conn_id, req, &state).await,
+        Ok(req) => client_request(conn_id, req, state).await,
         Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
     }
 }

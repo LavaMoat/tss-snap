@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", &level);
     pretty_env_logger::init();
 
-    let bind = opts.bind.unwrap_or("127.0.0.1:3030".to_string());
+    let bind = opts.bind.unwrap_or_else(|| "127.0.0.1:3030".to_string());
     let addr = SocketAddr::from_str(&bind)?;
     Server::start("demo", (addr.ip(), addr.port()), params).await
 }
