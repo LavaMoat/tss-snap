@@ -51,4 +51,4 @@ jobs:
           profile: minimal
           target: wasm32-unknown-unknown
       - name: Run cargo build
-        run: cd wasm && cargo check --target wasm32-unknown-unknown
+        run: cd wasm && cargo check
