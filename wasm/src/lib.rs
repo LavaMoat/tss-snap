@@ -15,6 +15,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 };
 */
 
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Parameters;
+
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
