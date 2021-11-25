@@ -1,6 +1,6 @@
 name: Cargo
 
-on: [push, pull_request]
+on: [pull_request]
 
 env:
   CI: 1
