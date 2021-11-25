@@ -15,9 +15,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 };
 */
 
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    Parameters,
-};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Parameters;
 
 use common::PartySignup;
 
