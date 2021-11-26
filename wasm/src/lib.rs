@@ -30,7 +30,6 @@ pub fn start() {
     console_log!("WASM: module started.");
 }
 
-
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
