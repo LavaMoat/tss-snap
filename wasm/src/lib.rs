@@ -30,6 +30,7 @@ pub fn start() {
     console_log!("WASM: module started.");
 }
 
+
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
@@ -38,7 +39,7 @@ pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
     let (party_num_int, uuid) = (number, uuid);
     println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
 
-    let party_keys = Keys::create(party_num_int as usize);
+    let party_keys = Keys::create(party_num_int);
     let (bc_i, decom_i) =
         party_keys.phase1_broadcast_phase3_proof_of_correct_key();
 

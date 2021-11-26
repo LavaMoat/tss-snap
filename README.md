@@ -24,3 +24,12 @@ make client
 ```
 
 Now visit `http://localhost:8080`.
+
+## Development
+
+During development you should link the WASM module:
+
+```
+cd wasm/pkg && yarn link
+cd client && yarn link ecdsa-wasm
+```

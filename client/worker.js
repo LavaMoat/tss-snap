@@ -6,12 +6,15 @@ import('ecdsa-wasm')
     onmessage = (e) => {
       const {data} = e;
       if (data.type === 'keygen_signup') {
-        console.log('worker got keygen signup request...');
-
         request({kind: "keygen_signup"})
           .then((res) => {
             const {party_signup} = res.data;
-            postMessage({type: 'keygen_signup_done', party_signup});
+
+            const round_entry = wasm.keygen_signup_entry(party_signup);
+            console.log('got round entry', round_entry);
+
+            postMessage({type: 'keygen_signup_done',
+              round_entry, party_signup});
           });
       }
     }
@@ -22,6 +25,7 @@ import('ecdsa-wasm')
 
     const server = "ws://localhost:3030/demo";
     const ws = new WebSocket(server);
+
     ws.onopen = () => {
       postMessage({type: 'server', server});
       request({kind: "parameters"})
