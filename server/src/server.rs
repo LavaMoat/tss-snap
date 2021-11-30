@@ -18,7 +18,7 @@ use warp::Filter;
 
 use super::state_machine::*;
 
-use common::{Key, Entry, PartySignup};
+use common::{Entry, Key, PartySignup};
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -58,7 +58,7 @@ enum MessageKind {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum RequestData {
-    Entry {entry: Entry},
+    Entry { entry: Entry },
 }
 
 #[derive(Debug, Serialize)]
@@ -244,7 +244,7 @@ async fn client_request(
         // Store the Entry
         MessageKind::KeygenSignupEntry => {
             // Assume the client is well behaved and sends the request data
-            let RequestData::Entry{ entry } = req.data.unwrap();
+            let RequestData::Entry { entry } = req.data.unwrap();
 
             // Store the key state broadcast by the client
             drop(info);
