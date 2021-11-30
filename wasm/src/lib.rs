@@ -42,7 +42,8 @@ pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
     let (bc_i, decom_i) =
         party_keys.phase1_broadcast_phase3_proof_of_correct_key();
 
-    // This is the entry that needs to be broadcast
+    // This is the entry that needs to be broadcast to the server
+    // by all parties
     let entry = into_round_entry(
         party_num_int,
         "round1",
@@ -54,8 +55,7 @@ pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
     // for future key generation phases
     let round_entry = Round1Entry { entry, decom_i };
 
-    // Pass back to the Javascript so it can be broadcast to all parties
-    // via the websocket server
+    // Pass back to the Javascript so it can be broadcast to the server
     JsValue::from_serde(&round_entry).unwrap()
 
     /*

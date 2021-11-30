@@ -18,7 +18,7 @@ use warp::Filter;
 
 use super::state_machine::*;
 
-use common::PartySignup;
+use common::{Key, Entry, PartySignup};
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -38,6 +38,7 @@ pub struct Parameters {
 struct Request {
     id: usize,
     kind: MessageKind,
+    data: Option<RequestData>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -45,15 +46,26 @@ enum MessageKind {
     /// Get the parameters.
     #[serde(rename = "parameters")]
     Parameters,
+    /// Initoalize the key generation process with a signup
     #[serde(rename = "keygen_signup")]
     KeygenSignup,
+    /// All clients send this message once `keygen_signup` is complete
+    /// to store the entry state on the server
+    #[serde(rename = "keygen_signup_entry")]
+    KeygenSignupEntry,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+enum RequestData {
+    Entry {entry: Entry},
 }
 
 #[derive(Debug, Serialize)]
 struct Response {
     id: usize,
     kind: MessageKind,
-    data: ResponseData,
+    data: Option<ResponseData>,
 }
 
 /// Request from a websocket client.
@@ -83,6 +95,8 @@ struct State<'a> {
     machine: PhaseIterator<'a>,
     /// Current keygen signup state.
     keygen_signup: PartySignup,
+    /// Map of key / values broadcast to the server by clients
+    keys: HashMap<Key, String>,
 }
 
 pub struct Server;
@@ -101,11 +115,12 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             params,
             clients: HashMap::new(),
-            phase: Default::default(),
             keygen_signup: PartySignup {
                 number: 0,
                 uuid: Uuid::new_v4().to_string(),
             },
+            keys: Default::default(),
+            phase: Default::default(),
             machine,
         }));
         let state = warp::any().map(move || state.clone());
@@ -194,10 +209,10 @@ async fn client_request(
         MessageKind::Parameters => Some(Response {
             id: req.id,
             kind: req.kind,
-            data: ResponseData::Parameters {
+            data: Some(ResponseData::Parameters {
                 parties: info.params.parties,
                 threshold: info.params.threshold,
-            },
+            }),
         }),
         // Signup creates a PartySignup
         MessageKind::KeygenSignup => {
@@ -223,22 +238,40 @@ async fn client_request(
             Some(Response {
                 id: req.id,
                 kind: req.kind,
-                data: ResponseData::KeygenSignup { party_signup },
+                data: Some(ResponseData::KeygenSignup { party_signup }),
+            })
+        }
+        // Store the Entry
+        MessageKind::KeygenSignupEntry => {
+            // Assume the client is well behaved and sends the request data
+            let RequestData::Entry{ entry } = req.data.unwrap();
+
+            // Store the key state broadcast by the client
+            drop(info);
+            let mut writer = state.write().await;
+            writer.keys.insert(entry.key, entry.value);
+
+            // Send an ACK so the client promise will resolve
+            Some(Response {
+                id: req.id,
+                kind: req.kind,
+                data: None,
             })
         }
     };
 
     if let Some(res) = response {
-        send_client_response(conn_id, res, state).await;
+        send_message(conn_id, res, state).await;
     }
 }
 
-/// Send a response to a single client.
-async fn send_client_response(
+/// Send a message to a single client.
+async fn send_message(
     conn_id: usize,
     res: Response,
     state: &Arc<RwLock<State<'_>>>,
 ) {
+    trace!("send_message (uid={})", conn_id);
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(&res).unwrap();
         trace!("sending message {:#?}", msg);
