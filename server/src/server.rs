@@ -261,19 +261,19 @@ async fn client_request(
     };
 
     if let Some(res) = response {
-        send_message(conn_id, res, state).await;
+        send_message(conn_id, &res, state).await;
     }
 }
 
 /// Send a message to a single client.
 async fn send_message(
     conn_id: usize,
-    res: Response,
+    res: &Response,
     state: &Arc<RwLock<State<'_>>>,
 ) {
     trace!("send_message (uid={})", conn_id);
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
-        let msg = serde_json::to_string(&res).unwrap();
+        let msg = serde_json::to_string(res).unwrap();
         trace!("sending message {:#?}", msg);
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
             // The tx is disconnected, our `client_disconnected` code
@@ -282,6 +282,16 @@ async fn send_message(
         }
     } else {
         warn!("could not find tx for (uid={})", conn_id);
+    }
+}
+
+/// Broadcast a message to all clients.
+async fn broadcast_message(res: &Response, state: &Arc<RwLock<State<'_>>>) {
+    let info = state.read().await;
+    let clients: Vec<usize> = info.clients.keys().cloned().collect();
+    drop(info);
+    for conn_id in clients {
+        send_message(conn_id, res, state).await;
     }
 }
 
