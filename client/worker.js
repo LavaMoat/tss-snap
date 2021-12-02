@@ -33,18 +33,24 @@ import('ecdsa-wasm')
       postMessage({type: 'server', server});
       request({kind: "parameters"})
         .then((res) => {
-          if (res.kind === "parameters") {
-            const {parties, threshold} = res.data;
-            postMessage({type: 'ready', parties, threshold});
-          }
+          const {parties, threshold} = res.data;
+          postMessage({type: 'ready', parties, threshold});
         });
     }
 
     ws.onmessage = (e) => {
-      const res = JSON.parse(e.data);
-      if (res.id && messageRequests.has(res.id)) {
-        const {resolve} = messageRequests.get(res.id);
-        resolve(res);
+      const msg = JSON.parse(e.data);
+      if (msg.id && messageRequests.has(msg.id)) {
+        const {resolve} = messageRequests.get(msg.id);
+        resolve(msg);
+      // Without an `id` we treat as a broadcast message that
+      // was sent from the server without a request from the client
+      } else {
+        if (msg.kind === 'commitment_answer') {
+          console.log('got a commitment answer for ', msg.data.round);
+        } else {
+          console.error('websocket client received a message it could not handle: ', msg);
+        }
       }
     }
 
