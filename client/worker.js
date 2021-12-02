@@ -7,6 +7,11 @@ import("ecdsa-wasm")
     const server = "ws://localhost:3030/demo";
     const ws = new WebSocket(server);
 
+    const clientState = {
+      partySignup: null,
+      round1Entry: null,
+    };
+
     // Receive messages sent to the worker
     onmessage = async (e) => {
       const { data } = e;
@@ -15,16 +20,20 @@ import("ecdsa-wasm")
         const signup = await request({ kind: "keygen_signup" });
         const { party_signup } = signup.data;
 
+        clientState.partySignup = party_signup;
+
         // Create the round 1 key entry
-        const round_entry = wasm.generate_round1_entry(party_signup);
-        const { entry } = round_entry;
+        const round1_entry = wasm.generate_round1_entry(party_signup);
+        const { entry } = round1_entry;
+
+        clientState.round1Entry = round1_entry;
 
         // Broadcast the round entry to the server
         const signupEntry = await request({
-          kind: "keygen_signup_entry",
+          kind: "set_round1_entry",
           data: { entry, uuid: party_signup.uuid },
         });
-        postMessage({ type: "party_signup", round_entry, party_signup });
+        postMessage({ type: "party_signup", round1_entry, party_signup });
       }
     };
 
@@ -34,6 +43,18 @@ import("ecdsa-wasm")
       switch (msg.kind) {
         case "commitment_answer":
           console.log("got a commitment answer for ", msg.data.round);
+          switch (msg.data.round) {
+            // Got round 1 commitments of other parties
+            case "round1":
+              // Get round 2 entry using round 1 commitments
+              const round2_entry = wasm.generate_round2_entry(
+                clientState.partySignup,
+                clientState.round1Entry,
+                msg.data.answer
+              );
+
+              console.log("got round 2 entry!!!", round2_entry);
+          }
           return true;
       }
       return false;
@@ -64,6 +85,8 @@ import("ecdsa-wasm")
       }
     };
 
+    // Wrap a websocket request in a promise that expects
+    // a response from the server
     function request(message) {
       const id = ++messageId;
       const resolve = (data) => data;

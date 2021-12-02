@@ -1,6 +1,8 @@
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Keys;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
+    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys,
+};
 
-use common::{into_round_entry, PartySignup, Round1Entry, ROUND_1};
+use common::{into_round_entry, PartySignup, Round1Entry, ROUND_1, ROUND_2};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -32,9 +34,9 @@ pub fn start() {
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_round1_entry(keygen_signup: JsValue) -> JsValue {
+pub fn generate_round1_entry(party_signup: JsValue) -> JsValue {
     let PartySignup { number, uuid } =
-        keygen_signup.into_serde::<PartySignup>().unwrap();
+        party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
     println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
 
@@ -51,7 +53,7 @@ pub fn generate_round1_entry(keygen_signup: JsValue) -> JsValue {
         uuid,
     );
 
-    // Store decom_i so that Javascript can pass it back to WASM
+    // Store decom_i and bc_i so that Javascript can pass it back to WASM
     // for future key generation phases
     let round_entry = Round1Entry {
         entry,
@@ -81,4 +83,40 @@ pub fn generate_round1_entry(keygen_signup: JsValue) -> JsValue {
         uuid.clone(),
     );
     */
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn generate_round2_entry(
+    party_signup: JsValue,
+    round1_entry: JsValue,
+    round1_ans_vec: JsValue,
+) -> JsValue {
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
+
+    let round1_ans_vec: Vec<String> = round1_ans_vec.into_serde().unwrap();
+
+    let round1_entry: Round1Entry = round1_entry.into_serde().unwrap();
+    let decom_i: KeyGenDecommitMessage1 = round1_entry.decom_i;
+    let bc_i: KeyGenBroadcastMessage1 = round1_entry.bc_i;
+
+    let mut bc1_vec = round1_ans_vec
+        .iter()
+        .map(|m| serde_json::from_str::<KeyGenBroadcastMessage1>(m).unwrap())
+        .collect::<Vec<_>>();
+
+    bc1_vec.insert(party_num_int as usize - 1, bc_i);
+
+    // Generate the entry for round 2
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_2,
+        serde_json::to_string(&decom_i).unwrap(),
+        uuid,
+    );
+
+    JsValue::from_serde(&entry).unwrap()
 }

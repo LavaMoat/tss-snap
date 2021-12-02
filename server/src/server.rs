@@ -53,8 +53,8 @@ enum IncomingKind {
     KeygenSignup,
     /// All clients send this message once `keygen_signup` is complete
     /// to store the entry state on the server
-    #[serde(rename = "keygen_signup_entry")]
-    KeygenSignupEntry,
+    #[serde(rename = "set_round1_entry")]
+    SetRound1Entry,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -262,7 +262,7 @@ async fn client_request(
             })
         }
         // Store the Entry
-        IncomingKind::KeygenSignupEntry => {
+        IncomingKind::SetRound1Entry => {
             // Assume the client is well behaved and sends the request data
             let IncomingData::Entry { entry, .. } = req.data.as_ref().unwrap();
 
@@ -286,7 +286,7 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::KeygenSignupEntry => {
+        IncomingKind::SetRound1Entry => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let num_keys = info.keys.len();
@@ -296,7 +296,7 @@ async fn client_request(
 
             // Got all the party round 1 commitments so broadcast
             // to each client with the answer vectors including an
-            // Entry for each other party
+            // the value (KeyGenBroadcastMessage1) for the other parties
             if num_keys == parties {
                 trace!("got all round1 commitments, broadcasting answers");
 
@@ -323,9 +323,6 @@ async fn client_request(
                         };
                         send_message(conn_id, &res, state).await;
                     }
-
-                    //println!("got ans_vec {:#?}", ans_vec);
-                    //println!("got answer conn_id {:#?}", conn_id);
                 }
             }
         }
