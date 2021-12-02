@@ -19,7 +19,6 @@ pub struct PartySignup {
 pub struct Entry {
     pub key: Key,
     pub value: String,
-    pub party_num: u16,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -36,9 +35,5 @@ pub fn into_round_entry(
     sender_uuid: String,
 ) -> Entry {
     let key = format!("{}-{}-{}", party_num, round, sender_uuid);
-    Entry {
-        key,
-        value,
-        party_num,
-    }
+    Entry { key, value }
 }
