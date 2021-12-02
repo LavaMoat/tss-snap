@@ -6,6 +6,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::KeyGenDec
 use serde::{Deserialize, Serialize};
 
 pub const ROUND_1: &str = "round1";
+pub const ROUND_2: &str = "round2";
 
 pub type Key = String;
 
