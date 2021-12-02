@@ -1,6 +1,6 @@
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::Keys;
 
-use common::{into_round_entry, PartySignup, Round1Entry};
+use common::{into_round_entry, PartySignup, Round1Entry, ROUND_1};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -46,7 +46,7 @@ pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
     // by all parties
     let entry = into_round_entry(
         party_num_int,
-        "round1",
+        ROUND_1,
         serde_json::to_string(&bc_i).unwrap(),
         uuid,
     );
