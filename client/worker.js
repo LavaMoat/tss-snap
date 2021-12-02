@@ -15,9 +15,9 @@ import("ecdsa-wasm")
     // Receive messages sent to the worker
     onmessage = async (e) => {
       const { data } = e;
-      if (data.type === "keygen_signup") {
+      if (data.type === "party_signup") {
         // Generate the party signup entry
-        const signup = await request({ kind: "keygen_signup" });
+        const signup = await request({ kind: "party_signup" });
         const { party_signup } = signup.data;
 
         clientState.partySignup = party_signup;
@@ -42,7 +42,6 @@ import("ecdsa-wasm")
     const onBroadcastMessage = (msg) => {
       switch (msg.kind) {
         case "commitment_answer":
-          console.log("got a commitment answer for ", msg.data.round);
           switch (msg.data.round) {
             // Got round 1 commitments of other parties
             case "round1":
@@ -64,8 +63,7 @@ import("ecdsa-wasm")
     ws.onopen = async () => {
       postMessage({ type: "server", server });
       const res = await request({ kind: "parameters" });
-      const { parties, threshold } = res.data;
-      postMessage({ type: "ready", parties, threshold });
+      postMessage({ type: "ready", ...res.data });
     };
 
     ws.onmessage = (e) => {

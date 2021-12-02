@@ -48,10 +48,10 @@ enum IncomingKind {
     /// Get the parameters.
     #[serde(rename = "parameters")]
     Parameters,
-    /// Initoalize the key generation process with a signup
-    #[serde(rename = "keygen_signup")]
-    KeygenSignup,
-    /// All clients send this message once `keygen_signup` is complete
+    /// Initialize the key generation process with a party signup
+    #[serde(rename = "party_signup")]
+    PartySignup,
+    /// All clients send this message once `party_signup` is complete
     /// to store the entry state on the server
     #[serde(rename = "set_round1_entry")]
     SetRound1Entry,
@@ -86,6 +86,7 @@ enum OutgoingData {
     Parameters {
         parties: u16,
         threshold: u16,
+        conn_id: usize,
     },
     KeygenSignup {
         party_signup: PartySignup,
@@ -109,8 +110,8 @@ struct State<'a> {
     machine: PhaseIterator<'a>,
     /// Current keygen signup state.
     keygen_signup: PartySignup,
-    /// Map of key / values broadcast to the server by clients
-    keys: HashMap<Key, String>,
+    /// Map of key / values broadcast to the server by clients for round1
+    round1_state: HashMap<Key, String>,
 }
 
 pub struct Server;
@@ -133,7 +134,7 @@ impl Server {
                 number: 0,
                 uuid: Uuid::new_v4().to_string(),
             },
-            keys: Default::default(),
+            round1_state: Default::default(),
             phase: Default::default(),
             machine,
         }));
@@ -228,11 +229,15 @@ async fn client_request(
             Some(Outgoing {
                 id: Some(req.id),
                 kind: None,
-                data: Some(OutgoingData::Parameters { parties, threshold }),
+                data: Some(OutgoingData::Parameters {
+                    parties,
+                    threshold,
+                    conn_id,
+                }),
             })
         }
         // Signup creates a PartySignup
-        IncomingKind::KeygenSignup => {
+        IncomingKind::PartySignup => {
             let party_signup = {
                 let client_signup = &info.keygen_signup;
                 if client_signup.number < info.params.parties {
@@ -269,7 +274,9 @@ async fn client_request(
             // Store the key state broadcast by the client
             drop(info);
             let mut writer = state.write().await;
-            writer.keys.insert(entry.key.clone(), entry.value.clone());
+            writer
+                .round1_state
+                .insert(entry.key.clone(), entry.value.clone());
 
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
@@ -289,7 +296,7 @@ async fn client_request(
         IncomingKind::SetRound1Entry => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
-            let num_keys = info.keys.len();
+            let num_keys = info.round1_state.len();
             drop(info);
 
             let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap();
@@ -323,6 +330,13 @@ async fn client_request(
                         };
                         send_message(conn_id, &res, state).await;
                     }
+                }
+
+                // We just sent round1 commitments to all clients so clean up the temporary state
+                {
+                    let mut writer = state.write().await;
+                    // TODO: zeroize the state information
+                    writer.round1_state = Default::default();
                 }
             }
         }
@@ -372,7 +386,7 @@ async fn round_commitment_answers(
     for i in 1..=parties {
         if i != party_num {
             let key = format!("{}-{}-{}", i, round, sender_uuid);
-            let value = info.keys.get(&key);
+            let value = info.round1_state.get(&key);
             if let Some(value) = value {
                 trace!("[{:?}] party {:?} => party {:?}", round, i, party_num);
                 ans_vec.push(value.clone());

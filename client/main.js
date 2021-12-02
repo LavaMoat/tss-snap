@@ -2,6 +2,7 @@ import Worker from "worker-loader!./worker.js";
 
 if (window.Worker) {
   // DOM references
+  const clientLabel = document.querySelector(".client span");
   const partiesLabel = document.querySelector(".parties span");
   const thresholdLabel = document.querySelector(".threshold span");
   const keygenSignupInfo = document.querySelector(".keygen-signup-info span");
@@ -24,15 +25,16 @@ if (window.Worker) {
         break;
       // Worker has been initialized and is ready with the server parameters
       case "ready":
-        const { parties, threshold } = e.data;
+        const { conn_id, parties, threshold } = e.data;
+        clientLabel.innerText = "#" + conn_id;
         partiesLabel.innerText = parties;
         thresholdLabel.innerText = threshold;
         keygenSignupButton.removeAttribute("hidden");
         keygenSignupButton.addEventListener("click", () => {
-          worker.postMessage({ type: "keygen_signup" });
+          worker.postMessage({ type: "party_signup" });
         });
         break;
-      // Keygen signup is done, we have PartySignup and Round1Entry
+      // We have PartySignup and Round1Entry
       case "party_signup":
         keygenSignupButton.setAttribute("hidden", "1");
         const { party_signup } = e.data;
