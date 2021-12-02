@@ -1,7 +1,9 @@
 /// Common types shared between the server and webassembly modules.
 
 #[cfg(target_arch = "wasm32")]
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::KeyGenDecommitMessage1;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
+    KeyGenBroadcastMessage1, KeyGenDecommitMessage1,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +29,7 @@ pub struct Entry {
 pub struct Round1Entry {
     pub entry: Entry,
     pub decom_i: KeyGenDecommitMessage1,
+    pub bc_i: KeyGenBroadcastMessage1,
 }
 
 pub fn into_round_entry(

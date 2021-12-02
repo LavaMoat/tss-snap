@@ -32,7 +32,7 @@ pub fn start() {
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
+pub fn generate_round1_entry(keygen_signup: JsValue) -> JsValue {
     let PartySignup { number, uuid } =
         keygen_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -53,7 +53,11 @@ pub fn keygen_signup_entry(keygen_signup: JsValue) -> JsValue {
 
     // Store decom_i so that Javascript can pass it back to WASM
     // for future key generation phases
-    let round_entry = Round1Entry { entry, decom_i };
+    let round_entry = Round1Entry {
+        entry,
+        decom_i,
+        bc_i,
+    };
 
     // Pass back to the Javascript so it can be broadcast to the server
     JsValue::from_serde(&round_entry).unwrap()

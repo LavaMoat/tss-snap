@@ -16,25 +16,28 @@ if (window.Worker) {
   const worker = new Worker("worker.js");
   worker.onmessage = (e) => {
     const { type } = e.data;
-    // Initial handshake gets the server parameters
-    if (type === "server") {
-      const { server } = e.data;
-      document.querySelector(".server span").innerText = server;
-      // Worker has been initialized and is ready
-    } else if (type === "ready") {
-      const { parties, threshold } = e.data;
-      partiesLabel.innerText = parties;
-      thresholdLabel.innerText = threshold;
-      keygenSignupButton.removeAttribute("hidden");
-      keygenSignupButton.addEventListener("click", () => {
-        worker.postMessage({ type: "keygen_signup" });
-      });
-      // Keygen signup is complete
-    } else if (type === "keygen_signup_done") {
-      keygenSignupButton.setAttribute("hidden", "1");
-      const { party_signup } = e.data;
-      keygenSignupInfo.innerText = JSON.stringify(party_signup);
-      console.log("main thread for worker keygen signup done", party_signup);
+
+    switch (type) {
+      case "server":
+        const { server } = e.data;
+        document.querySelector(".server span").innerText = server;
+        break;
+      // Worker has been initialized and is ready with the server parameters
+      case "ready":
+        const { parties, threshold } = e.data;
+        partiesLabel.innerText = parties;
+        thresholdLabel.innerText = threshold;
+        keygenSignupButton.removeAttribute("hidden");
+        keygenSignupButton.addEventListener("click", () => {
+          worker.postMessage({ type: "keygen_signup" });
+        });
+        break;
+      // Keygen signup is done, we have PartySignup and Round1Entry
+      case "party_signup":
+        keygenSignupButton.setAttribute("hidden", "1");
+        const { party_signup } = e.data;
+        keygenSignupInfo.innerText = JSON.stringify(party_signup);
+        break;
     }
   };
 } else {

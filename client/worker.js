@@ -16,7 +16,7 @@ import("ecdsa-wasm")
         const { party_signup } = signup.data;
 
         // Create the round 1 key entry
-        const round_entry = wasm.keygen_signup_entry(party_signup);
+        const round_entry = wasm.generate_round1_entry(party_signup);
         const { entry } = round_entry;
 
         // Broadcast the round entry to the server
@@ -24,7 +24,7 @@ import("ecdsa-wasm")
           kind: "keygen_signup_entry",
           data: { entry, uuid: party_signup.uuid },
         });
-        postMessage({ type: "keygen_signup_done", round_entry, party_signup });
+        postMessage({ type: "party_signup", round_entry, party_signup });
       }
     };
 

@@ -18,4 +18,10 @@ server:
 client:
 	@cd client && yarn start
 
-.PHONY: all wasm setup build release server client
+fmt:
+	@cd client && yarn prettier
+	@cd server && cargo fmt
+	@cd common && cargo fmt
+	@cd wasm && cargo fmt
+
+.PHONY: all wasm setup build release server client fmt
