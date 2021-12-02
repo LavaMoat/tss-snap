@@ -19,9 +19,8 @@ import('ecdsa-wasm')
             const {entry} = round_entry;
 
             // Broadcast the round entry to the server
-            request({kind: "keygen_signup_entry", data: {entry}})
+            request({kind: "keygen_signup_entry", data: {entry, uuid: party_signup.uuid}})
               .then((res) => {
-                console.log('GOT KEYGEN SIGNUP RESPONSE');
                 postMessage({type: 'keygen_signup_done',
                   round_entry, party_signup});
               });

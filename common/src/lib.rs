@@ -36,5 +36,9 @@ pub fn into_round_entry(
     sender_uuid: String,
 ) -> Entry {
     let key = format!("{}-{}-{}", party_num, round, sender_uuid);
-    Entry { key, value, party_num }
+    Entry {
+        key,
+        value,
+        party_num,
+    }
 }

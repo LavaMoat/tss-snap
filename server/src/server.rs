@@ -16,9 +16,11 @@ use uuid::Uuid;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
+use std::convert::TryInto;
+
 use super::state_machine::*;
 
-use common::{Entry, Key, PartySignup};
+use common::{Entry, Key, PartySignup, ROUND_1};
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -58,7 +60,7 @@ enum MessageKind {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum RequestData {
-    Entry { entry: Entry },
+    Entry { entry: Entry, uuid: String },
 }
 
 #[derive(Debug, Serialize)]
@@ -206,14 +208,17 @@ async fn client_request(
     trace!("processing request {:#?}", req);
     let response: Option<Response> = match req.kind {
         // Handshake gets the parameters the server was started with
-        MessageKind::Parameters => Some(Response {
-            id: req.id,
-            kind: req.kind,
-            data: Some(ResponseData::Parameters {
-                parties: info.params.parties,
-                threshold: info.params.threshold,
-            }),
-        }),
+        MessageKind::Parameters => {
+            let parties = info.params.parties;
+            let threshold = info.params.threshold;
+            drop(info);
+
+            Some(Response {
+                id: req.id,
+                kind: req.kind,
+                data: Some(ResponseData::Parameters { parties, threshold }),
+            })
+        }
         // Signup creates a PartySignup
         MessageKind::KeygenSignup => {
             let party_signup = {
@@ -244,12 +249,15 @@ async fn client_request(
         // Store the Entry
         MessageKind::KeygenSignupEntry => {
             // Assume the client is well behaved and sends the request data
-            let RequestData::Entry { entry } = req.data.unwrap();
+            let RequestData::Entry { entry, .. } = req.data.as_ref().unwrap();
 
             // Store the key state broadcast by the client
             drop(info);
             let mut writer = state.write().await;
-            writer.keys.insert(entry.key, entry.value);
+
+            println!("Saving entry with key {}", entry.key);
+
+            writer.keys.insert(entry.key.clone(), entry.value.clone());
 
             // Send an ACK so the client promise will resolve
             Some(Response {
@@ -262,6 +270,37 @@ async fn client_request(
 
     if let Some(res) = response {
         send_message(conn_id, &res, state).await;
+    }
+
+    // Post processing after sending response
+    match req.kind {
+        MessageKind::KeygenSignupEntry => {
+            let info = state.read().await;
+            let parties = info.params.parties as usize;
+            let num_keys = info.keys.len();
+            drop(info);
+
+            let RequestData::Entry { uuid, .. } = req.data.as_ref().unwrap();
+
+            // Got all the party round 1 commitments so broadcast
+            // to each client with the answer vectors including an
+            // Entry for each other party
+            if num_keys == parties {
+                trace!("got all round1 commitments, broadcasting answers");
+                for i in 0..parties {
+                    let ans_vec = round_commitment_answers(
+                        state,
+                        (i + 1).try_into().unwrap(),
+                        ROUND_1,
+                        uuid.clone(),
+                    )
+                    .await;
+
+                    println!("got ans_vec {:#?}", ans_vec);
+                }
+            }
+        }
+        _ => {}
     }
 }
 
@@ -293,6 +332,28 @@ async fn broadcast_message(res: &Response, state: &Arc<RwLock<State<'_>>>) {
     for conn_id in clients {
         send_message(conn_id, res, state).await;
     }
+}
+
+async fn round_commitment_answers(
+    state: &Arc<RwLock<State<'_>>>,
+    party_num: u16,
+    round: &str,
+    sender_uuid: String,
+) -> Vec<String> {
+    let mut ans_vec = Vec::new();
+    let info = state.read().await;
+    let parties = info.params.parties;
+    for i in 1..=parties {
+        if i != party_num {
+            let key = format!("{}-{}-{}", i, round, sender_uuid);
+            let value = info.keys.get(&key);
+            if let Some(value) = value {
+                trace!("[{:?}] party {:?} => party {:?}", round, i, party_num);
+                ans_vec.push(value.clone());
+            }
+        }
+    }
+    ans_vec
 }
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State<'_>>>) {
