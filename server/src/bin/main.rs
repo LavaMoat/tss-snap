@@ -1,8 +1,11 @@
 use anyhow::Result;
-use ecdsa_wasm::{Parameters, Server};
+
 use std::net::SocketAddr;
 use std::str::FromStr;
 use structopt::StructOpt;
+
+use common::Parameters;
+use ecdsa_wasm::Server;
 
 #[derive(Debug, StructOpt)]
 #[structopt(

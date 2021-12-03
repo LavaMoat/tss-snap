@@ -1,9 +1,16 @@
+use curv::{
+    arithmetic::Converter,
+    elliptic::curves::{secp256_k1::Secp256k1, Point},
+    BigInt,
+};
+
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys,
+    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
 };
 
 use common::{
-    into_round_entry, PartySignup, Round1Entry, Round2Entry, ROUND_1, ROUND_2,
+    into_round_entry, PartySignup, Round1Entry, Round2Entry, Round3Entry,
+    AES_KEY_BYTES_LEN, ROUND_1, ROUND_2,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -58,33 +65,14 @@ pub fn generate_round1_entry(party_signup: JsValue) -> JsValue {
     // Store decom_i and bc_i so that Javascript can pass it back to WASM
     // for future key generation phases
     let round_entry = Round1Entry {
+        party_keys,
         entry,
         decom_i,
         bc_i,
     };
 
-    // Pass back to the Javascript so it can be broadcast to the server
+    // Pass back to the Javascript so it can be sent to the server
     JsValue::from_serde(&round_entry).unwrap()
-
-    /*
-    // send commitment to ephemeral public keys, get round 1 commitments of other parties
-    assert!(broadcast(
-        &client,
-        party_num_int,
-        "round1",
-        serde_json::to_string(&bc_i).unwrap(),
-        uuid.clone()
-    )
-    .is_ok());
-    let round1_ans_vec = poll_for_broadcasts(
-        &client,
-        party_num_int,
-        PARTIES,
-        delay,
-        "round1",
-        uuid.clone(),
-    );
-    */
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -102,8 +90,9 @@ pub fn generate_round2_entry(
     let round1_ans_vec: Vec<String> = round1_ans_vec.into_serde().unwrap();
 
     let round1_entry: Round1Entry = round1_entry.into_serde().unwrap();
-    let decom_i: KeyGenDecommitMessage1 = round1_entry.decom_i;
-    let bc_i: KeyGenBroadcastMessage1 = round1_entry.bc_i;
+    let party_keys = round1_entry.party_keys;
+    let decom_i = round1_entry.decom_i;
+    let bc_i = round1_entry.bc_i;
 
     let mut bc1_vec = round1_ans_vec
         .iter()
@@ -120,6 +109,79 @@ pub fn generate_round2_entry(
         uuid,
     );
 
-    let round_entry = Round2Entry { entry };
+    let round_entry = Round2Entry {
+        party_keys,
+        entry,
+        decom_i,
+        bc1_vec,
+    };
+    JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn check_round2_correct_key(
+    parties: u16,
+    threshold: u16,
+    party_signup: JsValue,
+    round2_entry: JsValue,
+    round2_ans_vec: JsValue,
+) -> JsValue {
+    let params = Parameters {
+        share_count: parties,
+        threshold,
+    };
+
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
+
+    let round2_ans_vec: Vec<String> = round2_ans_vec.into_serde().unwrap();
+    let round2_entry: Round2Entry = round2_entry.into_serde().unwrap();
+    let party_keys = round2_entry.party_keys;
+    let decom_i = round2_entry.decom_i;
+    let bc1_vec = round2_entry.bc1_vec;
+
+    let mut j = 0;
+    let mut point_vec: Vec<Point<Secp256k1>> = Vec::new();
+    let mut decom_vec: Vec<KeyGenDecommitMessage1> = Vec::new();
+    let mut enc_keys: Vec<Vec<u8>> = Vec::new();
+    for i in 1..=parties {
+        if i == party_num_int {
+            point_vec.push(decom_i.y_i.clone());
+            decom_vec.push(decom_i.clone());
+        } else {
+            let decom_j: KeyGenDecommitMessage1 =
+                serde_json::from_str(&round2_ans_vec[j]).unwrap();
+            point_vec.push(decom_j.y_i.clone());
+            decom_vec.push(decom_j.clone());
+            let key_bn: BigInt = (decom_j.y_i.clone() * party_keys.u_i.clone())
+                .x_coord()
+                .unwrap();
+            let key_bytes = BigInt::to_bytes(&key_bn);
+            let mut template: Vec<u8> =
+                vec![0u8; AES_KEY_BYTES_LEN - key_bytes.len()];
+            template.extend_from_slice(&key_bytes[..]);
+            enc_keys.push(template);
+            j += 1;
+        }
+    }
+
+    let (head, tail) = point_vec.split_at(1);
+    let y_sum = tail.iter().fold(head[0].clone(), |acc, x| acc + x);
+
+    let (vss_scheme, secret_shares, _index) = party_keys
+        .phase1_verify_com_phase3_verify_correct_key_phase2_distribute(
+            &params, &decom_vec, &bc1_vec,
+        )
+        .expect("invalid key");
+
+    let round_entry = Round3Entry {
+        vss_scheme,
+        secret_shares,
+        y_sum,
+    };
+
     JsValue::from_serde(&round_entry).unwrap()
 }

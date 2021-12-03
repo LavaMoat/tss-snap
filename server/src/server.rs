@@ -20,20 +20,13 @@ use std::convert::TryInto;
 
 use super::state_machine::*;
 
-use common::{Entry, Key, PartySignup, ROUND_1, ROUND_2};
+use common::{Entry, Key, Parameters, PartySignup, ROUND_1, ROUND_2};
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
 static PHASES: Lazy<Vec<Phase>> =
     Lazy::new(|| vec![Phase::Standby, Phase::Keygen, Phase::Signing]);
-
-/// Parameters for key generation and signing.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Parameters {
-    pub parties: u16,
-    pub threshold: u16,
-}
 
 /// Incoming message from a websocket client.
 #[derive(Debug, Deserialize)]
