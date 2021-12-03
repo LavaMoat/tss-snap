@@ -33,3 +33,16 @@ During development you should link the WASM module:
 cd wasm/pkg && yarn link
 cd client && yarn link ecdsa-wasm
 ```
+
+## Thread Support (Rayon)
+
+If you get this error:
+
+```
+panicked at 'The global thread pool has not been initialized.: ThreadPoolBuildError { kind: IOError(Error { kind: Unsupported, message: "operation not supported on this platform" }) }', /home/muji/.cargo/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/src/registry.rs:170:10
+```
+
+Then webassembly needs threads enabled, see:
+
+* https://github.com/GoogleChromeLabs/wasm-bindgen-rayon
+* https://rustwasm.github.io/wasm-bindgen/examples/raytrace.html
