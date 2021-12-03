@@ -32,6 +32,12 @@ pub struct Round1Entry {
     pub bc_i: KeyGenBroadcastMessage1,
 }
 
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Round2Entry {
+    pub entry: Entry,
+}
+
 pub fn into_round_entry(
     party_num: u16,
     round: &str,

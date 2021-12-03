@@ -35,10 +35,10 @@ if (window.Worker) {
         });
         break;
       // We have PartySignup and Round1Entry
-      case "party_signup":
+      case "round1_complete":
         keygenSignupButton.setAttribute("hidden", "1");
-        const { party_signup } = e.data;
-        keygenSignupInfo.innerText = JSON.stringify(party_signup);
+        const { partySignup } = e.data;
+        keygenSignupInfo.innerText = JSON.stringify(partySignup);
         break;
     }
   };

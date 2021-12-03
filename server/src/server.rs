@@ -52,9 +52,12 @@ enum IncomingKind {
     #[serde(rename = "party_signup")]
     PartySignup,
     /// All clients send this message once `party_signup` is complete
-    /// to store the entry state on the server
+    /// to store the round 1 entry
     #[serde(rename = "set_round1_entry")]
     SetRound1Entry,
+    /// Store the round 2 entry sent each client.
+    #[serde(rename = "set_round2_entry")]
+    SetRound2Entry,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -110,8 +113,10 @@ struct State<'a> {
     machine: PhaseIterator<'a>,
     /// Current keygen signup state.
     keygen_signup: PartySignup,
-    /// Map of key / values broadcast to the server by clients for round1
+    /// Map of key / values sent to the server by clients for round1
     round1_state: HashMap<Key, String>,
+    /// Map of key / values sent to the server by clients for round2
+    round2_state: HashMap<Key, String>,
 }
 
 pub struct Server;
@@ -135,6 +140,7 @@ impl Server {
                 uuid: Uuid::new_v4().to_string(),
             },
             round1_state: Default::default(),
+            round2_state: Default::default(),
             phase: Default::default(),
             machine,
         }));
@@ -266,7 +272,7 @@ async fn client_request(
                 data: Some(OutgoingData::KeygenSignup { party_signup }),
             })
         }
-        // Store the Entry
+        // Store the round 1 Entry
         IncomingKind::SetRound1Entry => {
             // Assume the client is well behaved and sends the request data
             let IncomingData::Entry { entry, .. } = req.data.as_ref().unwrap();
@@ -277,6 +283,27 @@ async fn client_request(
             writer
                 .round1_state
                 .insert(entry.key.clone(), entry.value.clone());
+
+            // Send an ACK so the client promise will resolve
+            Some(Outgoing {
+                id: Some(req.id),
+                kind: None,
+                data: None,
+            })
+        }
+        // Store the round 2 Entry
+        IncomingKind::SetRound2Entry => {
+            // Assume the client is well behaved and sends the request data
+            let IncomingData::Entry { entry, .. } = req.data.as_ref().unwrap();
+
+            // Store the key state broadcast by the client
+            drop(info);
+            let mut writer = state.write().await;
+            writer
+                .round2_state
+                .insert(entry.key.clone(), entry.value.clone());
+
+            println!("stored round 2 entry {}", entry.key);
 
             // Send an ACK so the client promise will resolve
             Some(Outgoing {

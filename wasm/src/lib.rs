@@ -2,7 +2,9 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys,
 };
 
-use common::{into_round_entry, PartySignup, Round1Entry, ROUND_1, ROUND_2};
+use common::{
+    into_round_entry, PartySignup, Round1Entry, Round2Entry, ROUND_1, ROUND_2,
+};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
@@ -118,5 +120,6 @@ pub fn generate_round2_entry(
         uuid,
     );
 
-    JsValue::from_serde(&entry).unwrap()
+    let round_entry = Round2Entry { entry };
+    JsValue::from_serde(&round_entry).unwrap()
 }

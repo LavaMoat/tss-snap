@@ -7,7 +7,9 @@ import("ecdsa-wasm")
     const server = "ws://localhost:3030/demo";
     const ws = new WebSocket(server);
 
-    const clientState = {
+    let clientState = {
+      parties: null,
+      threshold: null,
       partySignup: null,
       round1Entry: null,
     };
@@ -25,15 +27,8 @@ import("ecdsa-wasm")
         // Create the round 1 key entry
         const round1_entry = wasm.generate_round1_entry(party_signup);
         const { entry } = round1_entry;
-
         clientState.round1Entry = round1_entry;
-
-        // Broadcast the round entry to the server
-        const signupEntry = await request({
-          kind: "set_round1_entry",
-          data: { entry, uuid: party_signup.uuid },
-        });
-        postMessage({ type: "party_signup", round1_entry, party_signup });
+        sendRound1Entry();
       }
     };
 
@@ -51,19 +46,41 @@ import("ecdsa-wasm")
                 clientState.round1Entry,
                 msg.data.answer
               );
-
-              console.log("got round 2 entry!!!", round2_entry);
+              clientState.round2Entry = round2_entry;
+              sendRound2Entry();
           }
           return true;
       }
       return false;
     };
 
+    // Send the round 1 entry to the server
+    const sendRound1Entry = async () => {
+      const { entry } = clientState.round1Entry;
+      // Send the round 1 entry to the server
+      await request({
+        kind: "set_round1_entry",
+        data: { entry, uuid: clientState.partySignup.uuid },
+      });
+      postMessage({ type: "round1_complete", ...clientState });
+    };
+
+    // Send the round 2 entry to the server
+    const sendRound2Entry = async () => {
+      const { entry } = clientState.round2Entry;
+      await request({
+        kind: "set_round2_entry",
+        data: { entry, uuid: clientState.partySignup.uuid },
+      });
+      postMessage({ type: "round2_complete", ...clientState });
+    };
+
     // Websocket communication with the server
     ws.onopen = async () => {
       postMessage({ type: "server", server });
       const res = await request({ kind: "parameters" });
-      postMessage({ type: "ready", ...res.data });
+      clientState = { ...clientState, ...res.data };
+      postMessage({ type: "ready", ...clientState });
     };
 
     ws.onmessage = (e) => {
