@@ -20,7 +20,7 @@ use std::convert::TryInto;
 
 use super::state_machine::*;
 
-use common::{Entry, Key, PartySignup, ROUND_1};
+use common::{Entry, Key, PartySignup, ROUND_1, ROUND_2};
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -113,10 +113,8 @@ struct State<'a> {
     machine: PhaseIterator<'a>,
     /// Current keygen signup state.
     keygen_signup: PartySignup,
-    /// Map of key / values sent to the server by clients for round1
-    round1_state: HashMap<Key, String>,
-    /// Map of key / values sent to the server by clients for round2
-    round2_state: HashMap<Key, String>,
+    /// Map of key / values sent to the server by clients for ephemeral states
+    ephemeral_state: HashMap<Key, String>,
 }
 
 pub struct Server;
@@ -139,8 +137,7 @@ impl Server {
                 number: 0,
                 uuid: Uuid::new_v4().to_string(),
             },
-            round1_state: Default::default(),
-            round2_state: Default::default(),
+            ephemeral_state: Default::default(),
             phase: Default::default(),
             machine,
         }));
@@ -273,7 +270,7 @@ async fn client_request(
             })
         }
         // Store the round 1 Entry
-        IncomingKind::SetRound1Entry => {
+        IncomingKind::SetRound1Entry | IncomingKind::SetRound2Entry => {
             // Assume the client is well behaved and sends the request data
             let IncomingData::Entry { entry, .. } = req.data.as_ref().unwrap();
 
@@ -281,29 +278,8 @@ async fn client_request(
             drop(info);
             let mut writer = state.write().await;
             writer
-                .round1_state
+                .ephemeral_state
                 .insert(entry.key.clone(), entry.value.clone());
-
-            // Send an ACK so the client promise will resolve
-            Some(Outgoing {
-                id: Some(req.id),
-                kind: None,
-                data: None,
-            })
-        }
-        // Store the round 2 Entry
-        IncomingKind::SetRound2Entry => {
-            // Assume the client is well behaved and sends the request data
-            let IncomingData::Entry { entry, .. } = req.data.as_ref().unwrap();
-
-            // Store the key state broadcast by the client
-            drop(info);
-            let mut writer = state.write().await;
-            writer
-                .round2_state
-                .insert(entry.key.clone(), entry.value.clone());
-
-            println!("stored round 2 entry {}", entry.key);
 
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
@@ -320,11 +296,17 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::SetRound1Entry => {
+        IncomingKind::SetRound1Entry | IncomingKind::SetRound2Entry => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
-            let num_keys = info.round1_state.len();
+            let num_keys = info.ephemeral_state.len();
             drop(info);
+
+            let round = match req.kind {
+                IncomingKind::SetRound1Entry => ROUND_1,
+                IncomingKind::SetRound2Entry => ROUND_2,
+                _ => unreachable!(),
+            };
 
             let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap();
 
@@ -332,14 +314,14 @@ async fn client_request(
             // to each client with the answer vectors including an
             // the value (KeyGenBroadcastMessage1) for the other parties
             if num_keys == parties {
-                trace!("got all round1 commitments, broadcasting answers");
+                trace!("got all {} commitments, broadcasting answers", round);
 
                 for i in 0..parties {
                     let party_num: u16 = (i + 1).try_into().unwrap();
                     let ans_vec = round_commitment_answers(
                         state,
                         party_num,
-                        ROUND_1,
+                        round,
                         uuid.clone(),
                     )
                     .await;
@@ -351,7 +333,7 @@ async fn client_request(
                             id: None,
                             kind: Some(OutgoingKind::CommitmentAnswer),
                             data: Some(OutgoingData::CommitmentAnswer {
-                                round: ROUND_1.to_string(),
+                                round: round.to_string(),
                                 answer: ans_vec,
                             }),
                         };
@@ -359,11 +341,12 @@ async fn client_request(
                     }
                 }
 
-                // We just sent round1 commitments to all clients so clean up the temporary state
+                // We just sent commitments to all clients for the round
+                // so clean up the temporary state
                 {
                     let mut writer = state.write().await;
                     // TODO: zeroize the state information
-                    writer.round1_state = Default::default();
+                    writer.ephemeral_state = Default::default();
                 }
             }
         }
@@ -391,6 +374,7 @@ async fn send_message(
     }
 }
 
+/*
 /// Broadcast a message to all clients.
 async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State<'_>>>) {
     let info = state.read().await;
@@ -400,6 +384,7 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State<'_>>>) {
         send_message(conn_id, res, state).await;
     }
 }
+*/
 
 async fn round_commitment_answers(
     state: &Arc<RwLock<State<'_>>>,
@@ -413,7 +398,7 @@ async fn round_commitment_answers(
     for i in 1..=parties {
         if i != party_num {
             let key = format!("{}-{}-{}", i, round, sender_uuid);
-            let value = info.round1_state.get(&key);
+            let value = info.ephemeral_state.get(&key);
             if let Some(value) = value {
                 trace!("[{:?}] party {:?} => party {:?}", round, i, party_num);
                 ans_vec.push(value.clone());

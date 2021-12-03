@@ -48,6 +48,10 @@ import("ecdsa-wasm")
               );
               clientState.round2Entry = round2_entry;
               sendRound2Entry();
+              break;
+            case "round2":
+              console.log("got commitment answer for round2", msg.data.answer);
+              break;
           }
           return true;
       }
