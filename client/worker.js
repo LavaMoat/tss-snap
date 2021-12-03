@@ -1,6 +1,7 @@
 import("ecdsa-wasm")
   // Now we have the WASM methods available
   .then((wasm) => {
+
     // Websocket state
     let messageId = 0;
     let messageRequests = new Map();
