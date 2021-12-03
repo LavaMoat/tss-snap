@@ -1,7 +1,7 @@
 all: build release
 
 wasm:
-	@cd wasm && wasm-pack build
+	@cd wasm && wasm-pack build --target web
 
 setup: wasm
 	@cd client && yarn install

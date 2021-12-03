@@ -7,8 +7,6 @@ import("ecdsa-wasm")
     const server = "ws://localhost:3030/demo";
     const ws = new WebSocket(server);
 
-    console.log('crossOriginIsolated', crossOriginIsolated);
-
     let clientState = {
       parties: null,
       threshold: null,

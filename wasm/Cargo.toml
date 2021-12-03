@@ -11,6 +11,7 @@ common = {path = "../common"}
 getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
 wasm-bindgen = { version = "0.2.76", features = ["serde-serialize"] }
+wasm-bindgen-rayon = "1.0"
 rand = { version="0.6.5", features = ["wasm-bindgen"] }
 #rand = { version="0.7.3", features = ["getrandom"] }
 console_error_panic_hook = "0.1.6"
