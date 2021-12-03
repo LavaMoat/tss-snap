@@ -7,6 +7,7 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     filename: "index.js",
   },
+  devtool: false,
   mode: "development",
   plugins: [new CopyWebpackPlugin(["index.html"])],
   devServer: {
@@ -18,5 +19,6 @@ module.exports = {
   experiments: {
     //syncWebAssembly: true,
     asyncWebAssembly: true,
+    topLevelAwait: true,
   },
 };

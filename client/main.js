@@ -1,5 +1,3 @@
-//import Worker from "worker-loader!./worker.js";
-
 if (window.Worker) {
   // DOM references
   const clientLabel = document.querySelector(".client span");

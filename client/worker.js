@@ -1,3 +1,8 @@
+import init, { initThreadPool} from 'ecdsa-wasm';
+
+await init();
+await initThreadPool(navigator.hardwareConcurrency);
+
 import("ecdsa-wasm")
   // Now we have the WASM methods available
   .then((wasm) => {

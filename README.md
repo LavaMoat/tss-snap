@@ -46,3 +46,9 @@ Then webassembly needs threads enabled, see:
 
 * https://github.com/GoogleChromeLabs/wasm-bindgen-rayon
 * https://rustwasm.github.io/wasm-bindgen/examples/raytrace.html
+
+## Notes
+
+```
+TypeError: Crypto.getRandomValues: Argument 1 can't be a SharedArrayBuffer or an ArrayBufferView backed by a SharedArrayBuffer
+```
