@@ -1,4 +1,4 @@
-import Worker from "worker-loader!./worker.js";
+//import Worker from "worker-loader!./worker.js";
 
 if (window.Worker) {
   // DOM references
@@ -14,7 +14,7 @@ if (window.Worker) {
   // UI thread and holds the handle to the websocket for communication
   // with the server that maintains state and orchestrates communication
   // between the connected clients.
-  const worker = new Worker("worker.js");
+  const worker = new Worker(new URL("./worker.js", import.meta.url));
   worker.onmessage = (e) => {
     const { type } = e.data;
 

@@ -9,21 +9,13 @@ module.exports = {
   },
   mode: "development",
   plugins: [new CopyWebpackPlugin(["index.html"])],
-  module: {
-    rules: [
-      {
-        test: /\.worker\.js$/,
-        use: { loader: "worker-loader" },
-      },
-    ],
-  },
   devServer: {
     headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    }
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+    },
   },
   experiments: {
     asyncWebAssembly: true,
-  }
+  },
 };
