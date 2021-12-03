@@ -51,6 +51,13 @@ import("ecdsa-wasm")
               break;
             case "round2":
               console.log("got commitment answer for round2", msg.data.answer);
+              const round3_entry = wasm.check_round2_correct_key(
+                clientState.parties,
+                clientState.threshold,
+                clientState.partySignup,
+                clientState.round2Entry,
+                msg.data.answer
+              );
               break;
           }
           return true;

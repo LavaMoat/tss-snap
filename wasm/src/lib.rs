@@ -183,5 +183,7 @@ pub fn check_round2_correct_key(
         y_sum,
     };
 
+    console_log!("WASM: round3 key is correct!");
+
     JsValue::from_serde(&round_entry).unwrap()
 }
