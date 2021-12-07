@@ -1,5 +1,14 @@
 import init, { initThreadPool} from 'ecdsa-wasm';
 
+// Temporary hack for getRandomValues() error
+const getRandomValues = crypto.getRandomValues;
+crypto.getRandomValues = function(buffer) {
+  const array = new Uint8Array(buffer);
+  const value = getRandomValues.call(crypto, array);
+  buffer.set(value);
+  return buffer;
+}
+
 await init();
 await initThreadPool(navigator.hardwareConcurrency);
 
@@ -32,6 +41,7 @@ import("ecdsa-wasm")
 
         // Create the round 1 key entry
         const round1_entry = wasm.generate_round1_entry(party_signup);
+
         const { entry } = round1_entry;
         clientState.round1Entry = round1_entry;
         sendRound1Entry();
@@ -74,6 +84,7 @@ import("ecdsa-wasm")
     // Send the round 1 entry to the server
     const sendRound1Entry = async () => {
       const { entry } = clientState.round1Entry;
+
       // Send the round 1 entry to the server
       await request({
         kind: "set_round1_entry",
