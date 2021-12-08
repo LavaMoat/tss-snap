@@ -28,6 +28,12 @@ pub struct AEAD {
     pub nonce: Vec<u8>,
 }
 
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct AeadPackEntry {
+    pub aead_pack_i: AEAD,
+    pub party_num: u16,
+}
+
 /// Parameters for key generation and signing.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Parameters {
@@ -72,6 +78,7 @@ pub struct Round3Entry {
     pub vss_scheme: VerifiableSS<Secp256k1>,
     pub secret_shares: Vec<Scalar<Secp256k1>>,
     pub y_sum: Point<Secp256k1>,
+    pub aead_packs: Vec<AeadPackEntry>,
 }
 
 pub fn into_round_entry(
