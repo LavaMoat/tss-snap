@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 
 pub const ROUND_1: &str = "round1";
 pub const ROUND_2: &str = "round2";
+pub const ROUND_3: &str = "round3";
 pub const AES_KEY_BYTES_LEN: usize = 32;
 
 pub type Key = String;
@@ -29,9 +30,10 @@ pub struct AEAD {
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct AeadPackEntry {
-    pub aead_pack_i: AEAD,
-    pub party_num: u16,
+pub struct PeerEntry {
+    pub party_from: u16,
+    pub party_to: u16,
+    pub entry: Entry,
 }
 
 /// Parameters for key generation and signing.
@@ -78,7 +80,7 @@ pub struct Round3Entry {
     pub vss_scheme: VerifiableSS<Secp256k1>,
     pub secret_shares: Vec<Scalar<Secp256k1>>,
     pub y_sum: Point<Secp256k1>,
-    pub aead_packs: Vec<AeadPackEntry>,
+    pub peer_entries: Vec<PeerEntry>,
 }
 
 pub fn into_round_entry(
@@ -88,6 +90,17 @@ pub fn into_round_entry(
     sender_uuid: String,
 ) -> Entry {
     let key = format!("{}-{}-{}", party_num, round, sender_uuid);
+    Entry { key, value }
+}
+
+pub fn into_p2p_entry(
+    party_from: u16,
+    party_to: u16,
+    round: &str,
+    value: String,
+    sender_uuid: String,
+) -> Entry {
+    let key = format!("{}-{}-{}-{}", party_from, party_to, round, sender_uuid);
     Entry { key, value }
 }
 
