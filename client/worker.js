@@ -1,13 +1,13 @@
-import init, { initThreadPool} from 'ecdsa-wasm';
+import init, { initThreadPool } from "ecdsa-wasm";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
-crypto.getRandomValues = function(buffer) {
+crypto.getRandomValues = function (buffer) {
   const array = new Uint8Array(buffer);
   const value = getRandomValues.call(crypto, array);
   buffer.set(value);
   return buffer;
-}
+};
 
 await init();
 await initThreadPool(navigator.hardwareConcurrency);
@@ -15,7 +15,6 @@ await initThreadPool(navigator.hardwareConcurrency);
 import("ecdsa-wasm")
   // Now we have the WASM methods available
   .then((wasm) => {
-
     // Websocket state
     let messageId = 0;
     let messageRequests = new Map();
