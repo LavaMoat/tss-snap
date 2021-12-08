@@ -36,19 +36,33 @@ cd client && yarn link ecdsa-wasm
 
 ## Thread Support (Rayon)
 
-If you get this error:
-
-```
-panicked at 'The global thread pool has not been initialized.: ThreadPoolBuildError { kind: IOError(Error { kind: Unsupported, message: "operation not supported on this platform" }) }', /home/muji/.cargo/registry/src/github.com-1ecc6299db9ec823/rayon-core-1.9.1/src/registry.rs:170:10
-```
-
-Then webassembly needs threads enabled, see:
+Webassembly needs threads enabled, see:
 
 * https://github.com/GoogleChromeLabs/wasm-bindgen-rayon
 * https://rustwasm.github.io/wasm-bindgen/examples/raytrace.html
 
 ## Notes
 
+There is an error using `Crypto.getRandomValues()` with a `SharedArrayBuffer` when threads are enabled:
+
 ```
 TypeError: Crypto.getRandomValues: Argument 1 can't be a SharedArrayBuffer or an ArrayBufferView backed by a SharedArrayBuffer
+```
+
+We are awaiting some PRs to be merged for a proper fix:
+
+* https://github.com/rust-bitcoin/rust-secp256k1/pull/331
+* https://github.com/algorand/pairing-plus/pull/22
+
+In the meantime this hack works around the issue:
+
+```javascript
+// Temporary hack for getRandomValues() error
+const getRandomValues = crypto.getRandomValues;
+crypto.getRandomValues = function (buffer) {
+  const array = new Uint8Array(buffer);
+  const value = getRandomValues.call(crypto, array);
+  buffer.set(value);
+  return buffer;
+};
 ```
