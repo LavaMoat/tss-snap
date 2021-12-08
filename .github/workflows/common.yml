@@ -3,16 +3,13 @@ name: Common
 on: [pull_request]
 
 env:
-  CI: 1
-  CARGO_INCREMENTAL: 0
-  RUST_LOG: "debug"
+  RUST_LOG: "0"
+  WORKING_DIRECTORY: ./common
 
 jobs:
   fmt:
     name: fmt
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -21,13 +18,12 @@ jobs:
           profile: minimal
           components: rustfmt
       - name: Run cargo fmt
-        run: cd common && cargo fmt --all -- --check
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo fmt --all -- --check
 
   clippy:
     name: clippy
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -36,13 +32,12 @@ jobs:
           profile: minimal
           components: clippy
       - name: Run cargo clippy
-        run: cd common && cargo clippy --all
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo clippy --all
 
   check:
     name: check
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -50,13 +45,12 @@ jobs:
         with:
           profile: minimal
       - name: Run cargo build
-        run: cd common && cargo check
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo check
 
   check-wasm:
     name: check-wasm
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -65,4 +59,5 @@ jobs:
           profile: minimal
           target: wasm32-unknown-unknown
       - name: Run cargo build
-        run: cd common && cargo check --target wasm32-unknown-unknown
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo check --target wasm32-unknown-unknown
