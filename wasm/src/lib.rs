@@ -9,8 +9,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 };
 
 use common::{
-    into_round_entry, PartySignup, Round1Entry, Round2Entry, Round3Entry,
-    AES_KEY_BYTES_LEN, ROUND_1, ROUND_2,
+    aes_encrypt, into_round_entry, PartySignup, Round1Entry, Round2Entry,
+    Round3Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -181,12 +181,48 @@ pub fn check_round2_correct_key(
         .expect("invalid key");
 
     let round_entry = Round3Entry {
+        enc_keys,
         vss_scheme,
         secret_shares,
         y_sum,
     };
 
-    console_log!("WASM: round3 key is correct!");
-
     JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn encrypt_secret_shares(
+    parties: u16,
+    party_signup: JsValue,
+    round3_entry: JsValue,
+) {
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
+
+    let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
+    let enc_keys = round3_entry.enc_keys;
+    let secret_shares = round3_entry.secret_shares;
+
+    let mut j = 0;
+    for (k, i) in (1..=parties).enumerate() {
+        if i != party_num_int {
+            // prepare encrypted ss for party i:
+            let key_i = &enc_keys[j];
+            let plaintext = BigInt::to_bytes(&secret_shares[k].to_bigint());
+            let aead_pack_i = aes_encrypt(key_i, &plaintext);
+            //assert!(sendp2p(
+            //&client,
+            //party_num_int,
+            //i,
+            //"round3",
+            //serde_json::to_string(&aead_pack_i).unwrap(),
+            //uuid.clone()
+            //)
+            //.is_ok());
+            j += 1;
+        }
+    }
 }

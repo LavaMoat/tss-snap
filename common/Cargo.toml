@@ -7,6 +7,8 @@ edition = "2018"
 serde = {version = "1", features = ["derive"]}
 getrandom = {version = "0.2", features = ["js"]}
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
+aes-gcm = "0.9"
+rand = "0.8"
 
 # TODO: use https://github.com/ZenGo-X/multi-party-ecdsa once
 # TODO: https://github.com/ZenGo-X/multi-party-ecdsa/pull/144 is merged
