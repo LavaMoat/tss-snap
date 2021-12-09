@@ -14,11 +14,28 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys,
 };
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
 use serde::{Deserialize, Serialize};
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
+#[cfg(target_arch = "wasm32")]
+#[macro_export]
+macro_rules! console_log {
+    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+}
 
 pub const ROUND_1: &str = "round1";
 pub const ROUND_2: &str = "round2";
 pub const ROUND_3: &str = "round3";
+pub const ROUND_4: &str = "round4";
 pub const AES_KEY_BYTES_LEN: usize = 32;
 
 pub type Key = String;
@@ -83,6 +100,14 @@ pub struct Round3Entry {
     pub peer_entries: Vec<PeerEntry>,
 }
 
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Round4Entry {
+    pub entry: Entry,
+    pub party_shares: Vec<Scalar<Secp256k1>>,
+    pub vss_scheme: VerifiableSS<Secp256k1>,
+}
+
 pub fn into_round_entry(
     party_num: u16,
     round: &str,
@@ -104,6 +129,7 @@ pub fn into_p2p_entry(
     Entry { key, value }
 }
 
+#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AEAD {
     // 96 bit (12 byte) unique nonce per message
@@ -117,6 +143,7 @@ pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AEAD {
     AEAD { ciphertext, nonce }
 }
 
+#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn aes_decrypt(key: &[u8], aead_pack: AEAD) -> Vec<u8> {
     let cipher_nonce = Nonce::from_slice(&aead_pack.nonce);

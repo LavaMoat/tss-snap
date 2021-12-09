@@ -10,8 +10,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 
 use common::{
     aes_decrypt, aes_encrypt, into_p2p_entry, into_round_entry, Entry,
-    PartySignup, PeerEntry, Round1Entry, Round2Entry, Round3Entry, AEAD,
-    AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3,
+    PartySignup, PeerEntry, Round1Entry, Round2Entry, Round3Entry, Round4Entry,
+    AEAD, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -34,6 +34,7 @@ extern "C" {
 }
 
 #[cfg(target_arch = "wasm32")]
+#[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
@@ -221,15 +222,16 @@ pub fn generate_round4_entry(
     party_signup: JsValue,
     round3_entry: JsValue,
     round3_ans_vec: JsValue,
-) {
+) -> JsValue {
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
-    let (party_num_int, _uuid) = (number, uuid);
+    let (party_num_int, uuid) = (number, uuid);
 
     let round3_ans_vec: Vec<Entry> = round3_ans_vec.into_serde().unwrap();
     let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
     let enc_keys = round3_entry.enc_keys;
     let secret_shares = round3_entry.secret_shares;
+    let vss_scheme = round3_entry.vss_scheme;
 
     let mut j = 0;
     let mut party_shares: Vec<Scalar<Secp256k1>> = Vec::new();
@@ -247,4 +249,19 @@ pub fn generate_round4_entry(
             j += 1;
         }
     }
+
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_4,
+        serde_json::to_string(&vss_scheme).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round4Entry {
+        party_shares,
+        vss_scheme,
+        entry,
+    };
+
+    JsValue::from_serde(&round_entry).unwrap()
 }

@@ -104,6 +104,15 @@ import("ecdsa-wasm")
             clientState.round3PeerEntries = null;
 
             console.log("all p2p messages received", round3_ans_vec);
+
+            const round4_entry = wasm.generate_round4_entry(
+              clientState.parties,
+              clientState.partySignup,
+              clientState.round3Entry,
+              round3_ans_vec
+            );
+
+            console.log("got round 4 entry", round4_entry);
           }
 
           return true;

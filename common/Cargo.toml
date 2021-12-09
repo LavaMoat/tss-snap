@@ -16,3 +16,6 @@ rand = "0.8"
 git = "https://github.com/tmpfs/multi-party-ecdsa"
 branch = "curv-0.8"
 default-features = false
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.76", features = ["serde-serialize"] }
