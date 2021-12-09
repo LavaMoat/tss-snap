@@ -1,6 +1,5 @@
 /// Common types shared between the server and webassembly modules.
-use aes_gcm::aead::{Aead, NewAead};
-use aes_gcm::{Aes256Gcm, Nonce};
+use aes_gcm::{Aes256Gcm, Nonce, aead::{Aead, NewAead}};
 use rand::Rng;
 
 #[cfg(target_arch = "wasm32")]
@@ -14,10 +13,11 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys,
 };
 
+use serde::{Deserialize, Serialize};
+
+/*
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-
-use serde::{Deserialize, Serialize};
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
@@ -31,6 +31,7 @@ extern "C" {
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
+*/
 
 pub const ROUND_1: &str = "round1";
 pub const ROUND_2: &str = "round2";
@@ -41,7 +42,7 @@ pub const AES_KEY_BYTES_LEN: usize = 32;
 pub type Key = String;
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct AEAD {
+pub struct AeadPack {
     pub ciphertext: Vec<u8>,
     pub nonce: Vec<u8>,
 }
@@ -131,7 +132,7 @@ pub fn into_p2p_entry(
 
 #[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
-pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AEAD {
+pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AeadPack {
     // 96 bit (12 byte) unique nonce per message
     let nonce: Vec<u8> = (1..=12)
         .into_iter()
@@ -140,15 +141,32 @@ pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AEAD {
     let cipher_nonce = Nonce::from_slice(&nonce);
     let cipher = Aes256Gcm::new(aes_gcm::Key::from_slice(key));
     let ciphertext = cipher.encrypt(cipher_nonce, plaintext).unwrap();
-    AEAD { ciphertext, nonce }
+    AeadPack { ciphertext, nonce }
 }
 
 #[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
-pub fn aes_decrypt(key: &[u8], aead_pack: AEAD) -> Vec<u8> {
+pub fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {
     let cipher_nonce = Nonce::from_slice(&aead_pack.nonce);
     let cipher = Aes256Gcm::new(aes_gcm::Key::from_slice(key));
     cipher
         .decrypt(cipher_nonce, aead_pack.ciphertext.as_ref())
         .unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[cfg(test)]
+mod wasm_tests {
+    use wasm_bindgen_test::*;
+    //wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+    use super::{aes_encrypt, aes_decrypt};
+
+    #[wasm_bindgen_test]
+    fn test_encrypt_decrypt() {
+        let key = b"an example very very secret key.";
+        let value = b"plaintext message";
+        let aead = aes_encrypt(key, value);
+        let plaintext = aes_decrypt(key, aead);
+        assert_eq!(&plaintext, value);
+    }
 }

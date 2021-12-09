@@ -19,3 +19,4 @@ default-features = false
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { version = "0.2.76", features = ["serde-serialize"] }
+wasm-bindgen-test = "0.3"

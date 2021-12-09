@@ -11,7 +11,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 use common::{
     aes_decrypt, aes_encrypt, into_p2p_entry, into_round_entry, Entry,
     PartySignup, PeerEntry, Round1Entry, Round2Entry, Round3Entry, Round4Entry,
-    AEAD, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
+    AeadPack, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -239,7 +239,7 @@ pub fn generate_round4_entry(
         if i == party_num_int {
             party_shares.push(secret_shares[(i - 1) as usize].clone());
         } else {
-            let aead_pack: AEAD =
+            let aead_pack: AeadPack =
                 serde_json::from_str(&round3_ans_vec[j].value).unwrap();
             let key_i = &enc_keys[j];
             let out = aes_decrypt(key_i, aead_pack);
