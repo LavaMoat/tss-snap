@@ -1,6 +1,6 @@
 use curv::{
     arithmetic::Converter,
-    elliptic::curves::{secp256_k1::Secp256k1, Point},
+    elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
     BigInt,
 };
 
@@ -9,9 +9,9 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 };
 
 use common::{
-    aes_encrypt, into_p2p_entry, into_round_entry, PartySignup, PeerEntry,
-    Round1Entry, Round2Entry, Round3Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2,
-    ROUND_3,
+    aes_decrypt, aes_encrypt, into_p2p_entry, into_round_entry, Entry,
+    PartySignup, PeerEntry, Round1Entry, Round2Entry, Round3Entry, AEAD,
+    AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -51,7 +51,6 @@ pub fn generate_round1_entry(party_signup: JsValue) -> JsValue {
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
-    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
 
     let party_keys = Keys::create(party_num_int);
     let (bc_i, decom_i) =
@@ -89,7 +88,6 @@ pub fn generate_round2_entry(
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
-    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
 
     let round1_ans_vec: Vec<String> = round1_ans_vec.into_serde().unwrap();
 
@@ -139,7 +137,6 @@ pub fn generate_round3_entry(
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
-    println!("number: {:?}, uuid: {:?}", party_num_int, uuid);
 
     let round2_ans_vec: Vec<String> = round2_ans_vec.into_serde().unwrap();
     let round2_entry: Round2Entry = round2_entry.into_serde().unwrap();
@@ -215,4 +212,39 @@ pub fn generate_round3_entry(
     };
 
     JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn generate_round4_entry(
+    parties: u16,
+    party_signup: JsValue,
+    round3_entry: JsValue,
+    round3_ans_vec: JsValue,
+) {
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, _uuid) = (number, uuid);
+
+    let round3_ans_vec: Vec<Entry> = round3_ans_vec.into_serde().unwrap();
+    let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
+    let enc_keys = round3_entry.enc_keys;
+    let secret_shares = round3_entry.secret_shares;
+
+    let mut j = 0;
+    let mut party_shares: Vec<Scalar<Secp256k1>> = Vec::new();
+    for i in 1..=parties {
+        if i == party_num_int {
+            party_shares.push(secret_shares[(i - 1) as usize].clone());
+        } else {
+            let aead_pack: AEAD =
+                serde_json::from_str(&round3_ans_vec[j].value).unwrap();
+            let key_i = &enc_keys[j];
+            let out = aes_decrypt(key_i, aead_pack);
+            let out_bn = BigInt::from_bytes(&out[..]);
+            let out_fe = Scalar::<Secp256k1>::from(&out_bn);
+            party_shares.push(out_fe);
+            j += 1;
+        }
+    }
 }
