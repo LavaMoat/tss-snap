@@ -26,6 +26,8 @@ import("ecdsa-wasm")
       threshold: null,
       partySignup: null,
       round1Entry: null,
+      round2Entry: null,
+      round3PeerEntries: [],
     };
 
     // Receive messages sent to the worker
@@ -65,7 +67,6 @@ import("ecdsa-wasm")
               sendRound2Entry();
               break;
             case "round2":
-              //console.log("got commitment answer for round2", msg.data.answer);
               const round3_entry = wasm.check_round2_correct_key(
                 clientState.parties,
                 clientState.threshold,
@@ -73,15 +74,29 @@ import("ecdsa-wasm")
                 clientState.round2Entry,
                 msg.data.answer
               );
-
-              console.log("got round3_entry", round3_entry);
-
               clientState.round3Entry = round3_entry;
               sendRound3Entry();
               break;
-            case "round3":
-              console.log("got commitment answer for round3", msg.data.answer);
           }
+          return true;
+        case "peer_answer":
+          console.log("got peer answer by relay", msg.data);
+          const { peer_entry } = msg.data;
+          clientState.round3PeerEntries.push(peer_entry);
+
+          // Got all the p2p answers
+          if (
+            clientState.round3PeerEntries.length ===
+            clientState.parties - 1
+          ) {
+            const round3_ans_vec = clientState.round3PeerEntries.map(
+              (peer) => peer.entry
+            );
+            console.log("all p2p messages received", round3_ans_vec);
+
+            postMessage({ type: "round3_complete", ...clientState });
+          }
+
           return true;
       }
       return false;
@@ -113,9 +128,8 @@ import("ecdsa-wasm")
       console.log("sending round 3 entry", peer_entries);
       await request({
         kind: "relay_round3",
-        data: { entries: peer_entries, uuid: clientState.partySignup.uuid },
+        data: { entries: peer_entries },
       });
-      postMessage({ type: "round3_complete", ...clientState });
     };
 
     // Websocket communication with the server

@@ -21,7 +21,7 @@ use std::convert::TryInto;
 use super::state_machine::*;
 
 use common::{
-    Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2,
+    Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
 };
 
 /// Global unique user id counter.
@@ -61,14 +61,8 @@ enum IncomingKind {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
-    Entry {
-        entry: Entry,
-        uuid: String,
-    },
-    PeerEntries {
-        entries: Vec<PeerEntry>,
-        uuid: String,
-    },
+    Entry { entry: Entry, uuid: String },
+    PeerEntries { entries: Vec<PeerEntry> },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -76,6 +70,9 @@ enum OutgoingKind {
     /// Answer sent to a party with the commitments from the other parties.
     #[serde(rename = "commitment_answer")]
     CommitmentAnswer,
+    /// Relayed peer to peer answer.
+    #[serde(rename = "peer_answer")]
+    PeerAnswer,
 }
 
 #[derive(Debug, Serialize)]
@@ -102,6 +99,10 @@ enum OutgoingData {
     CommitmentAnswer {
         round: String,
         answer: Vec<String>,
+    },
+    PeerAnswer {
+        round: String,
+        peer_entry: PeerEntry,
     },
 }
 
@@ -372,11 +373,22 @@ async fn client_request(
             }
         }
         IncomingKind::RelayRound3 => {
-            if let IncomingData::PeerEntries { uuid, entries } =
-                req.data.as_ref().unwrap()
-            {
-                println!("relaying round 3 entries {:#?}", uuid);
-                println!("relaying round 3 entries {:#?}", entries);
+            if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
+                for entry in entries {
+                    if let Some(conn_id) =
+                        conn_id_for_party(state, entry.party_to).await
+                    {
+                        let res = Outgoing {
+                            id: None,
+                            kind: Some(OutgoingKind::PeerAnswer),
+                            data: Some(OutgoingData::PeerAnswer {
+                                round: ROUND_3.to_string(),
+                                peer_entry: entry,
+                            }),
+                        };
+                        send_message(conn_id, &res, state).await;
+                    }
+                }
             }
         }
         _ => {}
