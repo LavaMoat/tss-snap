@@ -10,7 +10,7 @@ use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use log::{error, info, trace, warn};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use uuid::Uuid;
 use warp::ws::{Message, WebSocket};
@@ -29,6 +29,8 @@ static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
 static PHASES: Lazy<Vec<Phase>> =
     Lazy::new(|| vec![Phase::Standby, Phase::Keygen, Phase::Signing]);
+
+static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
 /// Incoming message from a websocket client.
 #[derive(Debug, Deserialize)]
@@ -118,11 +120,9 @@ struct State<'a> {
     /// The state machine.
     machine: PhaseIterator<'a>,
     /// Current keygen signup state.
-    keygen_signup: PartySignup,
+    party_signup: PartySignup,
     /// Map of key / values sent to the server by clients for ephemeral states
     ephemeral_state: HashMap<Key, String>,
-    /// Hack to track which rounds have been broadcast
-    completed_rounds: HashMap<String, bool>,
 }
 
 pub struct Server;
@@ -141,12 +141,11 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             params,
             clients: HashMap::new(),
-            keygen_signup: PartySignup {
+            party_signup: PartySignup {
                 number: 0,
                 uuid: Uuid::new_v4().to_string(),
             },
             ephemeral_state: Default::default(),
-            completed_rounds: Default::default(),
             phase: Default::default(),
             machine,
         }));
@@ -251,7 +250,7 @@ async fn client_request(
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
             let party_signup = {
-                let client_signup = &info.keygen_signup;
+                let client_signup = &info.party_signup;
                 if client_signup.number < info.params.parties {
                     PartySignup {
                         number: client_signup.number + 1,
@@ -267,7 +266,7 @@ async fn client_request(
 
             drop(info);
             let mut writer = state.write().await;
-            writer.keygen_signup = party_signup.clone();
+            writer.party_signup = party_signup.clone();
 
             let conn_info = writer.clients.get_mut(&conn_id).unwrap();
             conn_info.1 = Some(party_signup.clone());
@@ -321,6 +320,7 @@ async fn client_request(
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let num_keys = info.ephemeral_state.len();
+            drop(info);
 
             let round = match req.kind {
                 IncomingKind::SetRound1Entry => ROUND_1,
@@ -328,56 +328,53 @@ async fn client_request(
                 _ => unreachable!(),
             };
 
-            let is_completed = info
-                .completed_rounds
-                .get(round)
-                .cloned()
-                .unwrap_or_else(|| false);
-            drop(info);
-
             if let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap()
             {
                 // Got all the party round commitments so broadcast
                 // to each client with the answer vectors including an
                 // the value (KeyGenBroadcastMessage1) for the other parties
-                if num_keys == parties && !is_completed {
-                    eprintln!(
-                        "got all {} commitments, broadcasting answers",
-                        round
-                    );
+                if num_keys == parties {
+                    let lock = BROADCAST_LOCK.try_lock();
+                    if let Ok(_) = lock {
+                        trace!(
+                            "got all {} commitments, broadcasting answers",
+                            round
+                        );
 
-                    for i in 0..parties {
-                        let party_num: u16 = (i + 1).try_into().unwrap();
-                        let ans_vec = round_commitment_answers(
-                            state,
-                            party_num,
-                            round,
-                            uuid.clone(),
-                        )
-                        .await;
+                        for i in 0..parties {
+                            let party_num: u16 = (i + 1).try_into().unwrap();
+                            let ans_vec = round_commitment_answers(
+                                state,
+                                party_num,
+                                round,
+                                uuid.clone(),
+                            )
+                            .await;
 
-                        if let Some(conn_id) =
-                            conn_id_for_party(state, party_num).await
-                        {
-                            let res = Outgoing {
-                                id: None,
-                                kind: Some(OutgoingKind::CommitmentAnswer),
-                                data: Some(OutgoingData::CommitmentAnswer {
-                                    round: round.to_string(),
-                                    answer: ans_vec,
-                                }),
-                            };
-                            send_message(conn_id, &res, state).await;
+                            if let Some(conn_id) =
+                                conn_id_for_party(state, party_num).await
+                            {
+                                let res = Outgoing {
+                                    id: None,
+                                    kind: Some(OutgoingKind::CommitmentAnswer),
+                                    data: Some(
+                                        OutgoingData::CommitmentAnswer {
+                                            round: round.to_string(),
+                                            answer: ans_vec,
+                                        },
+                                    ),
+                                };
+                                send_message(conn_id, &res, state).await;
+                            }
                         }
-                    }
 
-                    // We just sent commitments to all clients for the round
-                    // so clean up the temporary state
-                    {
-                        let mut writer = state.write().await;
-                        // TODO: zeroize the state information
-                        writer.ephemeral_state = Default::default();
-                        writer.completed_rounds.insert(round.to_string(), true);
+                        // We just sent commitments to all clients for the round
+                        // so clean up the temporary state
+                        {
+                            let mut writer = state.write().await;
+                            // TODO: zeroize the state information
+                            writer.ephemeral_state = Default::default();
+                        }
                     }
                 }
             }

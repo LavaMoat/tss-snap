@@ -76,8 +76,6 @@ import("ecdsa-wasm")
               );
               clientState.round2Entry = round2_entry;
 
-              console.log("SENDING ROUND 2 ENTRY!!!");
-
               // Send the round 2 entry to the server
               await request({
                 kind: "set_round2_entry",
@@ -88,8 +86,6 @@ import("ecdsa-wasm")
               });
               break;
             case "round2":
-              console.log("RECEIVED BROADCAST MESSAGE FOR ROUND 2");
-
               postMessage({ type: "round2_complete", ...clientState });
               const round3_entry = wasm.generate_round3_entry(
                 clientState.parties,
@@ -120,18 +116,18 @@ import("ecdsa-wasm")
             );
 
             // Clean up the peer entries
-            //clientState.round3PeerEntries = null;
+            clientState.round3PeerEntries = null;
 
             console.log("all p2p messages received", round3_ans_vec);
 
-            //const round4_entry = wasm.generate_round4_entry(
-            //clientState.parties,
-            //clientState.partySignup,
-            //clientState.round3Entry,
-            //round3_ans_vec
-            //);
+            const round4_entry = wasm.generate_round4_entry(
+              clientState.parties,
+              clientState.partySignup,
+              clientState.round3Entry,
+              round3_ans_vec
+            );
 
-            //console.log("got round 4 entry", round4_entry);
+            console.log("got round 4 entry", round4_entry);
           }
 
           return true;
@@ -164,7 +160,6 @@ import("ecdsa-wasm")
         // Without an `id` we treat as a broadcast message that
         // was sent from the server without a request from the client
       } else {
-        console.log("HANDLING BROADCAST MESSAGE: ", msg);
         if (!(await onBroadcastMessage(msg))) {
           console.error(
             "websocket client received a message it could not handle: ",
