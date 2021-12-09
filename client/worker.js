@@ -65,7 +65,7 @@ import("ecdsa-wasm")
               sendRound2Entry();
               break;
             case "round2":
-              console.log("got commitment answer for round2", msg.data.answer);
+              //console.log("got commitment answer for round2", msg.data.answer);
               const round3_entry = wasm.check_round2_correct_key(
                 clientState.parties,
                 clientState.threshold,
@@ -73,7 +73,14 @@ import("ecdsa-wasm")
                 clientState.round2Entry,
                 msg.data.answer
               );
+
+              console.log("got round3_entry", round3_entry);
+
+              clientState.round3Entry = round3_entry;
+              sendRound3Entry();
               break;
+            case "round3":
+              console.log("got commitment answer for round3", msg.data.answer);
           }
           return true;
       }
@@ -83,8 +90,6 @@ import("ecdsa-wasm")
     // Send the round 1 entry to the server
     const sendRound1Entry = async () => {
       const { entry } = clientState.round1Entry;
-
-      // Send the round 1 entry to the server
       await request({
         kind: "set_round1_entry",
         data: { entry, uuid: clientState.partySignup.uuid },
@@ -100,6 +105,17 @@ import("ecdsa-wasm")
         data: { entry, uuid: clientState.partySignup.uuid },
       });
       postMessage({ type: "round2_complete", ...clientState });
+    };
+
+    // Send the round 3 entry to the server
+    const sendRound3Entry = async () => {
+      const { peer_entries } = clientState.round3Entry;
+      console.log("sending round 3 entry", peer_entries);
+      await request({
+        kind: "relay_round3",
+        data: { entries: peer_entries, uuid: clientState.partySignup.uuid },
+      });
+      postMessage({ type: "round3_complete", ...clientState });
     };
 
     // Websocket communication with the server

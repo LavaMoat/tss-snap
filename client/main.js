@@ -34,10 +34,15 @@ if (window.Worker) {
         break;
       // We have PartySignup and Round1Entry
       case "round1_complete":
+        console.log("keygen: round 1 complete");
         keygenSignupButton.setAttribute("hidden", "1");
         const { partySignup } = e.data;
         keygenSignupInfo.innerText = JSON.stringify(partySignup);
         break;
+      case "round2_complete":
+        console.log("keygen: round 2 complete");
+      case "round3_complete":
+        console.log("keygen: round 3 complete");
     }
   };
 } else {

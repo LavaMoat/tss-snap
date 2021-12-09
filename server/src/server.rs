@@ -20,7 +20,9 @@ use std::convert::TryInto;
 
 use super::state_machine::*;
 
-use common::{Entry, Key, Parameters, PartySignup, ROUND_1, ROUND_2};
+use common::{
+    Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2,
+};
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -51,12 +53,22 @@ enum IncomingKind {
     /// Store the round 2 entry sent each client.
     #[serde(rename = "set_round2_entry")]
     SetRound2Entry,
+    /// Relay round 3 entries peer 2 peer
+    #[serde(rename = "relay_round3")]
+    RelayRound3,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
-    Entry { entry: Entry, uuid: String },
+    Entry {
+        entry: Entry,
+        uuid: String,
+    },
+    PeerEntries {
+        entries: Vec<PeerEntry>,
+        uuid: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -265,15 +277,27 @@ async fn client_request(
         // Store the round 1 Entry
         IncomingKind::SetRound1Entry | IncomingKind::SetRound2Entry => {
             // Assume the client is well behaved and sends the request data
-            let IncomingData::Entry { entry, .. } = req.data.as_ref().unwrap();
+            if let IncomingData::Entry { entry, .. } =
+                req.data.as_ref().unwrap()
+            {
+                // Store the key state broadcast by the client
+                drop(info);
+                let mut writer = state.write().await;
+                writer
+                    .ephemeral_state
+                    .insert(entry.key.clone(), entry.value.clone());
 
-            // Store the key state broadcast by the client
-            drop(info);
-            let mut writer = state.write().await;
-            writer
-                .ephemeral_state
-                .insert(entry.key.clone(), entry.value.clone());
-
+                // Send an ACK so the client promise will resolve
+                Some(Outgoing {
+                    id: Some(req.id),
+                    kind: None,
+                    data: None,
+                })
+            } else {
+                None
+            }
+        }
+        IncomingKind::RelayRound3 => {
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
                 id: Some(req.id),
@@ -301,46 +325,58 @@ async fn client_request(
                 _ => unreachable!(),
             };
 
-            let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap();
+            if let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap()
+            {
+                // Got all the party round 1 commitments so broadcast
+                // to each client with the answer vectors including an
+                // the value (KeyGenBroadcastMessage1) for the other parties
+                if num_keys == parties {
+                    trace!(
+                        "got all {} commitments, broadcasting answers",
+                        round
+                    );
 
-            // Got all the party round 1 commitments so broadcast
-            // to each client with the answer vectors including an
-            // the value (KeyGenBroadcastMessage1) for the other parties
-            if num_keys == parties {
-                trace!("got all {} commitments, broadcasting answers", round);
+                    for i in 0..parties {
+                        let party_num: u16 = (i + 1).try_into().unwrap();
+                        let ans_vec = round_commitment_answers(
+                            state,
+                            party_num,
+                            round,
+                            uuid.clone(),
+                        )
+                        .await;
 
-                for i in 0..parties {
-                    let party_num: u16 = (i + 1).try_into().unwrap();
-                    let ans_vec = round_commitment_answers(
-                        state,
-                        party_num,
-                        round,
-                        uuid.clone(),
-                    )
-                    .await;
+                        if let Some(conn_id) =
+                            conn_id_for_party(state, party_num).await
+                        {
+                            let res = Outgoing {
+                                id: None,
+                                kind: Some(OutgoingKind::CommitmentAnswer),
+                                data: Some(OutgoingData::CommitmentAnswer {
+                                    round: round.to_string(),
+                                    answer: ans_vec,
+                                }),
+                            };
+                            send_message(conn_id, &res, state).await;
+                        }
+                    }
 
-                    if let Some(conn_id) =
-                        conn_id_for_party(state, party_num).await
+                    // We just sent commitments to all clients for the round
+                    // so clean up the temporary state
                     {
-                        let res = Outgoing {
-                            id: None,
-                            kind: Some(OutgoingKind::CommitmentAnswer),
-                            data: Some(OutgoingData::CommitmentAnswer {
-                                round: round.to_string(),
-                                answer: ans_vec,
-                            }),
-                        };
-                        send_message(conn_id, &res, state).await;
+                        let mut writer = state.write().await;
+                        // TODO: zeroize the state information
+                        writer.ephemeral_state = Default::default();
                     }
                 }
-
-                // We just sent commitments to all clients for the round
-                // so clean up the temporary state
-                {
-                    let mut writer = state.write().await;
-                    // TODO: zeroize the state information
-                    writer.ephemeral_state = Default::default();
-                }
+            }
+        }
+        IncomingKind::RelayRound3 => {
+            if let IncomingData::PeerEntries { uuid, entries } =
+                req.data.as_ref().unwrap()
+            {
+                println!("relaying round 3 entries {:#?}", uuid);
+                println!("relaying round 3 entries {:#?}", entries);
             }
         }
         _ => {}

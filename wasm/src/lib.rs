@@ -189,7 +189,6 @@ pub fn check_round2_correct_key(
             let key_i = &enc_keys[j];
             let plaintext = BigInt::to_bytes(&secret_shares[k].to_bigint());
             let aead_pack_i = aes_encrypt(key_i, &plaintext);
-
             let entry = into_p2p_entry(
                 party_num_int,
                 i,
@@ -203,15 +202,6 @@ pub fn check_round2_correct_key(
                 party_to: i,
                 entry,
             });
-            //assert!(sendp2p(
-            //&client,
-            //party_num_int,
-            //i,
-            //"round3",
-            //serde_json::to_string(&aead_pack_i).unwrap(),
-            //uuid.clone()
-            //)
-            //.is_ok());
             j += 1;
         }
     }
