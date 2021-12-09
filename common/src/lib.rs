@@ -1,5 +1,8 @@
 /// Common types shared between the server and webassembly modules.
-use aes_gcm::{Aes256Gcm, Nonce, aead::{Aead, NewAead}};
+use aes_gcm::{
+    aead::{Aead, NewAead},
+    Aes256Gcm, Nonce,
+};
 use rand::Rng;
 
 #[cfg(target_arch = "wasm32")]
@@ -159,7 +162,7 @@ pub fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {
 mod wasm_tests {
     use wasm_bindgen_test::*;
     //wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
-    use super::{aes_encrypt, aes_decrypt};
+    use super::{aes_decrypt, aes_encrypt};
 
     #[wasm_bindgen_test]
     fn test_encrypt_decrypt() {

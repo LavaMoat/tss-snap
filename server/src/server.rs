@@ -121,6 +121,8 @@ struct State<'a> {
     keygen_signup: PartySignup,
     /// Map of key / values sent to the server by clients for ephemeral states
     ephemeral_state: HashMap<Key, String>,
+    /// Hack to track which rounds have been broadcast
+    completed_rounds: HashMap<String, bool>,
 }
 
 pub struct Server;
@@ -144,6 +146,7 @@ impl Server {
                 uuid: Uuid::new_v4().to_string(),
             },
             ephemeral_state: Default::default(),
+            completed_rounds: Default::default(),
             phase: Default::default(),
             machine,
         }));
@@ -318,7 +321,6 @@ async fn client_request(
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let num_keys = info.ephemeral_state.len();
-            drop(info);
 
             let round = match req.kind {
                 IncomingKind::SetRound1Entry => ROUND_1,
@@ -326,13 +328,20 @@ async fn client_request(
                 _ => unreachable!(),
             };
 
+            let is_completed = info
+                .completed_rounds
+                .get(round)
+                .cloned()
+                .unwrap_or_else(|| false);
+            drop(info);
+
             if let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap()
             {
-                // Got all the party round 1 commitments so broadcast
+                // Got all the party round commitments so broadcast
                 // to each client with the answer vectors including an
                 // the value (KeyGenBroadcastMessage1) for the other parties
-                if num_keys == parties {
-                    trace!(
+                if num_keys == parties && !is_completed {
+                    eprintln!(
                         "got all {} commitments, broadcasting answers",
                         round
                     );
@@ -368,6 +377,7 @@ async fn client_request(
                         let mut writer = state.write().await;
                         // TODO: zeroize the state information
                         writer.ephemeral_state = Default::default();
+                        writer.completed_rounds.insert(round.to_string(), true);
                     }
                 }
             }
@@ -386,6 +396,7 @@ async fn client_request(
                                 peer_entry: entry,
                             }),
                         };
+
                         send_message(conn_id, &res, state).await;
                     }
                 }

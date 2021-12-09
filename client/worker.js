@@ -47,13 +47,20 @@ import("ecdsa-wasm")
 
         const { entry } = round1_entry;
         clientState.round1Entry = round1_entry;
-        sendRound1Entry();
+        // Send the round 1 entry to the server
+        await request({
+          kind: "set_round1_entry",
+          data: {
+            entry: clientState.round1Entry.entry,
+            uuid: clientState.partySignup.uuid,
+          },
+        });
       }
     };
 
     // Handle messages from the server that were broadcast
     // without a client request
-    const onBroadcastMessage = (msg) => {
+    const onBroadcastMessage = async (msg) => {
       switch (msg.kind) {
         case "commitment_answer":
           switch (msg.data.round) {
@@ -68,9 +75,21 @@ import("ecdsa-wasm")
                 msg.data.answer
               );
               clientState.round2Entry = round2_entry;
-              sendRound2Entry();
+
+              console.log("SENDING ROUND 2 ENTRY!!!");
+
+              // Send the round 2 entry to the server
+              await request({
+                kind: "set_round2_entry",
+                data: {
+                  entry: clientState.round2Entry.entry,
+                  uuid: clientState.partySignup.uuid,
+                },
+              });
               break;
             case "round2":
+              console.log("RECEIVED BROADCAST MESSAGE FOR ROUND 2");
+
               postMessage({ type: "round2_complete", ...clientState });
               const round3_entry = wasm.generate_round3_entry(
                 clientState.parties,
@@ -101,41 +120,23 @@ import("ecdsa-wasm")
             );
 
             // Clean up the peer entries
-            clientState.round3PeerEntries = null;
+            //clientState.round3PeerEntries = null;
 
             console.log("all p2p messages received", round3_ans_vec);
 
-            const round4_entry = wasm.generate_round4_entry(
-              clientState.parties,
-              clientState.partySignup,
-              clientState.round3Entry,
-              round3_ans_vec
-            );
+            //const round4_entry = wasm.generate_round4_entry(
+            //clientState.parties,
+            //clientState.partySignup,
+            //clientState.round3Entry,
+            //round3_ans_vec
+            //);
 
-            console.log("got round 4 entry", round4_entry);
+            //console.log("got round 4 entry", round4_entry);
           }
 
           return true;
       }
       return false;
-    };
-
-    // Send the round 1 entry to the server
-    const sendRound1Entry = async () => {
-      const { entry } = clientState.round1Entry;
-      await request({
-        kind: "set_round1_entry",
-        data: { entry, uuid: clientState.partySignup.uuid },
-      });
-    };
-
-    // Send the round 2 entry to the server
-    const sendRound2Entry = async () => {
-      const { entry } = clientState.round2Entry;
-      await request({
-        kind: "set_round2_entry",
-        data: { entry, uuid: clientState.partySignup.uuid },
-      });
     };
 
     // Send the round 3 entry to the server
@@ -155,7 +156,7 @@ import("ecdsa-wasm")
       postMessage({ type: "ready", ...clientState });
     };
 
-    ws.onmessage = (e) => {
+    ws.onmessage = async (e) => {
       const msg = JSON.parse(e.data);
       if (msg.id && messageRequests.has(msg.id)) {
         const { resolve } = messageRequests.get(msg.id);
@@ -163,7 +164,8 @@ import("ecdsa-wasm")
         // Without an `id` we treat as a broadcast message that
         // was sent from the server without a request from the client
       } else {
-        if (!onBroadcastMessage(msg)) {
+        console.log("HANDLING BROADCAST MESSAGE: ", msg);
+        if (!(await onBroadcastMessage(msg))) {
           console.error(
             "websocket client received a message it could not handle: ",
             msg

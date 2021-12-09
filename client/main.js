@@ -3,7 +3,7 @@ if (window.Worker) {
   const clientLabel = document.querySelector(".client span");
   const partiesLabel = document.querySelector(".parties span");
   const thresholdLabel = document.querySelector(".threshold span");
-  const keygenSignupInfo = document.querySelector(".keygen-signup-info span");
+  const partyNumber = document.querySelector(".party-number span");
   const keygenSignupButton = document.querySelector("button.keygen-signup");
 
   // Worker communication.
@@ -37,7 +37,7 @@ if (window.Worker) {
       case "party_signup":
         keygenSignupButton.setAttribute("hidden", "1");
         const { partySignup } = e.data;
-        keygenSignupInfo.innerText = JSON.stringify(partySignup);
+        partyNumber.innerText = partySignup.number;
         break;
       // We have Round1Entry
       case "round1_complete":
