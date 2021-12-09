@@ -17,6 +17,7 @@ if (window.Worker) {
     const { type } = e.data;
 
     switch (type) {
+      // Worker sends us the backend server URL
       case "server":
         const { server } = e.data;
         document.querySelector(".server span").innerText = server;
@@ -32,17 +33,24 @@ if (window.Worker) {
           worker.postMessage({ type: "party_signup" });
         });
         break;
-      // We have PartySignup and Round1Entry
-      case "round1_complete":
-        console.log("keygen: round 1 complete");
+      // We have PartySignup
+      case "party_signup":
         keygenSignupButton.setAttribute("hidden", "1");
         const { partySignup } = e.data;
         keygenSignupInfo.innerText = JSON.stringify(partySignup);
         break;
+      // We have Round1Entry
+      case "round1_complete":
+        console.log("keygen: round 1 complete");
+        break;
+      // We have Round2Entry
       case "round2_complete":
         console.log("keygen: round 2 complete");
+        break;
+      // We have Round3Entry
       case "round3_complete":
         console.log("keygen: round 3 complete");
+        break;
     }
   };
 } else {

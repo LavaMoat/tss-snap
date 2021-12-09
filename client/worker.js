@@ -40,6 +40,8 @@ import("ecdsa-wasm")
 
         clientState.partySignup = party_signup;
 
+        postMessage({ type: "party_signup", ...clientState });
+
         // Create the round 1 key entry
         const round1_entry = wasm.generate_round1_entry(party_signup);
 
@@ -57,6 +59,8 @@ import("ecdsa-wasm")
           switch (msg.data.round) {
             // Got round 1 commitments of other parties
             case "round1":
+              postMessage({ type: "round1_complete", ...clientState });
+
               // Get round 2 entry using round 1 commitments
               const round2_entry = wasm.generate_round2_entry(
                 clientState.partySignup,
@@ -67,7 +71,8 @@ import("ecdsa-wasm")
               sendRound2Entry();
               break;
             case "round2":
-              const round3_entry = wasm.check_round2_correct_key(
+              postMessage({ type: "round2_complete", ...clientState });
+              const round3_entry = wasm.generate_round3_entry(
                 clientState.parties,
                 clientState.threshold,
                 clientState.partySignup,
@@ -89,12 +94,16 @@ import("ecdsa-wasm")
             clientState.round3PeerEntries.length ===
             clientState.parties - 1
           ) {
+            postMessage({ type: "round3_complete", ...clientState });
+
             const round3_ans_vec = clientState.round3PeerEntries.map(
               (peer) => peer.entry
             );
-            console.log("all p2p messages received", round3_ans_vec);
 
-            postMessage({ type: "round3_complete", ...clientState });
+            // Clean up the peer entries
+            clientState.round3PeerEntries = null;
+
+            console.log("all p2p messages received", round3_ans_vec);
           }
 
           return true;
@@ -109,7 +118,6 @@ import("ecdsa-wasm")
         kind: "set_round1_entry",
         data: { entry, uuid: clientState.partySignup.uuid },
       });
-      postMessage({ type: "round1_complete", ...clientState });
     };
 
     // Send the round 2 entry to the server
@@ -119,13 +127,11 @@ import("ecdsa-wasm")
         kind: "set_round2_entry",
         data: { entry, uuid: clientState.partySignup.uuid },
       });
-      postMessage({ type: "round2_complete", ...clientState });
     };
 
     // Send the round 3 entry to the server
     const sendRound3Entry = async () => {
       const { peer_entries } = clientState.round3Entry;
-      console.log("sending round 3 entry", peer_entries);
       await request({
         kind: "relay_round3",
         data: { entries: peer_entries },

@@ -124,7 +124,7 @@ pub fn generate_round2_entry(
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn check_round2_correct_key(
+pub fn generate_round3_entry(
     parties: u16,
     threshold: u16,
     party_signup: JsValue,
