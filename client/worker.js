@@ -8,6 +8,8 @@ import init, {
   generate_key,
 } from "ecdsa-wasm";
 
+import { makeWebSocketClient } from "./websocket-client";
+
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
 crypto.getRandomValues = function (buffer) {
@@ -19,12 +21,6 @@ crypto.getRandomValues = function (buffer) {
 
 await init();
 await initThreadPool(navigator.hardwareConcurrency);
-
-// Websocket state
-let messageId = 0;
-let messageRequests = new Map();
-const server = "ws://localhost:3030/demo";
-const ws = new WebSocket(server);
 
 let clientState = {
   parties: null,
@@ -201,41 +197,15 @@ const onBroadcastMessage = async (msg) => {
   return false;
 };
 
-// Websocket communication with the server
-ws.onopen = async () => {
-  postMessage({ type: "server", server });
-  const res = await request({ kind: "parameters" });
-  clientState = { ...clientState, ...res.data };
-  postMessage({ type: "ready", ...clientState });
-};
-
-ws.onmessage = async (e) => {
-  const msg = JSON.parse(e.data);
-  if (msg.id && messageRequests.has(msg.id)) {
-    const { resolve } = messageRequests.get(msg.id);
-    resolve(msg);
-    // Without an `id` we treat as a broadcast message that
-    // was sent from the server without a request from the client
-  } else {
-    if (!(await onBroadcastMessage(msg))) {
-      console.error(
-        "websocket client received a message it could not handle: ",
-        msg
-      );
-    }
-  }
-};
-
-// Wrap a websocket request in a promise that expects
-// a response from the server
-function request(message) {
-  const id = ++messageId;
-  const resolve = (data) => data;
-  const reject = (e) => {};
-  const p = new Promise(function (resolve, reject) {
-    messageRequests.set(id, { resolve, reject });
-  });
-  message.id = id;
-  ws.send(JSON.stringify(message));
-  return p;
-}
+const server = "ws://localhost:3030/demo";
+const { request } = makeWebSocketClient({
+  url: server,
+  onOpen: async () => {
+    postMessage({ type: "server", server });
+    const res = await request({ kind: "parameters" });
+    clientState = { ...clientState, ...res.data };
+    postMessage({ type: "ready", ...clientState });
+  },
+  onClose: async () => {},
+  onBroadcastMessage,
+});
