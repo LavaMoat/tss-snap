@@ -28,6 +28,7 @@ import("ecdsa-wasm")
       round1Entry: null,
       round2Entry: null,
       round3PeerEntries: [],
+      round4Entry: null,
     };
 
     // Receive messages sent to the worker
@@ -87,6 +88,9 @@ import("ecdsa-wasm")
               break;
             case "round2":
               postMessage({ type: "round2_complete", ...clientState });
+
+              console.log("got round 2 answer", msg.data.answer);
+
               const round3_entry = wasm.generate_round3_entry(
                 clientState.parties,
                 clientState.threshold,
@@ -95,12 +99,31 @@ import("ecdsa-wasm")
                 msg.data.answer
               );
               clientState.round3Entry = round3_entry;
-              sendRound3Entry();
+
+              // Send the round 3 entry to the server
+              await request({
+                kind: "relay_round3",
+                data: { entries: clientState.round3Entry.peer_entries },
+              });
+              break;
+            case "round4":
+              postMessage({ type: "round4_complete", ...clientState });
+              console.log("got round 4 answer", msg.data.answer);
+
+              const round5_entry = wasm.generate_round5_entry(
+                clientState.parties,
+                clientState.threshold,
+                clientState.partySignup,
+                clientState.round4Entry,
+                msg.data.answer
+              );
+
+              console.log("generated round 5 entry", round5_entry);
+
               break;
           }
           return true;
         case "peer_answer":
-          console.log("got peer answer by relay", msg.data);
           const { peer_entry } = msg.data;
           clientState.round3PeerEntries.push(peer_entry);
 
@@ -136,20 +159,22 @@ import("ecdsa-wasm")
             );
 
             console.log("got round 4 entry", round4_entry);
+
+            clientState.round4Entry = round4_entry;
+
+            // Send the round 4 entry to the server
+            await request({
+              kind: "set_round4_entry",
+              data: {
+                entry: clientState.round4Entry.entry,
+                uuid: clientState.partySignup.uuid,
+              },
+            });
           }
 
           return true;
       }
       return false;
-    };
-
-    // Send the round 3 entry to the server
-    const sendRound3Entry = async () => {
-      const { peer_entries } = clientState.round3Entry;
-      await request({
-        kind: "relay_round3",
-        data: { entries: peer_entries },
-      });
     };
 
     // Websocket communication with the server

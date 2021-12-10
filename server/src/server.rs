@@ -21,7 +21,8 @@ use std::convert::TryInto;
 use super::state_machine::*;
 
 use common::{
-    Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
+    Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
+    ROUND_4,
 };
 
 /// Global unique user id counter.
@@ -281,7 +282,9 @@ async fn client_request(
             })
         }
         // Store the round 1 Entry
-        IncomingKind::SetRound1Entry | IncomingKind::SetRound2Entry | IncomingKind::SetRound4Entry => {
+        IncomingKind::SetRound1Entry
+        | IncomingKind::SetRound2Entry
+        | IncomingKind::SetRound4Entry => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -319,7 +322,9 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::SetRound1Entry | IncomingKind::SetRound2Entry | IncomingKind::SetRound4Entry => {
+        IncomingKind::SetRound1Entry
+        | IncomingKind::SetRound2Entry
+        | IncomingKind::SetRound4Entry => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let num_keys = info.ephemeral_state.len();

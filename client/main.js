@@ -50,6 +50,9 @@ if (window.Worker) {
       // We have Round3Entry
       case "round3_complete":
         console.log("keygen: round 3 complete");
+      // We have Round4Entry
+      case "round4_complete":
+        console.log("keygen: round 4 complete");
         break;
     }
   };
