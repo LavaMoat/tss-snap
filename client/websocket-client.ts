@@ -1,16 +1,20 @@
-export const makeWebSocketClient = ({
-  url,
-  onOpen,
-  onClose,
-  onBroadcastMessage,
-}) => {
+interface webSocketOptions {
+  url: string;
+  onOpen: (e: Event) => void;
+  onClose: (e: CloseEvent) => void;
+  onBroadcastMessage: (msg: any) => Promise<boolean>;
+}
+
+export const makeWebSocketClient = (options: webSocketOptions) => {
+  const {url, onOpen, onClose, onBroadcastMessage} = options;
+
   // Websocket state
   let messageId = 0;
   let messageRequests = new Map();
   const websocket = new WebSocket(url);
 
-  websocket.onopen = () => onOpen();
-  websocket.onclose = () => onClose();
+  websocket.onopen = (e) => onOpen(e);
+  websocket.onclose = (e) => onClose(e);
 
   websocket.onmessage = async (e) => {
     const msg = JSON.parse(e.data);
