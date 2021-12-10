@@ -188,16 +188,6 @@ pub fn generate_round3_entry(
             // prepare encrypted ss for party i:
             let key_i = &enc_keys[j];
             let plaintext = BigInt::to_bytes(&secret_shares[k].to_bigint());
-
-            /*
-            console_log!(
-                "encrypt (self = {}, other = {}) {:#?}",
-                party_num_int,
-                i,
-                key_i
-            );
-            */
-
             let aead_pack_i = aes_encrypt(key_i, &plaintext);
             let entry = into_p2p_entry(
                 party_num_int,
@@ -258,16 +248,6 @@ pub fn generate_round4_entry(
             let aead_pack: AeadPack =
                 serde_json::from_str(&round3_ans_vec[j].value).unwrap();
             let key_i = &enc_keys[j];
-
-            /*
-            console_log!(
-                "decrypt (self = {}, other = {}) {:#?}",
-                party_num_int,
-                i,
-                key_i
-            );
-            */
-
             let out = aes_decrypt(key_i, aead_pack);
             let out_bn = BigInt::from_bytes(&out[..]);
             let out_fe = Scalar::<Secp256k1>::from(&out_bn);

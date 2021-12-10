@@ -22,7 +22,7 @@ use super::state_machine::*;
 
 use common::{
     Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
-    ROUND_4,
+    ROUND_4, ROUND_5,
 };
 
 /// Global unique user id counter.
@@ -62,6 +62,9 @@ enum IncomingKind {
     /// Store the round 4 entry sent by each client.
     #[serde(rename = "set_round4_entry")]
     SetRound4Entry,
+    /// Store the round 5 entry sent by each client.
+    #[serde(rename = "set_round5_entry")]
+    SetRound5Entry,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -284,7 +287,8 @@ async fn client_request(
         // Store the round 1 Entry
         IncomingKind::SetRound1Entry
         | IncomingKind::SetRound2Entry
-        | IncomingKind::SetRound4Entry => {
+        | IncomingKind::SetRound4Entry
+        | IncomingKind::SetRound5Entry => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -324,7 +328,8 @@ async fn client_request(
     match req.kind {
         IncomingKind::SetRound1Entry
         | IncomingKind::SetRound2Entry
-        | IncomingKind::SetRound4Entry => {
+        | IncomingKind::SetRound4Entry
+        | IncomingKind::SetRound5Entry => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let num_keys = info.ephemeral_state.len();
@@ -334,6 +339,7 @@ async fn client_request(
                 IncomingKind::SetRound1Entry => ROUND_1,
                 IncomingKind::SetRound2Entry => ROUND_2,
                 IncomingKind::SetRound4Entry => ROUND_4,
+                IncomingKind::SetRound5Entry => ROUND_5,
                 _ => unreachable!(),
             };
 
