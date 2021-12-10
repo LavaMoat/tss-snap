@@ -111,6 +111,14 @@ import("ecdsa-wasm")
           ) {
             postMessage({ type: "round3_complete", ...clientState });
 
+            // Must sort the entries otherwise the decryption
+            // keys will not match the peer entries
+            clientState.round3PeerEntries.sort((a, b) => {
+              if (a.party_from < b.party_from) return -1;
+              if (a.party_from > b.party_from) return 1;
+              return 0;
+            });
+
             const round3_ans_vec = clientState.round3PeerEntries.map(
               (peer) => peer.entry
             );
