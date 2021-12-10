@@ -215,9 +215,11 @@ dependencies = [
  "aes-gcm",
  "curv-kzen",
  "getrandom 0.2.3",
+ "kzen-paillier",
  "multi-party-ecdsa",
  "rand 0.8.4",
  "serde",
+ "sha2 0.9.8",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]
@@ -449,9 +451,11 @@ dependencies = [
  "console_error_panic_hook",
  "curv-kzen",
  "getrandom 0.1.16",
+ "kzen-paillier",
  "multi-party-ecdsa",
  "rand 0.6.5",
  "serde_json",
+ "sha2 0.9.8",
  "wasm-bindgen",
  "wasm-bindgen-rayon",
 ]

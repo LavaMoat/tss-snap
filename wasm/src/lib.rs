@@ -1,9 +1,15 @@
 use curv::{
     arithmetic::Converter,
-    cryptographic_primitives::secret_sharing::feldman_vss::VerifiableSS,
+    cryptographic_primitives::{
+        proofs::sigma_dlog::DLogProof,
+        secret_sharing::feldman_vss::VerifiableSS,
+    },
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
     BigInt,
 };
+
+use paillier::EncryptionKey;
+use sha2::Sha256;
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
@@ -11,9 +17,9 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 
 use common::{
     aes_decrypt, aes_encrypt, into_p2p_entry, into_round_entry, AeadPack,
-    Entry, PartySignup, PeerEntry, Round1Entry, Round2Entry, Round3Entry,
-    Round4Entry, Round5Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3,
-    ROUND_4, ROUND_5,
+    Entry, PartyKey, PartySignup, PeerEntry, Round1Entry, Round2Entry,
+    Round3Entry, Round4Entry, Round5Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2,
+    ROUND_3, ROUND_4, ROUND_5,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -214,6 +220,7 @@ pub fn generate_round3_entry(
         y_sum,
         point_vec,
         peer_entries,
+        bc1_vec,
     };
 
     JsValue::from_serde(&round_entry).unwrap()
@@ -238,6 +245,8 @@ pub fn generate_round4_entry(
     let secret_shares = round3_entry.secret_shares;
     let vss_scheme = round3_entry.vss_scheme;
     let point_vec = round3_entry.point_vec;
+    let y_sum = round3_entry.y_sum;
+    let bc1_vec = round3_entry.bc1_vec;
 
     let mut j = 0;
     let mut party_shares: Vec<Scalar<Secp256k1>> = Vec::new();
@@ -269,6 +278,8 @@ pub fn generate_round4_entry(
         vss_scheme,
         point_vec,
         entry,
+        y_sum,
+        bc1_vec,
     };
 
     JsValue::from_serde(&round_entry).unwrap()
@@ -298,6 +309,8 @@ pub fn generate_round5_entry(
     let party_shares = round4_entry.party_shares;
     let vss_scheme = round4_entry.vss_scheme;
     let point_vec = round4_entry.point_vec;
+    let y_sum = round4_entry.y_sum;
+    let bc1_vec = round4_entry.bc1_vec;
 
     let mut j = 0;
     let mut vss_scheme_vec: Vec<VerifiableSS<Secp256k1>> = Vec::new();
@@ -329,7 +342,76 @@ pub fn generate_round5_entry(
         uuid,
     );
 
-    let round_entry = Round5Entry { shared_keys, entry };
+    let round_entry = Round5Entry {
+        shared_keys,
+        entry,
+        dlog_proof,
+        point_vec,
+        party_keys,
+        vss_scheme_vec,
+        y_sum,
+        bc1_vec,
+    };
 
     JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn generate_key(
+    parties: u16,
+    threshold: u16,
+    party_signup: JsValue,
+    round5_entry: JsValue,
+    round5_ans_vec: JsValue,
+) -> JsValue {
+    let params = Parameters {
+        share_count: parties,
+        threshold,
+    };
+
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, _uuid) = (number, uuid);
+
+    let round5_ans_vec: Vec<String> = round5_ans_vec.into_serde().unwrap();
+    let round5_entry: Round5Entry = round5_entry.into_serde().unwrap();
+    let party_keys = round5_entry.party_keys;
+    let shared_keys = round5_entry.shared_keys;
+    let dlog_proof = round5_entry.dlog_proof;
+    let point_vec = round5_entry.point_vec;
+    let vss_scheme_vec = round5_entry.vss_scheme_vec;
+    let y_sum = round5_entry.y_sum;
+    let bc1_vec = round5_entry.bc1_vec;
+
+    let mut j = 0;
+    let mut dlog_proof_vec: Vec<DLogProof<Secp256k1, Sha256>> = Vec::new();
+    for i in 1..=parties {
+        if i == party_num_int {
+            dlog_proof_vec.push(dlog_proof.clone());
+        } else {
+            let dlog_proof_j: DLogProof<Secp256k1, Sha256> =
+                serde_json::from_str(&round5_ans_vec[j]).unwrap();
+            dlog_proof_vec.push(dlog_proof_j);
+            j += 1;
+        }
+    }
+    Keys::verify_dlog_proofs(&params, &dlog_proof_vec, &point_vec)
+        .expect("bad dlog proof");
+
+    //save key to file:
+    let paillier_key_vec = (0..parties)
+        .map(|i| bc1_vec[i as usize].e.clone())
+        .collect::<Vec<EncryptionKey>>();
+
+    let party_key = PartyKey {
+        party_keys,
+        shared_keys,
+        party_num_int,
+        vss_scheme_vec,
+        paillier_key_vec,
+        y_sum,
+    };
+
+    JsValue::from_serde(&party_key).unwrap()
 }

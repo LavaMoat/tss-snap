@@ -5,6 +5,7 @@ import init, {
   generate_round3_entry,
   generate_round4_entry,
   generate_round5_entry,
+  generate_key,
 } from "ecdsa-wasm";
 
 // Temporary hack for getRandomValues() error
@@ -34,6 +35,7 @@ let clientState = {
   round3PeerEntries: [],
   round4Entry: null,
   round5Entry: null,
+  partyKey: null,
 };
 
 // Receive messages sent to the worker
@@ -94,8 +96,6 @@ const onBroadcastMessage = async (msg) => {
         case "round2":
           postMessage({ type: "round2_complete", ...clientState });
 
-          console.log("got round 2 answer", msg.data.answer);
-
           const round3_entry = generate_round3_entry(
             clientState.parties,
             clientState.threshold,
@@ -113,7 +113,6 @@ const onBroadcastMessage = async (msg) => {
           break;
         case "round4":
           postMessage({ type: "round4_complete", ...clientState });
-          console.log("got round 4 answer", msg.data.answer);
 
           const round5_entry = generate_round5_entry(
             clientState.parties,
@@ -122,8 +121,6 @@ const onBroadcastMessage = async (msg) => {
             clientState.round4Entry,
             msg.data.answer
           );
-
-          console.log("generated round 5 entry", round5_entry);
 
           clientState.round5Entry = round5_entry;
 
@@ -138,7 +135,22 @@ const onBroadcastMessage = async (msg) => {
 
           break;
         case "round5":
-          console.log("got round 5 answers", msg.data.answer);
+          postMessage({ type: "round5_complete", ...clientState });
+
+          const party_key = generate_key(
+            clientState.parties,
+            clientState.threshold,
+            clientState.partySignup,
+            clientState.round5Entry,
+            msg.data.answer
+          );
+
+          //console.log('keygen complete: ', party_key);
+
+          clientState.partyKey = party_key;
+
+          postMessage({ type: "keygen_complete", ...clientState });
+
           break;
       }
       return true;
@@ -165,16 +177,12 @@ const onBroadcastMessage = async (msg) => {
         // Clean up the peer entries
         clientState.round3PeerEntries = null;
 
-        console.log("all p2p messages received", round3_ans_vec);
-
         const round4_entry = generate_round4_entry(
           clientState.parties,
           clientState.partySignup,
           clientState.round3Entry,
           round3_ans_vec
         );
-
-        console.log("got round 4 entry", round4_entry);
 
         clientState.round4Entry = round4_entry;
 

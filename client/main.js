@@ -54,6 +54,14 @@ if (window.Worker) {
       case "round4_complete":
         console.log("keygen: round 4 complete");
         break;
+      // We have Round5Entry
+      case "round5_complete":
+        console.log("keygen: round 5 complete");
+        break;
+      // We have all the key information for this party
+      case "keygen_complete":
+        console.log("keygen: completed!");
+        break;
     }
   };
 } else {

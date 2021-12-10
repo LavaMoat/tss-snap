@@ -287,9 +287,11 @@ dependencies = [
  "aes-gcm",
  "curv-kzen",
  "getrandom 0.2.3",
+ "kzen-paillier",
  "multi-party-ecdsa",
  "rand 0.8.4",
  "serde",
+ "sha2 0.9.8",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]

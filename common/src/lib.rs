@@ -10,8 +10,17 @@ use aes_gcm::{
 use rand::Rng;
 
 #[cfg(target_arch = "wasm32")]
+use sha2::Sha256;
+
+#[cfg(target_arch = "wasm32")]
+use paillier::EncryptionKey;
+
+#[cfg(target_arch = "wasm32")]
 use curv::{
-    cryptographic_primitives::secret_sharing::feldman_vss::VerifiableSS,
+    cryptographic_primitives::{
+        proofs::sigma_dlog::DLogProof,
+        secret_sharing::feldman_vss::VerifiableSS,
+    },
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
 };
 
@@ -91,6 +100,7 @@ pub struct Round3Entry {
     pub y_sum: Point<Secp256k1>,
     pub peer_entries: Vec<PeerEntry>,
     pub point_vec: Vec<Point<Secp256k1>>,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -101,13 +111,32 @@ pub struct Round4Entry {
     pub party_shares: Vec<Scalar<Secp256k1>>,
     pub vss_scheme: VerifiableSS<Secp256k1>,
     pub point_vec: Vec<Point<Secp256k1>>,
+    pub y_sum: Point<Secp256k1>,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round5Entry {
+    pub party_keys: Keys,
     pub shared_keys: SharedKeys,
     pub entry: Entry,
+    pub dlog_proof: DLogProof<Secp256k1, Sha256>,
+    pub point_vec: Vec<Point<Secp256k1>>,
+    pub vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
+    pub y_sum: Point<Secp256k1>,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PartyKey {
+    pub party_keys: Keys,
+    pub shared_keys: SharedKeys,
+    pub party_num_int: u16,
+    pub vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
+    pub paillier_key_vec: Vec<EncryptionKey>,
+    pub y_sum: Point<Secp256k1>,
 }
 
 pub fn into_round_entry(
