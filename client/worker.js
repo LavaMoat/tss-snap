@@ -110,7 +110,6 @@ import("ecdsa-wasm")
               postMessage({ type: "round4_complete", ...clientState });
               console.log("got round 4 answer", msg.data.answer);
 
-              /*
               const round5_entry = wasm.generate_round5_entry(
                 clientState.parties,
                 clientState.threshold,
@@ -120,7 +119,6 @@ import("ecdsa-wasm")
               );
 
               console.log("generated round 5 entry", round5_entry);
-              */
 
               break;
           }

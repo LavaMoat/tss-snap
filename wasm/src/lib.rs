@@ -312,7 +312,7 @@ pub fn generate_round5_entry(
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
 
-    let round4_ans_vec: Vec<Entry> = round4_ans_vec.into_serde().unwrap();
+    let round4_ans_vec: Vec<String> = round4_ans_vec.into_serde().unwrap();
     let round4_entry: Round4Entry = round4_entry.into_serde().unwrap();
     let party_keys = round4_entry.party_keys;
     let party_shares = round4_entry.party_shares;
@@ -326,7 +326,7 @@ pub fn generate_round5_entry(
             vss_scheme_vec.push(vss_scheme.clone());
         } else {
             let vss_scheme_j: VerifiableSS<Secp256k1> =
-                serde_json::from_str(&round4_ans_vec[j].value).unwrap();
+                serde_json::from_str(&round4_ans_vec[j]).unwrap();
             vss_scheme_vec.push(vss_scheme_j);
             j += 1;
         }
