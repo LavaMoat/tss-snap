@@ -33,6 +33,7 @@ let clientState = {
   round2Entry: null,
   round3PeerEntries: [],
   round4Entry: null,
+  round5Entry: null,
 };
 
 // Receive messages sent to the worker
@@ -124,6 +125,20 @@ const onBroadcastMessage = async (msg) => {
 
           console.log("generated round 5 entry", round5_entry);
 
+          clientState.round5Entry = round5_entry;
+
+          // Send the round 5 entry to the server
+          await request({
+            kind: "set_round5_entry",
+            data: {
+              entry: clientState.round5Entry.entry,
+              uuid: clientState.partySignup.uuid,
+            },
+          });
+
+          break;
+        case "round5":
+          console.log("got round 5 answers", msg.data.answer);
           break;
       }
       return true;
@@ -132,10 +147,7 @@ const onBroadcastMessage = async (msg) => {
       clientState.round3PeerEntries.push(peer_entry);
 
       // Got all the p2p answers
-      if (
-        clientState.round3PeerEntries.length ===
-        clientState.parties - 1
-      ) {
+      if (clientState.round3PeerEntries.length === clientState.parties - 1) {
         postMessage({ type: "round3_complete", ...clientState });
 
         // Must sort the entries otherwise the decryption
