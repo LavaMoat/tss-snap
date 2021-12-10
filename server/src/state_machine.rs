@@ -24,7 +24,7 @@ impl<'a> Iterator for PhaseIterator<'a> {
     type Item = &'a Phase;
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.phases.get(self.index);
-        self.index = self.index + 1;
+        self.index += 1;
         item
     }
 }

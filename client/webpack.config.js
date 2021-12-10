@@ -1,5 +1,5 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const path = require('path');
+const path = require("path");
 
 module.exports = {
   entry: "./index.js",
@@ -7,16 +7,18 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     filename: "index.js",
   },
+  devtool: false,
   mode: "development",
-  plugins: [
-    new CopyWebpackPlugin(['index.html'])
-  ],
-  module: {
-    rules: [
-      {
-        test: /\.worker\.js$/,
-        use: { loader: "worker-loader" },
-      },
-    ],
+  plugins: [new CopyWebpackPlugin(["index.html"])],
+  devServer: {
+    headers: {
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+    },
+  },
+  experiments: {
+    //syncWebAssembly: true,
+    asyncWebAssembly: true,
+    topLevelAwait: true,
   },
 };

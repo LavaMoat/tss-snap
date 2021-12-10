@@ -1,10 +1,10 @@
-name: Webassembly
+name: Common
 
 on: [pull_request]
 
 env:
   RUST_LOG: "0"
-  WORKING_DIRECTORY: ./wasm
+  WORKING_DIRECTORY: ./common
 
 jobs:
   fmt:
@@ -30,8 +30,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: clippy, rust-src
-          target: wasm32-unknown-unknown
+          components: clippy
       - name: Run cargo clippy
         working-directory: ${{env.WORKING_DIRECTORY}}
         run: cargo clippy --all
@@ -45,13 +44,25 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: rust-src
-          target: wasm32-unknown-unknown
       - name: Run cargo build
         working-directory: ${{env.WORKING_DIRECTORY}}
         run: cargo check
 
-  web:
+  check-wasm:
+    name: check-wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: wasm32-unknown-unknown
+      - name: Run cargo build
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo check --target wasm32-unknown-unknown
+
+  test-wasm:
     name: web
     runs-on: ubuntu-latest
     steps:
@@ -68,4 +79,4 @@ jobs:
           version: 'v0.9.1'
       - name: Run wasm-pack
         working-directory: ${{env.WORKING_DIRECTORY}}
-        run: wasm-pack build --target web
+        run: wasm-pack test --node

@@ -1,0 +1,28 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+serde = {version = "1", features = ["derive"]}
+getrandom = {version = "0.2", features = ["js"]}
+curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
+aes-gcm = "0.9"
+rand = "0.8"
+sha2 = "0.9"
+
+# TODO: use https://github.com/ZenGo-X/multi-party-ecdsa once
+# TODO: https://github.com/ZenGo-X/multi-party-ecdsa/pull/144 is merged
+[dependencies.multi-party-ecdsa]
+git = "https://github.com/tmpfs/multi-party-ecdsa"
+branch = "curv-0.8"
+default-features = false
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2.76", features = ["serde-serialize"] }
+wasm-bindgen-test = "0.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.paillier]
+version = "0.4.2"
+package = "kzen-paillier"
+default-features = false

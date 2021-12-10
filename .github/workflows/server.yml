@@ -1,18 +1,15 @@
-name: Cargo
+name: Server
 
-on: [push, pull_request]
+on: [pull_request]
 
 env:
-  CI: 1
-  CARGO_INCREMENTAL: 0
-  RUST_LOG: "debug"
+  RUST_LOG: "0"
+  WORKING_DIRECTORY: ./server
 
 jobs:
   fmt:
     name: fmt
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -21,13 +18,12 @@ jobs:
           profile: minimal
           components: rustfmt
       - name: Run cargo fmt
-        run: cd server && cargo fmt --all -- --check
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo fmt --all -- --check
 
   clippy:
     name: clippy
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -36,13 +32,12 @@ jobs:
           profile: minimal
           components: clippy
       - name: Run cargo clippy
-        run: cd server && cargo clippy --all
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo clippy --all
 
   build:
     name: build
     runs-on: ubuntu-latest
-    env:
-      RUST_LOG: "0"
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -50,4 +45,5 @@ jobs:
         with:
           profile: minimal
       - name: Run cargo build
-        run: cd server && cargo build --release
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: cargo build --release
