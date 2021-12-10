@@ -1,8 +1,12 @@
 /// Common types shared between the server and webassembly modules.
+
+#[cfg(target_arch = "wasm32")]
 use aes_gcm::{
     aead::{Aead, NewAead},
     Aes256Gcm, Nonce,
 };
+
+#[cfg(target_arch = "wasm32")]
 use rand::Rng;
 
 #[cfg(target_arch = "wasm32")]
