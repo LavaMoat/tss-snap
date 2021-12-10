@@ -13,33 +13,16 @@ use curv::{
 
 #[cfg(target_arch = "wasm32")]
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys,
+    KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, SharedKeys,
 };
 
 use serde::{Deserialize, Serialize};
-
-/*
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-#[cfg(target_arch = "wasm32")]
-#[macro_export]
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-*/
 
 pub const ROUND_1: &str = "round1";
 pub const ROUND_2: &str = "round2";
 pub const ROUND_3: &str = "round3";
 pub const ROUND_4: &str = "round4";
+pub const ROUND_5: &str = "round5";
 pub const AES_KEY_BYTES_LEN: usize = 32;
 
 pub type Key = String;
@@ -97,19 +80,30 @@ pub struct Round2Entry {
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round3Entry {
+    pub party_keys: Keys,
     pub enc_keys: Vec<Vec<u8>>,
     pub vss_scheme: VerifiableSS<Secp256k1>,
     pub secret_shares: Vec<Scalar<Secp256k1>>,
     pub y_sum: Point<Secp256k1>,
     pub peer_entries: Vec<PeerEntry>,
+    pub point_vec: Vec<Point<Secp256k1>>,
 }
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round4Entry {
+    pub party_keys: Keys,
     pub entry: Entry,
     pub party_shares: Vec<Scalar<Secp256k1>>,
     pub vss_scheme: VerifiableSS<Secp256k1>,
+    pub point_vec: Vec<Point<Secp256k1>>,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Round5Entry {
+    pub shared_keys: SharedKeys,
+    pub entry: Entry,
 }
 
 pub fn into_round_entry(

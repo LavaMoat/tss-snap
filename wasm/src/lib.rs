@@ -1,5 +1,6 @@
 use curv::{
     arithmetic::Converter,
+    cryptographic_primitives::secret_sharing::feldman_vss::VerifiableSS,
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
     BigInt,
 };
@@ -11,7 +12,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 use common::{
     aes_decrypt, aes_encrypt, into_p2p_entry, into_round_entry, AeadPack,
     Entry, PartySignup, PeerEntry, Round1Entry, Round2Entry, Round3Entry,
-    Round4Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
+    Round4Entry, Round5Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2, ROUND_3,
+    ROUND_4, ROUND_5,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -215,10 +217,12 @@ pub fn generate_round3_entry(
     }
 
     let round_entry = Round3Entry {
+        party_keys,
         enc_keys,
         vss_scheme,
         secret_shares,
         y_sum,
+        point_vec,
         peer_entries,
     };
 
@@ -239,9 +243,11 @@ pub fn generate_round4_entry(
 
     let round3_ans_vec: Vec<Entry> = round3_ans_vec.into_serde().unwrap();
     let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
+    let party_keys = round3_entry.party_keys;
     let enc_keys = round3_entry.enc_keys;
     let secret_shares = round3_entry.secret_shares;
     let vss_scheme = round3_entry.vss_scheme;
+    let point_vec = round3_entry.point_vec;
 
     let mut j = 0;
     let mut party_shares: Vec<Scalar<Secp256k1>> = Vec::new();
@@ -278,10 +284,72 @@ pub fn generate_round4_entry(
     );
 
     let round_entry = Round4Entry {
+        party_keys,
         party_shares,
         vss_scheme,
+        point_vec,
         entry,
     };
+
+    JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn generate_round5_entry(
+    parties: u16,
+    threshold: u16,
+    party_signup: JsValue,
+    round4_entry: JsValue,
+    round4_ans_vec: JsValue,
+) -> JsValue {
+    let params = Parameters {
+        share_count: parties,
+        threshold,
+    };
+
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+
+    let round4_ans_vec: Vec<Entry> = round4_ans_vec.into_serde().unwrap();
+    let round4_entry: Round4Entry = round4_entry.into_serde().unwrap();
+    let party_keys = round4_entry.party_keys;
+    let party_shares = round4_entry.party_shares;
+    let vss_scheme = round4_entry.vss_scheme;
+    let point_vec = round4_entry.point_vec;
+
+    let mut j = 0;
+    let mut vss_scheme_vec: Vec<VerifiableSS<Secp256k1>> = Vec::new();
+    for i in 1..=parties {
+        if i == party_num_int {
+            vss_scheme_vec.push(vss_scheme.clone());
+        } else {
+            let vss_scheme_j: VerifiableSS<Secp256k1> =
+                serde_json::from_str(&round4_ans_vec[j].value).unwrap();
+            vss_scheme_vec.push(vss_scheme_j);
+            j += 1;
+        }
+    }
+
+    let (shared_keys, dlog_proof) = party_keys
+        .phase2_verify_vss_construct_keypair_phase3_pok_dlog(
+            &params,
+            &point_vec,
+            &party_shares,
+            &vss_scheme_vec,
+            party_num_int,
+        )
+        .expect("invalid vss");
+
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_5,
+        serde_json::to_string(&dlog_proof).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round5Entry { shared_keys, entry };
 
     JsValue::from_serde(&round_entry).unwrap()
 }
