@@ -22,7 +22,36 @@ crypto.getRandomValues = function (buffer) {
 await init();
 await initThreadPool(navigator.hardwareConcurrency);
 
-let clientState = {
+interface PartySignup {
+  number: number;
+  uuid: string;
+}
+
+interface Entry {
+  key: String;
+  value: String;
+}
+
+interface PeerEntry {
+  party_from: number;
+  party_to: number;
+  entry: Entry;
+}
+
+interface ClientState {
+  parties: number;
+  threshold: number;
+  partySignup: PartySignup;
+  round1Entry: any;
+  round2Entry: any;
+  round3Entry: any;
+  round3PeerEntries: any;
+  round4Entry: any;
+  round5Entry: any;
+  partyKey: any;
+}
+
+let clientState: ClientState = {
   parties: null,
   threshold: null,
   partySignup: null,

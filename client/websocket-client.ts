@@ -6,7 +6,7 @@ interface webSocketOptions {
 }
 
 export const makeWebSocketClient = (options: webSocketOptions) => {
-  const {url, onOpen, onClose, onBroadcastMessage} = options;
+  const { url, onOpen, onClose, onBroadcastMessage } = options;
 
   // Websocket state
   let messageId = 0;
