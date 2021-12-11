@@ -38,7 +38,7 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
   function request(message) {
     const id = ++messageId;
     const resolve = (data) => data;
-    const reject = (e) => {};
+    const reject = (e: Error) => {};
     const p = new Promise(function (resolve, reject) {
       messageRequests.set(id, { resolve, reject });
     });
