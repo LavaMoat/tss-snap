@@ -21,7 +21,7 @@ module.exports = {
   },
   devtool: false,
   mode: "development",
-  plugins: [new CopyWebpackPlugin(["index.html"])],
+  plugins: [new CopyWebpackPlugin(["index.html", "favicon.png"])],
   devServer: {
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
