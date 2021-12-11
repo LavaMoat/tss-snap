@@ -39,6 +39,15 @@ interface Entry {
   value: String;
 }
 
+interface RoundEntry {
+  entry: Entry;
+  // WASM adds a bunch of temporary properties
+  // to each round entry for further rounds but
+  // these fields should not be accessed here
+  // however we declare their presence in the type
+  [x: string]: any;
+}
+
 interface PeerEntry {
   party_from: number;
   party_to: number;
@@ -49,12 +58,12 @@ interface ClientState {
   parties: number;
   threshold: number;
   partySignup: PartySignup;
-  round1Entry: any;
-  round2Entry: any;
-  round3Entry: any;
+  round1Entry: RoundEntry;
+  round2Entry: RoundEntry;
+  round3Entry: RoundEntry;
   round3PeerEntries: PeerEntry[];
-  round4Entry: any;
-  round5Entry: any;
+  round4Entry: RoundEntry;
+  round5Entry: RoundEntry;
   partyKey: any;
 }
 
