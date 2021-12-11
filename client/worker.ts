@@ -196,7 +196,7 @@ const onBroadcastMessage = async (msg) => {
         });
 
         const round3_ans_vec = clientState.round3PeerEntries.map(
-          (peer) => peer.entry
+          (peer: PeerEntry) => peer.entry
         );
 
         // Clean up the peer entries
