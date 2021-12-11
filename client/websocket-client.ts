@@ -42,7 +42,7 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
   // a response from the server
   function request(message) {
     const id = ++messageId;
-    const resolve = (data) => data;
+    const resolve = (data: any) => data;
     const reject = (e: Error) => {};
     const p = new Promise(function (resolve, reject) {
       messageRequests.set(id, { resolve, reject });

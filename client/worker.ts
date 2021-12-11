@@ -45,7 +45,7 @@ interface ClientState {
   round1Entry: any;
   round2Entry: any;
   round3Entry: any;
-  round3PeerEntries: any;
+  round3PeerEntries: PeerEntry[];
   round4Entry: any;
   round5Entry: any;
   partyKey: any;
@@ -57,6 +57,7 @@ let clientState: ClientState = {
   partySignup: null,
   round1Entry: null,
   round2Entry: null,
+  round3Entry: null,
   round3PeerEntries: [],
   round4Entry: null,
   round5Entry: null,
