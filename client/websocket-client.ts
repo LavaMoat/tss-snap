@@ -1,8 +1,13 @@
-interface webSocketOptions {
+export interface BroadcastMessage {
+  kind: string,
+  data: any,
+}
+
+export interface webSocketOptions {
   url: string;
   onOpen: (e: Event) => void;
   onClose: (e: CloseEvent) => void;
-  onBroadcastMessage: (msg: any) => Promise<boolean>;
+  onBroadcastMessage: (msg: BroadcastMessage) => Promise<boolean>;
 }
 
 export const makeWebSocketClient = (options: webSocketOptions) => {

@@ -8,7 +8,7 @@ import init, {
   generate_key,
 } from "ecdsa-wasm";
 
-import { makeWebSocketClient } from "./websocket-client";
+import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
@@ -93,7 +93,7 @@ onmessage = async (e) => {
 
 // Handle messages from the server that were broadcast
 // without a client request
-const onBroadcastMessage = async (msg) => {
+const onBroadcastMessage = async (msg: BroadcastMessage) => {
   switch (msg.kind) {
     case "commitment_answer":
       switch (msg.data.round) {
