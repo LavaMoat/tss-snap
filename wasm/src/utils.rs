@@ -1,19 +1,14 @@
-#[cfg(target_arch = "wasm32")]
 use aes_gcm::{
     aead::{Aead, NewAead},
     Aes256Gcm, Nonce,
 };
 
-#[cfg(target_arch = "wasm32")]
 use rand::Rng;
 
-#[cfg(target_arch = "wasm32")]
 use sha2::Sha256;
 
-#[cfg(target_arch = "wasm32")]
 use paillier::EncryptionKey;
 
-#[cfg(target_arch = "wasm32")]
 use curv::{
     cryptographic_primitives::{
         proofs::sigma_dlog::DLogProof,
@@ -22,7 +17,6 @@ use curv::{
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
 };
 
-#[cfg(target_arch = "wasm32")]
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, SharedKeys,
 };
@@ -33,14 +27,12 @@ use common::{Entry, PeerEntry};
 
 pub const AES_KEY_BYTES_LEN: usize = 32;
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct AeadPack {
     pub ciphertext: Vec<u8>,
     pub nonce: Vec<u8>,
 }
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round1Entry {
     pub party_keys: Keys,
@@ -49,7 +41,6 @@ pub struct Round1Entry {
     pub bc_i: KeyGenBroadcastMessage1,
 }
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round2Entry {
     pub party_keys: Keys,
@@ -58,7 +49,6 @@ pub struct Round2Entry {
     pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round3Entry {
     pub party_keys: Keys,
@@ -71,7 +61,6 @@ pub struct Round3Entry {
     pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round4Entry {
     pub party_keys: Keys,
@@ -83,7 +72,6 @@ pub struct Round4Entry {
     pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Round5Entry {
     pub party_keys: Keys,
@@ -96,7 +84,6 @@ pub struct Round5Entry {
     pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
-#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PartyKey {
     pub party_keys: Keys,
@@ -107,7 +94,6 @@ pub struct PartyKey {
     pub y_sum: Point<Secp256k1>,
 }
 
-#[cfg(target_arch = "wasm32")]
 pub fn into_round_entry(
     party_num: u16,
     round: &str,
@@ -118,7 +104,6 @@ pub fn into_round_entry(
     Entry { key, value }
 }
 
-#[cfg(target_arch = "wasm32")]
 pub fn into_p2p_entry(
     party_from: u16,
     party_to: u16,
@@ -130,7 +115,6 @@ pub fn into_p2p_entry(
     Entry { key, value }
 }
 
-#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AeadPack {
     // 96 bit (12 byte) unique nonce per message
@@ -144,7 +128,6 @@ pub fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AeadPack {
     AeadPack { ciphertext, nonce }
 }
 
-#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 pub fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {
     let cipher_nonce = Nonce::from_slice(&aead_pack.nonce);

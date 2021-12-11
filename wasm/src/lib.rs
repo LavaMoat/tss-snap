@@ -1,3 +1,6 @@
+use common::{
+    Entry, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
+};
 use curv::{
     arithmetic::Converter,
     cryptographic_primitives::{
@@ -7,25 +10,15 @@ use curv::{
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
     BigInt,
 };
-
-use paillier::EncryptionKey;
-use sha2::Sha256;
-
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
 };
-
-use common::{
-    Entry, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
-};
-
-#[cfg(target_arch = "wasm32")]
-pub use wasm_bindgen_rayon::init_thread_pool;
-
-#[cfg(target_arch = "wasm32")]
+use paillier::EncryptionKey;
+use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-#[cfg(target_arch = "wasm32")]
+pub use wasm_bindgen_rayon::init_thread_pool;
+
 extern crate wasm_bindgen;
 
 #[cfg(all(test, target_arch = "wasm32"))]
@@ -37,20 +30,17 @@ use utils::*;
 
 pub use utils::{aes_decrypt, aes_encrypt};
 
-#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
 
-#[cfg(target_arch = "wasm32")]
 #[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
-#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
@@ -58,7 +48,6 @@ pub fn start() {
 }
 
 #[allow(non_snake_case)]
-#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygenRound1(party_signup: JsValue) -> JsValue {
     let PartySignup { number, uuid } =
