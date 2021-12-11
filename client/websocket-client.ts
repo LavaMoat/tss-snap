@@ -9,6 +9,12 @@ export interface RequestMessage {
   data?: any;
 }
 
+export interface ResponseMessage {
+  id?: number;
+  kind?: string;
+  data?: any;
+}
+
 export interface webSocketOptions {
   url: string;
   onOpen: (e: Event) => void;
@@ -46,11 +52,11 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
 
   // Wrap a websocket request in a promise that expects
   // a response from the server
-  function request(message: RequestMessage): Promise<any> {
+  function request(message: RequestMessage): Promise<ResponseMessage> {
     const id = ++messageId;
-    const resolve = (data: any) => data;
-    const reject = (e: Error) => {};
-    const p = new Promise(function (resolve, reject) {
+    const resolve = (data: ResponseMessage) => data;
+    const reject = (e: Error) => { throw e };
+    const p = new Promise((resolve, reject) => {
       messageRequests.set(id, { resolve, reject });
     });
     message.id = id;
