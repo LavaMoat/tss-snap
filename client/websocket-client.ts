@@ -1,17 +1,27 @@
+type BroadcastKind = "commitment_answer" | "peer_answer";
+
 export interface BroadcastMessage {
-  kind: string;
+  kind: BroadcastKind;
   data: any;
 }
 
+type RequestKind =
+  | "parameters"
+  | "party_signup"
+  | "set_round1_entry"
+  | "set_round2_entry"
+  | "relay_round3"
+  | "set_round4_entry"
+  | "set_round5_entry";
+
 export interface RequestMessage {
   id?: number;
-  kind: string;
+  kind: RequestKind;
   data?: any;
 }
 
 export interface ResponseMessage {
   id?: number;
-  kind?: string;
   data?: any;
 }
 
