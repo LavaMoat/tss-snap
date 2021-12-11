@@ -19,8 +19,13 @@ crypto.getRandomValues = function (buffer) {
   return buffer;
 };
 
-await init();
-await initThreadPool(navigator.hardwareConcurrency);
+// For top-level await typescript wants `target` to be es2017
+// but this generates a "too much recursion" runtime error so
+// we avoid top-level await for now
+void (async function () {
+  await init();
+  await initThreadPool(navigator.hardwareConcurrency);
+})();
 
 interface PartySignup {
   number: number;
@@ -158,7 +163,6 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
               uuid: clientState.partySignup.uuid,
             },
           });
-
           break;
         case "round5":
           postMessage({ type: "round5_complete", ...clientState });
@@ -171,12 +175,8 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
             msg.data.answer
           );
 
-          //console.log('keygen complete: ', party_key);
-
           clientState.partyKey = party_key;
-
           postMessage({ type: "keygen_complete", ...clientState });
-
           break;
       }
       return true;

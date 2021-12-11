@@ -1,6 +1,12 @@
 export interface BroadcastMessage {
-  kind: string,
-  data: any,
+  kind: string;
+  data: any;
+}
+
+export interface RequestMessage {
+  id?: number;
+  kind: string;
+  data?: any;
 }
 
 export interface webSocketOptions {
@@ -40,7 +46,7 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
 
   // Wrap a websocket request in a promise that expects
   // a response from the server
-  function request(message) {
+  function request(message: RequestMessage): Promise<any> {
     const id = ++messageId;
     const resolve = (data: any) => data;
     const reject = (e: Error) => {};
