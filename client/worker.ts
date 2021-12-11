@@ -229,11 +229,11 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
   return false;
 };
 
-const server = "ws://localhost:3030/demo";
+const url = "ws://localhost:3030/demo";
 const { request } = makeWebSocketClient({
-  url: server,
+  url,
   onOpen: async () => {
-    postMessage({ type: "server", server });
+    postMessage({ type: "server", url });
     const res = await request({ kind: "parameters" });
     clientState = { ...clientState, ...res.data };
     postMessage({ type: "ready", ...clientState });

@@ -25,9 +25,13 @@
   },
   "homepage": "https://github.com/tmpfs/ecdsa-wasm",
   "dependencies": {
-    "ecdsa-wasm": "file:../wasm/pkg"
+    "ecdsa-wasm": "file:../wasm/pkg",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   },
   "devDependencies": {
+    "@types/react": "^17.0.37",
+    "@types/react-dom": "^17.0.11",
     "copy-webpack-plugin": "^5.0.0",
     "prettier": "^2.5.0",
     "ts-loader": "^9.2.6",
