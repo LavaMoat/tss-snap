@@ -189,7 +189,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
 
         // Must sort the entries otherwise the decryption
         // keys will not match the peer entries
-        clientState.round3PeerEntries.sort((a, b) => {
+        clientState.round3PeerEntries.sort((a: PeerEntry, b: PeerEntry) => {
           if (a.party_from < b.party_from) return -1;
           if (a.party_from > b.party_from) return 1;
           return 0;
