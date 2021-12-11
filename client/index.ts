@@ -12,7 +12,7 @@ if (window.Worker) {
   // UI thread and holds the handle to the websocket for communication
   // with the server that maintains state and orchestrates communication
   // between the connected clients.
-  const worker = new Worker(new URL("./worker.js", import.meta.url));
+  const worker = new Worker(new URL("./worker.ts", import.meta.url));
   worker.onmessage = (e) => {
     const { type } = e.data;
 
@@ -20,14 +20,14 @@ if (window.Worker) {
       // Worker sends us the backend server URL
       case "server":
         const { server } = e.data;
-        document.querySelector(".server span").innerText = server;
+        document.querySelector(".server span").textContent = server;
         break;
       // Worker has been initialized and is ready with the server parameters
       case "ready":
         const { conn_id, parties, threshold } = e.data;
-        clientLabel.innerText = "#" + conn_id;
-        partiesLabel.innerText = parties;
-        thresholdLabel.innerText = threshold;
+        clientLabel.textContent = "#" + conn_id;
+        partiesLabel.textContent = parties;
+        thresholdLabel.textContent = threshold;
         keygenSignupButton.removeAttribute("hidden");
         keygenSignupButton.addEventListener("click", () => {
           worker.postMessage({ type: "party_signup" });
@@ -37,7 +37,7 @@ if (window.Worker) {
       case "party_signup":
         keygenSignupButton.setAttribute("hidden", "1");
         const { partySignup } = e.data;
-        partyNumber.innerText = partySignup.number;
+        partyNumber.textContent = partySignup.number;
         break;
       // We have Round1Entry
       case "round1_complete":

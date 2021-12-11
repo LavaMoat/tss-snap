@@ -1,16 +1,37 @@
-export const makeWebSocketClient = ({
-  url,
-  onOpen,
-  onClose,
-  onBroadcastMessage,
-}) => {
+export interface BroadcastMessage {
+  kind: string;
+  data: any;
+}
+
+export interface RequestMessage {
+  id?: number;
+  kind: string;
+  data?: any;
+}
+
+export interface ResponseMessage {
+  id?: number;
+  kind?: string;
+  data?: any;
+}
+
+export interface webSocketOptions {
+  url: string;
+  onOpen: (e: Event) => void;
+  onClose: (e: CloseEvent) => void;
+  onBroadcastMessage: (msg: BroadcastMessage) => Promise<boolean>;
+}
+
+export const makeWebSocketClient = (options: webSocketOptions) => {
+  const { url, onOpen, onClose, onBroadcastMessage } = options;
+
   // Websocket state
   let messageId = 0;
   let messageRequests = new Map();
   const websocket = new WebSocket(url);
 
-  websocket.onopen = () => onOpen();
-  websocket.onclose = () => onClose();
+  websocket.onopen = (e) => onOpen(e);
+  websocket.onclose = (e) => onClose(e);
 
   websocket.onmessage = async (e) => {
     const msg = JSON.parse(e.data);
@@ -31,11 +52,13 @@ export const makeWebSocketClient = ({
 
   // Wrap a websocket request in a promise that expects
   // a response from the server
-  function request(message) {
+  function request(message: RequestMessage): Promise<ResponseMessage> {
     const id = ++messageId;
-    const resolve = (data) => data;
-    const reject = (e) => {};
-    const p = new Promise(function (resolve, reject) {
+    const resolve = (data: ResponseMessage) => data;
+    const reject = (e: Error) => {
+      throw e;
+    };
+    const p = new Promise((resolve, reject) => {
       messageRequests.set(id, { resolve, reject });
     });
     message.id = id;

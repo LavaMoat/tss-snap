@@ -8,26 +8,63 @@ import init, {
   generate_key,
 } from "ecdsa-wasm";
 
-import { makeWebSocketClient } from "./websocket-client";
+import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
-crypto.getRandomValues = function (buffer) {
-  const array = new Uint8Array(buffer);
-  const value = getRandomValues.call(crypto, array);
-  buffer.set(value);
-  return buffer;
+crypto.getRandomValues = function <T extends ArrayBufferView | null>(
+  array: T
+): T {
+  const buffer = new Uint8Array(array as unknown as Uint8Array);
+  const value = getRandomValues.call(crypto, buffer);
+  (array as unknown as Uint8Array).set(value);
+  return array;
 };
 
-await init();
-await initThreadPool(navigator.hardwareConcurrency);
+// For top-level await typescript wants `target` to be es2017
+// but this generates a "too much recursion" runtime error so
+// we avoid top-level await for now
+void (async function () {
+  await init();
+  await initThreadPool(navigator.hardwareConcurrency);
+})();
 
-let clientState = {
+interface PartySignup {
+  number: number;
+  uuid: string;
+}
+
+interface Entry {
+  key: String;
+  value: String;
+}
+
+interface PeerEntry {
+  party_from: number;
+  party_to: number;
+  entry: Entry;
+}
+
+interface ClientState {
+  parties: number;
+  threshold: number;
+  partySignup: PartySignup;
+  round1Entry: any;
+  round2Entry: any;
+  round3Entry: any;
+  round3PeerEntries: PeerEntry[];
+  round4Entry: any;
+  round5Entry: any;
+  partyKey: any;
+}
+
+let clientState: ClientState = {
   parties: null,
   threshold: null,
   partySignup: null,
   round1Entry: null,
   round2Entry: null,
+  round3Entry: null,
   round3PeerEntries: [],
   round4Entry: null,
   round5Entry: null,
@@ -64,7 +101,7 @@ onmessage = async (e) => {
 
 // Handle messages from the server that were broadcast
 // without a client request
-const onBroadcastMessage = async (msg) => {
+const onBroadcastMessage = async (msg: BroadcastMessage) => {
   switch (msg.kind) {
     case "commitment_answer":
       switch (msg.data.round) {
@@ -128,7 +165,6 @@ const onBroadcastMessage = async (msg) => {
               uuid: clientState.partySignup.uuid,
             },
           });
-
           break;
         case "round5":
           postMessage({ type: "round5_complete", ...clientState });
@@ -141,12 +177,8 @@ const onBroadcastMessage = async (msg) => {
             msg.data.answer
           );
 
-          //console.log('keygen complete: ', party_key);
-
           clientState.partyKey = party_key;
-
           postMessage({ type: "keygen_complete", ...clientState });
-
           break;
       }
       return true;
@@ -160,14 +192,14 @@ const onBroadcastMessage = async (msg) => {
 
         // Must sort the entries otherwise the decryption
         // keys will not match the peer entries
-        clientState.round3PeerEntries.sort((a, b) => {
+        clientState.round3PeerEntries.sort((a: PeerEntry, b: PeerEntry) => {
           if (a.party_from < b.party_from) return -1;
           if (a.party_from > b.party_from) return 1;
           return 0;
         });
 
         const round3_ans_vec = clientState.round3PeerEntries.map(
-          (peer) => peer.entry
+          (peer: PeerEntry) => peer.entry
         );
 
         // Clean up the peer entries
