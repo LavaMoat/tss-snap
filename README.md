@@ -5,13 +5,13 @@ Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa)
 ## Prerequisites
 
 * `rust@1.54.0`
-* `wasm-pack@0.9.1`
+* `wasm-pack@0.10.1`
 * `node@14.17.0`
 
 To install a particular version of `wasm-pack`:
 
 ```
-cargo install --version 0.9.1 wasm-pack
+cargo install --version 0.10.1 wasm-pack
 ```
 
 ## Setup
