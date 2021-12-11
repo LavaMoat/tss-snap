@@ -12,11 +12,13 @@ import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
-crypto.getRandomValues = function (buffer) {
-  const array = new Uint8Array(buffer);
-  const value = getRandomValues.call(crypto, array);
-  buffer.set(value);
-  return buffer;
+crypto.getRandomValues = function <T extends ArrayBufferView | null>(
+  array: T
+): T {
+  const buffer = new Uint8Array(array as unknown as Uint8Array);
+  const value = getRandomValues.call(crypto, buffer);
+  (array as unknown as Uint8Array).set(value);
+  return array;
 };
 
 // For top-level await typescript wants `target` to be es2017
