@@ -16,10 +16,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 };
 
 use common::{
-    aes_decrypt, aes_encrypt, into_p2p_entry, into_round_entry, AeadPack,
-    Entry, PartyKey, PartySignup, PeerEntry, Round1Entry, Round2Entry,
-    Round3Entry, Round4Entry, Round5Entry, AES_KEY_BYTES_LEN, ROUND_1, ROUND_2,
-    ROUND_3, ROUND_4, ROUND_5,
+    Entry, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
 };
 
 #[cfg(target_arch = "wasm32")]
@@ -33,6 +30,12 @@ extern crate wasm_bindgen;
 
 #[cfg(all(test, target_arch = "wasm32"))]
 extern crate wasm_bindgen_test;
+
+mod utils;
+
+use utils::*;
+
+pub use utils::{aes_decrypt, aes_encrypt};
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
@@ -54,9 +57,10 @@ pub fn start() {
     console_log!("WASM: module started.");
 }
 
+#[allow(non_snake_case)]
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_round1_entry(party_signup: JsValue) -> JsValue {
+pub fn keygenRound1(party_signup: JsValue) -> JsValue {
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -87,9 +91,10 @@ pub fn generate_round1_entry(party_signup: JsValue) -> JsValue {
     JsValue::from_serde(&round_entry).unwrap()
 }
 
+#[allow(non_snake_case)]
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_round2_entry(
+pub fn keygenRound2(
     party_signup: JsValue,
     round1_entry: JsValue,
     round1_ans_vec: JsValue,
@@ -129,9 +134,10 @@ pub fn generate_round2_entry(
     JsValue::from_serde(&round_entry).unwrap()
 }
 
+#[allow(non_snake_case)]
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_round3_entry(
+pub fn keygenRound3(
     parties: u16,
     threshold: u16,
     party_signup: JsValue,
@@ -226,9 +232,10 @@ pub fn generate_round3_entry(
     JsValue::from_serde(&round_entry).unwrap()
 }
 
+#[allow(non_snake_case)]
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_round4_entry(
+pub fn keygenRound4(
     parties: u16,
     party_signup: JsValue,
     round3_entry: JsValue,
@@ -285,9 +292,10 @@ pub fn generate_round4_entry(
     JsValue::from_serde(&round_entry).unwrap()
 }
 
+#[allow(non_snake_case)]
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_round5_entry(
+pub fn keygenRound5(
     parties: u16,
     threshold: u16,
     party_signup: JsValue,
@@ -356,9 +364,10 @@ pub fn generate_round5_entry(
     JsValue::from_serde(&round_entry).unwrap()
 }
 
+#[allow(non_snake_case)]
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn generate_key(
+pub fn createKey(
     parties: u16,
     threshold: u16,
     party_signup: JsValue,

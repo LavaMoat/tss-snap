@@ -21,7 +21,7 @@ use std::convert::TryInto;
 use super::state_machine::*;
 
 use common::{
-    Entry, Key, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
+    Entry, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
     ROUND_4, ROUND_5,
 };
 
@@ -129,7 +129,7 @@ struct State<'a> {
     /// Current keygen signup state.
     party_signup: PartySignup,
     /// Map of key / values sent to the server by clients for ephemeral states
-    ephemeral_state: HashMap<Key, String>,
+    ephemeral_state: HashMap<String, String>,
 }
 
 pub struct Server;

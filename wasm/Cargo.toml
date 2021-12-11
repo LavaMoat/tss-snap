@@ -16,7 +16,9 @@ rand = { version="0.6.5", features = ["wasm-bindgen"] }
 #rand = { version="0.7.3", features = ["getrandom"] }
 console_error_panic_hook = "0.1.6"
 serde_json = "1"
+aes-gcm = "0.9"
 sha2 = "0.9"
+serde = {version = "1", features = ["derive"]}
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.paillier]
 version = "0.4.2"
@@ -34,3 +36,6 @@ default-features = false
 git = "https://github.com/tmpfs/multi-party-ecdsa"
 branch = "curv-0.8"
 default-features = false
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"

@@ -1,11 +1,11 @@
 import init, {
   initThreadPool,
-  generate_round1_entry,
-  generate_round2_entry,
-  generate_round3_entry,
-  generate_round4_entry,
-  generate_round5_entry,
-  generate_key,
+  keygenRound1,
+  keygenRound2,
+  keygenRound3,
+  keygenRound4,
+  keygenRound5,
+  createKey,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -41,7 +41,7 @@ interface Entry {
 
 interface RoundEntry {
   entry: Entry;
-  // WASM adds a bunch of temporary properties
+  // Webassembly adds a bunch of temporary properties
   // to each round entry for further rounds but
   // these fields should not be accessed here
   // however we declare their presence in the type
@@ -93,7 +93,7 @@ onmessage = async (e) => {
     postMessage({ type: "party_signup", ...clientState });
 
     // Create the round 1 key entry
-    const round1_entry = generate_round1_entry(party_signup);
+    const round1_entry = keygenRound1(party_signup);
 
     const { entry } = round1_entry;
     clientState.round1Entry = round1_entry;
@@ -119,7 +119,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           postMessage({ type: "round1_complete", ...clientState });
 
           // Get round 2 entry using round 1 commitments
-          const round2_entry = generate_round2_entry(
+          const round2_entry = keygenRound2(
             clientState.partySignup,
             clientState.round1Entry,
             msg.data.answer
@@ -138,7 +138,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         case "round2":
           postMessage({ type: "round2_complete", ...clientState });
 
-          const round3_entry = generate_round3_entry(
+          const round3_entry = keygenRound3(
             clientState.parties,
             clientState.threshold,
             clientState.partySignup,
@@ -156,7 +156,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         case "round4":
           postMessage({ type: "round4_complete", ...clientState });
 
-          const round5_entry = generate_round5_entry(
+          const round5_entry = keygenRound5(
             clientState.parties,
             clientState.threshold,
             clientState.partySignup,
@@ -178,7 +178,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         case "round5":
           postMessage({ type: "round5_complete", ...clientState });
 
-          const party_key = generate_key(
+          const party_key = createKey(
             clientState.parties,
             clientState.threshold,
             clientState.partySignup,
@@ -214,7 +214,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         // Clean up the peer entries
         clientState.round3PeerEntries = null;
 
-        const round4_entry = generate_round4_entry(
+        const round4_entry = keygenRound4(
           clientState.parties,
           clientState.partySignup,
           clientState.round3Entry,
