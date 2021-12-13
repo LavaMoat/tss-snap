@@ -31,9 +31,9 @@ const App = (props: AppProps) => {
           break;
         // Worker has been initialized and is ready with the server parameters
         case "ready":
-          const { conn_id, parties, threshold } = e.data;
+          const { conn_id, share_count, threshold } = e.data;
           setClientId(conn_id);
-          setParties(parties);
+          setParties(share_count);
           setThreshold(threshold);
           setSignupVisible(true);
           break;

@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-use super::utils::{into_p2p_entry, into_round_entry, PartyKey};
+use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
 
 const AES_KEY_BYTES_LEN: usize = 32;
 
@@ -195,18 +195,24 @@ pub fn keygenRound2(
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygenRound3(
-    parties: u16,
-    threshold: u16,
+    //parties: u16,
+    //threshold: u16,
+    parameters: JsValue,
     party_signup: JsValue,
     round2_entry: JsValue,
     round2_ans_vec: JsValue,
 ) -> JsValue {
     //console_log!("WASM: keygen round 3");
 
-    let params = Parameters {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
         share_count: parties,
-        threshold,
-    };
+        ..
+    } = params;
+    //let params = Parameters {
+    //share_count: parties,
+    //threshold,
+    //};
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();

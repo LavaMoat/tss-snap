@@ -9,6 +9,7 @@ import init, {
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
+import { State, StateMachine } from "./state-machine";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
@@ -67,6 +68,20 @@ interface ClientState {
   partyKey: any;
 }
 
+interface ClientId {
+  conn_id: number;
+}
+
+interface Parameters {
+  parties: number;
+  threshold: number;
+}
+
+interface Handshake {
+  client: ClientId;
+  parameters: Parameters;
+}
+
 let clientState: ClientState = {
   parties: null,
   threshold: null,
@@ -80,10 +95,159 @@ let clientState: ClientState = {
   partyKey: null,
 };
 
+interface KeygenRoundEntry<T> {
+  parameters: Parameters;
+  partySignup: PartySignup;
+  roundEntry: T;
+}
+
+interface BroadcastAnswer {
+  answer: string[];
+}
+
+interface PeerState {
+  parties: number;
+  received: PeerEntry[];
+}
+
+type UserData = BroadcastAnswer;
+type StateData = Handshake | KeygenRoundEntry<RoundEntry>;
+
+let peerState: PeerState = { parties: 0, received: [] };
+
+const machine = new StateMachine<StateData, UserData>([
+  // Handshake to get server parameters and client identifier
+  {
+    transition: async (previousState: StateData): Promise<StateData | null> => {
+      const res = await request({ kind: "parameters" });
+      const parameters = {
+        parties: res.data.parties,
+        threshold: res.data.threshold,
+      };
+      peerState.parties = res.data.parties;
+      const client = { conn_id: res.data.conn_id };
+      return Promise.resolve({ parameters, client });
+    },
+  },
+  // Generate the PartySignup and keygen round 1 entry
+  {
+    transition: async (previousState: StateData): Promise<StateData | null> => {
+      const handshake = previousState as Handshake;
+      const { parameters } = handshake;
+      const signup = await request({ kind: "party_signup" });
+      const { party_signup: partySignup } = signup.data;
+
+      // So the UI thread can show the party number
+      postMessage({ type: "party_signup", partySignup });
+
+      // Create the round 1 key entry
+      const roundEntry = keygenRound1(partySignup);
+
+      // Send the round 1 entry to the server
+      await request({
+        kind: "set_round1_entry",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      const data = {
+        parameters,
+        partySignup,
+        roundEntry,
+      };
+
+      return Promise.resolve(data);
+    },
+  },
+  // All parties committed to round 1 so generate the round 2 entry
+  {
+    transition: async (
+      previousState: StateData,
+      userData: UserData
+    ): Promise<StateData | null> => {
+      postMessage({ type: "round1_complete" });
+      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+      const { parameters, partySignup } = keygenRoundEntry;
+      const { answer } = userData as BroadcastAnswer;
+
+      // Get round 2 entry using round 1 commitments
+      const roundEntry = keygenRound2(
+        partySignup,
+        keygenRoundEntry.roundEntry,
+        answer
+      );
+
+      // Send the round 2 entry to the server
+      await request({
+        kind: "set_round2_entry",
+        data: {
+          entry: roundEntry.entry,
+          uuid: keygenRoundEntry.partySignup.uuid,
+        },
+      });
+
+      const data = {
+        parameters,
+        partySignup,
+        roundEntry,
+      };
+
+      return Promise.resolve(data);
+    },
+  },
+  // All parties committed to round 2 so generate the round 3 peer to peer calls
+  {
+    transition: async (
+      previousState: StateData,
+      userData: UserData
+    ): Promise<StateData | null> => {
+      postMessage({ type: "round2_complete" });
+      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+      const { parameters, partySignup } = keygenRoundEntry;
+      const { answer } = userData as BroadcastAnswer;
+
+      const roundEntry = keygenRound3(
+        parameters,
+        partySignup,
+        keygenRoundEntry.roundEntry,
+        answer
+      );
+
+      // Send the round 3 entry to the server
+      await request({
+        kind: "relay_round3",
+        data: { entries: roundEntry.peer_entries },
+      });
+
+      const data = {
+        parameters,
+        partySignup,
+        roundEntry,
+      };
+
+      return Promise.resolve(data);
+    },
+  },
+  // Got all the round 3 peer to peer messages, proceed to round  4
+  {
+    transition: async (
+      previousState: StateData,
+      userData: UserData
+    ): Promise<StateData | null> => {
+      return Promise.resolve(null);
+    },
+  },
+]);
+
 // Receive messages sent to the worker
 onmessage = async (e) => {
   const { data } = e;
   if (data.type === "party_signup") {
+    await machine.next();
+
+    /*
     // Generate the party signup entry
     const signup = await request({ kind: "party_signup" });
     const { party_signup } = signup.data;
@@ -105,6 +269,7 @@ onmessage = async (e) => {
         uuid: clientState.partySignup.uuid,
       },
     });
+    */
   }
 };
 
@@ -116,6 +281,9 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       switch (msg.data.round) {
         // Got round 1 commitments of other parties
         case "round1":
+          await machine.next({ answer: msg.data.answer });
+
+          /*
           postMessage({ type: "round1_complete", ...clientState });
 
           // Get round 2 entry using round 1 commitments
@@ -134,8 +302,12 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
               uuid: clientState.partySignup.uuid,
             },
           });
+          */
           break;
         case "round2":
+          await machine.next({ answer: msg.data.answer });
+
+          /*
           postMessage({ type: "round2_complete", ...clientState });
 
           const round3_entry = keygenRound3(
@@ -152,6 +324,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
             kind: "relay_round3",
             data: { entries: clientState.round3Entry.peer_entries },
           });
+          */
           break;
         case "round4":
           postMessage({ type: "round4_complete", ...clientState });
@@ -193,10 +366,13 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       return true;
     case "peer_answer":
       const { peer_entry } = msg.data;
-      clientState.round3PeerEntries.push(peer_entry);
+      peerState.received.push(peer_entry);
 
       // Got all the p2p answers
-      if (clientState.round3PeerEntries.length === clientState.parties - 1) {
+      if (peerState.received.length === peerState.parties - 1) {
+        console.log("got all the p2p answers!!!");
+
+        /*
         postMessage({ type: "round3_complete", ...clientState });
 
         // Must sort the entries otherwise the decryption
@@ -231,6 +407,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
             uuid: clientState.partySignup.uuid,
           },
         });
+        */
       }
 
       return true;
@@ -243,9 +420,13 @@ const { request } = makeWebSocketClient({
   url,
   onOpen: async () => {
     postMessage({ type: "server", url });
-    const res = await request({ kind: "parameters" });
-    clientState = { ...clientState, ...res.data };
-    postMessage({ type: "ready", ...clientState });
+    const stateData = await machine.next();
+    const handshake = stateData as Handshake;
+    postMessage({
+      type: "ready",
+      ...handshake.parameters,
+      ...handshake.client,
+    });
   },
   onClose: async () => {},
   onBroadcastMessage,

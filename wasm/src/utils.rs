@@ -4,10 +4,25 @@ use curv::{
     elliptic::curves::{secp256_k1::Secp256k1, Point},
 };
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    Keys, SharedKeys,
+    Keys, Parameters, SharedKeys,
 };
 use paillier::EncryptionKey;
 use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Params {
+    pub parties: u16,
+    pub threshold: u16,
+}
+
+impl From<Params> for Parameters {
+    fn from(params: Params) -> Self {
+        Self {
+            share_count: params.parties,
+            threshold: params.threshold,
+        }
+    }
+}
 
 /// The generated key data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
