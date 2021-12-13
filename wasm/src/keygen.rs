@@ -1,3 +1,9 @@
+use aes_gcm::{
+    aead::{Aead, NewAead},
+    Aes256Gcm, Nonce,
+};
+use rand::Rng;
+
 use common::{
     Entry, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
 };
@@ -12,13 +18,96 @@ use curv::{
 };
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, Parameters,
+    SharedKeys,
 };
 use paillier::EncryptionKey;
+use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-use super::utils::*;
+use super::utils::{into_p2p_entry, into_round_entry, PartyKey};
+
+const AES_KEY_BYTES_LEN: usize = 32;
+
+//use super::utils::*;
 //use super::{console_log, log};
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+struct AeadPack {
+    pub ciphertext: Vec<u8>,
+    pub nonce: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round1Entry {
+    pub party_keys: Keys,
+    pub entry: Entry,
+    pub decom_i: KeyGenDecommitMessage1,
+    pub bc_i: KeyGenBroadcastMessage1,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round2Entry {
+    pub party_keys: Keys,
+    pub entry: Entry,
+    pub decom_i: KeyGenDecommitMessage1,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round3Entry {
+    pub party_keys: Keys,
+    pub enc_keys: Vec<Vec<u8>>,
+    pub vss_scheme: VerifiableSS<Secp256k1>,
+    pub secret_shares: Vec<Scalar<Secp256k1>>,
+    pub y_sum: Point<Secp256k1>,
+    pub peer_entries: Vec<PeerEntry>,
+    pub point_vec: Vec<Point<Secp256k1>>,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round4Entry {
+    pub party_keys: Keys,
+    pub entry: Entry,
+    pub party_shares: Vec<Scalar<Secp256k1>>,
+    pub vss_scheme: VerifiableSS<Secp256k1>,
+    pub point_vec: Vec<Point<Secp256k1>>,
+    pub y_sum: Point<Secp256k1>,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round5Entry {
+    pub party_keys: Keys,
+    pub shared_keys: SharedKeys,
+    pub entry: Entry,
+    pub dlog_proof: DLogProof<Secp256k1, Sha256>,
+    pub point_vec: Vec<Point<Secp256k1>>,
+    pub vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
+    pub y_sum: Point<Secp256k1>,
+    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+}
+
+fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AeadPack {
+    // 96 bit (12 byte) unique nonce per message
+    let nonce: Vec<u8> = (1..=12)
+        .into_iter()
+        .map(|_| rand::thread_rng().gen::<u8>())
+        .collect();
+    let cipher_nonce = Nonce::from_slice(&nonce);
+    let cipher = Aes256Gcm::new(aes_gcm::Key::from_slice(key));
+    let ciphertext = cipher.encrypt(cipher_nonce, plaintext).unwrap();
+    AeadPack { ciphertext, nonce }
+}
+
+fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {
+    let cipher_nonce = Nonce::from_slice(&aead_pack.nonce);
+    let cipher = Aes256Gcm::new(aes_gcm::Key::from_slice(key));
+    cipher
+        .decrypt(cipher_nonce, aead_pack.ciphertext.as_ref())
+        .unwrap()
+}
 
 #[allow(non_snake_case)]
 #[wasm_bindgen]
@@ -33,7 +122,7 @@ pub fn keygenRound1(party_signup: JsValue) -> JsValue {
     let (bc_i, decom_i) =
         party_keys.phase1_broadcast_phase3_proof_of_correct_key();
 
-    // This is the entry that needs to be broadcast to the server
+    // This is the entry that needs to be sent to the server
     // by all parties
     let entry = into_round_entry(
         party_num_int,
@@ -51,7 +140,6 @@ pub fn keygenRound1(party_signup: JsValue) -> JsValue {
         bc_i,
     };
 
-    // Pass back to the Javascript so it can be sent to the server
     JsValue::from_serde(&round_entry).unwrap()
 }
 
@@ -72,9 +160,12 @@ pub fn keygenRound2(
     let round1_ans_vec: Vec<String> = round1_ans_vec.into_serde().unwrap();
 
     let round1_entry: Round1Entry = round1_entry.into_serde().unwrap();
-    let party_keys = round1_entry.party_keys;
-    let decom_i = round1_entry.decom_i;
-    let bc_i = round1_entry.bc_i;
+    let Round1Entry {
+        party_keys,
+        decom_i,
+        bc_i,
+        ..
+    } = round1_entry;
 
     let mut bc1_vec = round1_ans_vec
         .iter()
@@ -123,9 +214,12 @@ pub fn keygenRound3(
 
     let round2_ans_vec: Vec<String> = round2_ans_vec.into_serde().unwrap();
     let round2_entry: Round2Entry = round2_entry.into_serde().unwrap();
-    let party_keys = round2_entry.party_keys;
-    let decom_i = round2_entry.decom_i;
-    let bc1_vec = round2_entry.bc1_vec;
+    let Round2Entry {
+        party_keys,
+        decom_i,
+        bc1_vec,
+        ..
+    } = round2_entry;
 
     let mut j = 0;
     let mut point_vec: Vec<Point<Secp256k1>> = Vec::new();
@@ -217,13 +311,16 @@ pub fn keygenRound4(
 
     let round3_ans_vec: Vec<Entry> = round3_ans_vec.into_serde().unwrap();
     let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
-    let party_keys = round3_entry.party_keys;
-    let enc_keys = round3_entry.enc_keys;
-    let secret_shares = round3_entry.secret_shares;
-    let vss_scheme = round3_entry.vss_scheme;
-    let point_vec = round3_entry.point_vec;
-    let y_sum = round3_entry.y_sum;
-    let bc1_vec = round3_entry.bc1_vec;
+    let Round3Entry {
+        party_keys,
+        enc_keys,
+        secret_shares,
+        vss_scheme,
+        point_vec,
+        y_sum,
+        bc1_vec,
+        ..
+    } = round3_entry;
 
     let mut j = 0;
     let mut party_shares: Vec<Scalar<Secp256k1>> = Vec::new();
@@ -284,12 +381,15 @@ pub fn keygenRound5(
 
     let round4_ans_vec: Vec<String> = round4_ans_vec.into_serde().unwrap();
     let round4_entry: Round4Entry = round4_entry.into_serde().unwrap();
-    let party_keys = round4_entry.party_keys;
-    let party_shares = round4_entry.party_shares;
-    let vss_scheme = round4_entry.vss_scheme;
-    let point_vec = round4_entry.point_vec;
-    let y_sum = round4_entry.y_sum;
-    let bc1_vec = round4_entry.bc1_vec;
+    let Round4Entry {
+        party_keys,
+        party_shares,
+        vss_scheme,
+        point_vec,
+        y_sum,
+        bc1_vec,
+        ..
+    } = round4_entry;
 
     let mut j = 0;
     let mut vss_scheme_vec: Vec<VerifiableSS<Secp256k1>> = Vec::new();
@@ -358,13 +458,16 @@ pub fn createKey(
 
     let round5_ans_vec: Vec<String> = round5_ans_vec.into_serde().unwrap();
     let round5_entry: Round5Entry = round5_entry.into_serde().unwrap();
-    let party_keys = round5_entry.party_keys;
-    let shared_keys = round5_entry.shared_keys;
-    let dlog_proof = round5_entry.dlog_proof;
-    let point_vec = round5_entry.point_vec;
-    let vss_scheme_vec = round5_entry.vss_scheme_vec;
-    let y_sum = round5_entry.y_sum;
-    let bc1_vec = round5_entry.bc1_vec;
+    let Round5Entry {
+        party_keys,
+        shared_keys,
+        dlog_proof,
+        point_vec,
+        vss_scheme_vec,
+        y_sum,
+        bc1_vec,
+        ..
+    } = round5_entry;
 
     let mut j = 0;
     let mut dlog_proof_vec: Vec<DLogProof<Secp256k1, Sha256>> = Vec::new();

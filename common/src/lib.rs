@@ -1,6 +1,7 @@
 /// Common types shared between the server and webassembly modules.
 use serde::{Deserialize, Serialize};
 
+pub const ROUND_0: &str = "round0";
 pub const ROUND_1: &str = "round1";
 pub const ROUND_2: &str = "round2";
 pub const ROUND_3: &str = "round3";
