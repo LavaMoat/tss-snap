@@ -195,8 +195,6 @@ pub fn keygenRound2(
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygenRound3(
-    //parties: u16,
-    //threshold: u16,
     parameters: JsValue,
     party_signup: JsValue,
     round2_entry: JsValue,
@@ -209,10 +207,6 @@ pub fn keygenRound3(
         share_count: parties,
         ..
     } = params;
-    //let params = Parameters {
-    //share_count: parties,
-    //threshold,
-    //};
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -304,12 +298,18 @@ pub fn keygenRound3(
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygenRound4(
-    parties: u16,
+    parameters: JsValue,
     party_signup: JsValue,
     round3_entry: JsValue,
     round3_ans_vec: JsValue,
 ) -> JsValue {
     //console_log!("WASM: keygen round 4");
+
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
+        share_count: parties,
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -368,18 +368,18 @@ pub fn keygenRound4(
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn keygenRound5(
-    parties: u16,
-    threshold: u16,
+    parameters: JsValue,
     party_signup: JsValue,
     round4_entry: JsValue,
     round4_ans_vec: JsValue,
 ) -> JsValue {
     //console_log!("WASM: keygen round 5");
 
-    let params = Parameters {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
         share_count: parties,
-        threshold,
-    };
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -445,18 +445,18 @@ pub fn keygenRound5(
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn createKey(
-    parties: u16,
-    threshold: u16,
+    parameters: JsValue,
     party_signup: JsValue,
     round5_entry: JsValue,
     round5_ans_vec: JsValue,
 ) -> JsValue {
     //console_log!("WASM: keygen create");
 
-    let params = Parameters {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
         share_count: parties,
-        threshold,
-    };
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();

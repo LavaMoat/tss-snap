@@ -21,6 +21,7 @@ const App = (props: AppProps) => {
       setSignupVisible(false);
     };
 
+    // Handle message from the worker
     worker.onmessage = (e) => {
       const { type } = e.data;
       switch (type) {
@@ -31,9 +32,9 @@ const App = (props: AppProps) => {
           break;
         // Worker has been initialized and is ready with the server parameters
         case "ready":
-          const { conn_id, share_count, threshold } = e.data;
+          const { conn_id, parties, threshold } = e.data;
           setClientId(conn_id);
-          setParties(share_count);
+          setParties(parties);
           setThreshold(threshold);
           setSignupVisible(true);
           break;
@@ -42,28 +43,24 @@ const App = (props: AppProps) => {
           const { partySignup } = e.data;
           setPartyNumber(partySignup.number);
           break;
-        // We have Round1Entry
         case "round1_complete":
-          console.log("keygen: round 1 complete");
+          console.log("[UI] keygen: round 1 complete");
           break;
-        // We have Round2Entry
         case "round2_complete":
-          console.log("keygen: round 2 complete");
+          console.log("[UI] keygen: round 2 complete");
           break;
-        // We have Round3Entry
         case "round3_complete":
-          console.log("keygen: round 3 complete");
-        // We have Round4Entry
-        case "round4_complete":
-          console.log("keygen: round 4 complete");
+          console.log("[UI] keygen: round 3 complete");
           break;
-        // We have Round5Entry
+        case "round4_complete":
+          console.log("[UI] keygen: round 4 complete");
+          break;
         case "round5_complete":
-          console.log("keygen: round 5 complete");
+          console.log("[UI] keygen: round 5 complete");
           break;
         // We have all the key information for this party
         case "keygen_complete":
-          console.log("keygen: completed!");
+          console.log("[UI] keygen: completed!");
           break;
       }
     };
