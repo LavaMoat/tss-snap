@@ -2,13 +2,7 @@ use aes_gcm::{
     aead::{Aead, NewAead},
     Aes256Gcm, Nonce,
 };
-
-use rand::Rng;
-
-use sha2::Sha256;
-
-use paillier::EncryptionKey;
-
+use common::{Entry, PeerEntry};
 use curv::{
     cryptographic_primitives::{
         proofs::sigma_dlog::DLogProof,
@@ -16,14 +10,13 @@ use curv::{
     },
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
 };
-
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     KeyGenBroadcastMessage1, KeyGenDecommitMessage1, Keys, SharedKeys,
 };
-
+use paillier::EncryptionKey;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
-
-use common::{Entry, PeerEntry};
+use sha2::Sha256;
 
 pub const AES_KEY_BYTES_LEN: usize = 32;
 
@@ -84,11 +77,12 @@ pub struct Round5Entry {
     pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
+/// The generated key data.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PartyKey {
     pub party_keys: Keys,
     pub shared_keys: SharedKeys,
-    pub party_num_int: u16,
+    pub party_id: u16,
     pub vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
     pub paillier_key_vec: Vec<EncryptionKey>,
     pub y_sum: Point<Secp256k1>,
