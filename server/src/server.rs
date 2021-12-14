@@ -89,6 +89,9 @@ enum OutgoingKind {
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
+    /// Broadcast to parties not signing the message to let them know a sign is in progress.
+    #[serde(rename = "sign_progress")]
+    SignProgress,
     /// Answer sent to a party with the commitments from the other parties
     /// during the sign phase.
     #[serde(rename = "sign_commitment_answer")]
@@ -400,7 +403,7 @@ async fn client_request(
                             let party_num: u16 = (i + 1).try_into().unwrap();
                             let ans_vec = round_commitment_answers(
                                 state,
-                                required_num_entries.try_into().unwrap(),
+                                parties.try_into().unwrap(),
                                 party_num,
                                 round,
                                 uuid.clone(),
@@ -418,7 +421,31 @@ async fn client_request(
                                         OutgoingKind::KeygenCommitmentAnswer
                                     }
                                     IncomingKind::SignRound0 => {
-                                        OutgoingKind::SignCommitmentAnswer
+                                        let sign_parties = {
+                                            let info = state.read().await;
+                                            info.ephemeral_state
+                                                .values()
+                                                .map(|value| {
+                                                    serde_json::from_str::<u16>(
+                                                        value,
+                                                    )
+                                                    .unwrap()
+                                                })
+                                                .collect::<Vec<u16>>()
+                                        };
+
+                                        // Send to a signing party
+                                        if let Some(_) = sign_parties
+                                            .into_iter()
+                                            .find(|party| {
+                                                *party as usize == i + 1
+                                            })
+                                        {
+                                            OutgoingKind::SignCommitmentAnswer
+                                        // Send to other parties
+                                        } else {
+                                            OutgoingKind::SignProgress
+                                        }
                                     }
                                     _ => unreachable!(),
                                 };
@@ -433,6 +460,7 @@ async fn client_request(
                                         },
                                     ),
                                 };
+
                                 send_message(conn_id, &res, state).await;
                             }
                         }

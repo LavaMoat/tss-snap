@@ -419,8 +419,13 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       const { message } = msg.data;
       postMessage({ type: "sign_proposal", message });
       return true;
+    case "sign_progress":
+      // Parties that did not commit to signing should update the UI only
+      postMessage({ type: "sign_progress" });
+      return true;
     case "sign_commitment_answer":
-      console.log("got the sign commitment answer...");
+      postMessage({ type: "sign_progress" });
+      console.log("got the sign commitment answer, proceed to sign round 1");
       return true;
   }
   return false;

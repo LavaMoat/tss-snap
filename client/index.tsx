@@ -47,11 +47,10 @@ interface SignProposalProps {
 }
 
 const SignProposal = (props: SignProposalProps) => {
-  const [signButtonVisible, setSignButtonVisible] = useState(true);
+  const signButtonVisible = props.signStatusMessage === "";
 
   const onSignMessage = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    setSignButtonVisible(false);
     props.onSignMessage(props.signMessage);
   };
 
@@ -84,9 +83,7 @@ const App = (props: AppProps) => {
     const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
 
     const [signMessage, setSignMessage] = useState(null);
-    const [signStatusMessage, setSignStatusMessage] = useState(
-      "Waiting for sign threshold..."
-    );
+    const [signStatusMessage, setSignStatusMessage] = useState("");
     const [signFormVisible, setSignFormVisible] = useState(false);
     const [signProposalVisible, setSignProposalVisible] = useState(false);
 
@@ -101,6 +98,7 @@ const App = (props: AppProps) => {
     };
 
     const onSignMessage = (message: string) => {
+      setSignStatusMessage("Waiting for sign threshold...");
       worker.postMessage({ type: "sign_message", message });
     };
 
@@ -144,6 +142,10 @@ const App = (props: AppProps) => {
         case "keygen_complete":
           setSignFormVisible(true);
           console.log("[UI] keygen: completed!");
+          break;
+        case "sign_progress":
+          console.log("UI got sign progress");
+          setSignStatusMessage("Signing in progress...");
           break;
         case "sign_proposal":
           const { message } = e.data;

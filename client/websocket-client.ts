@@ -2,6 +2,7 @@ type BroadcastKind =
   | "keygen_commitment_answer"
   | "keygen_peer_answer"
   | "sign_proposal"
+  | "sign_progress"
   | "sign_commitment_answer";
 
 export interface BroadcastMessage {
