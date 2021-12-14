@@ -18,8 +18,6 @@ use warp::Filter;
 
 use std::convert::TryInto;
 
-use super::state_machine::*;
-
 use common::{
     Entry, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
     ROUND_4, ROUND_5,
@@ -27,9 +25,6 @@ use common::{
 
 /// Global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
-
-static PHASES: Lazy<Vec<Phase>> =
-    Lazy::new(|| vec![Phase::Standby, Phase::Keygen, Phase::Signing]);
 
 static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
@@ -116,16 +111,12 @@ enum OutgoingData {
 }
 
 #[derive(Debug)]
-struct State<'a> {
+struct State {
     /// Initial parameters.
     params: Parameters,
     /// Connected clients.
     clients:
         HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
-    /// Current state machine phase.
-    phase: Phase,
-    /// The state machine.
-    machine: PhaseIterator<'a>,
     /// Current keygen signup state.
     party_signup: PartySignup,
     /// Map of key / values sent to the server by clients for ephemeral states
@@ -140,11 +131,6 @@ impl Server {
         addr: impl Into<SocketAddr>,
         params: Parameters,
     ) -> Result<()> {
-        let machine = PhaseIterator {
-            phases: &PHASES,
-            index: 0,
-        };
-
         let state = Arc::new(RwLock::new(State {
             params,
             clients: HashMap::new(),
@@ -153,8 +139,6 @@ impl Server {
                 uuid: Uuid::new_v4().to_string(),
             },
             ephemeral_state: Default::default(),
-            phase: Default::default(),
-            machine,
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -168,7 +152,7 @@ impl Server {
     }
 }
 
-async fn client_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
+async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     let conn_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
 
     info!("connected (uid={})", conn_id);
@@ -215,7 +199,7 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State<'_>>>) {
 async fn client_incoming_message(
     conn_id: usize,
     msg: Message,
-    state: &Arc<RwLock<State<'_>>>,
+    state: &Arc<RwLock<State>>,
 ) {
     let msg = if let Ok(s) = msg.to_str() {
         s
@@ -233,7 +217,7 @@ async fn client_incoming_message(
 async fn client_request(
     conn_id: usize,
     req: Incoming,
-    state: &Arc<RwLock<State<'_>>>,
+    state: &Arc<RwLock<State>>,
 ) {
     let info = state.read().await;
     trace!("processing request {:#?}", req);
@@ -422,7 +406,7 @@ async fn client_request(
 async fn send_message(
     conn_id: usize,
     res: &Outgoing,
-    state: &Arc<RwLock<State<'_>>>,
+    state: &Arc<RwLock<State>>,
 ) {
     trace!("send_message (uid={})", conn_id);
     if let Some((tx, _)) = state.read().await.clients.get(&conn_id) {
@@ -451,7 +435,7 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State<'_>>>) {
 */
 
 async fn round_commitment_answers(
-    state: &Arc<RwLock<State<'_>>>,
+    state: &Arc<RwLock<State>>,
     party_num: u16,
     round: &str,
     sender_uuid: String,
@@ -472,14 +456,14 @@ async fn round_commitment_answers(
     ans_vec
 }
 
-async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State<'_>>>) {
+async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     info!("disconnected (uid={})", conn_id);
     // Stream closed up, so remove from the client list
     state.write().await.clients.remove(&conn_id);
 }
 
 async fn conn_id_for_party(
-    state: &Arc<RwLock<State<'_>>>,
+    state: &Arc<RwLock<State>>,
     party_num: u16,
 ) -> Option<usize> {
     let info = state.read().await;
