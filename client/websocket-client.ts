@@ -1,4 +1,4 @@
-type BroadcastKind = "commitment_answer" | "peer_answer";
+type BroadcastKind = "commitment_answer" | "peer_answer" | "sign_proposal";
 
 export interface BroadcastMessage {
   kind: BroadcastKind;
@@ -13,6 +13,7 @@ type RequestKind =
   | "keygen_round3_relay_peers"
   | "keygen_round4"
   | "keygen_round5"
+  | "sign_proposal"
   | "sign_round0";
 
 export interface RequestMessage {
@@ -61,6 +62,11 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
     }
   };
 
+  // Send a message without any expectation of a reply.
+  function send(message: RequestMessage): void {
+    websocket.send(JSON.stringify(message));
+  }
+
   // Wrap a websocket request in a promise that expects
   // a response from the server
   function request(message: RequestMessage): Promise<ResponseMessage> {
@@ -73,12 +79,13 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
       messageRequests.set(id, { resolve, reject });
     });
     message.id = id;
-    websocket.send(JSON.stringify(message));
+    send(message);
     return p;
   }
 
   return {
     websocket,
     request,
+    send,
   };
 };

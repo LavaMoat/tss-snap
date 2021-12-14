@@ -373,6 +373,9 @@ onmessage = async (e) => {
   const { data } = e;
   if (data.type === "party_signup") {
     await keygen.next();
+  } else if (data.type === "sign_proposal") {
+    const { message } = data;
+    send({ kind: "sign_proposal", data: { message } });
   } else if (data.type === "sign_message") {
     const { message } = data;
     await sign.next({ message, keygenResult });
@@ -412,12 +415,16 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       }
 
       return true;
+    case "sign_proposal":
+      const { message } = msg.data;
+      postMessage({ type: "sign_proposal", message });
+      return true;
   }
   return false;
 };
 
 const url = "ws://localhost:3030/demo";
-const { request } = makeWebSocketClient({
+const { send, request } = makeWebSocketClient({
   url,
   onOpen: async () => {
     postMessage({ type: "server", url });

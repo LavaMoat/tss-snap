@@ -31,7 +31,7 @@ static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 /// Incoming message from a websocket client.
 #[derive(Debug, Deserialize)]
 struct Incoming {
-    id: usize,
+    id: Option<usize>,
     kind: IncomingKind,
     data: Option<IncomingData>,
 }
@@ -62,6 +62,9 @@ enum IncomingKind {
     KeygenRound5,
 
     // Start the signing process by sharing party identifiers
+    #[serde(rename = "sign_proposal")]
+    SignProposal,
+    // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_round0")]
     SignRound0,
 }
@@ -71,6 +74,7 @@ enum IncomingKind {
 enum IncomingData {
     Entry { entry: Entry, uuid: String },
     PeerEntries { entries: Vec<PeerEntry> },
+    Message { message: String },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -81,6 +85,9 @@ enum OutgoingKind {
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_answer")]
     PeerAnswer,
+    /// Broadcast to propose a message to sign.
+    #[serde(rename = "sign_proposal")]
+    SignProposal,
 }
 
 #[derive(Debug, Serialize)]
@@ -111,6 +118,9 @@ enum OutgoingData {
     PeerAnswer {
         round: String,
         peer_entry: PeerEntry,
+    },
+    Message {
+        message: String,
     },
 }
 
@@ -233,7 +243,7 @@ async fn client_request(
             drop(info);
 
             Some(Outgoing {
-                id: Some(req.id),
+                id: req.id,
                 kind: None,
                 data: Some(OutgoingData::Parameters {
                     parties,
@@ -267,10 +277,34 @@ async fn client_request(
             conn_info.1 = Some(party_signup.clone());
 
             Some(Outgoing {
-                id: Some(req.id),
+                id: req.id,
                 kind: None,
                 data: Some(OutgoingData::KeygenSignup { party_signup }),
             })
+        }
+        IncomingKind::SignProposal => {
+            if let IncomingData::Message { message } =
+                req.data.as_ref().unwrap()
+            {
+                drop(info);
+
+                let msg = Outgoing {
+                    id: None,
+                    kind: Some(OutgoingKind::SignProposal),
+                    data: Some(OutgoingData::Message {
+                        message: message.clone(),
+                    }),
+                };
+
+                let lock = BROADCAST_LOCK.try_lock();
+                if let Ok(_) = lock {
+                    broadcast_message(&msg, state).await;
+                }
+
+                None
+            } else {
+                None
+            }
         }
         // Store the round 1 Entry
         IncomingKind::KeygenRound1
@@ -291,7 +325,7 @@ async fn client_request(
 
                 // Send an ACK so the client promise will resolve
                 Some(Outgoing {
-                    id: Some(req.id),
+                    id: req.id,
                     kind: None,
                     data: None,
                 })
@@ -302,7 +336,7 @@ async fn client_request(
         IncomingKind::KeygenRound3RelayPeers => {
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
-                id: Some(req.id),
+                id: req.id,
                 kind: None,
                 data: None,
             })
@@ -439,9 +473,8 @@ async fn send_message(
     }
 }
 
-/*
 /// Broadcast a message to all clients.
-async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State<'_>>>) {
+async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
     let info = state.read().await;
     let clients: Vec<usize> = info.clients.keys().cloned().collect();
     drop(info);
@@ -449,7 +482,6 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State<'_>>>) {
         send_message(conn_id, res, state).await;
     }
 }
-*/
 
 async fn round_commitment_answers(
     state: &Arc<RwLock<State>>,

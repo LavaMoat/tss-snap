@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 
-interface AppProps {
-  worker: Worker;
-}
-
 interface SignFormProps {
   onSubmit: (message: string) => void;
 }
@@ -28,18 +24,45 @@ const SignForm = (props: SignFormProps) => {
   };
 
   return (
-    <form onSubmit={onSignFormSubmit}>
-      <textarea
-        placeholder="Enter a message to sign"
-        rows={8}
-        name="message"
-        onChange={onMessageChange}
-        value={message}
-      ></textarea>
-      <input type="submit" name="Sign" value="Sign" />
-    </form>
+    <>
+      <h3>Propose a message to sign</h3>
+      <form onSubmit={onSignFormSubmit}>
+        <textarea
+          placeholder="Enter a message to sign"
+          rows={8}
+          name="message"
+          onChange={onMessageChange}
+          value={message}
+        ></textarea>
+        <input type="submit" name="Sign" value="Submit Proposal" />
+      </form>
+    </>
   );
 };
+
+interface SignProposalProps {
+  signMessage: string;
+  onSignMessage: (message: string) => void;
+}
+
+const SignProposal = (props: SignProposalProps) => {
+  const onSignMessage = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    props.onSignMessage(props.signMessage);
+  };
+
+  return (
+    <>
+      <h3>Message to sign!</h3>
+      <pre>{props.signMessage}</pre>
+      <button onClick={onSignMessage}>Sign</button>
+    </>
+  );
+};
+
+interface AppProps {
+  worker: Worker;
+}
 
 const App = (props: AppProps) => {
   const { worker } = props;
@@ -51,7 +74,10 @@ const App = (props: AppProps) => {
     const [partyNumber, setPartyNumber] = useState(null);
 
     const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
+
+    const [signMessage, setSignMessage] = useState(null);
     const [signFormVisible, setSignFormVisible] = useState(false);
+    const [signProposalVisible, setSignProposalVisible] = useState(false);
 
     const onKeygenPartySignup = () => {
       worker.postMessage({ type: "party_signup" });
@@ -59,8 +85,12 @@ const App = (props: AppProps) => {
     };
 
     const onSignFormSubmit = (message: string) => {
-      worker.postMessage({ type: "sign_message", message });
+      worker.postMessage({ type: "sign_proposal", message });
       setSignFormVisible(false);
+    };
+
+    const onSignMessage = (message: string) => {
+      worker.postMessage({ type: "sign_message", message });
     };
 
     // Handle message from the worker
@@ -80,7 +110,6 @@ const App = (props: AppProps) => {
           setThreshold(threshold);
           setKeygenSignupVisible(true);
           break;
-        // We have PartySignup
         case "party_signup":
           const { partySignup } = e.data;
           setPartyNumber(partySignup.number);
@@ -105,6 +134,12 @@ const App = (props: AppProps) => {
           setSignFormVisible(true);
           console.log("[UI] keygen: completed!");
           break;
+        case "sign_proposal":
+          const { message } = e.data;
+          setSignMessage(message);
+          setSignFormVisible(false);
+          setSignProposalVisible(true);
+          break;
       }
     };
 
@@ -120,6 +155,12 @@ const App = (props: AppProps) => {
           <button onClick={onKeygenPartySignup}>Keygen Signup</button>
         ) : null}
         {signFormVisible ? <SignForm onSubmit={onSignFormSubmit} /> : null}
+        {signProposalVisible ? (
+          <SignProposal
+            signMessage={signMessage}
+            onSignMessage={onSignMessage}
+          />
+        ) : null}
       </>
     );
   } else {
