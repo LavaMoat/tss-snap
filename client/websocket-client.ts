@@ -1,4 +1,8 @@
-type BroadcastKind = "commitment_answer" | "peer_answer" | "sign_proposal";
+type BroadcastKind =
+  | "keygen_commitment_answer"
+  | "keygen_peer_answer"
+  | "sign_proposal"
+  | "sign_commitment_answer";
 
 export interface BroadcastMessage {
   kind: BroadcastKind;

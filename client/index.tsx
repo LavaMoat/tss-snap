@@ -43,11 +43,15 @@ const SignForm = (props: SignFormProps) => {
 interface SignProposalProps {
   signMessage: string;
   onSignMessage: (message: string) => void;
+  signStatusMessage: string;
 }
 
 const SignProposal = (props: SignProposalProps) => {
+  const [signButtonVisible, setSignButtonVisible] = useState(true);
+
   const onSignMessage = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
+    setSignButtonVisible(false);
     props.onSignMessage(props.signMessage);
   };
 
@@ -55,7 +59,11 @@ const SignProposal = (props: SignProposalProps) => {
     <>
       <h3>Message to sign!</h3>
       <pre>{props.signMessage}</pre>
-      <button onClick={onSignMessage}>Sign</button>
+      {signButtonVisible ? (
+        <button onClick={onSignMessage}>Sign</button>
+      ) : (
+        <p>{props.signStatusMessage}</p>
+      )}
     </>
   );
 };
@@ -76,6 +84,9 @@ const App = (props: AppProps) => {
     const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
 
     const [signMessage, setSignMessage] = useState(null);
+    const [signStatusMessage, setSignStatusMessage] = useState(
+      "Waiting for sign threshold..."
+    );
     const [signFormVisible, setSignFormVisible] = useState(false);
     const [signProposalVisible, setSignProposalVisible] = useState(false);
 
@@ -158,6 +169,7 @@ const App = (props: AppProps) => {
         {signProposalVisible ? (
           <SignProposal
             signMessage={signMessage}
+            signStatusMessage={signStatusMessage}
             onSignMessage={onSignMessage}
           />
         ) : null}

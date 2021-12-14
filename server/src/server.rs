@@ -79,15 +79,20 @@ enum IncomingData {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
-    /// Answer sent to a party with the commitments from the other parties.
-    #[serde(rename = "commitment_answer")]
-    CommitmentAnswer,
+    /// Answer sent to a party with the commitments from the other parties
+    /// during the keygen phase.
+    #[serde(rename = "keygen_commitment_answer")]
+    KeygenCommitmentAnswer,
     /// Relayed peer to peer answer.
-    #[serde(rename = "peer_answer")]
+    #[serde(rename = "keygen_peer_answer")]
     PeerAnswer,
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
+    /// Answer sent to a party with the commitments from the other parties
+    /// during the sign phase.
+    #[serde(rename = "sign_commitment_answer")]
+    SignCommitmentAnswer,
 }
 
 #[derive(Debug, Serialize)]
@@ -395,6 +400,7 @@ async fn client_request(
                             let party_num: u16 = (i + 1).try_into().unwrap();
                             let ans_vec = round_commitment_answers(
                                 state,
+                                required_num_entries.try_into().unwrap(),
                                 party_num,
                                 round,
                                 uuid.clone(),
@@ -404,9 +410,22 @@ async fn client_request(
                             if let Some(conn_id) =
                                 conn_id_for_party(state, party_num).await
                             {
+                                let kind = match req.kind {
+                                    IncomingKind::KeygenRound1
+                                    | IncomingKind::KeygenRound2
+                                    | IncomingKind::KeygenRound4
+                                    | IncomingKind::KeygenRound5 => {
+                                        OutgoingKind::KeygenCommitmentAnswer
+                                    }
+                                    IncomingKind::SignRound0 => {
+                                        OutgoingKind::SignCommitmentAnswer
+                                    }
+                                    _ => unreachable!(),
+                                };
+
                                 let res = Outgoing {
                                     id: None,
-                                    kind: Some(OutgoingKind::CommitmentAnswer),
+                                    kind: Some(kind),
                                     data: Some(
                                         OutgoingData::CommitmentAnswer {
                                             round: round.to_string(),
@@ -485,13 +504,13 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
 
 async fn round_commitment_answers(
     state: &Arc<RwLock<State>>,
+    parties: u16,
     party_num: u16,
     round: &str,
     sender_uuid: String,
 ) -> Vec<String> {
-    let mut ans_vec = Vec::new();
     let info = state.read().await;
-    let parties = info.params.parties;
+    let mut ans_vec = Vec::new();
     for i in 1..=parties {
         if i != party_num {
             let key = format!("{}-{}-{}", i, round, sender_uuid);

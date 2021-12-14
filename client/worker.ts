@@ -386,7 +386,7 @@ onmessage = async (e) => {
 // without a client request
 const onBroadcastMessage = async (msg: BroadcastMessage) => {
   switch (msg.kind) {
-    case "commitment_answer":
+    case "keygen_commitment_answer":
       switch (msg.data.round) {
         case "round1":
           await keygen.next({ answer: msg.data.answer });
@@ -405,7 +405,7 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           break;
       }
       return true;
-    case "peer_answer":
+    case "keygen_peer_answer":
       const { peer_entry } = msg.data;
       peerState.received.push(peer_entry);
 
@@ -418,6 +418,9 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
     case "sign_proposal":
       const { message } = msg.data;
       postMessage({ type: "sign_proposal", message });
+      return true;
+    case "sign_commitment_answer":
+      console.log("got the sign commitment answer...");
       return true;
   }
   return false;
