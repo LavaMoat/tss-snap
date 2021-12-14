@@ -8,11 +8,11 @@ export interface BroadcastMessage {
 type RequestKind =
   | "parameters"
   | "party_signup"
-  | "set_round1_entry"
-  | "set_round2_entry"
-  | "relay_round3"
-  | "set_round4_entry"
-  | "set_round5_entry";
+  | "keygen_round1"
+  | "keygen_round2"
+  | "keygen_round3_relay_peers"
+  | "keygen_round4"
+  | "keygen_round5";
 
 export interface RequestMessage {
   id?: number;

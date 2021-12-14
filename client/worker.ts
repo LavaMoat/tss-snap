@@ -89,12 +89,12 @@ interface PeerState {
 // see the rust `PartyKey` type for details.
 interface PartyKey {}
 
-type UserData = BroadcastAnswer;
+type TransitionData = BroadcastAnswer;
 type StateData = Handshake | KeygenRoundEntry<RoundEntry> | PartyKey;
 
 let peerState: PeerState = { parties: 0, received: [] };
 
-const keygen = new StateMachine<StateData, UserData>([
+const keygen = new StateMachine<StateData, TransitionData>([
   // Handshake to get server parameters and client identifier
   {
     name: "HANDSHAKE",
@@ -126,7 +126,7 @@ const keygen = new StateMachine<StateData, UserData>([
 
       // Send the round 1 entry to the server
       request({
-        kind: "set_round1_entry",
+        kind: "keygen_round1",
         data: {
           entry: roundEntry.entry,
           uuid: partySignup.uuid,
@@ -142,12 +142,12 @@ const keygen = new StateMachine<StateData, UserData>([
     name: "KEYGEN_ROUND_2",
     transition: async (
       previousState: StateData,
-      userData: UserData
+      transitionData: TransitionData
     ): Promise<StateData | null> => {
       postMessage({ type: "round1_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = userData as BroadcastAnswer;
+      const { answer } = transitionData as BroadcastAnswer;
 
       // Get round 2 entry using round 1 commitments
       const roundEntry = keygenRound2(
@@ -158,7 +158,7 @@ const keygen = new StateMachine<StateData, UserData>([
 
       // Send the round 2 entry to the server
       request({
-        kind: "set_round2_entry",
+        kind: "keygen_round2",
         data: {
           entry: roundEntry.entry,
           uuid: keygenRoundEntry.partySignup.uuid,
@@ -174,12 +174,12 @@ const keygen = new StateMachine<StateData, UserData>([
     name: "KEYGEN_ROUND_3",
     transition: async (
       previousState: StateData,
-      userData: UserData
+      transitionData: TransitionData
     ): Promise<StateData | null> => {
       postMessage({ type: "round2_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = userData as BroadcastAnswer;
+      const { answer } = transitionData as BroadcastAnswer;
 
       const roundEntry = keygenRound3(
         parameters,
@@ -190,7 +190,7 @@ const keygen = new StateMachine<StateData, UserData>([
 
       // Send the round 3 entry to the server
       request({
-        kind: "relay_round3",
+        kind: "keygen_round3_relay_peers",
         data: { entries: roundEntry.peer_entries },
       });
 
@@ -203,7 +203,7 @@ const keygen = new StateMachine<StateData, UserData>([
     name: "KEYGEN_ROUND_4",
     transition: async (
       previousState: StateData,
-      userData: UserData
+      transitionData: TransitionData
     ): Promise<StateData | null> => {
       postMessage({ type: "round3_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
@@ -231,7 +231,7 @@ const keygen = new StateMachine<StateData, UserData>([
 
       // Send the round 4 entry to the server
       request({
-        kind: "set_round4_entry",
+        kind: "keygen_round4",
         data: {
           entry: roundEntry.entry,
           uuid: partySignup.uuid,
@@ -247,12 +247,12 @@ const keygen = new StateMachine<StateData, UserData>([
     name: "KEYGEN_ROUND_5",
     transition: async (
       previousState: StateData,
-      userData: UserData
+      transitionData: TransitionData
     ): Promise<StateData | null> => {
       postMessage({ type: "round4_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = userData as BroadcastAnswer;
+      const { answer } = transitionData as BroadcastAnswer;
 
       const roundEntry = keygenRound5(
         parameters,
@@ -263,7 +263,7 @@ const keygen = new StateMachine<StateData, UserData>([
 
       // Send the round 5 entry to the server
       request({
-        kind: "set_round5_entry",
+        kind: "keygen_round5",
         data: {
           entry: roundEntry.entry,
           uuid: partySignup.uuid,
@@ -279,12 +279,12 @@ const keygen = new StateMachine<StateData, UserData>([
     name: "KEYGEN_FINALIZE",
     transition: async (
       previousState: StateData,
-      userData: UserData
+      transitionData: TransitionData
     ): Promise<StateData | null> => {
       postMessage({ type: "round5_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = userData as BroadcastAnswer;
+      const { answer } = transitionData as BroadcastAnswer;
 
       const partyKey = createKey(
         parameters,

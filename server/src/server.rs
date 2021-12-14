@@ -46,20 +46,20 @@ enum IncomingKind {
     PartySignup,
     /// All clients send this message once `party_signup` is complete
     /// to store the round 1 entry
-    #[serde(rename = "set_round1_entry")]
-    SetRound1Entry,
+    #[serde(rename = "keygen_round1")]
+    KeygenRound1,
     /// Store the round 2 entry sent by each client.
-    #[serde(rename = "set_round2_entry")]
-    SetRound2Entry,
+    #[serde(rename = "keygen_round2")]
+    KeygenRound2,
     /// Relay round 3 entries peer 2 peer
-    #[serde(rename = "relay_round3")]
-    RelayRound3,
+    #[serde(rename = "keygen_round3_relay_peers")]
+    KeygenRound3RelayPeers,
     /// Store the round 4 entry sent by each client.
-    #[serde(rename = "set_round4_entry")]
-    SetRound4Entry,
+    #[serde(rename = "keygen_round4")]
+    KeygenRound4,
     /// Store the round 5 entry sent by each client.
-    #[serde(rename = "set_round5_entry")]
-    SetRound5Entry,
+    #[serde(rename = "keygen_round5")]
+    KeygenRound5,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -269,10 +269,10 @@ async fn client_request(
             })
         }
         // Store the round 1 Entry
-        IncomingKind::SetRound1Entry
-        | IncomingKind::SetRound2Entry
-        | IncomingKind::SetRound4Entry
-        | IncomingKind::SetRound5Entry => {
+        IncomingKind::KeygenRound1
+        | IncomingKind::KeygenRound2
+        | IncomingKind::KeygenRound4
+        | IncomingKind::KeygenRound5 => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -294,7 +294,7 @@ async fn client_request(
                 None
             }
         }
-        IncomingKind::RelayRound3 => {
+        IncomingKind::KeygenRound3RelayPeers => {
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
                 id: Some(req.id),
@@ -310,20 +310,20 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::SetRound1Entry
-        | IncomingKind::SetRound2Entry
-        | IncomingKind::SetRound4Entry
-        | IncomingKind::SetRound5Entry => {
+        IncomingKind::KeygenRound1
+        | IncomingKind::KeygenRound2
+        | IncomingKind::KeygenRound4
+        | IncomingKind::KeygenRound5 => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let num_keys = info.ephemeral_state.len();
             drop(info);
 
             let round = match req.kind {
-                IncomingKind::SetRound1Entry => ROUND_1,
-                IncomingKind::SetRound2Entry => ROUND_2,
-                IncomingKind::SetRound4Entry => ROUND_4,
-                IncomingKind::SetRound5Entry => ROUND_5,
+                IncomingKind::KeygenRound1 => ROUND_1,
+                IncomingKind::KeygenRound2 => ROUND_2,
+                IncomingKind::KeygenRound4 => ROUND_4,
+                IncomingKind::KeygenRound5 => ROUND_5,
                 _ => unreachable!(),
             };
 
@@ -378,7 +378,7 @@ async fn client_request(
                 }
             }
         }
-        IncomingKind::RelayRound3 => {
+        IncomingKind::KeygenRound3RelayPeers => {
             if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
                 for entry in entries {
                     if let Some(conn_id) =
