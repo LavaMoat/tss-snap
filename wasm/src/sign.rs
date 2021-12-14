@@ -71,6 +71,8 @@ pub fn signRound1(
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
 
+    console_log!("WASM: party_num_int {:#?}", party_num_int);
+
     let PartyKey {
         party_keys,
         party_id,
@@ -82,9 +84,21 @@ pub fn signRound1(
     let round0_ans_vec: Vec<String> = round0_ans_vec.into_serde().unwrap();
     console_log!("WASM: Got round0_ans_vec {:#?}", round0_ans_vec);
 
+    /*
+    let mut signers_vec: Vec<u16> = round0_ans_vec
+        .iter()
+        .map(|s| serde_json::from_str::<u16>(s).unwrap() - 1).collect();
+    signers_vec.push(party_id - 1);
+    //signers_vec.sort();
+
+    console_log!("WASM: Got signers_vec {:#?}", signers_vec);
+    console_log!("WASM: Got party index {:#?}", party_num_int - 1);
+    */
+
     let mut j = 0;
     let mut signers_vec: Vec<u16> = Vec::new();
     for i in 1..=threshold + 1 {
+        console_log!("WASM: iterating {:#?}", i);
         if i == party_num_int {
             signers_vec.push(party_id - 1);
         } else {
@@ -113,7 +127,7 @@ pub fn signRound1(
     let entry = into_round_entry(
         party_num_int,
         ROUND_1,
-        serde_json::to_string(&(com.clone(), m_a_k)).unwrap(),
+        serde_json::to_string(&(com, m_a_k)).unwrap(),
         uuid,
     );
 

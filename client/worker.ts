@@ -461,10 +461,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
             "got the sign commitment answer, proceed to sign round 1",
             msg.data.answer
           );
-          //await sign.next({ answer: msg.data.answer });
+          await sign.next({ answer: msg.data.answer });
           break;
         case "round1":
-          console.log("GOT SIGN ROUND 1 COMMITMENT ANSWER");
+          console.log("GOT SIGN ROUND 1 COMMITMENT ANSWER", msg.data.answer);
           //await sign.next({ answer: msg.data.answer });
           break;
       }

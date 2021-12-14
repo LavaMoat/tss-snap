@@ -424,7 +424,12 @@ async fn client_request(
                             )
                             .await;
 
-                            //println!("Got answers for reply {:#?}", ans_vec);
+                            if round == ROUND_0 {
+                                println!(
+                                    "Got answers for reply {} {:#?}",
+                                    party_num, ans_vec
+                                );
+                            }
 
                             if let Some(conn_id) =
                                 conn_id_for_party(state, party_num).await
