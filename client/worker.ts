@@ -6,6 +6,7 @@ import init, {
   keygenRound4,
   keygenRound5,
   createKey,
+  signRound0,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -87,6 +88,19 @@ interface KeygenRoundEntry<T> {
   roundEntry: T;
 }
 
+// Type used to start the signing process.
+interface SignInit {
+  message: string;
+  keygenResult: KeygenResult;
+}
+
+// Type to pass through the client state machine during message signing.
+interface SignRoundEntry<T> {
+  message: string;
+  keygenResult: KeygenResult;
+  roundEntry: T;
+}
+
 // Type received from the server once all parties have commited
 // to a round; contains the answers from the other parties.
 interface BroadcastAnswer {
@@ -113,8 +127,8 @@ interface KeygenResult {
 
 type KeygenTransition = BroadcastAnswer;
 type KeygenState = Handshake | KeygenRoundEntry<RoundEntry> | KeygenResult;
-type SignState = KeygenRoundEntry<RoundEntry>;
-type SignTransition = BroadcastAnswer;
+type SignState = SignRoundEntry<RoundEntry>;
+type SignTransition = SignInit | BroadcastAnswer;
 
 let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
@@ -332,15 +346,24 @@ const sign = new StateMachine<SignState, SignTransition>([
   // Start the signing process.
   {
     name: "SIGN_ROUND_0",
-    transition: async (previousState: SignState): Promise<SignState | null> => {
-      //const res = await request({ kind: "parameters" });
-      //const parameters = {
-      //parties: res.data.parties,
-      //threshold: res.data.threshold,
-      //};
-      //peerState.parties = res.data.parties;
-      //const client = { conn_id: res.data.conn_id };
-      return Promise.resolve(null);
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const { message, keygenResult } = transitionData as SignInit;
+      const { partySignup, key } = keygenResult;
+      const roundEntry = signRound0(partySignup, key);
+
+      // Send the round 0 entry to the server
+      request({
+        kind: "sign_round0",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      return Promise.resolve({ message, keygenResult, roundEntry });
     },
   },
 ]);
@@ -351,8 +374,8 @@ onmessage = async (e) => {
   if (data.type === "party_signup") {
     await keygen.next();
   } else if (data.type === "sign_message") {
-    console.log("Got message to sign...", data.message);
-    console.log("Got message to sign...", keygenResult);
+    const { message } = data;
+    await sign.next({ message, keygenResult });
   }
 };
 
