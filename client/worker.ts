@@ -80,7 +80,7 @@ interface PeerEntry {
   entry: Entry;
 }
 
-// Type pass through the client state machine during key generation.
+// Type to pass through the client state machine during key generation.
 interface KeygenRoundEntry<T> {
   parameters: Parameters;
   partySignup: PartySignup;
@@ -111,16 +111,21 @@ interface KeygenResult {
   key: PartyKey;
 }
 
-type TransitionData = BroadcastAnswer;
-type StateData = Handshake | KeygenRoundEntry<RoundEntry> | KeygenResult;
+type KeygenTransition = BroadcastAnswer;
+type KeygenState = Handshake | KeygenRoundEntry<RoundEntry> | KeygenResult;
+type SignState = KeygenRoundEntry<RoundEntry>;
+type SignTransition = BroadcastAnswer;
 
 let peerState: PeerState = { parties: 0, received: [] };
+let keygenResult: KeygenResult = null;
 
-const keygen = new StateMachine<StateData, TransitionData>([
+const keygen = new StateMachine<KeygenState, KeygenTransition>([
   // Handshake to get server parameters and client identifier
   {
     name: "HANDSHAKE",
-    transition: async (previousState: StateData): Promise<StateData | null> => {
+    transition: async (
+      previousState: KeygenState
+    ): Promise<KeygenState | null> => {
       const res = await request({ kind: "parameters" });
       const parameters = {
         parties: res.data.parties,
@@ -134,7 +139,9 @@ const keygen = new StateMachine<StateData, TransitionData>([
   // Generate the PartySignup and keygen round 1 entry
   {
     name: "KEYGEN_ROUND_1",
-    transition: async (previousState: StateData): Promise<StateData | null> => {
+    transition: async (
+      previousState: KeygenState
+    ): Promise<KeygenState | null> => {
       const handshake = previousState as Handshake;
       const { parameters } = handshake;
       const signup = await request({ kind: "party_signup" });
@@ -163,9 +170,9 @@ const keygen = new StateMachine<StateData, TransitionData>([
   {
     name: "KEYGEN_ROUND_2",
     transition: async (
-      previousState: StateData,
-      transitionData: TransitionData
-    ): Promise<StateData | null> => {
+      previousState: KeygenState,
+      transitionData: KeygenTransition
+    ): Promise<KeygenState | null> => {
       postMessage({ type: "round1_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
@@ -195,9 +202,9 @@ const keygen = new StateMachine<StateData, TransitionData>([
   {
     name: "KEYGEN_ROUND_3",
     transition: async (
-      previousState: StateData,
-      transitionData: TransitionData
-    ): Promise<StateData | null> => {
+      previousState: KeygenState,
+      transitionData: KeygenTransition
+    ): Promise<KeygenState | null> => {
       postMessage({ type: "round2_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
@@ -224,9 +231,9 @@ const keygen = new StateMachine<StateData, TransitionData>([
   {
     name: "KEYGEN_ROUND_4",
     transition: async (
-      previousState: StateData,
-      transitionData: TransitionData
-    ): Promise<StateData | null> => {
+      previousState: KeygenState,
+      transitionData: KeygenTransition
+    ): Promise<KeygenState | null> => {
       postMessage({ type: "round3_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
@@ -268,9 +275,9 @@ const keygen = new StateMachine<StateData, TransitionData>([
   {
     name: "KEYGEN_ROUND_5",
     transition: async (
-      previousState: StateData,
-      transitionData: TransitionData
-    ): Promise<StateData | null> => {
+      previousState: KeygenState,
+      transitionData: KeygenTransition
+    ): Promise<KeygenState | null> => {
       postMessage({ type: "round4_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
@@ -300,9 +307,9 @@ const keygen = new StateMachine<StateData, TransitionData>([
   {
     name: "KEYGEN_FINALIZE",
     transition: async (
-      previousState: StateData,
-      transitionData: TransitionData
-    ): Promise<StateData | null> => {
+      previousState: KeygenState,
+      transitionData: KeygenTransition
+    ): Promise<KeygenState | null> => {
       postMessage({ type: "round5_complete" });
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
@@ -321,11 +328,11 @@ const keygen = new StateMachine<StateData, TransitionData>([
 ]);
 
 // State machine for signing a proposal
-const sign = new StateMachine<StateData, TransitionData>([
+const sign = new StateMachine<SignState, SignTransition>([
   // Start the signing process.
   {
     name: "SIGN_ROUND_0",
-    transition: async (previousState: StateData): Promise<StateData | null> => {
+    transition: async (previousState: SignState): Promise<SignState | null> => {
       //const res = await request({ kind: "parameters" });
       //const parameters = {
       //parties: res.data.parties,
@@ -343,6 +350,9 @@ onmessage = async (e) => {
   const { data } = e;
   if (data.type === "party_signup") {
     await keygen.next();
+  } else if (data.type === "sign_message") {
+    console.log("Got message to sign...", data.message);
+    console.log("Got message to sign...", keygenResult);
   }
 };
 
@@ -362,7 +372,9 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           await keygen.next({ answer: msg.data.answer });
           break;
         case "round5":
-          const keygenResult = await keygen.next({ answer: msg.data.answer });
+          keygenResult = (await keygen.next({
+            answer: msg.data.answer,
+          })) as KeygenResult;
           postMessage({ type: "keygen_complete" });
           break;
       }

@@ -5,6 +5,42 @@ interface AppProps {
   worker: Worker;
 }
 
+interface SignFormProps {
+  onSubmit: (message: string) => void;
+}
+
+const SignForm = (props: SignFormProps) => {
+  const [message, setMessage] = useState("");
+
+  const onSignFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (message.trim() === "") {
+      return alert("Please enter a message to sign");
+    }
+
+    props.onSubmit(message);
+  };
+
+  const onMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setMessage(event.currentTarget.value);
+  };
+
+  return (
+    <form onSubmit={onSignFormSubmit}>
+      <textarea
+        placeholder="Enter a message to sign"
+        rows={8}
+        name="message"
+        onChange={onMessageChange}
+        value={message}
+      ></textarea>
+      <input type="submit" name="Sign" value="Sign" />
+    </form>
+  );
+};
+
 const App = (props: AppProps) => {
   const { worker } = props;
   if (worker) {
@@ -14,11 +50,17 @@ const App = (props: AppProps) => {
     const [threshold, setThreshold] = useState(null);
     const [partyNumber, setPartyNumber] = useState(null);
 
-    const [signupVisible, setSignupVisible] = useState(false);
+    const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
+    const [signFormVisible, setSignFormVisible] = useState(false);
 
-    const doKeygenPartySignup = () => {
+    const onKeygenPartySignup = () => {
       worker.postMessage({ type: "party_signup" });
-      setSignupVisible(false);
+      setKeygenSignupVisible(false);
+    };
+
+    const onSignFormSubmit = (message: string) => {
+      worker.postMessage({ type: "sign_message", message });
+      setSignFormVisible(false);
     };
 
     // Handle message from the worker
@@ -36,7 +78,7 @@ const App = (props: AppProps) => {
           setClientId(conn_id);
           setParties(parties);
           setThreshold(threshold);
-          setSignupVisible(true);
+          setKeygenSignupVisible(true);
           break;
         // We have PartySignup
         case "party_signup":
@@ -60,6 +102,7 @@ const App = (props: AppProps) => {
           break;
         // We have all the key information for this party
         case "keygen_complete":
+          setSignFormVisible(true);
           console.log("[UI] keygen: completed!");
           break;
       }
@@ -73,9 +116,10 @@ const App = (props: AppProps) => {
         <p>Parties: {parties}</p>
         <p>Threshold: {threshold}</p>
         <p>Party #: {partyNumber ? partyNumber : "-"}</p>
-        {signupVisible ? (
-          <button onClick={doKeygenPartySignup}>Keygen Signup</button>
+        {keygenSignupVisible ? (
+          <button onClick={onKeygenPartySignup}>Keygen Signup</button>
         ) : null}
+        {signFormVisible ? <SignForm onSubmit={onSignFormSubmit} /> : null}
       </>
     );
   } else {
