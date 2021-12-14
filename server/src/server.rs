@@ -19,8 +19,8 @@ use warp::Filter;
 use std::convert::TryInto;
 
 use common::{
-    Entry, Parameters, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3,
-    ROUND_4, ROUND_5,
+    Entry, Parameters, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2,
+    ROUND_3, ROUND_4, ROUND_5,
 };
 
 /// Global unique user id counter.
@@ -60,6 +60,10 @@ enum IncomingKind {
     /// Store the round 5 entry sent by each client.
     #[serde(rename = "keygen_round5")]
     KeygenRound5,
+
+    // Start the signing process by sharing party identifiers
+    #[serde(rename = "sign_round0")]
+    SignRound0,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -272,7 +276,8 @@ async fn client_request(
         IncomingKind::KeygenRound1
         | IncomingKind::KeygenRound2
         | IncomingKind::KeygenRound4
-        | IncomingKind::KeygenRound5 => {
+        | IncomingKind::KeygenRound5
+        | IncomingKind::SignRound0 => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -313,26 +318,38 @@ async fn client_request(
         IncomingKind::KeygenRound1
         | IncomingKind::KeygenRound2
         | IncomingKind::KeygenRound4
-        | IncomingKind::KeygenRound5 => {
+        | IncomingKind::KeygenRound5
+        | IncomingKind::SignRound0 => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
-            let num_keys = info.ephemeral_state.len();
+            let threshold = info.params.threshold as usize;
+            let num_entries = info.ephemeral_state.len();
             drop(info);
 
-            let round = match req.kind {
-                IncomingKind::KeygenRound1 => ROUND_1,
-                IncomingKind::KeygenRound2 => ROUND_2,
-                IncomingKind::KeygenRound4 => ROUND_4,
-                IncomingKind::KeygenRound5 => ROUND_5,
+            let required_num_entries = match req.kind {
+                IncomingKind::SignRound0 => threshold + 1,
+                IncomingKind::KeygenRound1
+                | IncomingKind::KeygenRound2
+                | IncomingKind::KeygenRound4
+                | IncomingKind::KeygenRound5 => parties,
                 _ => unreachable!(),
             };
 
-            if let IncomingData::Entry { uuid, .. } = req.data.as_ref().unwrap()
-            {
-                // Got all the party round commitments so broadcast
-                // to each client with the answer vectors including an
-                // the value (KeyGenBroadcastMessage1) for the other parties
-                if num_keys == parties {
+            // Got all the party round commitments so broadcast
+            // to each client with the answer vectors
+            if num_entries == required_num_entries {
+                let round = match req.kind {
+                    IncomingKind::SignRound0 => ROUND_0,
+                    IncomingKind::KeygenRound1 => ROUND_1,
+                    IncomingKind::KeygenRound2 => ROUND_2,
+                    IncomingKind::KeygenRound4 => ROUND_4,
+                    IncomingKind::KeygenRound5 => ROUND_5,
+                    _ => unreachable!(),
+                };
+
+                if let IncomingData::Entry { uuid, .. } =
+                    req.data.as_ref().unwrap()
+                {
                     let lock = BROADCAST_LOCK.try_lock();
                     if let Ok(_) = lock {
                         trace!(

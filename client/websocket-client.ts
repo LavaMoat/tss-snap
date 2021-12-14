@@ -12,7 +12,8 @@ type RequestKind =
   | "keygen_round2"
   | "keygen_round3_relay_peers"
   | "keygen_round4"
-  | "keygen_round5";
+  | "keygen_round5"
+  | "sign_round0";
 
 export interface RequestMessage {
   id?: number;
