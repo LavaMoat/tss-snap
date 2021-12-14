@@ -7,6 +7,7 @@ import init, {
   keygenRound5,
   createKey,
   signRound0,
+  signRound1,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -366,6 +367,34 @@ const sign = new StateMachine<SignState, SignTransition>([
       return Promise.resolve({ message, keygenResult, roundEntry });
     },
   },
+  {
+    name: "SIGN_ROUND_1",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const { message, keygenResult } =
+        previousState as SignRoundEntry<RoundEntry>;
+      const { parameters, partySignup, key } = keygenResult;
+
+      const { answer } = transitionData as BroadcastAnswer;
+
+      console.log("calling signRound1 with answer", answer);
+
+      const roundEntry = signRound1(parameters, partySignup, key, answer);
+
+      // Send the round 1 entry to the server
+      request({
+        kind: "sign_round1",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      return Promise.resolve({ message, keygenResult, roundEntry });
+    },
+  },
 ]);
 
 // Receive messages sent to the worker
@@ -424,8 +453,22 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       postMessage({ type: "sign_progress" });
       return true;
     case "sign_commitment_answer":
-      postMessage({ type: "sign_progress" });
-      console.log("got the sign commitment answer, proceed to sign round 1");
+      switch (msg.data.round) {
+        case "round0":
+          // We performed a sign of the message and also need to update the UI
+          postMessage({ type: "sign_progress" });
+          console.log(
+            "got the sign commitment answer, proceed to sign round 1",
+            msg.data.answer
+          );
+          //await sign.next({ answer: msg.data.answer });
+          break;
+        case "round1":
+          console.log("GOT SIGN ROUND 1 COMMITMENT ANSWER");
+          //await sign.next({ answer: msg.data.answer });
+          break;
+      }
+
       return true;
   }
   return false;

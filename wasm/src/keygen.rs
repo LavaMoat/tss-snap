@@ -27,10 +27,9 @@ use wasm_bindgen::prelude::*;
 
 use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
 
-const AES_KEY_BYTES_LEN: usize = 32;
-
-//use super::utils::*;
 //use super::{console_log, log};
+
+const AES_KEY_BYTES_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 struct AeadPack {

@@ -67,6 +67,9 @@ enum IncomingKind {
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_round0")]
     SignRound0,
+    // First signing round
+    #[serde(rename = "sign_round1")]
+    SignRound1,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -314,12 +317,13 @@ async fn client_request(
                 None
             }
         }
-        // Store the round 1 Entry
+        // Store the round Entry
         IncomingKind::KeygenRound1
         | IncomingKind::KeygenRound2
         | IncomingKind::KeygenRound4
         | IncomingKind::KeygenRound5
-        | IncomingKind::SignRound0 => {
+        | IncomingKind::SignRound0
+        | IncomingKind::SignRound1 => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -330,6 +334,8 @@ async fn client_request(
                 writer
                     .ephemeral_state
                     .insert(entry.key.clone(), entry.value.clone());
+
+                //println!("Store entry {:#?} -> {:#?}", entry.key, entry.value);
 
                 // Send an ACK so the client promise will resolve
                 Some(Outgoing {
@@ -361,7 +367,8 @@ async fn client_request(
         | IncomingKind::KeygenRound2
         | IncomingKind::KeygenRound4
         | IncomingKind::KeygenRound5
-        | IncomingKind::SignRound0 => {
+        | IncomingKind::SignRound0
+        | IncomingKind::SignRound1 => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let threshold = info.params.threshold as usize;
@@ -369,7 +376,9 @@ async fn client_request(
             drop(info);
 
             let required_num_entries = match req.kind {
-                IncomingKind::SignRound0 => threshold + 1,
+                IncomingKind::SignRound0 | IncomingKind::SignRound1 => {
+                    threshold + 1
+                }
                 IncomingKind::KeygenRound1
                 | IncomingKind::KeygenRound2
                 | IncomingKind::KeygenRound4
@@ -382,7 +391,9 @@ async fn client_request(
             if num_entries == required_num_entries {
                 let round = match req.kind {
                     IncomingKind::SignRound0 => ROUND_0,
-                    IncomingKind::KeygenRound1 => ROUND_1,
+                    IncomingKind::KeygenRound1 | IncomingKind::SignRound1 => {
+                        ROUND_1
+                    }
                     IncomingKind::KeygenRound2 => ROUND_2,
                     IncomingKind::KeygenRound4 => ROUND_4,
                     IncomingKind::KeygenRound5 => ROUND_5,
@@ -401,14 +412,19 @@ async fn client_request(
 
                         for i in 0..parties {
                             let party_num: u16 = (i + 1).try_into().unwrap();
+
+                            //println!("getting round commitment answers for {} until {}",
+                            //party_num, required_num_entries);
+
                             let ans_vec = round_commitment_answers(
                                 state,
-                                parties.try_into().unwrap(),
                                 party_num,
                                 round,
                                 uuid.clone(),
                             )
                             .await;
+
+                            //println!("Got answers for reply {:#?}", ans_vec);
 
                             if let Some(conn_id) =
                                 conn_id_for_party(state, party_num).await
@@ -446,6 +462,9 @@ async fn client_request(
                                         } else {
                                             OutgoingKind::SignProgress
                                         }
+                                    }
+                                    IncomingKind::SignRound1 => {
+                                        OutgoingKind::SignCommitmentAnswer
                                     }
                                     _ => unreachable!(),
                                 };
@@ -532,12 +551,13 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
 
 async fn round_commitment_answers(
     state: &Arc<RwLock<State>>,
-    parties: u16,
+    //parties: u16,
     party_num: u16,
     round: &str,
     sender_uuid: String,
 ) -> Vec<String> {
     let info = state.read().await;
+    let parties: u16 = info.params.parties;
     let mut ans_vec = Vec::new();
     for i in 1..=parties {
         if i != party_num {

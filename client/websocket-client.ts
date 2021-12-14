@@ -19,7 +19,8 @@ type RequestKind =
   | "keygen_round4"
   | "keygen_round5"
   | "sign_proposal"
-  | "sign_round0";
+  | "sign_round0"
+  | "sign_round1";
 
 export interface RequestMessage {
   id?: number;
