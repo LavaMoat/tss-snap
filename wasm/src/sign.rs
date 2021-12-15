@@ -244,3 +244,15 @@ pub fn signRound2(
 
     JsValue::from_serde(&round_entry).unwrap()
 }
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn signRound3(
+    parameters: JsValue,
+    party_signup: JsValue,
+    party_key: JsValue,
+    round2_entry: JsValue,
+    round2_ans_vec: JsValue,
+) -> JsValue {
+    JsValue::undefined()
+}

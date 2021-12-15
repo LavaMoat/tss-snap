@@ -3,7 +3,8 @@ type BroadcastKind =
   | "keygen_peer_answer"
   | "sign_proposal"
   | "sign_progress"
-  | "sign_commitment_answer";
+  | "sign_commitment_answer"
+  | "sign_peer_answer";
 
 export interface BroadcastMessage {
   kind: BroadcastKind;
@@ -20,7 +21,9 @@ type RequestKind =
   | "keygen_round5"
   | "sign_proposal"
   | "sign_round0"
-  | "sign_round1";
+  | "sign_round1"
+  | "sign_round2_relay_peers"
+  | "sign_round3";
 
 export interface RequestMessage {
   id?: number;

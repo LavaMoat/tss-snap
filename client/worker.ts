@@ -9,6 +9,7 @@ import init, {
   signRound0,
   signRound1,
   signRound2,
+  signRound3,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -135,6 +136,17 @@ type SignTransition = SignInit | BroadcastAnswer;
 let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
+function getSortedPeerEntriesAnswer(): Entry[] {
+  // Must sort the entries otherwise the decryption
+  // keys will not match the peer entries
+  peerState.received.sort((a: PeerEntry, b: PeerEntry) => {
+    if (a.party_from < b.party_from) return -1;
+    if (a.party_from > b.party_from) return 1;
+    return 0;
+  });
+  return peerState.received.map((peer: PeerEntry) => peer.entry);
+}
+
 const keygen = new StateMachine<KeygenState, KeygenTransition>([
   // Handshake to get server parameters and client identifier
   {
@@ -254,16 +266,7 @@ const keygen = new StateMachine<KeygenState, KeygenTransition>([
       const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
       const { parameters, partySignup } = keygenRoundEntry;
 
-      // Must sort the entries otherwise the decryption
-      // keys will not match the peer entries
-      peerState.received.sort((a: PeerEntry, b: PeerEntry) => {
-        if (a.party_from < b.party_from) return -1;
-        if (a.party_from > b.party_from) return 1;
-        return 0;
-      });
-
-      const answer = peerState.received.map((peer: PeerEntry) => peer.entry);
-
+      const answer = getSortedPeerEntriesAnswer();
       // Clean up the peer entries
       peerState.received = [];
 
@@ -392,6 +395,10 @@ const sign = new StateMachine<SignState, SignTransition>([
       const { answer } = transitionData as BroadcastAnswer;
       const roundEntry = signRound1(parameters, partySignup, key, answer);
 
+      // Set up for the peer to peer calls in round 2
+      peerState.parties = parameters.threshold + 1;
+      peerState.received = [];
+
       // Send the round 1 entry to the server
       request({
         kind: "sign_round1",
@@ -428,18 +435,50 @@ const sign = new StateMachine<SignState, SignTransition>([
         answer
       );
 
-      console.log("Got round entry for sign round 2, relay peer to peer!");
-
-      /*
       // Send the round 2 entry to the server
       request({
-        kind: "sign_round1",
+        kind: "sign_round2_relay_peers",
+        data: { entries: roundEntry.peer_entries },
+      });
+
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
+    },
+  },
+  {
+    name: "SIGN_ROUND_3",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const signState = previousState as SignRoundEntry<RoundEntry>;
+      const { message, partySignup, keygenResult } = signState;
+      const { parameters, key } = keygenResult;
+
+      const answer = getSortedPeerEntriesAnswer();
+      // Clean up the peer entries
+      peerState.received = [];
+
+      const roundEntry = signRound3(
+        parameters,
+        partySignup,
+        key,
+        signState.roundEntry,
+        answer
+      );
+
+      // Send the round 3 entry to the server
+      request({
+        kind: "sign_round3",
         data: {
           entry: roundEntry.entry,
           uuid: partySignup.uuid,
         },
       });
-      */
 
       return Promise.resolve({
         message,
@@ -489,8 +528,8 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       }
       return true;
     case "keygen_peer_answer":
-      const { peer_entry } = msg.data;
-      peerState.received.push(peer_entry);
+      const { peer_entry: keygenPeerEntry } = msg.data;
+      peerState.received.push(keygenPeerEntry);
 
       // Got all the p2p answers
       if (peerState.received.length === peerState.parties - 1) {
@@ -522,6 +561,15 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         case "round1":
           await sign.next({ answer: msg.data.answer });
           break;
+      }
+      return true;
+    case "sign_peer_answer":
+      const { peer_entry: signPeerEntry } = msg.data;
+      peerState.received.push(signPeerEntry);
+
+      // Got all the p2p answers
+      if (peerState.received.length === peerState.parties - 1) {
+        await sign.next();
       }
 
       return true;

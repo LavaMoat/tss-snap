@@ -70,6 +70,9 @@ enum IncomingKind {
     // First signing round
     #[serde(rename = "sign_round1")]
     SignRound1,
+    /// Relay round 2 entries peer 2 peer
+    #[serde(rename = "sign_round2_relay_peers")]
+    SignRound2RelayPeers,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -88,7 +91,7 @@ enum OutgoingKind {
     KeygenCommitmentAnswer,
     /// Relayed peer to peer answer.
     #[serde(rename = "keygen_peer_answer")]
-    PeerAnswer,
+    KeygenPeerAnswer,
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
@@ -99,6 +102,9 @@ enum OutgoingKind {
     /// during the sign phase.
     #[serde(rename = "sign_commitment_answer")]
     SignCommitmentAnswer,
+    /// Relayed peer to peer answer.
+    #[serde(rename = "sign_peer_answer")]
+    SignPeerAnswer,
 }
 
 #[derive(Debug, Serialize)]
@@ -346,7 +352,8 @@ async fn client_request(
                 None
             }
         }
-        IncomingKind::KeygenRound3RelayPeers => {
+        IncomingKind::KeygenRound3RelayPeers
+        | IncomingKind::SignRound2RelayPeers => {
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
                 id: req.id,
@@ -496,15 +503,26 @@ async fn client_request(
                 }
             }
         }
-        IncomingKind::KeygenRound3RelayPeers => {
+        IncomingKind::KeygenRound3RelayPeers
+        | IncomingKind::SignRound2RelayPeers => {
             if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
+                let kind = match req.kind {
+                    IncomingKind::KeygenRound3RelayPeers => {
+                        OutgoingKind::KeygenPeerAnswer
+                    }
+                    IncomingKind::SignRound2RelayPeers => {
+                        OutgoingKind::SignPeerAnswer
+                    }
+                    _ => unreachable!(),
+                };
+
                 for entry in entries {
                     if let Some(conn_id) =
                         conn_id_for_party(state, entry.party_to).await
                     {
                         let res = Outgoing {
                             id: None,
-                            kind: Some(OutgoingKind::PeerAnswer),
+                            kind: Some(kind),
                             data: Some(OutgoingData::PeerAnswer {
                                 round: ROUND_3.to_string(),
                                 peer_entry: entry,
