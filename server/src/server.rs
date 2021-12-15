@@ -293,6 +293,7 @@ async fn client_request(
                 data: Some(OutgoingData::KeygenSignup { party_signup }),
             })
         }
+        // Propose a message to be signed
         IncomingKind::SignProposal => {
             if let IncomingData::Message { message } =
                 req.data.as_ref().unwrap()
@@ -334,8 +335,6 @@ async fn client_request(
                 writer
                     .ephemeral_state
                     .insert(entry.key.clone(), entry.value.clone());
-
-                //println!("Store entry {:#?} -> {:#?}", entry.key, entry.value);
 
                 // Send an ACK so the client promise will resolve
                 Some(Outgoing {
@@ -403,6 +402,42 @@ async fn client_request(
                 if let IncomingData::Entry { uuid, .. } =
                     req.data.as_ref().unwrap()
                 {
+
+                    // Round 0 only exists for the sign phase
+                    if round == ROUND_0 {
+                        let mut non_signing_clients: Vec<usize> = Vec::new();
+                        {
+                            let mut writer = state.write().await;
+                            writer.clients.iter_mut().for_each(|(k, v)| {
+                                if let Some(mut party_signup) = v.1.as_mut() {
+                                    // Got a connection that is not participating
+                                    // in the signing phase, we need to set the party
+                                    // number to zero otherwise there are collisions
+                                    // betweeen parties participating in the signing and
+                                    // stale party signup numbers from the key generation
+                                    // phase. These collisions would cause broadcast messages
+                                    // to go to the wrong recipients due to the simple logic
+                                    // for associating a connection with a party number.
+                                    if &party_signup.uuid != uuid {
+                                        party_signup.number = 0;
+                                        non_signing_clients.push(*k);
+
+                                    }
+                                }
+                            })
+                        }
+
+                        // Notify non-participants that signing is in progress
+                        for conn_id in non_signing_clients {
+                            let res = Outgoing {
+                                id: None,
+                                kind: Some(OutgoingKind::SignProgress),
+                                data: None,
+                            };
+                            send_message(conn_id, &res, state).await;
+                        }
+                    }
+
                     let lock = BROADCAST_LOCK.try_lock();
                     if let Ok(_) = lock {
                         trace!(
@@ -430,34 +465,8 @@ async fn client_request(
                                     | IncomingKind::KeygenRound5 => {
                                         OutgoingKind::KeygenCommitmentAnswer
                                     }
-                                    IncomingKind::SignRound0 => {
-                                        let sign_parties = {
-                                            let info = state.read().await;
-                                            info.ephemeral_state
-                                                .values()
-                                                .map(|value| {
-                                                    serde_json::from_str::<u16>(
-                                                        value,
-                                                    )
-                                                    .unwrap()
-                                                })
-                                                .collect::<Vec<u16>>()
-                                        };
-
-                                        // Send to a signing party
-                                        if let Some(_) = sign_parties
-                                            .into_iter()
-                                            .find(|party| {
-                                                *party as usize == i + 1
-                                            })
-                                        {
-                                            OutgoingKind::SignCommitmentAnswer
-                                        // Send to other parties
-                                        } else {
-                                            OutgoingKind::SignProgress
-                                        }
-                                    }
-                                    IncomingKind::SignRound1 => {
+                                    IncomingKind::SignRound0
+                                    | IncomingKind::SignRound1 => {
                                         OutgoingKind::SignCommitmentAnswer
                                     }
                                     _ => unreachable!(),

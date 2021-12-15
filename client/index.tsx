@@ -121,7 +121,7 @@ const App = (props: AppProps) => {
           break;
         case "party_signup":
           const { partySignup } = e.data;
-          setPartyNumber(partySignup.number);
+          setPartyNumber(partySignup.number > 0 ? partySignup.number : "N/A");
           break;
         case "round1_complete":
           console.log("[UI] keygen: round 1 complete");

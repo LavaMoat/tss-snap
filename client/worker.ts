@@ -351,10 +351,12 @@ const sign = new StateMachine<SignState, SignTransition>([
       previousState: SignState,
       transitionData: SignTransition
     ): Promise<SignState | null> => {
+      // Generate a new party signup for the sign phase
       const signup = await request({ kind: "party_signup" });
       const { party_signup: partySignup } = signup.data;
 
-      console.log("GOT SIGN PHASE PARTY SIGNUP:", partySignup);
+      // So the UI thread can update the party number for the sign phase
+      postMessage({ type: "party_signup", partySignup });
 
       const { message, keygenResult } = transitionData as SignInit;
       const { key } = keygenResult;
@@ -466,6 +468,9 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
     case "sign_progress":
       // Parties that did not commit to signing should update the UI only
       postMessage({ type: "sign_progress" });
+
+      // Parties not participating in the signing should reset their party number
+      postMessage({ type: "party_signup", partySignup:{ number: 0, uuid: "" } });
       return true;
     case "sign_commitment_answer":
       switch (msg.data.round) {
