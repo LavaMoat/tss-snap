@@ -26,7 +26,7 @@ use wasm_bindgen::prelude::*;
 
 use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
 
-//use super::{console_log, log};
+use super::{console_log, log};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round0Entry {
@@ -87,6 +87,7 @@ struct Round5Entry {
     dlog_proof_rho: DLogProof<Secp256k1, Sha256>,
     local_sig: LocalSignature,
     R: Point<Secp256k1>,
+    message_bn: BigInt,
 }
 
 #[allow(non_snake_case)]
@@ -99,6 +100,7 @@ struct Round6Entry {
     phase_5a_decom: Phase5ADecom1,
     commit5a_vec: Vec<Phase5Com1>,
     R: Point<Secp256k1>,
+    message_bn: BigInt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -112,6 +114,7 @@ struct Round7Entry {
     phase_5d_decom2: Phase5DDecom2,
     phase5_com2: Phase5Com2,
     local_sig: LocalSignature,
+    message_bn: BigInt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -125,11 +128,15 @@ struct Round8Entry {
     phase_5d_decom2: Phase5DDecom2,
     local_sig: LocalSignature,
     commit5c_vec: Vec<Phase5Com2>,
+    message_bn: BigInt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round9Entry {
     entry: Entry,
+    local_sig: LocalSignature,
+    s_i: Scalar<Secp256k1>,
+    message_bn: BigInt,
 }
 
 fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(
@@ -592,6 +599,7 @@ pub fn signRound5(
         dlog_proof_rho,
         local_sig,
         R,
+        message_bn,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -616,6 +624,7 @@ pub fn signRound6(
         dlog_proof_rho,
         local_sig,
         R,
+        message_bn,
         ..
     } = round5_entry;
 
@@ -648,6 +657,7 @@ pub fn signRound6(
         phase_5a_decom,
         commit5a_vec,
         R,
+        message_bn,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -676,6 +686,7 @@ pub fn signRound7(
         dlog_proof_rho,
         local_sig,
         R,
+        message_bn,
         ..
     } = round6_entry;
 
@@ -727,6 +738,7 @@ pub fn signRound7(
         phase_5d_decom2,
         phase5_com2,
         local_sig,
+        message_bn,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -749,6 +761,7 @@ pub fn signRound8(
         phase_5d_decom2,
         local_sig,
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
+        message_bn,
         ..
     } = round7_entry;
 
@@ -774,6 +787,7 @@ pub fn signRound8(
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
         phase_5d_decom2,
         commit5c_vec,
+        message_bn,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -800,6 +814,7 @@ pub fn signRound9(
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
         phase_5d_decom2,
         commit5c_vec,
+        message_bn,
         ..
     } = round8_entry;
 
@@ -833,6 +848,104 @@ pub fn signRound9(
         uuid,
     );
 
-    let round_entry = Round9Entry { entry };
+    let round_entry = Round9Entry {
+        entry,
+        local_sig,
+        s_i,
+        message_bn,
+    };
     JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn signMessage(
+    party_signup: JsValue,
+    party_key: JsValue,
+    round9_entry: JsValue,
+    round9_ans_vec: JsValue,
+) -> JsValue {
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, _uuid) = (number, uuid);
+
+    let PartyKey { y_sum, .. } = party_key.into_serde::<PartyKey>().unwrap();
+
+    let round9_ans_vec: Vec<String> = round9_ans_vec.into_serde().unwrap();
+    let round9_entry: Round9Entry = round9_entry.into_serde().unwrap();
+    let Round9Entry {
+        local_sig,
+        s_i,
+        message_bn,
+        ..
+    } = round9_entry;
+
+    let mut s_i_vec: Vec<Scalar<Secp256k1>> = Vec::new();
+    format_vec_from_reads(
+        &round9_ans_vec,
+        party_num_int as usize,
+        s_i,
+        &mut s_i_vec,
+    );
+
+    s_i_vec.remove(usize::from(party_num_int - 1));
+    let sig = local_sig
+        .output_signature(&s_i_vec)
+        .expect("verification failed");
+
+    console_log!("party {:?} Output Signature: \n", party_num_int);
+    console_log!("R: {:?}", sig.r);
+    console_log!("s: {:?} \n", sig.s);
+    console_log!("recid: {:?} \n", sig.recid.clone());
+
+    /*
+    let sign_json = serde_json::to_string(&(
+        "r",
+        BigInt::from_bytes(sig.r.to_bytes().as_ref()).to_str_radix(16),
+        "s",
+        BigInt::from_bytes(sig.s.to_bytes().as_ref()).to_str_radix(16),
+    ))
+    .unwrap();
+    */
+
+    // check sig against secp256k1
+    check_sig(&sig.r, &sig.s, &message_bn, &y_sum);
+
+    JsValue::undefined()
+}
+
+fn check_sig(
+    r: &Scalar<Secp256k1>,
+    s: &Scalar<Secp256k1>,
+    msg: &BigInt,
+    pk: &Point<Secp256k1>,
+) {
+    use secp256k1::{verify, Message, PublicKey, PublicKeyFormat, Signature};
+
+    let raw_msg = BigInt::to_bytes(msg);
+    let mut msg: Vec<u8> = Vec::new(); // padding
+    msg.extend(vec![0u8; 32 - raw_msg.len()]);
+    msg.extend(raw_msg.iter());
+
+    let msg = Message::parse_slice(msg.as_slice()).unwrap();
+    let mut raw_pk = pk.to_bytes(false).to_vec();
+    if raw_pk.len() == 64 {
+        raw_pk.insert(0, 4u8);
+    }
+    let pk =
+        PublicKey::parse_slice(&raw_pk, Some(PublicKeyFormat::Full)).unwrap();
+
+    let mut compact: Vec<u8> = Vec::new();
+    let bytes_r = &r.to_bytes().to_vec();
+    compact.extend(vec![0u8; 32 - bytes_r.len()]);
+    compact.extend(bytes_r.iter());
+
+    let bytes_s = &s.to_bytes().to_vec();
+    compact.extend(vec![0u8; 32 - bytes_s.len()]);
+    compact.extend(bytes_s.iter());
+
+    let secp_sig = Signature::parse_slice(compact.as_slice()).unwrap();
+
+    let is_correct = verify(&msg, &secp_sig, &pk);
+    assert!(is_correct);
 }
