@@ -29,7 +29,7 @@ const SignForm = (props: SignFormProps) => {
       <form onSubmit={onSignFormSubmit}>
         <textarea
           placeholder="Enter a message to sign"
-          rows={8}
+          rows={4}
           name="message"
           onChange={onMessageChange}
           value={message}
@@ -144,7 +144,7 @@ const App = (props: AppProps) => {
           console.log("[UI] keygen: completed!");
           break;
         case "sign_progress":
-          console.log("UI got sign progress");
+          console.log("[UI] sign: signing in progres");
           setSignStatusMessage("Signing in progress...");
           break;
         case "sign_proposal":
@@ -159,6 +159,8 @@ const App = (props: AppProps) => {
     return (
       <>
         <h1>ECDSA WASM Demo</h1>
+        <p>Using the gg18 protocol, signing initiated on threshold + 1</p>
+        <hr />
         <p>Server: {url}</p>
         <p>Client ID: {clientId}</p>
         <p>Parties: {parties}</p>

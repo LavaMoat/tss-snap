@@ -8,6 +8,7 @@ import init, {
   createKey,
   signRound0,
   signRound1,
+  signRound2,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -388,11 +389,7 @@ const sign = new StateMachine<SignState, SignTransition>([
       const { message, partySignup, keygenResult } =
         previousState as SignRoundEntry<RoundEntry>;
       const { parameters, key } = keygenResult;
-
       const { answer } = transitionData as BroadcastAnswer;
-
-      console.log("calling signRound1 with answer", answer);
-
       const roundEntry = signRound1(parameters, partySignup, key, answer);
 
       // Send the round 1 entry to the server
@@ -403,6 +400,46 @@ const sign = new StateMachine<SignState, SignTransition>([
           uuid: partySignup.uuid,
         },
       });
+
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
+    },
+  },
+  {
+    name: "SIGN_ROUND_2",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const signState = previousState as SignRoundEntry<RoundEntry>;
+      const { message, partySignup, keygenResult } = signState;
+      const { parameters, key } = keygenResult;
+      const { answer } = transitionData as BroadcastAnswer;
+
+      const roundEntry = signRound2(
+        parameters,
+        partySignup,
+        key,
+        signState.roundEntry,
+        answer
+      );
+
+      console.log("Got round entry for sign round 2, relay peer to peer!");
+
+      /*
+      // Send the round 2 entry to the server
+      request({
+        kind: "sign_round1",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+      */
 
       return Promise.resolve({
         message,
@@ -480,15 +517,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         case "round0":
           // We performed a sign of the message and also need to update the UI
           postMessage({ type: "sign_progress" });
-          console.log(
-            "got the sign commitment answer, proceed to sign round 1",
-            msg.data.answer
-          );
           await sign.next({ answer: msg.data.answer });
           break;
         case "round1":
-          console.log("GOT SIGN ROUND 1 COMMITMENT ANSWER", msg.data.answer);
-          //await sign.next({ answer: msg.data.answer });
+          await sign.next({ answer: msg.data.answer });
           break;
       }
 
