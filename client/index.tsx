@@ -159,7 +159,7 @@ const App = (props: AppProps) => {
     return (
       <>
         <h1>ECDSA WASM Demo</h1>
-        <p>Using the gg18 protocol, signing initiated on threshold + 1</p>
+        <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />
         <p>Server: {url}</p>
         <p>Client ID: {clientId}</p>

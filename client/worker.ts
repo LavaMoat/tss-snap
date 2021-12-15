@@ -463,6 +463,9 @@ const sign = new StateMachine<SignState, SignTransition>([
       // Clean up the peer entries
       peerState.received = [];
 
+      console.log("Getting sign round 3 with partySignup", partySignup);
+      console.log(typeof partySignup);
+
       const roundEntry = signRound3(
         parameters,
         partySignup,
@@ -560,6 +563,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           break;
         case "round1":
           await sign.next({ answer: msg.data.answer });
+          break;
+        case "round3":
+          console.log("GOT SIGNING ROUND 3 COMMITMENT");
+          //await sign.next({ answer: msg.data.answer });
           break;
       }
       return true;

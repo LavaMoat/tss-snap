@@ -33,59 +33,59 @@ const AES_KEY_BYTES_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 struct AeadPack {
-    pub ciphertext: Vec<u8>,
-    pub nonce: Vec<u8>,
+    ciphertext: Vec<u8>,
+    nonce: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round1Entry {
-    pub party_keys: Keys,
-    pub entry: Entry,
-    pub decom_i: KeyGenDecommitMessage1,
-    pub bc_i: KeyGenBroadcastMessage1,
+    party_keys: Keys,
+    entry: Entry,
+    decom_i: KeyGenDecommitMessage1,
+    bc_i: KeyGenBroadcastMessage1,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round2Entry {
-    pub party_keys: Keys,
-    pub entry: Entry,
-    pub decom_i: KeyGenDecommitMessage1,
-    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+    party_keys: Keys,
+    entry: Entry,
+    decom_i: KeyGenDecommitMessage1,
+    bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round3Entry {
-    pub party_keys: Keys,
-    pub enc_keys: Vec<Vec<u8>>,
-    pub vss_scheme: VerifiableSS<Secp256k1>,
-    pub secret_shares: Vec<Scalar<Secp256k1>>,
-    pub y_sum: Point<Secp256k1>,
-    pub peer_entries: Vec<PeerEntry>,
-    pub point_vec: Vec<Point<Secp256k1>>,
-    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+    party_keys: Keys,
+    enc_keys: Vec<Vec<u8>>,
+    vss_scheme: VerifiableSS<Secp256k1>,
+    secret_shares: Vec<Scalar<Secp256k1>>,
+    y_sum: Point<Secp256k1>,
+    peer_entries: Vec<PeerEntry>,
+    point_vec: Vec<Point<Secp256k1>>,
+    bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round4Entry {
-    pub party_keys: Keys,
-    pub entry: Entry,
-    pub party_shares: Vec<Scalar<Secp256k1>>,
-    pub vss_scheme: VerifiableSS<Secp256k1>,
-    pub point_vec: Vec<Point<Secp256k1>>,
-    pub y_sum: Point<Secp256k1>,
-    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+    party_keys: Keys,
+    entry: Entry,
+    party_shares: Vec<Scalar<Secp256k1>>,
+    vss_scheme: VerifiableSS<Secp256k1>,
+    point_vec: Vec<Point<Secp256k1>>,
+    y_sum: Point<Secp256k1>,
+    bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round5Entry {
-    pub party_keys: Keys,
-    pub shared_keys: SharedKeys,
-    pub entry: Entry,
-    pub dlog_proof: DLogProof<Secp256k1, Sha256>,
-    pub point_vec: Vec<Point<Secp256k1>>,
-    pub vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
-    pub y_sum: Point<Secp256k1>,
-    pub bc1_vec: Vec<KeyGenBroadcastMessage1>,
+    party_keys: Keys,
+    shared_keys: SharedKeys,
+    entry: Entry,
+    dlog_proof: DLogProof<Secp256k1, Sha256>,
+    point_vec: Vec<Point<Secp256k1>>,
+    vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
+    y_sum: Point<Secp256k1>,
+    bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
 
 fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AeadPack {

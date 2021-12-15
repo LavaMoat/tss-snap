@@ -11,7 +11,9 @@ use multi_party_ecdsa::utilities::mta::*;
 
 //use paillier::EncryptionKey;
 
-use common::{Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2};
+use common::{
+    Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3,
+};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -26,17 +28,28 @@ struct Round0Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round1Entry {
-    pub entry: Entry,
-    pub xi_com_vec: Vec<Point<Secp256k1>>,
-    pub decommit: SignDecommitPhase1,
-    pub signers_vec: Vec<u16>,
-    pub sign_keys: SignKeys,
-    pub com: SignBroadcastPhase1,
+    entry: Entry,
+    xi_com_vec: Vec<Point<Secp256k1>>,
+    decommit: SignDecommitPhase1,
+    signers_vec: Vec<u16>,
+    sign_keys: SignKeys,
+    com: SignBroadcastPhase1,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round2Entry {
-    pub peer_entries: Vec<PeerEntry>,
+    peer_entries: Vec<PeerEntry>,
+    xi_com_vec: Vec<Point<Secp256k1>>,
+    ni_vec: Vec<Scalar<Secp256k1>>,
+    signers_vec: Vec<u16>,
+    sign_keys: SignKeys,
+    beta_vec: Vec<Scalar<Secp256k1>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round3Entry {
+    entry: Entry,
+    sigma: Scalar<Secp256k1>,
 }
 
 #[allow(non_snake_case)]
@@ -158,6 +171,7 @@ pub fn signRound2(
         signers_vec,
         sign_keys,
         com,
+        xi_com_vec,
         ..
     } = round1_entry;
 
@@ -240,7 +254,14 @@ pub fn signRound2(
         }
     }
 
-    let round_entry = Round2Entry { peer_entries };
+    let round_entry = Round2Entry {
+        peer_entries,
+        ni_vec,
+        sign_keys,
+        signers_vec,
+        beta_vec,
+        xi_com_vec,
+    };
 
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -254,5 +275,80 @@ pub fn signRound3(
     round2_entry: JsValue,
     round2_ans_vec: JsValue,
 ) -> JsValue {
-    JsValue::undefined()
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+
+    let PartyKey {
+        party_keys,
+        vss_scheme_vec,
+        ..
+    } = party_key.into_serde::<PartyKey>().unwrap();
+
+    let round2_ans_vec: Vec<Entry> = round2_ans_vec.into_serde().unwrap();
+    let round2_entry: Round2Entry = round2_entry.into_serde().unwrap();
+    let Round2Entry {
+        ni_vec,
+        sign_keys,
+        signers_vec,
+        beta_vec,
+        xi_com_vec,
+        ..
+    } = round2_entry;
+
+    let mut m_b_gamma_rec_vec: Vec<MessageB> = Vec::new();
+    let mut m_b_w_rec_vec: Vec<MessageB> = Vec::new();
+
+    for i in 0..threshold {
+        //  if signers_vec.contains(&(i as usize)) {
+        let (m_b_gamma_i, m_b_w_i): (MessageB, MessageB) =
+            serde_json::from_str(&round2_ans_vec[i as usize].value).unwrap();
+        m_b_gamma_rec_vec.push(m_b_gamma_i);
+        m_b_w_rec_vec.push(m_b_w_i);
+        //     }
+    }
+
+    let mut alpha_vec: Vec<Scalar<Secp256k1>> = Vec::new();
+    let mut miu_vec: Vec<Scalar<Secp256k1>> = Vec::new();
+
+    let mut j = 0;
+    for i in 1..threshold + 2 {
+        if i != party_num_int {
+            let m_b = m_b_gamma_rec_vec[j].clone();
+
+            let alpha_ij_gamma = m_b
+                .verify_proofs_get_alpha(&party_keys.dk, &sign_keys.k_i)
+                .expect("wrong dlog or m_b");
+            let m_b = m_b_w_rec_vec[j].clone();
+            let alpha_ij_wi = m_b
+                .verify_proofs_get_alpha(&party_keys.dk, &sign_keys.k_i)
+                .expect("wrong dlog or m_b");
+            alpha_vec.push(alpha_ij_gamma.0);
+            miu_vec.push(alpha_ij_wi.0);
+            let g_w_i = Keys::update_commitments_to_xi(
+                &xi_com_vec[usize::from(signers_vec[usize::from(i - 1)])],
+                &vss_scheme_vec[usize::from(signers_vec[usize::from(i - 1)])],
+                signers_vec[usize::from(i - 1)],
+                &signers_vec,
+            );
+            assert_eq!(m_b.b_proof.pk, g_w_i);
+            j += 1;
+        }
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    let delta_i = sign_keys.phase2_delta_i(&alpha_vec, &beta_vec);
+    let sigma = sign_keys.phase2_sigma_i(&miu_vec, &ni_vec);
+
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_3,
+        serde_json::to_string(&delta_i).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round3Entry { entry, sigma };
+    JsValue::from_serde(&round_entry).unwrap()
 }
