@@ -35,10 +35,6 @@ struct Round1Entry {
 #[wasm_bindgen]
 pub fn signRound0(party_signup: JsValue, party_key: JsValue) -> JsValue {
     // Round zero broadcasts the party identifiers
-    //
-    // Note that `party_num_int` and `party_id` are equal but we use
-    // `party_id` from the keys to verify the caller has already generated
-    // a valid `PartyKey`
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -71,8 +67,6 @@ pub fn signRound1(
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
 
-    console_log!("WASM: party_num_int {:#?}", party_num_int);
-
     let PartyKey {
         party_keys,
         party_id,
@@ -82,18 +76,11 @@ pub fn signRound1(
     } = party_key.into_serde::<PartyKey>().unwrap();
 
     let round0_ans_vec: Vec<String> = round0_ans_vec.into_serde().unwrap();
-    console_log!("WASM: Got round0_ans_vec {:#?}", round0_ans_vec);
 
-    /*
-    let mut signers_vec: Vec<u16> = round0_ans_vec
-        .iter()
-        .map(|s| serde_json::from_str::<u16>(s).unwrap() - 1).collect();
-    signers_vec.push(party_id - 1);
-    //signers_vec.sort();
-
-    console_log!("WASM: Got signers_vec {:#?}", signers_vec);
-    console_log!("WASM: Got party index {:#?}", party_num_int - 1);
-    */
+    console_log!("GOT PARTY ID {}", party_id);
+    console_log!("GOT PARTY NUM INT {}", party_num_int);
+    console_log!("GOT VSS SCHEME VEC LENGTH {}", vss_scheme_vec.len());
+    console_log!("GOT ROUND 0 ANSWER VEC {:#?}", round0_ans_vec);
 
     let mut j = 0;
     let mut signers_vec: Vec<u16> = Vec::new();
@@ -108,6 +95,8 @@ pub fn signRound1(
             j += 1;
         }
     }
+
+    println!("GOT ROUND 0 SIGNERS VEC {:#?}", signers_vec);
 
     let private = PartyPrivate::set_private(party_keys.clone(), shared_keys);
 

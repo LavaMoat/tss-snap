@@ -98,6 +98,7 @@ interface SignInit {
 // Type to pass through the client state machine during message signing.
 interface SignRoundEntry<T> {
   message: string;
+  partySignup: PartySignup;
   keygenResult: KeygenResult;
   roundEntry: T;
 }
@@ -122,7 +123,6 @@ interface PartyKey {}
 // The result from generating a key.
 interface KeygenResult {
   parameters: Parameters;
-  partySignup: PartySignup;
   key: PartyKey;
 }
 
@@ -351,8 +351,13 @@ const sign = new StateMachine<SignState, SignTransition>([
       previousState: SignState,
       transitionData: SignTransition
     ): Promise<SignState | null> => {
+      const signup = await request({ kind: "party_signup" });
+      const { party_signup: partySignup } = signup.data;
+
+      console.log("GOT SIGN PHASE PARTY SIGNUP:", partySignup);
+
       const { message, keygenResult } = transitionData as SignInit;
-      const { partySignup, key } = keygenResult;
+      const { key } = keygenResult;
       const roundEntry = signRound0(partySignup, key);
 
       // Send the round 0 entry to the server
@@ -364,7 +369,12 @@ const sign = new StateMachine<SignState, SignTransition>([
         },
       });
 
-      return Promise.resolve({ message, keygenResult, roundEntry });
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
     },
   },
   {
@@ -373,9 +383,9 @@ const sign = new StateMachine<SignState, SignTransition>([
       previousState: SignState,
       transitionData: SignTransition
     ): Promise<SignState | null> => {
-      const { message, keygenResult } =
+      const { message, partySignup, keygenResult } =
         previousState as SignRoundEntry<RoundEntry>;
-      const { parameters, partySignup, key } = keygenResult;
+      const { parameters, key } = keygenResult;
 
       const { answer } = transitionData as BroadcastAnswer;
 
@@ -392,7 +402,12 @@ const sign = new StateMachine<SignState, SignTransition>([
         },
       });
 
-      return Promise.resolve({ message, keygenResult, roundEntry });
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
     },
   },
 ]);

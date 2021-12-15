@@ -412,10 +412,6 @@ async fn client_request(
 
                         for i in 0..parties {
                             let party_num: u16 = (i + 1).try_into().unwrap();
-
-                            //println!("getting round commitment answers for {} until {}",
-                            //party_num, required_num_entries);
-
                             let ans_vec = round_commitment_answers(
                                 state,
                                 party_num,
@@ -423,13 +419,6 @@ async fn client_request(
                                 uuid.clone(),
                             )
                             .await;
-
-                            if round == ROUND_0 {
-                                println!(
-                                    "Got answers for reply {} {:#?}",
-                                    party_num, ans_vec
-                                );
-                            }
 
                             if let Some(conn_id) =
                                 conn_id_for_party(state, party_num).await
