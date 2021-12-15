@@ -1,18 +1,26 @@
-use curv::elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar};
+use curv::{
+    arithmetic::traits::*,
+    cryptographic_primitives::{
+        proofs::sigma_correct_homomorphic_elgamal_enc::HomoELGamalProof,
+        proofs::sigma_dlog::DLogProof, /* secret_sharing::feldman_vss::VerifiableSS, */
+    },
+    elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
+    BigInt,
+};
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    Keys, Parameters,
-    /* LocalSignature, */
-    PartyPrivate, /*Phase5ADecom1, Phase5Com1, Phase5Com2,
-                  Phase5DDecom2, SharedKeys, */
+    Keys, LocalSignature, Parameters, PartyPrivate,
+    Phase5ADecom1, /* Phase5Com1, Phase5Com2,
+                   Phase5DDecom2, SharedKeys, */
     SignBroadcastPhase1, SignDecommitPhase1, SignKeys,
 };
 use multi_party_ecdsa::utilities::mta::*;
-//use sha2::Sha256;
+use sha2::Sha256;
 
 //use paillier::EncryptionKey;
 
 use common::{
     Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
+    ROUND_5,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -45,6 +53,7 @@ struct Round2Entry {
     signers_vec: Vec<u16>,
     sign_keys: SignKeys,
     beta_vec: Vec<Scalar<Secp256k1>>,
+    bc1_vec: Vec<SignBroadcastPhase1>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,12 +62,28 @@ struct Round3Entry {
     decommit: SignDecommitPhase1,
     delta_i: Scalar<Secp256k1>,
     sigma: Scalar<Secp256k1>,
+    sign_keys: SignKeys,
+    bc1_vec: Vec<SignBroadcastPhase1>,
+    m_b_gamma_rec_vec: Vec<MessageB>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round4Entry {
     entry: Entry,
+    decommit: SignDecommitPhase1,
     delta_inv: Scalar<Secp256k1>,
+    sigma: Scalar<Secp256k1>,
+    sign_keys: SignKeys,
+    bc1_vec: Vec<SignBroadcastPhase1>,
+    m_b_gamma_rec_vec: Vec<MessageB>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round5Entry {
+    entry: Entry,
+    phase_5a_decom: Phase5ADecom1,
+    helgamal_proof: HomoELGamalProof<Secp256k1, Sha256>,
+    dlog_proof_rho: DLogProof<Secp256k1, Sha256>,
 }
 
 fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(
@@ -290,6 +315,7 @@ pub fn signRound2(
         beta_vec,
         xi_com_vec,
         decommit,
+        bc1_vec,
     };
 
     JsValue::from_serde(&round_entry).unwrap()
@@ -326,6 +352,7 @@ pub fn signRound3(
         beta_vec,
         xi_com_vec,
         decommit,
+        bc1_vec,
         ..
     } = round2_entry;
 
@@ -384,6 +411,9 @@ pub fn signRound3(
         sigma,
         delta_i,
         decommit,
+        sign_keys,
+        bc1_vec,
+        m_b_gamma_rec_vec,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -402,7 +432,13 @@ pub fn signRound4(
     let round3_ans_vec: Vec<String> = round3_ans_vec.into_serde().unwrap();
     let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
     let Round3Entry {
-        delta_i, decommit, ..
+        delta_i,
+        decommit,
+        sigma,
+        sign_keys,
+        bc1_vec,
+        m_b_gamma_rec_vec,
+        ..
     } = round3_entry;
 
     let mut delta_vec: Vec<Scalar<Secp256k1>> = Vec::new();
@@ -422,6 +458,91 @@ pub fn signRound4(
         uuid,
     );
 
-    let round_entry = Round4Entry { entry, delta_inv };
+    let round_entry = Round4Entry {
+        entry,
+        delta_inv,
+        decommit,
+        sigma,
+        sign_keys,
+        bc1_vec,
+        m_b_gamma_rec_vec,
+    };
+    JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn signRound5(
+    party_signup: JsValue,
+    party_key: JsValue,
+    round4_entry: JsValue,
+    round4_ans_vec: JsValue,
+    message: JsValue,
+) -> JsValue {
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+
+    let PartyKey { y_sum, .. } = party_key.into_serde::<PartyKey>().unwrap();
+
+    let round4_ans_vec: Vec<String> = round4_ans_vec.into_serde().unwrap();
+    let round4_entry: Round4Entry = round4_entry.into_serde().unwrap();
+    let Round4Entry {
+        decommit,
+        sigma,
+        sign_keys,
+        delta_inv,
+        mut bc1_vec,
+        m_b_gamma_rec_vec,
+        ..
+    } = round4_entry;
+
+    let message: Vec<u8> = message.into_serde().unwrap();
+
+    let mut decommit_vec: Vec<SignDecommitPhase1> = Vec::new();
+    format_vec_from_reads(
+        &round4_ans_vec,
+        party_num_int as usize,
+        decommit,
+        &mut decommit_vec,
+    );
+    let decomm_i = decommit_vec.remove(usize::from(party_num_int - 1));
+    bc1_vec.remove(usize::from(party_num_int - 1));
+    let b_proof_vec = (0..m_b_gamma_rec_vec.len())
+        .map(|i| &m_b_gamma_rec_vec[i].b_proof)
+        .collect::<Vec<&DLogProof<Secp256k1, Sha256>>>();
+    let R = SignKeys::phase4(&delta_inv, &b_proof_vec, decommit_vec, &bc1_vec)
+        .expect("bad gamma_i decommit");
+
+    // adding local g_gamma_i
+    let R = R + decomm_i.g_gamma_i * delta_inv;
+
+    // we assume the message is already hashed (by the signer).
+    let message_bn = BigInt::from_bytes(&message);
+    let local_sig = LocalSignature::phase5_local_sig(
+        &sign_keys.k_i,
+        &message_bn,
+        &R,
+        &sigma,
+        &y_sum,
+    );
+
+    let (phase5_com, phase_5a_decom, helgamal_proof, dlog_proof_rho) =
+        local_sig.phase5a_broadcast_5b_zkproof();
+
+    //phase (5A)  broadcast commit
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_5,
+        serde_json::to_string(&phase5_com).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round5Entry {
+        entry,
+        phase_5a_decom,
+        helgamal_proof,
+        dlog_proof_rho,
+    };
     JsValue::from_serde(&round_entry).unwrap()
 }

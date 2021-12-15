@@ -11,6 +11,7 @@ import init, {
   signRound2,
   signRound3,
   signRound4,
+  signRound5,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -500,7 +501,6 @@ const sign = new StateMachine<SignState, SignTransition>([
     ): Promise<SignState | null> => {
       const signState = previousState as SignRoundEntry<RoundEntry>;
       const { message, partySignup, keygenResult } = signState;
-      const { parameters, key } = keygenResult;
       const { answer } = transitionData as BroadcastAnswer;
 
       const roundEntry = signRound4(partySignup, signState.roundEntry, answer);
@@ -508,6 +508,47 @@ const sign = new StateMachine<SignState, SignTransition>([
       // Send the round 4 entry to the server
       request({
         kind: "sign_round4",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
+    },
+  },
+  {
+    name: "SIGN_ROUND_5",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const signState = previousState as SignRoundEntry<RoundEntry>;
+      const { message, partySignup, keygenResult } = signState;
+      const { key } = keygenResult;
+      const { answer } = transitionData as BroadcastAnswer;
+
+      const encoder = new TextEncoder();
+      // NOTE: UInt8Array serializes to a map but we want
+      // NOTE: a Vec<u8> in webassembly so must call Array.from()
+      const messageBytes = Array.from(encoder.encode(message));
+
+      const roundEntry = signRound5(
+        partySignup,
+        key,
+        signState.roundEntry,
+        answer,
+        messageBytes
+      );
+
+      // Send the round 5 entry to the server
+      request({
+        kind: "sign_round5",
         data: {
           entry: roundEntry.entry,
           uuid: partySignup.uuid,
@@ -599,7 +640,11 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           await sign.next({ answer: msg.data.answer });
           break;
         case "round4":
-          console.log("GOT SIGNING ROUND 4 COMMITMENT");
+          await sign.next({ answer: msg.data.answer });
+          break;
+        case "round5":
+          console.log("GOT SIGNING ROUND 5 COMMITMENT");
+          //await sign.next({ answer: msg.data.answer });
           break;
       }
       return true;
