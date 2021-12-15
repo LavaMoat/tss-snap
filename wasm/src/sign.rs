@@ -19,7 +19,7 @@ use sha2::Sha256;
 
 use common::{
     Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
-    ROUND_5, ROUND_6, ROUND_7, ROUND_8,
+    ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -111,10 +111,24 @@ struct Round7Entry {
     )>,
     phase_5d_decom2: Phase5DDecom2,
     phase5_com2: Phase5Com2,
+    local_sig: LocalSignature,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round8Entry {
+    entry: Entry,
+    decommit5a_and_elgamal_and_dlog_vec_includes_i: Vec<(
+        Phase5ADecom1,
+        HomoELGamalProof<Secp256k1, Sha256>,
+        DLogProof<Secp256k1, Sha256>,
+    )>,
+    phase_5d_decom2: Phase5DDecom2,
+    local_sig: LocalSignature,
+    commit5c_vec: Vec<Phase5Com2>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round9Entry {
     entry: Entry,
 }
 
@@ -712,6 +726,7 @@ pub fn signRound7(
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
         phase_5d_decom2,
         phase5_com2,
+        local_sig,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -732,6 +747,8 @@ pub fn signRound8(
     let Round7Entry {
         phase5_com2,
         phase_5d_decom2,
+        local_sig,
+        decommit5a_and_elgamal_and_dlog_vec_includes_i,
         ..
     } = round7_entry;
 
@@ -751,6 +768,71 @@ pub fn signRound8(
         uuid,
     );
 
-    let round_entry = Round8Entry { entry };
+    let round_entry = Round8Entry {
+        entry,
+        local_sig,
+        decommit5a_and_elgamal_and_dlog_vec_includes_i,
+        phase_5d_decom2,
+        commit5c_vec,
+    };
+    JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn signRound9(
+    parameters: JsValue,
+    party_signup: JsValue,
+    round8_entry: JsValue,
+    round8_ans_vec: JsValue,
+) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+
+    let round8_ans_vec: Vec<String> = round8_ans_vec.into_serde().unwrap();
+    let round8_entry: Round8Entry = round8_entry.into_serde().unwrap();
+    let Round8Entry {
+        local_sig,
+        decommit5a_and_elgamal_and_dlog_vec_includes_i,
+        phase_5d_decom2,
+        commit5c_vec,
+        ..
+    } = round8_entry;
+
+    let mut decommit5d_vec: Vec<Phase5DDecom2> = Vec::new();
+    format_vec_from_reads(
+        &round8_ans_vec,
+        party_num_int as usize,
+        phase_5d_decom2,
+        &mut decommit5d_vec,
+    );
+
+    let phase_5a_decomm_vec_includes_i = (0..=threshold)
+        .map(|i| {
+            decommit5a_and_elgamal_and_dlog_vec_includes_i[i as usize]
+                .0
+                .clone()
+        })
+        .collect::<Vec<Phase5ADecom1>>();
+    let s_i = local_sig
+        .phase5d(
+            &decommit5d_vec,
+            &commit5c_vec,
+            &phase_5a_decomm_vec_includes_i,
+        )
+        .expect("bad com 5d");
+
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_9,
+        serde_json::to_string(&s_i).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round9Entry { entry };
     JsValue::from_serde(&round_entry).unwrap()
 }

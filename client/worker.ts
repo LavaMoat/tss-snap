@@ -15,6 +15,7 @@ import init, {
   signRound6,
   signRound7,
   signRound8,
+  signRound9,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -468,9 +469,6 @@ const sign = new StateMachine<SignState, SignTransition>([
       // Clean up the peer entries
       peerState.received = [];
 
-      console.log("Getting sign round 3 with partySignup", partySignup);
-      console.log(typeof partySignup);
-
       const roundEntry = signRound3(
         parameters,
         partySignup,
@@ -659,6 +657,41 @@ const sign = new StateMachine<SignState, SignTransition>([
       });
     },
   },
+  {
+    name: "SIGN_ROUND_9",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const signState = previousState as SignRoundEntry<RoundEntry>;
+      const { message, partySignup, keygenResult } = signState;
+      const { parameters } = keygenResult;
+      const { answer } = transitionData as BroadcastAnswer;
+
+      const roundEntry = signRound9(
+        parameters,
+        partySignup,
+        signState.roundEntry,
+        answer
+      );
+
+      // Send the round 9 entry to the server
+      request({
+        kind: "sign_round9",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
+    },
+  },
 ]);
 
 // Receive messages sent to the worker
@@ -748,7 +781,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           await sign.next({ answer: msg.data.answer });
           break;
         case "round8":
-          console.log("GOT SIGNING ROUND 8 COMMITMENT");
+          await sign.next({ answer: msg.data.answer });
+          break;
+        case "round9":
+          console.log("GOT SIGNING ROUND 9 COMMITMENT");
           //await sign.next({ answer: msg.data.answer });
           break;
       }

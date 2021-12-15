@@ -10,6 +10,7 @@ pub const ROUND_5: &str = "round5";
 pub const ROUND_6: &str = "round6";
 pub const ROUND_7: &str = "round7";
 pub const ROUND_8: &str = "round8";
+pub const ROUND_9: &str = "round9";
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PeerEntry {
