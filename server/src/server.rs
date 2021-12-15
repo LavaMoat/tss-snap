@@ -406,17 +406,18 @@ async fn client_request(
             // Got all the party round commitments so broadcast
             // to each client with the answer vectors
             if num_entries == required_num_entries {
-                let round = match req.kind {
-                    IncomingKind::SignRound0 => ROUND_0,
-                    IncomingKind::KeygenRound1 | IncomingKind::SignRound1 => {
-                        ROUND_1
-                    }
-                    IncomingKind::KeygenRound2 => ROUND_2,
-                    IncomingKind::SignRound3 => ROUND_3,
-                    IncomingKind::KeygenRound4 | IncomingKind::SignRound4 => ROUND_4,
-                    IncomingKind::KeygenRound5 => ROUND_5,
-                    _ => unreachable!(),
-                };
+                let round =
+                    match req.kind {
+                        IncomingKind::SignRound0 => ROUND_0,
+                        IncomingKind::KeygenRound1
+                        | IncomingKind::SignRound1 => ROUND_1,
+                        IncomingKind::KeygenRound2 => ROUND_2,
+                        IncomingKind::SignRound3 => ROUND_3,
+                        IncomingKind::KeygenRound4
+                        | IncomingKind::SignRound4 => ROUND_4,
+                        IncomingKind::KeygenRound5 => ROUND_5,
+                        _ => unreachable!(),
+                    };
 
                 if let IncomingData::Entry { uuid, .. } =
                     req.data.as_ref().unwrap()

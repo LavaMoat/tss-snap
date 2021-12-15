@@ -62,8 +62,8 @@ interface Parameters {
 
 // Opaque type proxied from WASM to the server
 interface Entry {
-  key: String;
-  value: String;
+  key: string;
+  value: string;
 }
 
 // Temporary object passed back and forth between javascript
@@ -137,7 +137,7 @@ type SignTransition = SignInit | BroadcastAnswer;
 let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
-function getSortedPeerEntriesAnswer(): Entry[] {
+function getSortedPeerEntriesAnswer(): string[] {
   // Must sort the entries otherwise the decryption
   // keys will not match the peer entries
   peerState.received.sort((a: PeerEntry, b: PeerEntry) => {
@@ -145,7 +145,7 @@ function getSortedPeerEntriesAnswer(): Entry[] {
     if (a.party_from > b.party_from) return 1;
     return 0;
   });
-  return peerState.received.map((peer: PeerEntry) => peer.entry);
+  return peerState.received.map((peer: PeerEntry) => peer.entry.value);
 }
 
 const keygen = new StateMachine<KeygenState, KeygenTransition>([
@@ -503,11 +503,7 @@ const sign = new StateMachine<SignState, SignTransition>([
       const { parameters, key } = keygenResult;
       const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound4(
-        partySignup,
-        signState.roundEntry,
-        answer
-      );
+      const roundEntry = signRound4(partySignup, signState.roundEntry, answer);
 
       // Send the round 4 entry to the server
       request({

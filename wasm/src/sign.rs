@@ -317,7 +317,7 @@ pub fn signRound3(
         ..
     } = party_key.into_serde::<PartyKey>().unwrap();
 
-    let round2_ans_vec: Vec<Entry> = round2_ans_vec.into_serde().unwrap();
+    let round2_ans_vec: Vec<String> = round2_ans_vec.into_serde().unwrap();
     let round2_entry: Round2Entry = round2_entry.into_serde().unwrap();
     let Round2Entry {
         ni_vec,
@@ -335,7 +335,7 @@ pub fn signRound3(
     for i in 0..threshold {
         //  if signers_vec.contains(&(i as usize)) {
         let (m_b_gamma_i, m_b_w_i): (MessageB, MessageB) =
-            serde_json::from_str(&round2_ans_vec[i as usize].value).unwrap();
+            serde_json::from_str(&round2_ans_vec[i as usize]).unwrap();
         m_b_gamma_rec_vec.push(m_b_gamma_i);
         m_b_w_rec_vec.push(m_b_w_i);
         //     }
@@ -379,7 +379,12 @@ pub fn signRound3(
         uuid,
     );
 
-    let round_entry = Round3Entry { entry, sigma, delta_i, decommit };
+    let round_entry = Round3Entry {
+        entry,
+        sigma,
+        delta_i,
+        decommit,
+    };
     JsValue::from_serde(&round_entry).unwrap()
 }
 
@@ -397,9 +402,7 @@ pub fn signRound4(
     let round3_ans_vec: Vec<String> = round3_ans_vec.into_serde().unwrap();
     let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
     let Round3Entry {
-        delta_i,
-        decommit,
-        ..
+        delta_i, decommit, ..
     } = round3_entry;
 
     let mut delta_vec: Vec<Scalar<Secp256k1>> = Vec::new();

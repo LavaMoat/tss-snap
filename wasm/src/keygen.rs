@@ -314,7 +314,7 @@ pub fn keygenRound4(
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
 
-    let round3_ans_vec: Vec<Entry> = round3_ans_vec.into_serde().unwrap();
+    let round3_ans_vec: Vec<String> = round3_ans_vec.into_serde().unwrap();
     let round3_entry: Round3Entry = round3_entry.into_serde().unwrap();
     let Round3Entry {
         party_keys,
@@ -334,7 +334,7 @@ pub fn keygenRound4(
             party_shares.push(secret_shares[(i - 1) as usize].clone());
         } else {
             let aead_pack: AeadPack =
-                serde_json::from_str(&round3_ans_vec[j].value).unwrap();
+                serde_json::from_str(&round3_ans_vec[j]).unwrap();
             let key_i = &enc_keys[j];
             let out = aes_decrypt(key_i, aead_pack);
             let out_bn = BigInt::from_bytes(&out[..]);
