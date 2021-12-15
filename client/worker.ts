@@ -470,7 +470,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
       postMessage({ type: "sign_progress" });
 
       // Parties not participating in the signing should reset their party number
-      postMessage({ type: "party_signup", partySignup:{ number: 0, uuid: "" } });
+      postMessage({
+        type: "party_signup",
+        partySignup: { number: 0, uuid: "" },
+      });
       return true;
     case "sign_commitment_answer":
       switch (msg.data.round) {

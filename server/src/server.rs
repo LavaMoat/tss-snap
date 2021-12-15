@@ -402,7 +402,6 @@ async fn client_request(
                 if let IncomingData::Entry { uuid, .. } =
                     req.data.as_ref().unwrap()
                 {
-
                     // Round 0 only exists for the sign phase
                     if round == ROUND_0 {
                         let mut non_signing_clients: Vec<usize> = Vec::new();
@@ -421,7 +420,6 @@ async fn client_request(
                                     if &party_signup.uuid != uuid {
                                         party_signup.number = 0;
                                         non_signing_clients.push(*k);
-
                                     }
                                 }
                             })
