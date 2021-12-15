@@ -67,7 +67,7 @@ enum IncomingKind {
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_round0")]
     SignRound0,
-    // First signing round
+    /// Store the round 1 entry sent by each client.
     #[serde(rename = "sign_round1")]
     SignRound1,
     /// Relay round 2 entries peer 2 peer
@@ -76,6 +76,9 @@ enum IncomingKind {
     /// Store the round 3 entry sent by each client.
     #[serde(rename = "sign_round3")]
     SignRound3,
+    /// Store the round 4 entry sent by each client.
+    #[serde(rename = "sign_round4")]
+    SignRound4,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -334,7 +337,8 @@ async fn client_request(
         | IncomingKind::KeygenRound5
         | IncomingKind::SignRound0
         | IncomingKind::SignRound1
-        | IncomingKind::SignRound3 => {
+        | IncomingKind::SignRound3
+        | IncomingKind::SignRound4 => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -379,7 +383,8 @@ async fn client_request(
         | IncomingKind::KeygenRound5
         | IncomingKind::SignRound0
         | IncomingKind::SignRound1
-        | IncomingKind::SignRound3 => {
+        | IncomingKind::SignRound3
+        | IncomingKind::SignRound4 => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let threshold = info.params.threshold as usize;
@@ -389,7 +394,8 @@ async fn client_request(
             let required_num_entries = match req.kind {
                 IncomingKind::SignRound0
                 | IncomingKind::SignRound1
-                | IncomingKind::SignRound3 => threshold + 1,
+                | IncomingKind::SignRound3
+                | IncomingKind::SignRound4 => threshold + 1,
                 IncomingKind::KeygenRound1
                 | IncomingKind::KeygenRound2
                 | IncomingKind::KeygenRound4
@@ -407,7 +413,7 @@ async fn client_request(
                     }
                     IncomingKind::KeygenRound2 => ROUND_2,
                     IncomingKind::SignRound3 => ROUND_3,
-                    IncomingKind::KeygenRound4 => ROUND_4,
+                    IncomingKind::KeygenRound4 | IncomingKind::SignRound4 => ROUND_4,
                     IncomingKind::KeygenRound5 => ROUND_5,
                     _ => unreachable!(),
                 };
@@ -478,7 +484,8 @@ async fn client_request(
                                     }
                                     IncomingKind::SignRound0
                                     | IncomingKind::SignRound1
-                                    | IncomingKind::SignRound3 => {
+                                    | IncomingKind::SignRound3
+                                    | IncomingKind::SignRound4 => {
                                         OutgoingKind::SignCommitmentAnswer
                                     }
                                     _ => unreachable!(),

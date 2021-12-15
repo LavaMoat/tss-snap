@@ -504,9 +504,7 @@ const sign = new StateMachine<SignState, SignTransition>([
       const { answer } = transitionData as BroadcastAnswer;
 
       const roundEntry = signRound4(
-        parameters,
         partySignup,
-        key,
         signState.roundEntry,
         answer
       );
@@ -602,8 +600,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           await sign.next({ answer: msg.data.answer });
           break;
         case "round3":
-          console.log("GOT SIGNING ROUND 3 COMMITMENT");
-          //await sign.next({ answer: msg.data.answer });
+          await sign.next({ answer: msg.data.answer });
+          break;
+        case "round4":
+          console.log("GOT SIGNING ROUND 4 COMMITMENT");
           break;
       }
       return true;
