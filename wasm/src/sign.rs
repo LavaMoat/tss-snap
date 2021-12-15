@@ -9,8 +9,8 @@ use curv::{
 };
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     Keys, LocalSignature, Parameters, PartyPrivate, Phase5ADecom1,
-    Phase5Com1, /* Phase5Com2,
-                Phase5DDecom2, SharedKeys, */
+    Phase5Com1,    /* Phase5Com2, */
+    Phase5DDecom2, /* SharedKeys, */
     SignBroadcastPhase1, SignDecommitPhase1, SignKeys,
 };
 use multi_party_ecdsa::utilities::mta::*;
@@ -20,7 +20,7 @@ use sha2::Sha256;
 
 use common::{
     Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
-    ROUND_5, ROUND_6,
+    ROUND_5, ROUND_6, ROUND_7,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -78,6 +78,7 @@ struct Round4Entry {
     m_b_gamma_rec_vec: Vec<MessageB>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round5Entry {
     entry: Entry,
@@ -85,11 +86,31 @@ struct Round5Entry {
     phase_5a_decom: Phase5ADecom1,
     helgamal_proof: HomoELGamalProof<Secp256k1, Sha256>,
     dlog_proof_rho: DLogProof<Secp256k1, Sha256>,
+    local_sig: LocalSignature,
+    R: Point<Secp256k1>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round6Entry {
     entry: Entry,
+    helgamal_proof: HomoELGamalProof<Secp256k1, Sha256>,
+    dlog_proof_rho: DLogProof<Secp256k1, Sha256>,
+    local_sig: LocalSignature,
+    phase_5a_decom: Phase5ADecom1,
+    commit5a_vec: Vec<Phase5Com1>,
+    R: Point<Secp256k1>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round7Entry {
+    entry: Entry,
+    decommit5a_and_elgamal_and_dlog_vec_includes_i: Vec<(
+        Phase5ADecom1,
+        HomoELGamalProof<Secp256k1, Sha256>,
+        DLogProof<Secp256k1, Sha256>,
+    )>,
+    phase_5d_decom2: Phase5DDecom2,
 }
 
 fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(
@@ -550,6 +571,8 @@ pub fn signRound5(
         phase_5a_decom,
         helgamal_proof,
         dlog_proof_rho,
+        local_sig,
+        R,
     };
     JsValue::from_serde(&round_entry).unwrap()
 }
@@ -572,6 +595,8 @@ pub fn signRound6(
         phase_5a_decom,
         helgamal_proof,
         dlog_proof_rho,
+        local_sig,
+        R,
         ..
     } = round5_entry;
 
@@ -588,14 +613,99 @@ pub fn signRound6(
         party_num_int,
         ROUND_6,
         serde_json::to_string(&(
-            phase_5a_decom,
-            helgamal_proof,
-            dlog_proof_rho,
+            phase_5a_decom.clone(),
+            helgamal_proof.clone(),
+            dlog_proof_rho.clone(),
         ))
         .unwrap(),
         uuid,
     );
 
-    let round_entry = Round6Entry { entry };
+    let round_entry = Round6Entry {
+        entry,
+        helgamal_proof,
+        dlog_proof_rho,
+        local_sig,
+        phase_5a_decom,
+        commit5a_vec,
+        R,
+    };
+    JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn signRound7(
+    parameters: JsValue,
+    party_signup: JsValue,
+    round6_entry: JsValue,
+    round6_ans_vec: JsValue,
+) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+
+    let round6_ans_vec: Vec<String> = round6_ans_vec.into_serde().unwrap();
+    let round6_entry: Round6Entry = round6_entry.into_serde().unwrap();
+    let Round6Entry {
+        mut commit5a_vec,
+        phase_5a_decom,
+        helgamal_proof,
+        dlog_proof_rho,
+        local_sig,
+        R,
+        ..
+    } = round6_entry;
+
+    let mut decommit5a_and_elgamal_and_dlog_vec: Vec<(
+        Phase5ADecom1,
+        HomoELGamalProof<Secp256k1, Sha256>,
+        DLogProof<Secp256k1, Sha256>,
+    )> = Vec::new();
+    format_vec_from_reads(
+        &round6_ans_vec,
+        party_num_int as usize,
+        (phase_5a_decom.clone(), helgamal_proof, dlog_proof_rho),
+        &mut decommit5a_and_elgamal_and_dlog_vec,
+    );
+    let decommit5a_and_elgamal_and_dlog_vec_includes_i =
+        decommit5a_and_elgamal_and_dlog_vec.clone();
+    decommit5a_and_elgamal_and_dlog_vec.remove(usize::from(party_num_int - 1));
+    commit5a_vec.remove(usize::from(party_num_int - 1));
+    let phase_5a_decomm_vec = (0..threshold)
+        .map(|i| decommit5a_and_elgamal_and_dlog_vec[i as usize].0.clone())
+        .collect::<Vec<Phase5ADecom1>>();
+    let phase_5a_elgamal_vec = (0..threshold)
+        .map(|i| decommit5a_and_elgamal_and_dlog_vec[i as usize].1.clone())
+        .collect::<Vec<HomoELGamalProof<Secp256k1, Sha256>>>();
+    let phase_5a_dlog_vec = (0..threshold)
+        .map(|i| decommit5a_and_elgamal_and_dlog_vec[i as usize].2.clone())
+        .collect::<Vec<DLogProof<Secp256k1, Sha256>>>();
+    let (phase5_com2, phase_5d_decom2) = local_sig
+        .phase5c(
+            &phase_5a_decomm_vec,
+            &commit5a_vec,
+            &phase_5a_elgamal_vec,
+            &phase_5a_dlog_vec,
+            &phase_5a_decom.V_i,
+            &R,
+        )
+        .expect("error phase5");
+
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_7,
+        serde_json::to_string(&phase5_com2).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round7Entry {
+        entry,
+        decommit5a_and_elgamal_and_dlog_vec_includes_i,
+        phase_5d_decom2,
+    };
     JsValue::from_serde(&round_entry).unwrap()
 }

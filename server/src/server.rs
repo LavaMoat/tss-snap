@@ -20,7 +20,7 @@ use std::convert::TryInto;
 
 use common::{
     Entry, Parameters, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2,
-    ROUND_3, ROUND_4, ROUND_5, ROUND_6,
+    ROUND_3, ROUND_4, ROUND_5, ROUND_6, ROUND_7,
 };
 
 /// Global unique user id counter.
@@ -85,6 +85,9 @@ enum IncomingKind {
     /// Store the round 6 entry sent by each client.
     #[serde(rename = "sign_round6")]
     SignRound6,
+    /// Store the round 7 entry sent by each client.
+    #[serde(rename = "sign_round7")]
+    SignRound7,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -346,7 +349,8 @@ async fn client_request(
         | IncomingKind::SignRound3
         | IncomingKind::SignRound4
         | IncomingKind::SignRound5
-        | IncomingKind::SignRound6 => {
+        | IncomingKind::SignRound6
+        | IncomingKind::SignRound7 => {
             // Assume the client is well behaved and sends the request data
             if let IncomingData::Entry { entry, .. } =
                 req.data.as_ref().unwrap()
@@ -394,7 +398,8 @@ async fn client_request(
         | IncomingKind::SignRound3
         | IncomingKind::SignRound4
         | IncomingKind::SignRound5
-        | IncomingKind::SignRound6 => {
+        | IncomingKind::SignRound6
+        | IncomingKind::SignRound7 => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let threshold = info.params.threshold as usize;
@@ -407,7 +412,8 @@ async fn client_request(
                 | IncomingKind::SignRound3
                 | IncomingKind::SignRound4
                 | IncomingKind::SignRound5
-                | IncomingKind::SignRound6 => threshold + 1,
+                | IncomingKind::SignRound6
+                | IncomingKind::SignRound7 => threshold + 1,
                 IncomingKind::KeygenRound1
                 | IncomingKind::KeygenRound2
                 | IncomingKind::KeygenRound4
@@ -430,6 +436,7 @@ async fn client_request(
                         IncomingKind::KeygenRound5
                         | IncomingKind::SignRound5 => ROUND_5,
                         IncomingKind::SignRound6 => ROUND_6,
+                        IncomingKind::SignRound7 => ROUND_7,
                         _ => unreachable!(),
                     };
 
@@ -502,7 +509,8 @@ async fn client_request(
                                     | IncomingKind::SignRound3
                                     | IncomingKind::SignRound4
                                     | IncomingKind::SignRound5
-                                    | IncomingKind::SignRound6 => {
+                                    | IncomingKind::SignRound6
+                                    | IncomingKind::SignRound7 => {
                                         OutgoingKind::SignCommitmentAnswer
                                     }
                                     _ => unreachable!(),
