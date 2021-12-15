@@ -10,6 +10,7 @@ import init, {
   signRound1,
   signRound2,
   signRound3,
+  signRound4,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -477,6 +478,42 @@ const sign = new StateMachine<SignState, SignTransition>([
       // Send the round 3 entry to the server
       request({
         kind: "sign_round3",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
+    },
+  },
+  {
+    name: "SIGN_ROUND_4",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const signState = previousState as SignRoundEntry<RoundEntry>;
+      const { message, partySignup, keygenResult } = signState;
+      const { parameters, key } = keygenResult;
+      const { answer } = transitionData as BroadcastAnswer;
+
+      const roundEntry = signRound4(
+        parameters,
+        partySignup,
+        key,
+        signState.roundEntry,
+        answer
+      );
+
+      // Send the round 4 entry to the server
+      request({
+        kind: "sign_round4",
         data: {
           entry: roundEntry.entry,
           uuid: partySignup.uuid,
