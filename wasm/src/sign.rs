@@ -8,9 +8,8 @@ use curv::{
     BigInt,
 };
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
-    Keys, LocalSignature, Parameters, PartyPrivate, Phase5ADecom1,
-    Phase5Com1,    /* Phase5Com2, */
-    Phase5DDecom2, /* SharedKeys, */
+    Keys, LocalSignature, Parameters, PartyPrivate, Phase5ADecom1, Phase5Com1,
+    Phase5Com2, Phase5DDecom2, /* SharedKeys, */
     SignBroadcastPhase1, SignDecommitPhase1, SignKeys,
 };
 use multi_party_ecdsa::utilities::mta::*;
@@ -20,7 +19,7 @@ use sha2::Sha256;
 
 use common::{
     Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
-    ROUND_5, ROUND_6, ROUND_7,
+    ROUND_5, ROUND_6, ROUND_7, ROUND_8,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -111,6 +110,12 @@ struct Round7Entry {
         DLogProof<Secp256k1, Sha256>,
     )>,
     phase_5d_decom2: Phase5DDecom2,
+    phase5_com2: Phase5Com2,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Round8Entry {
+    entry: Entry,
 }
 
 fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(
@@ -706,6 +711,46 @@ pub fn signRound7(
         entry,
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
         phase_5d_decom2,
+        phase5_com2,
     };
+    JsValue::from_serde(&round_entry).unwrap()
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn signRound8(
+    party_signup: JsValue,
+    round7_entry: JsValue,
+    round7_ans_vec: JsValue,
+) -> JsValue {
+    let PartySignup { number, uuid } =
+        party_signup.into_serde::<PartySignup>().unwrap();
+    let (party_num_int, uuid) = (number, uuid);
+
+    let round7_ans_vec: Vec<String> = round7_ans_vec.into_serde().unwrap();
+    let round7_entry: Round7Entry = round7_entry.into_serde().unwrap();
+    let Round7Entry {
+        phase5_com2,
+        phase_5d_decom2,
+        ..
+    } = round7_entry;
+
+    let mut commit5c_vec: Vec<Phase5Com2> = Vec::new();
+    format_vec_from_reads(
+        &round7_ans_vec,
+        party_num_int as usize,
+        phase5_com2,
+        &mut commit5c_vec,
+    );
+
+    //phase (5B)  broadcast decommit and (5B) ZK proof
+    let entry = into_round_entry(
+        party_num_int,
+        ROUND_8,
+        serde_json::to_string(&phase_5d_decom2).unwrap(),
+        uuid,
+    );
+
+    let round_entry = Round8Entry { entry };
     JsValue::from_serde(&round_entry).unwrap()
 }

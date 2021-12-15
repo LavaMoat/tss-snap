@@ -27,7 +27,8 @@ type RequestKind =
   | "sign_round4"
   | "sign_round5"
   | "sign_round6"
-  | "sign_round7";
+  | "sign_round7"
+  | "sign_round8";
 
 export interface RequestMessage {
   id?: number;
