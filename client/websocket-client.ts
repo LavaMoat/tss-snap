@@ -25,7 +25,8 @@ type RequestKind =
   | "sign_round2_relay_peers"
   | "sign_round3"
   | "sign_round4"
-  | "sign_round5";
+  | "sign_round5"
+  | "sign_round6";
 
 export interface RequestMessage {
   id?: number;

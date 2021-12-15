@@ -12,6 +12,7 @@ import init, {
   signRound3,
   signRound4,
   signRound5,
+  signRound6,
 } from "ecdsa-wasm";
 
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
@@ -563,6 +564,35 @@ const sign = new StateMachine<SignState, SignTransition>([
       });
     },
   },
+  {
+    name: "SIGN_ROUND_6",
+    transition: async (
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> => {
+      const signState = previousState as SignRoundEntry<RoundEntry>;
+      const { message, partySignup, keygenResult } = signState;
+      const { answer } = transitionData as BroadcastAnswer;
+
+      const roundEntry = signRound6(partySignup, signState.roundEntry, answer);
+
+      // Send the round 6 entry to the server
+      request({
+        kind: "sign_round6",
+        data: {
+          entry: roundEntry.entry,
+          uuid: partySignup.uuid,
+        },
+      });
+
+      return Promise.resolve({
+        message,
+        partySignup,
+        keygenResult,
+        roundEntry,
+      });
+    },
+  },
 ]);
 
 // Receive messages sent to the worker
@@ -643,7 +673,10 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
           await sign.next({ answer: msg.data.answer });
           break;
         case "round5":
-          console.log("GOT SIGNING ROUND 5 COMMITMENT");
+          await sign.next({ answer: msg.data.answer });
+          break;
+        case "round6":
+          console.log("GOT SIGNING ROUND 6 COMMITMENT");
           //await sign.next({ answer: msg.data.answer });
           break;
       }
