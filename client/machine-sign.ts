@@ -11,7 +11,7 @@ import {
   signRound9,
   signMessage,
 } from "ecdsa-wasm";
-import { State, StateMachine } from "./state-machine";
+import { StateMachine } from "./state-machine";
 import {
   KeygenResult,
   PartySignup,
@@ -21,7 +21,7 @@ import {
   getSortedPeerEntriesAnswer,
   makeOnTransition,
 } from "./machine-common";
-import {} from "./machine-keygen";
+import { BroadcastMessage } from "./websocket-client";
 
 // Type used to start the signing process.
 interface SignInit {
@@ -47,7 +47,7 @@ export function makeSignMessageStateMachine(
   send: Function
 ) {
   // State machine for signing a proposal
-  return new StateMachine<SignState, SignTransition>(
+  const machine = new StateMachine<SignState, SignTransition>(
     [
       // Start the signing process.
       {
@@ -431,4 +431,76 @@ export function makeSignMessageStateMachine(
     ],
     makeOnTransition<SignState, SignTransition>(postMessage)
   );
+
+  // Handle messages from the server that were broadcast
+  // without a client request
+  async function onBroadcastMessage(msg: BroadcastMessage) {
+    switch (msg.kind) {
+      case "sign_proposal":
+        const { message } = msg.data;
+        postMessage({ type: "sign_proposal", message });
+        return true;
+      case "sign_progress":
+        // Parties that did not commit to signing should update the UI only
+        postMessage({ type: "sign_progress" });
+
+        // Parties not participating in the signing should reset their party number
+        postMessage({
+          type: "party_signup",
+          partySignup: { number: 0, uuid: "" },
+        });
+        return true;
+      case "sign_commitment_answer":
+        switch (msg.data.round) {
+          case "round0":
+            // We performed a sign of the message and also need to update the UI
+            postMessage({ type: "sign_progress" });
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round1":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round3":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round4":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round5":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round6":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round7":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round8":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round9":
+            await machine.next({ answer: msg.data.answer });
+            break;
+        }
+        return true;
+      case "sign_peer_answer":
+        const { peer_entry: signPeerEntry } = msg.data;
+        peerState.received.push(signPeerEntry);
+
+        // Got all the p2p answers
+        if (peerState.received.length === peerState.parties - 1) {
+          await machine.next();
+        }
+
+        return true;
+      case "sign_result":
+        const { sign_result: signResult } = msg.data;
+        // Update the UI
+        postMessage({ type: "sign_result", signResult });
+        return true;
+    }
+    return false;
+  }
+
+  return { machine, onBroadcastMessage };
 }

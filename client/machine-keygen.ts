@@ -6,7 +6,7 @@ import {
   keygenRound5,
   createKey,
 } from "ecdsa-wasm";
-import { State, StateMachine } from "./state-machine";
+import { StateMachine } from "./state-machine";
 import {
   Parameters,
   PartySignup,
@@ -19,6 +19,7 @@ import {
   getSortedPeerEntriesAnswer,
   makeOnTransition,
 } from "./machine-common";
+import { BroadcastMessage } from "./websocket-client";
 
 // Type to pass through the client state machine during key generation.
 interface KeygenRoundEntry<T> {
@@ -36,9 +37,10 @@ export type KeygenState =
 export function makeKeygenStateMachine(
   peerState: PeerState,
   request: Function,
-  postMessage: Function
+  postMessage: Function,
+  onKeygenResult: Function
 ) {
-  return new StateMachine<KeygenState, KeygenTransition>(
+  const machine = new StateMachine<KeygenState, KeygenTransition>(
     [
       // Handshake to get server parameters and client identifier
       {
@@ -239,4 +241,44 @@ export function makeKeygenStateMachine(
     ],
     makeOnTransition<KeygenState, KeygenTransition>(postMessage)
   );
+
+  // Handle messages from the server that were broadcast
+  // without a client request
+  async function onBroadcastMessage(msg: BroadcastMessage) {
+    switch (msg.kind) {
+      case "keygen_commitment_answer":
+        switch (msg.data.round) {
+          case "round1":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round2":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round4":
+            await machine.next({ answer: msg.data.answer });
+            break;
+          case "round5":
+            const keygenResult = (await machine.next({
+              answer: msg.data.answer,
+            })) as KeygenResult;
+            onKeygenResult(keygenResult);
+            postMessage({ type: "keygen_complete" });
+            break;
+        }
+        return true;
+      case "keygen_peer_answer":
+        const { peer_entry: keygenPeerEntry } = msg.data;
+        peerState.received.push(keygenPeerEntry);
+
+        // Got all the p2p answers
+        if (peerState.received.length === peerState.parties - 1) {
+          await machine.next();
+        }
+
+        return true;
+    }
+    return false;
+  }
+
+  return { machine, onBroadcastMessage };
 }
