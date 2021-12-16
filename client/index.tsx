@@ -73,6 +73,7 @@ const App = (props: AppProps) => {
   const { worker } = props;
   if (worker) {
     const [url, setUrl] = useState(null);
+    const [connected, setConnected] = useState(false);
     const [clientId, setClientId] = useState(null);
     const [parties, setParties] = useState(null);
     const [threshold, setThreshold] = useState(null);
@@ -107,9 +108,13 @@ const App = (props: AppProps) => {
       const { type } = e.data;
       switch (type) {
         // Worker sends us the backend server URL
-        case "server":
+        case "connected":
           const { url } = e.data;
           setUrl(url);
+          setConnected(true);
+          break;
+        case "disconnected":
+          setConnected(false);
           break;
         // Worker has been initialized and is ready with the server parameters
         case "ready":
@@ -146,11 +151,8 @@ const App = (props: AppProps) => {
       }
     };
 
-    return (
+    const Connected = () => (
       <>
-        <h1>ECDSA WASM Demo</h1>
-        <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
-        <hr />
         <p>Server: {url}</p>
         <p>Client ID: {clientId}</p>
         <p>Parties: {parties}</p>
@@ -168,6 +170,15 @@ const App = (props: AppProps) => {
             onSignMessage={onSignMessage}
           />
         ) : null}
+      </>
+    );
+
+    return (
+      <>
+        <h1>ECDSA WASM Demo</h1>
+        <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
+        <hr />
+        {connected ? <Connected /> : <p>Not connected</p>}
       </>
     );
   } else {

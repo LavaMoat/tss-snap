@@ -856,7 +856,7 @@ const url = "ws://localhost:3030/demo";
 const { send, request } = makeWebSocketClient({
   url,
   onOpen: async () => {
-    postMessage({ type: "server", url });
+    postMessage({ type: "connected", url });
     const handshake = (await keygen.next()) as Handshake;
     postMessage({
       type: "ready",
@@ -864,6 +864,8 @@ const { send, request } = makeWebSocketClient({
       ...handshake.client,
     });
   },
-  onClose: async () => {},
+  onClose: async () => {
+    postMessage({ type: "disconnected" });
+  },
   onBroadcastMessage,
 });
