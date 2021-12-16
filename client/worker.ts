@@ -156,11 +156,14 @@ function getSortedPeerEntriesAnswer(): string[] {
 
 function makeOnTransition<T, U>() {
   return (previousState: State<T, U>, nextState: State<T, U>) => {
+    let message = "";
     if (previousState) {
-      console.log("transition from", previousState.name, "to", nextState.name);
+      message = `transition from ${previousState.name} to ${nextState.name}`;
     } else {
-      console.log("transition to", nextState.name);
+      message = `transition to ${nextState.name}`;
     }
+    console.log(message);
+    postMessage({ type: "log", message });
   };
 }
 
@@ -219,7 +222,6 @@ const keygen = new StateMachine<KeygenState, KeygenTransition>(
         previousState: KeygenState,
         transitionData: KeygenTransition
       ): Promise<KeygenState | null> => {
-        postMessage({ type: "round1_complete" });
         const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
         const { parameters, partySignup } = keygenRoundEntry;
         const { answer } = transitionData as BroadcastAnswer;
@@ -251,7 +253,6 @@ const keygen = new StateMachine<KeygenState, KeygenTransition>(
         previousState: KeygenState,
         transitionData: KeygenTransition
       ): Promise<KeygenState | null> => {
-        postMessage({ type: "round2_complete" });
         const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
         const { parameters, partySignup } = keygenRoundEntry;
         const { answer } = transitionData as BroadcastAnswer;
@@ -280,7 +281,6 @@ const keygen = new StateMachine<KeygenState, KeygenTransition>(
         previousState: KeygenState,
         transitionData: KeygenTransition
       ): Promise<KeygenState | null> => {
-        postMessage({ type: "round3_complete" });
         const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
         const { parameters, partySignup } = keygenRoundEntry;
 
@@ -315,7 +315,6 @@ const keygen = new StateMachine<KeygenState, KeygenTransition>(
         previousState: KeygenState,
         transitionData: KeygenTransition
       ): Promise<KeygenState | null> => {
-        postMessage({ type: "round4_complete" });
         const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
         const { parameters, partySignup } = keygenRoundEntry;
         const { answer } = transitionData as BroadcastAnswer;
@@ -347,7 +346,6 @@ const keygen = new StateMachine<KeygenState, KeygenTransition>(
         previousState: KeygenState,
         transitionData: KeygenTransition
       ): Promise<KeygenState | null> => {
-        postMessage({ type: "round5_complete" });
         const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
         const { parameters, partySignup } = keygenRoundEntry;
         const { answer } = transitionData as BroadcastAnswer;

@@ -30,14 +30,17 @@ export class StateMachine<T, U> {
       );
     }
 
-    const state = this.states[this.index];
-    if (state) {
+    const nextState = this.states[this.index];
+    if (nextState) {
       const previousState = this.states[this.index - 1];
-      this.onTransition(previousState, state);
-      this.index++;
+      this.onTransition(previousState, nextState);
       this.inTransition = true;
-      this.stateData = await state.transition(this.stateData, transitionData);
+      this.stateData = await nextState.transition(
+        this.stateData,
+        transitionData
+      );
       this.inTransition = false;
+      this.index++;
     }
     return this.stateData;
   }

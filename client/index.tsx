@@ -25,7 +25,6 @@ const SignForm = (props: SignFormProps) => {
 
   return (
     <>
-      <h3>Propose a message to sign</h3>
       <form onSubmit={onSignFormSubmit}>
         <textarea
           placeholder="Enter a message to sign"
@@ -56,7 +55,6 @@ const SignProposal = (props: SignProposalProps) => {
 
   return (
     <>
-      <h3>Message to sign!</h3>
       <pre>{props.signMessage}</pre>
       {signButtonVisible ? (
         <button onClick={onSignMessage}>Sign</button>
@@ -86,6 +84,8 @@ const App = (props: AppProps) => {
     const [signStatusMessage, setSignStatusMessage] = useState("");
     const [signFormVisible, setSignFormVisible] = useState(false);
     const [signProposalVisible, setSignProposalVisible] = useState(false);
+
+    const [logMessage, setLogMessage] = useState("");
 
     const onKeygenPartySignup = () => {
       worker.postMessage({ type: "party_signup" });
@@ -123,31 +123,21 @@ const App = (props: AppProps) => {
           const { partySignup } = e.data;
           setPartyNumber(partySignup.number > 0 ? partySignup.number : "N/A");
           break;
-        case "round1_complete":
-          console.log("[UI] keygen: round 1 complete");
-          break;
-        case "round2_complete":
-          console.log("[UI] keygen: round 2 complete");
-          break;
-        case "round3_complete":
-          console.log("[UI] keygen: round 3 complete");
-          break;
-        case "round4_complete":
-          console.log("[UI] keygen: round 4 complete");
-          break;
-        case "round5_complete":
-          console.log("[UI] keygen: round 5 complete");
+        case "log":
+          const { message: logMessage } = e.data;
+          setLogMessage(logMessage);
           break;
         // We have all the key information for this party
         case "keygen_complete":
+          setLogMessage("SIGN_MESSAGE_PROPOSAL");
           setSignFormVisible(true);
-          console.log("[UI] keygen: completed!");
           break;
         case "sign_progress":
           console.log("[UI] sign: signing in progres");
           setSignStatusMessage("Signing in progress...");
           break;
         case "sign_proposal":
+          setLogMessage("SIGN_PENDING");
           const { message } = e.data;
           setSignMessage(message);
           setSignFormVisible(false);
@@ -166,6 +156,7 @@ const App = (props: AppProps) => {
         <p>Parties: {parties}</p>
         <p>Threshold: {threshold}</p>
         <p>Party #: {partyNumber ? partyNumber : "-"}</p>
+        <p>State: {logMessage}</p>
         {keygenSignupVisible ? (
           <button onClick={onKeygenPartySignup}>Keygen Signup</button>
         ) : null}
