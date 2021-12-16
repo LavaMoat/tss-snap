@@ -33,6 +33,14 @@ The `make server` command starts the server configured for 3 parties with thresh
 
 ***Warning:***: The server is stateful and not idempotent, it is best to run the demo from a clean server (re)start.
 
+For example is you see an error like this:
+
+```
+panicked at 'index out of bounds: the len is 1 but the index is 1', src/keygen.rs:233:39
+```
+
+Try restarting the server.
+
 ## Demo
 
 Now visit `http://localhost:8080`.
