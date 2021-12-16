@@ -139,7 +139,6 @@ const App = (props: AppProps) => {
           setSignFormVisible(true);
           break;
         case "sign_progress":
-          console.log("[UI] sign: signing in progres");
           setSignStatusMessage("Signing in progress...");
           break;
         case "sign_proposal":

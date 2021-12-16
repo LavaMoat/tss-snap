@@ -4,7 +4,8 @@ type BroadcastKind =
   | "sign_proposal"
   | "sign_progress"
   | "sign_commitment_answer"
-  | "sign_peer_answer";
+  | "sign_peer_answer"
+  | "sign_result";
 
 export interface BroadcastMessage {
   kind: BroadcastKind;
@@ -29,7 +30,8 @@ type RequestKind =
   | "sign_round6"
   | "sign_round7"
   | "sign_round8"
-  | "sign_round9";
+  | "sign_round9"
+  | "sign_result";
 
 export interface RequestMessage {
   id?: number;

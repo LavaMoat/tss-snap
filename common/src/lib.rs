@@ -37,3 +37,9 @@ pub struct Entry {
     pub key: String,
     pub value: String,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SignResult {
+    pub r: String,
+    pub s: String,
+}

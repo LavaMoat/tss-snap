@@ -16,8 +16,8 @@ use multi_party_ecdsa::utilities::mta::*;
 use sha2::Sha256;
 
 use common::{
-    Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
-    ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
+    Entry, PartySignup, PeerEntry, SignResult, ROUND_0, ROUND_1, ROUND_2,
+    ROUND_3, ROUND_4, ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -135,12 +135,6 @@ struct Round9Entry {
     local_sig: LocalSignature,
     s_i: Scalar<Secp256k1>,
     message_bn: BigInt,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct SignResult {
-    r: String,
-    s: String,
 }
 
 fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(

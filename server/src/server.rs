@@ -19,8 +19,8 @@ use warp::Filter;
 use std::convert::TryInto;
 
 use common::{
-    Entry, Parameters, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2,
-    ROUND_3, ROUND_4, ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
+    Entry, Parameters, PartySignup, PeerEntry, SignResult, ROUND_0, ROUND_1,
+    ROUND_2, ROUND_3, ROUND_4, ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
 };
 
 /// Global unique user id counter.
@@ -94,14 +94,28 @@ enum IncomingKind {
     /// Store the round 9 entry sent by each client.
     #[serde(rename = "sign_round9")]
     SignRound9,
+    /// Notify non-participants that a signed message was generated.
+    #[serde(rename = "sign_result")]
+    SignResult,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
-    Entry { entry: Entry, uuid: String },
-    PeerEntries { entries: Vec<PeerEntry> },
-    Message { message: String },
+    Entry {
+        entry: Entry,
+        uuid: String,
+    },
+    PeerEntries {
+        entries: Vec<PeerEntry>,
+    },
+    Message {
+        message: String,
+    },
+    SignResult {
+        sign_result: SignResult,
+        uuid: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -126,6 +140,9 @@ enum OutgoingKind {
     /// Relayed peer to peer answer.
     #[serde(rename = "sign_peer_answer")]
     SignPeerAnswer,
+    /// Notify non-participants of a sign result.
+    #[serde(rename = "sign_result")]
+    SignResult,
 }
 
 #[derive(Debug, Serialize)]
@@ -159,6 +176,9 @@ enum OutgoingData {
     },
     Message {
         message: String,
+    },
+    SignResult {
+        sign_result: SignResult,
     },
 }
 
@@ -388,6 +408,43 @@ async fn client_request(
                 kind: None,
                 data: None,
             })
+        }
+        // FIXME: this is broadcast multiple times because
+        // FIXME: we receive this message from each signer
+        IncomingKind::SignResult => {
+            if let IncomingData::SignResult { sign_result, uuid } =
+                req.data.as_ref().unwrap()
+            {
+                let info = state.read().await;
+                let non_participants: Vec<usize> = info
+                    .clients
+                    .iter()
+                    .filter(|(_k, v)| {
+                        if let Some(party_signup) = &v.1 {
+                            if &party_signup.uuid != uuid {
+                                return true;
+                            }
+                        }
+                        false
+                    })
+                    .map(|(k, _v)| *k)
+                    .collect();
+                drop(info);
+
+                let res = Outgoing {
+                    id: None,
+                    kind: Some(OutgoingKind::SignResult),
+                    data: Some(OutgoingData::SignResult {
+                        sign_result: sign_result.clone(),
+                    }),
+                };
+
+                for conn_id in non_participants {
+                    send_message(conn_id, &res, state).await;
+                }
+            }
+
+            None
         }
     };
 

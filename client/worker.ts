@@ -735,7 +735,14 @@ const sign = new StateMachine<SignState, SignTransition>(
           answer
         );
 
+        // Update the UI
         postMessage({ type: "sign_result", signResult });
+
+        // Notify non-participants of the signed message
+        send({
+          kind: "sign_result",
+          data: { sign_result: signResult, uuid: partySignup.uuid },
+        });
 
         return Promise.resolve(null);
       },
@@ -847,6 +854,11 @@ const onBroadcastMessage = async (msg: BroadcastMessage) => {
         await sign.next();
       }
 
+      return true;
+    case "sign_result":
+      const { sign_result: signResult } = msg.data;
+      // Update the UI
+      postMessage({ type: "sign_result", signResult });
       return true;
   }
   return false;
