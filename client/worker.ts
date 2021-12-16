@@ -154,567 +154,597 @@ function getSortedPeerEntriesAnswer(): string[] {
   return peerState.received.map((peer: PeerEntry) => peer.entry.value);
 }
 
-const keygen = new StateMachine<KeygenState, KeygenTransition>([
-  // Handshake to get server parameters and client identifier
-  {
-    name: "HANDSHAKE",
-    transition: async (
-      previousState: KeygenState
-    ): Promise<KeygenState | null> => {
-      const res = await request({ kind: "parameters" });
-      const parameters = {
-        parties: res.data.parties,
-        threshold: res.data.threshold,
-      };
-      peerState.parties = res.data.parties;
-      const client = { conn_id: res.data.conn_id };
-      return Promise.resolve({ parameters, client });
+function makeOnTransition<T, U>() {
+  return (previousState: State<T, U>, nextState: State<T, U>) => {
+    if (previousState) {
+      console.log("transition from", previousState.name, "to", nextState.name);
+    } else {
+      console.log("transition to", nextState.name);
+    }
+  };
+}
+
+const keygen = new StateMachine<KeygenState, KeygenTransition>(
+  [
+    // Handshake to get server parameters and client identifier
+    {
+      name: "HANDSHAKE",
+      transition: async (
+        previousState: KeygenState
+      ): Promise<KeygenState | null> => {
+        const res = await request({ kind: "parameters" });
+        const parameters = {
+          parties: res.data.parties,
+          threshold: res.data.threshold,
+        };
+        peerState.parties = res.data.parties;
+        const client = { conn_id: res.data.conn_id };
+        return Promise.resolve({ parameters, client });
+      },
     },
-  },
-  // Generate the PartySignup and keygen round 1 entry
-  {
-    name: "KEYGEN_ROUND_1",
-    transition: async (
-      previousState: KeygenState
-    ): Promise<KeygenState | null> => {
-      const handshake = previousState as Handshake;
-      const { parameters } = handshake;
-      const signup = await request({ kind: "party_signup" });
-      const { party_signup: partySignup } = signup.data;
+    // Generate the PartySignup and keygen round 1 entry
+    {
+      name: "KEYGEN_ROUND_1",
+      transition: async (
+        previousState: KeygenState
+      ): Promise<KeygenState | null> => {
+        const handshake = previousState as Handshake;
+        const { parameters } = handshake;
+        const signup = await request({ kind: "party_signup" });
+        const { party_signup: partySignup } = signup.data;
 
-      // So the UI thread can show the party number
-      postMessage({ type: "party_signup", partySignup });
+        // So the UI thread can show the party number
+        postMessage({ type: "party_signup", partySignup });
 
-      // Create the round 1 key entry
-      const roundEntry = keygenRound1(partySignup);
+        // Create the round 1 key entry
+        const roundEntry = keygenRound1(partySignup);
 
-      // Send the round 1 entry to the server
-      request({
-        kind: "keygen_round1",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 1 entry to the server
+        request({
+          kind: "keygen_round1",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      const data = { parameters, partySignup, roundEntry };
-      return Promise.resolve(data);
+        const data = { parameters, partySignup, roundEntry };
+        return Promise.resolve(data);
+      },
     },
-  },
-  // All parties committed to round 1 so generate the round 2 entry
-  {
-    name: "KEYGEN_ROUND_2",
-    transition: async (
-      previousState: KeygenState,
-      transitionData: KeygenTransition
-    ): Promise<KeygenState | null> => {
-      postMessage({ type: "round1_complete" });
-      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
-      const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = transitionData as BroadcastAnswer;
+    // All parties committed to round 1 so generate the round 2 entry
+    {
+      name: "KEYGEN_ROUND_2",
+      transition: async (
+        previousState: KeygenState,
+        transitionData: KeygenTransition
+      ): Promise<KeygenState | null> => {
+        postMessage({ type: "round1_complete" });
+        const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+        const { parameters, partySignup } = keygenRoundEntry;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      // Get round 2 entry using round 1 commitments
-      const roundEntry = keygenRound2(
-        partySignup,
-        keygenRoundEntry.roundEntry,
-        answer
-      );
+        // Get round 2 entry using round 1 commitments
+        const roundEntry = keygenRound2(
+          partySignup,
+          keygenRoundEntry.roundEntry,
+          answer
+        );
 
-      // Send the round 2 entry to the server
-      request({
-        kind: "keygen_round2",
-        data: {
-          entry: roundEntry.entry,
-          uuid: keygenRoundEntry.partySignup.uuid,
-        },
-      });
+        // Send the round 2 entry to the server
+        request({
+          kind: "keygen_round2",
+          data: {
+            entry: roundEntry.entry,
+            uuid: keygenRoundEntry.partySignup.uuid,
+          },
+        });
 
-      const data = { parameters, partySignup, roundEntry };
-      return Promise.resolve(data);
+        const data = { parameters, partySignup, roundEntry };
+        return Promise.resolve(data);
+      },
     },
-  },
-  // All parties committed to round 2 so generate the round 3 peer to peer calls
-  {
-    name: "KEYGEN_ROUND_3",
-    transition: async (
-      previousState: KeygenState,
-      transitionData: KeygenTransition
-    ): Promise<KeygenState | null> => {
-      postMessage({ type: "round2_complete" });
-      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
-      const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = transitionData as BroadcastAnswer;
+    // All parties committed to round 2 so generate the round 3 peer to peer calls
+    {
+      name: "KEYGEN_ROUND_3",
+      transition: async (
+        previousState: KeygenState,
+        transitionData: KeygenTransition
+      ): Promise<KeygenState | null> => {
+        postMessage({ type: "round2_complete" });
+        const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+        const { parameters, partySignup } = keygenRoundEntry;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = keygenRound3(
-        parameters,
-        partySignup,
-        keygenRoundEntry.roundEntry,
-        answer
-      );
+        const roundEntry = keygenRound3(
+          parameters,
+          partySignup,
+          keygenRoundEntry.roundEntry,
+          answer
+        );
 
-      // Send the round 3 entry to the server
-      request({
-        kind: "keygen_round3_relay_peers",
-        data: { entries: roundEntry.peer_entries },
-      });
+        // Send the round 3 entry to the server
+        request({
+          kind: "keygen_round3_relay_peers",
+          data: { entries: roundEntry.peer_entries },
+        });
 
-      const data = { parameters, partySignup, roundEntry };
-      return Promise.resolve(data);
+        const data = { parameters, partySignup, roundEntry };
+        return Promise.resolve(data);
+      },
     },
-  },
-  // Got all the round 3 peer to peer messages, proceed to round  4
-  {
-    name: "KEYGEN_ROUND_4",
-    transition: async (
-      previousState: KeygenState,
-      transitionData: KeygenTransition
-    ): Promise<KeygenState | null> => {
-      postMessage({ type: "round3_complete" });
-      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
-      const { parameters, partySignup } = keygenRoundEntry;
+    // Got all the round 3 peer to peer messages, proceed to round  4
+    {
+      name: "KEYGEN_ROUND_4",
+      transition: async (
+        previousState: KeygenState,
+        transitionData: KeygenTransition
+      ): Promise<KeygenState | null> => {
+        postMessage({ type: "round3_complete" });
+        const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+        const { parameters, partySignup } = keygenRoundEntry;
 
-      const answer = getSortedPeerEntriesAnswer();
-      // Clean up the peer entries
-      peerState.received = [];
+        const answer = getSortedPeerEntriesAnswer();
+        // Clean up the peer entries
+        peerState.received = [];
 
-      const roundEntry = keygenRound4(
-        parameters,
-        partySignup,
-        keygenRoundEntry.roundEntry,
-        answer
-      );
+        const roundEntry = keygenRound4(
+          parameters,
+          partySignup,
+          keygenRoundEntry.roundEntry,
+          answer
+        );
 
-      // Send the round 4 entry to the server
-      request({
-        kind: "keygen_round4",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 4 entry to the server
+        request({
+          kind: "keygen_round4",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      const data = { parameters, partySignup, roundEntry };
-      return Promise.resolve(data);
+        const data = { parameters, partySignup, roundEntry };
+        return Promise.resolve(data);
+      },
     },
-  },
-  // Got all the round 4 entries
-  {
-    name: "KEYGEN_ROUND_5",
-    transition: async (
-      previousState: KeygenState,
-      transitionData: KeygenTransition
-    ): Promise<KeygenState | null> => {
-      postMessage({ type: "round4_complete" });
-      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
-      const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = transitionData as BroadcastAnswer;
+    // Got all the round 4 entries
+    {
+      name: "KEYGEN_ROUND_5",
+      transition: async (
+        previousState: KeygenState,
+        transitionData: KeygenTransition
+      ): Promise<KeygenState | null> => {
+        postMessage({ type: "round4_complete" });
+        const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+        const { parameters, partySignup } = keygenRoundEntry;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = keygenRound5(
-        parameters,
-        partySignup,
-        keygenRoundEntry.roundEntry,
-        answer
-      );
+        const roundEntry = keygenRound5(
+          parameters,
+          partySignup,
+          keygenRoundEntry.roundEntry,
+          answer
+        );
 
-      // Send the round 5 entry to the server
-      request({
-        kind: "keygen_round5",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 5 entry to the server
+        request({
+          kind: "keygen_round5",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      const data = { parameters, partySignup, roundEntry };
-      return Promise.resolve(data);
+        const data = { parameters, partySignup, roundEntry };
+        return Promise.resolve(data);
+      },
     },
-  },
-  // Got all the round 5 entries, create the final key data
-  {
-    name: "KEYGEN_FINALIZE",
-    transition: async (
-      previousState: KeygenState,
-      transitionData: KeygenTransition
-    ): Promise<KeygenState | null> => {
-      postMessage({ type: "round5_complete" });
-      const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
-      const { parameters, partySignup } = keygenRoundEntry;
-      const { answer } = transitionData as BroadcastAnswer;
+    // Got all the round 5 entries, create the final key data
+    {
+      name: "KEYGEN_FINALIZE",
+      transition: async (
+        previousState: KeygenState,
+        transitionData: KeygenTransition
+      ): Promise<KeygenState | null> => {
+        postMessage({ type: "round5_complete" });
+        const keygenRoundEntry = previousState as KeygenRoundEntry<RoundEntry>;
+        const { parameters, partySignup } = keygenRoundEntry;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const key: PartyKey = createKey(
-        parameters,
-        partySignup,
-        keygenRoundEntry.roundEntry,
-        answer
-      );
+        const key: PartyKey = createKey(
+          parameters,
+          partySignup,
+          keygenRoundEntry.roundEntry,
+          answer
+        );
 
-      return Promise.resolve({ parameters, partySignup, key });
+        return Promise.resolve({ parameters, partySignup, key });
+      },
     },
-  },
-]);
+  ],
+  makeOnTransition<KeygenState, KeygenTransition>()
+);
 
 // State machine for signing a proposal
-const sign = new StateMachine<SignState, SignTransition>([
-  // Start the signing process.
-  {
-    name: "SIGN_ROUND_0",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      // Generate a new party signup for the sign phase
-      const signup = await request({ kind: "party_signup" });
-      const { party_signup: partySignup } = signup.data;
+const sign = new StateMachine<SignState, SignTransition>(
+  [
+    // Start the signing process.
+    {
+      name: "SIGN_ROUND_0",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        // Generate a new party signup for the sign phase
+        const signup = await request({ kind: "party_signup" });
+        const { party_signup: partySignup } = signup.data;
 
-      // So the UI thread can update the party number for the sign phase
-      postMessage({ type: "party_signup", partySignup });
+        // So the UI thread can update the party number for the sign phase
+        postMessage({ type: "party_signup", partySignup });
 
-      const { message, keygenResult } = transitionData as SignInit;
-      const { key } = keygenResult;
-      const roundEntry = signRound0(partySignup, key);
+        const { message, keygenResult } = transitionData as SignInit;
+        const { key } = keygenResult;
+        const roundEntry = signRound0(partySignup, key);
 
-      // Send the round 0 entry to the server
-      request({
-        kind: "sign_round0",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 0 entry to the server
+        request({
+          kind: "sign_round0",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_1",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const { message, partySignup, keygenResult } =
-        previousState as SignRoundEntry<RoundEntry>;
-      const { parameters, key } = keygenResult;
-      const { answer } = transitionData as BroadcastAnswer;
-      const roundEntry = signRound1(parameters, partySignup, key, answer);
+    {
+      name: "SIGN_ROUND_1",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const { message, partySignup, keygenResult } =
+          previousState as SignRoundEntry<RoundEntry>;
+        const { parameters, key } = keygenResult;
+        const { answer } = transitionData as BroadcastAnswer;
+        const roundEntry = signRound1(parameters, partySignup, key, answer);
 
-      // Set up for the peer to peer calls in round 2
-      peerState.parties = parameters.threshold + 1;
-      peerState.received = [];
+        // Set up for the peer to peer calls in round 2
+        peerState.parties = parameters.threshold + 1;
+        peerState.received = [];
 
-      // Send the round 1 entry to the server
-      request({
-        kind: "sign_round1",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 1 entry to the server
+        request({
+          kind: "sign_round1",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_2",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { parameters, key } = keygenResult;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_2",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { parameters, key } = keygenResult;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound2(
-        parameters,
-        partySignup,
-        key,
-        signState.roundEntry,
-        answer
-      );
+        const roundEntry = signRound2(
+          parameters,
+          partySignup,
+          key,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 2 entry to the server
-      request({
-        kind: "sign_round2_relay_peers",
-        data: { entries: roundEntry.peer_entries },
-      });
+        // Send the round 2 entry to the server
+        request({
+          kind: "sign_round2_relay_peers",
+          data: { entries: roundEntry.peer_entries },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_3",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { parameters, key } = keygenResult;
+    {
+      name: "SIGN_ROUND_3",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { parameters, key } = keygenResult;
 
-      const answer = getSortedPeerEntriesAnswer();
-      // Clean up the peer entries
-      peerState.received = [];
+        const answer = getSortedPeerEntriesAnswer();
+        // Clean up the peer entries
+        peerState.received = [];
 
-      const roundEntry = signRound3(
-        parameters,
-        partySignup,
-        key,
-        signState.roundEntry,
-        answer
-      );
+        const roundEntry = signRound3(
+          parameters,
+          partySignup,
+          key,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 3 entry to the server
-      request({
-        kind: "sign_round3",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 3 entry to the server
+        request({
+          kind: "sign_round3",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_4",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_4",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound4(partySignup, signState.roundEntry, answer);
+        const roundEntry = signRound4(
+          partySignup,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 4 entry to the server
-      request({
-        kind: "sign_round4",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 4 entry to the server
+        request({
+          kind: "sign_round4",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_5",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { key } = keygenResult;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_5",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { key } = keygenResult;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const encoder = new TextEncoder();
-      // NOTE: UInt8Array serializes to a map but we want
-      // NOTE: a Vec<u8> in webassembly so must call Array.from()
-      const messageBytes = Array.from(encoder.encode(message));
+        const encoder = new TextEncoder();
+        // NOTE: UInt8Array serializes to a map but we want
+        // NOTE: a Vec<u8> in webassembly so must call Array.from()
+        const messageBytes = Array.from(encoder.encode(message));
 
-      const roundEntry = signRound5(
-        partySignup,
-        key,
-        signState.roundEntry,
-        answer,
-        messageBytes
-      );
+        const roundEntry = signRound5(
+          partySignup,
+          key,
+          signState.roundEntry,
+          answer,
+          messageBytes
+        );
 
-      // Send the round 5 entry to the server
-      request({
-        kind: "sign_round5",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 5 entry to the server
+        request({
+          kind: "sign_round5",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_6",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_6",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound6(partySignup, signState.roundEntry, answer);
+        const roundEntry = signRound6(
+          partySignup,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 6 entry to the server
-      request({
-        kind: "sign_round6",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 6 entry to the server
+        request({
+          kind: "sign_round6",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_7",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { parameters } = keygenResult;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_7",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { parameters } = keygenResult;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound7(
-        parameters,
-        partySignup,
-        signState.roundEntry,
-        answer
-      );
+        const roundEntry = signRound7(
+          parameters,
+          partySignup,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 7 entry to the server
-      request({
-        kind: "sign_round7",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 7 entry to the server
+        request({
+          kind: "sign_round7",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_8",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_8",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound8(partySignup, signState.roundEntry, answer);
+        const roundEntry = signRound8(
+          partySignup,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 8 entry to the server
-      request({
-        kind: "sign_round8",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 8 entry to the server
+        request({
+          kind: "sign_round8",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_ROUND_9",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { parameters } = keygenResult;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_ROUND_9",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { parameters } = keygenResult;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const roundEntry = signRound9(
-        parameters,
-        partySignup,
-        signState.roundEntry,
-        answer
-      );
+        const roundEntry = signRound9(
+          parameters,
+          partySignup,
+          signState.roundEntry,
+          answer
+        );
 
-      // Send the round 9 entry to the server
-      request({
-        kind: "sign_round9",
-        data: {
-          entry: roundEntry.entry,
-          uuid: partySignup.uuid,
-        },
-      });
+        // Send the round 9 entry to the server
+        request({
+          kind: "sign_round9",
+          data: {
+            entry: roundEntry.entry,
+            uuid: partySignup.uuid,
+          },
+        });
 
-      return Promise.resolve({
-        message,
-        partySignup,
-        keygenResult,
-        roundEntry,
-      });
+        return Promise.resolve({
+          message,
+          partySignup,
+          keygenResult,
+          roundEntry,
+        });
+      },
     },
-  },
-  {
-    name: "SIGN_FINALIZE",
-    transition: async (
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> => {
-      const signState = previousState as SignRoundEntry<RoundEntry>;
-      const { message, partySignup, keygenResult } = signState;
-      const { parameters, key } = keygenResult;
-      const { answer } = transitionData as BroadcastAnswer;
+    {
+      name: "SIGN_FINALIZE",
+      transition: async (
+        previousState: SignState,
+        transitionData: SignTransition
+      ): Promise<SignState | null> => {
+        const signState = previousState as SignRoundEntry<RoundEntry>;
+        const { message, partySignup, keygenResult } = signState;
+        const { parameters, key } = keygenResult;
+        const { answer } = transitionData as BroadcastAnswer;
 
-      const signResult = signMessage(
-        partySignup,
-        key,
-        signState.roundEntry,
-        answer
-      );
+        const signResult = signMessage(
+          partySignup,
+          key,
+          signState.roundEntry,
+          answer
+        );
 
-      return Promise.resolve(null);
+        console.log("got sign result", signResult);
+
+        return Promise.resolve(null);
+      },
     },
-  },
-]);
+  ],
+  makeOnTransition<SignState, SignTransition>()
+);
 
 // Receive messages sent to the worker
 onmessage = async (e) => {

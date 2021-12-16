@@ -2,7 +2,7 @@ use curv::{
     arithmetic::traits::*,
     cryptographic_primitives::{
         proofs::sigma_correct_homomorphic_elgamal_enc::HomoELGamalProof,
-        proofs::sigma_dlog::DLogProof, /* secret_sharing::feldman_vss::VerifiableSS, */
+        proofs::sigma_dlog::DLogProof,
     },
     elliptic::curves::{secp256_k1::Secp256k1, Point, Scalar},
     BigInt,
@@ -15,8 +15,6 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
 use multi_party_ecdsa::utilities::mta::*;
 use sha2::Sha256;
 
-//use paillier::EncryptionKey;
-
 use common::{
     Entry, PartySignup, PeerEntry, ROUND_0, ROUND_1, ROUND_2, ROUND_3, ROUND_4,
     ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
@@ -26,7 +24,7 @@ use wasm_bindgen::prelude::*;
 
 use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
 
-use super::{console_log, log};
+//use super::{console_log, log};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round0Entry {
@@ -137,6 +135,12 @@ struct Round9Entry {
     local_sig: LocalSignature,
     s_i: Scalar<Secp256k1>,
     message_bn: BigInt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct SignResult {
+    r: String,
+    s: String,
 }
 
 fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(
@@ -893,25 +897,22 @@ pub fn signMessage(
         .output_signature(&s_i_vec)
         .expect("verification failed");
 
+    /*
     console_log!("party {:?} Output Signature: \n", party_num_int);
     console_log!("R: {:?}", sig.r);
     console_log!("s: {:?} \n", sig.s);
     console_log!("recid: {:?} \n", sig.recid.clone());
-
-    /*
-    let sign_json = serde_json::to_string(&(
-        "r",
-        BigInt::from_bytes(sig.r.to_bytes().as_ref()).to_str_radix(16),
-        "s",
-        BigInt::from_bytes(sig.s.to_bytes().as_ref()).to_str_radix(16),
-    ))
-    .unwrap();
     */
+
+    let sign_result = SignResult {
+        r: BigInt::from_bytes(sig.r.to_bytes().as_ref()).to_str_radix(16),
+        s: BigInt::from_bytes(sig.s.to_bytes().as_ref()).to_str_radix(16),
+    };
 
     // check sig against secp256k1
     check_sig(&sig.r, &sig.s, &message_bn, &y_sum);
 
-    JsValue::undefined()
+    JsValue::from_serde(&sign_result).unwrap()
 }
 
 fn check_sig(

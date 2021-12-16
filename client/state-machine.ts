@@ -4,16 +4,23 @@ export interface State<T, U> {
   transition: (previousState?: T, transitionData?: U) => Promise<T | null>;
 }
 
+type transitionHandler<T, U> = (
+  previousState?: State<T, U>,
+  nextState?: State<T, U>
+) => void;
+
 export class StateMachine<T, U> {
   states: State<T, U>[];
   index: number;
   stateData: T | null;
   inTransition: boolean;
+  onTransition: transitionHandler<T, U>;
 
-  constructor(states: State<T, U>[]) {
+  constructor(states: State<T, U>[], onTransition: transitionHandler<T, U>) {
     this.states = states;
     this.index = 0;
     this.stateData = null;
+    this.onTransition = onTransition;
   }
 
   async next(transitionData?: U): Promise<T | null> {
@@ -26,11 +33,7 @@ export class StateMachine<T, U> {
     const state = this.states[this.index];
     if (state) {
       const previousState = this.states[this.index - 1];
-      if (previousState) {
-        console.log("transition from", previousState.name, "to", state.name);
-      } else {
-        console.log("transition to", state.name, "with", transitionData);
-      }
+      this.onTransition(previousState, state);
       this.index++;
       this.inTransition = true;
       this.stateData = await state.transition(this.stateData, transitionData);
