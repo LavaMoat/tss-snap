@@ -735,7 +735,7 @@ const sign = new StateMachine<SignState, SignTransition>(
           answer
         );
 
-        console.log("got sign result", signResult);
+        postMessage({ type: "sign_result", signResult });
 
         return Promise.resolve(null);
       },

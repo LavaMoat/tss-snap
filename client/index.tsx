@@ -85,6 +85,7 @@ const App = (props: AppProps) => {
     const [signStatusMessage, setSignStatusMessage] = useState("");
     const [signFormVisible, setSignFormVisible] = useState(false);
     const [signProposalVisible, setSignProposalVisible] = useState(false);
+    const [signResult, setSignResult] = useState(null);
 
     const [logMessage, setLogMessage] = useState("");
 
@@ -148,6 +149,12 @@ const App = (props: AppProps) => {
           setSignFormVisible(false);
           setSignProposalVisible(true);
           break;
+        case "sign_result":
+          setLogMessage("SIGN_RESULT");
+          const { signResult } = e.data;
+          setSignProposalVisible(false);
+          setSignResult(signResult);
+          break;
       }
     };
 
@@ -169,6 +176,9 @@ const App = (props: AppProps) => {
             signStatusMessage={signStatusMessage}
             onSignMessage={onSignMessage}
           />
+        ) : null}
+        {signResult ? (
+          <pre>{JSON.stringify(signResult, undefined, 2)}</pre>
         ) : null}
       </>
     );
