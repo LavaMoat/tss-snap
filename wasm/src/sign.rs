@@ -901,6 +901,7 @@ pub fn signMessage(
     let sign_result = SignResult {
         r: BigInt::from_bytes(sig.r.to_bytes().as_ref()).to_str_radix(16),
         s: BigInt::from_bytes(sig.s.to_bytes().as_ref()).to_str_radix(16),
+        recid: sig.recid,
     };
 
     // check sig against secp256k1

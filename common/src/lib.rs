@@ -42,4 +42,5 @@ pub struct Entry {
 pub struct SignResult {
     pub r: String,
     pub s: String,
+    pub recid: u8,
 }
