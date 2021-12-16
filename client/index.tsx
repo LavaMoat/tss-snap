@@ -5,6 +5,17 @@ interface SignFormProps {
   onSubmit: (message: string) => void;
 }
 
+const isHex = (message: string) => {
+  if (message.length % 2 !== 0) return false;
+  for (let i = 0; i < message.length; i += 2) {
+    const c = message.substr(i, 2);
+    if (!/[a-f0-9]{2}/i.test(c)) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const SignForm = (props: SignFormProps) => {
   const [message, setMessage] = useState("");
 
@@ -13,6 +24,10 @@ const SignForm = (props: SignFormProps) => {
 
     if (message.trim() === "") {
       return alert("Please enter a message to sign");
+    }
+
+    if (!isHex(message)) {
+      return alert("Message must be hex encoded");
     }
 
     props.onSubmit(message);
