@@ -23,38 +23,41 @@ void (async function () {
   await initThreadPool(navigator.hardwareConcurrency);
 })();
 
+const sendUiMessage = self.postMessage;
+
 const url = "ws://localhost:3030/demo";
-const { send, request } = makeWebSocketClient({
-  url,
-  onOpen: async () => {
-    postMessage({ type: "connected", url });
-    const handshake = (await getKeygenHandshake()) as Handshake;
-    postMessage({
-      type: "ready",
-      ...handshake.parameters,
-      ...handshake.client,
-    });
-  },
-  onClose: async () => {
-    postMessage({ type: "disconnected" });
-  },
-  onBroadcastMessage,
-});
+const { send: sendNetworkMessage, request: sendNetworkRequest } =
+  makeWebSocketClient({
+    url,
+    onOpen: async () => {
+      sendUiMessage({ type: "connected", url });
+      const handshake = (await getKeygenHandshake()) as Handshake;
+      sendUiMessage({
+        type: "ready",
+        ...handshake.parameters,
+        ...handshake.client,
+      });
+    },
+    onClose: async () => {
+      sendUiMessage({ type: "disconnected" });
+    },
+    onBroadcastMessage,
+  });
 
 let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
 const keygenMachine = makeKeygenStateMachine(
   peerState,
-  request,
-  postMessage,
+  sendNetworkRequest,
+  sendUiMessage,
   onKeygenResult
 );
 const signMachine = makeSignMessageStateMachine(
   peerState,
-  request,
-  postMessage,
-  send
+  sendNetworkRequest,
+  sendUiMessage,
+  sendNetworkMessage
 );
 
 // Receive messages sent to the worker from the ui
@@ -64,7 +67,7 @@ self.onmessage = async (e) => {
     await keygenMachine.machine.next();
   } else if (data.type === "sign_proposal") {
     const { message } = data;
-    send({ kind: "sign_proposal", data: { message } });
+    sendNetworkMessage({ kind: "sign_proposal", data: { message } });
   } else if (data.type === "sign_message") {
     const { message } = data;
     await signMachine.machine.next({ message, keygenResult });

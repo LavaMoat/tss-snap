@@ -42,9 +42,9 @@ type SignTransition = SignInit | BroadcastAnswer;
 
 export function makeSignMessageStateMachine(
   peerState: PeerState,
-  request: Function,
-  postMessage: Function,
-  send: Function
+  sendNetworkRequest: Function,
+  sendUiMessage: Function,
+  sendNetworkMessage: Function
 ) {
   // State machine for signing a proposal
   const machine = new StateMachine<SignState, SignTransition>(
@@ -57,18 +57,18 @@ export function makeSignMessageStateMachine(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           // Generate a new party signup for the sign phase
-          const signup = await request({ kind: "party_signup" });
+          const signup = await sendNetworkRequest({ kind: "party_signup" });
           const { party_signup: partySignup } = signup.data;
 
           // So the UI thread can update the party number for the sign phase
-          postMessage({ type: "party_signup", partySignup });
+          sendUiMessage({ type: "party_signup", partySignup });
 
           const { message, keygenResult } = transitionData as SignInit;
           const { key } = keygenResult;
           const roundEntry = signRound0(partySignup, key);
 
           // Send the round 0 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round0",
             data: {
               entry: roundEntry.entry,
@@ -101,7 +101,7 @@ export function makeSignMessageStateMachine(
           peerState.received = [];
 
           // Send the round 1 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round1",
             data: {
               entry: roundEntry.entry,
@@ -137,7 +137,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 2 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round2_relay_peers",
             data: { entries: roundEntry.peer_entries },
           });
@@ -173,7 +173,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 3 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round3",
             data: {
               entry: roundEntry.entry,
@@ -206,7 +206,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 4 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round4",
             data: {
               entry: roundEntry.entry,
@@ -246,7 +246,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 5 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round5",
             data: {
               entry: roundEntry.entry,
@@ -279,7 +279,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 6 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round6",
             data: {
               entry: roundEntry.entry,
@@ -314,7 +314,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 7 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round7",
             data: {
               entry: roundEntry.entry,
@@ -347,7 +347,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 8 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round8",
             data: {
               entry: roundEntry.entry,
@@ -382,7 +382,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 9 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "sign_round9",
             data: {
               entry: roundEntry.entry,
@@ -417,10 +417,10 @@ export function makeSignMessageStateMachine(
           );
 
           // Update the UI
-          postMessage({ type: "sign_result", signResult });
+          sendUiMessage({ type: "sign_result", signResult });
 
           // Notify non-participants of the signed message
-          send({
+          sendNetworkMessage({
             kind: "sign_result",
             data: { sign_result: signResult, uuid: partySignup.uuid },
           });
@@ -429,7 +429,7 @@ export function makeSignMessageStateMachine(
         },
       },
     ],
-    makeOnTransition<SignState, SignTransition>(postMessage)
+    makeOnTransition<SignState, SignTransition>(sendUiMessage)
   );
 
   // Handle messages from the server that were broadcast
@@ -438,14 +438,14 @@ export function makeSignMessageStateMachine(
     switch (msg.kind) {
       case "sign_proposal":
         const { message } = msg.data;
-        postMessage({ type: "sign_proposal", message });
+        sendUiMessage({ type: "sign_proposal", message });
         return true;
       case "sign_progress":
         // Parties that did not commit to signing should update the UI only
-        postMessage({ type: "sign_progress" });
+        sendUiMessage({ type: "sign_progress" });
 
         // Parties not participating in the signing should reset their party number
-        postMessage({
+        sendUiMessage({
           type: "party_signup",
           partySignup: { number: 0, uuid: "" },
         });
@@ -454,7 +454,7 @@ export function makeSignMessageStateMachine(
         switch (msg.data.round) {
           case "round0":
             // We performed a sign of the message and also need to update the UI
-            postMessage({ type: "sign_progress" });
+            sendUiMessage({ type: "sign_progress" });
             await machine.next({ answer: msg.data.answer });
             break;
           case "round1":
@@ -496,7 +496,7 @@ export function makeSignMessageStateMachine(
       case "sign_result":
         const { sign_result: signResult } = msg.data;
         // Update the UI
-        postMessage({ type: "sign_result", signResult });
+        sendUiMessage({ type: "sign_result", signResult });
         return true;
     }
     return false;

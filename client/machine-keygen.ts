@@ -36,8 +36,8 @@ export type KeygenState =
 
 export function makeKeygenStateMachine(
   peerState: PeerState,
-  request: Function,
-  postMessage: Function,
+  sendNetworkRequest: Function,
+  sendUiMessage: Function,
   onKeygenResult: Function
 ) {
   const machine = new StateMachine<KeygenState, KeygenTransition>(
@@ -48,7 +48,7 @@ export function makeKeygenStateMachine(
         transition: async (
           previousState: KeygenState
         ): Promise<KeygenState | null> => {
-          const res = await request({ kind: "parameters" });
+          const res = await sendNetworkRequest({ kind: "parameters" });
           const parameters = {
             parties: res.data.parties,
             threshold: res.data.threshold,
@@ -66,17 +66,17 @@ export function makeKeygenStateMachine(
         ): Promise<KeygenState | null> => {
           const handshake = previousState as Handshake;
           const { parameters } = handshake;
-          const signup = await request({ kind: "party_signup" });
+          const signup = await sendNetworkRequest({ kind: "party_signup" });
           const { party_signup: partySignup } = signup.data;
 
           // So the UI thread can show the party number
-          postMessage({ type: "party_signup", partySignup });
+          sendUiMessage({ type: "party_signup", partySignup });
 
           // Create the round 1 key entry
           const roundEntry = keygenRound1(partySignup);
 
           // Send the round 1 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "keygen_round1",
             data: {
               entry: roundEntry.entry,
@@ -108,7 +108,7 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 2 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "keygen_round2",
             data: {
               entry: roundEntry.entry,
@@ -140,7 +140,7 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 3 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "keygen_round3_relay_peers",
             data: { entries: roundEntry.peer_entries },
           });
@@ -172,7 +172,7 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 4 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "keygen_round4",
             data: {
               entry: roundEntry.entry,
@@ -204,7 +204,7 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 5 entry to the server
-          request({
+          sendNetworkRequest({
             kind: "keygen_round5",
             data: {
               entry: roundEntry.entry,
@@ -239,7 +239,7 @@ export function makeKeygenStateMachine(
         },
       },
     ],
-    makeOnTransition<KeygenState, KeygenTransition>(postMessage)
+    makeOnTransition<KeygenState, KeygenTransition>(sendUiMessage)
   );
 
   // Handle messages from the server that were broadcast
@@ -262,7 +262,7 @@ export function makeKeygenStateMachine(
               answer: msg.data.answer,
             })) as KeygenResult;
             onKeygenResult(keygenResult);
-            postMessage({ type: "keygen_complete" });
+            sendUiMessage({ type: "keygen_complete" });
             break;
         }
         return true;
