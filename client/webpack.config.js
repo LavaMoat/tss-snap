@@ -20,7 +20,7 @@ module.exports = {
     filename: "index.js",
   },
   devtool: false,
-  mode: "development",
+  mode: process.env.NODE_ENV || "development",
   plugins: [new CopyWebpackPlugin(["index.html", "favicon.png"])],
   devServer: {
     headers: {

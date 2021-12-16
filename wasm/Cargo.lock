@@ -446,6 +446,7 @@ dependencies = [
  "curv-kzen",
  "getrandom 0.1.16",
  "kzen-paillier",
+ "libsecp256k1",
  "multi-party-ecdsa",
  "rand 0.6.5",
  "serde",

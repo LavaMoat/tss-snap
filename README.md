@@ -1,6 +1,6 @@
 # ECDSA WASM
 
-Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) in WASM.
+Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) (gg18) in WASM.
 
 ## Prerequisites
 
@@ -29,7 +29,19 @@ make server
 make client
 ```
 
+The `make server` command starts the server configured for 3 parties with threshold 1 using the gg18 protocol so requires 2 parties to sign a message (threshold + 1).
+
+***Warning:***: The server is stateful and not idempotent, it is best to run the demo from a clean server (re)start.
+
+## Demo
+
 Now visit `http://localhost:8080`.
+
+* Open 3 browser windows/tabs, one for each party
+* Click the *Keygen Signup* button in each window/tab
+* Once key generation is completed a form is presented to propose a message to sign, enter a message and submit the form
+* Each browser window/tab should now show the message and a *Sign* button
+* Click the *Sign* button in two browser windows/tabs to complete the demo
 
 ## Development
 
@@ -40,14 +52,16 @@ cd wasm/pkg && yarn link
 cd client && yarn link ecdsa-wasm
 ```
 
-## Thread Support (Rayon)
+## Notes
+
+### Thread Support (Rayon)
 
 Webassembly needs threads enabled, see:
 
 * https://github.com/GoogleChromeLabs/wasm-bindgen-rayon
 * https://rustwasm.github.io/wasm-bindgen/examples/raytrace.html
 
-## Notes
+### Crypto.getRandomValues()
 
 There is an error using `Crypto.getRandomValues()` with a `SharedArrayBuffer` when threads are enabled:
 

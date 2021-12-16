@@ -1,11 +1,16 @@
 /// Common types shared between the server and webassembly modules.
 use serde::{Deserialize, Serialize};
 
+pub const ROUND_0: &str = "round0";
 pub const ROUND_1: &str = "round1";
 pub const ROUND_2: &str = "round2";
 pub const ROUND_3: &str = "round3";
 pub const ROUND_4: &str = "round4";
 pub const ROUND_5: &str = "round5";
+pub const ROUND_6: &str = "round6";
+pub const ROUND_7: &str = "round7";
+pub const ROUND_8: &str = "round8";
+pub const ROUND_9: &str = "round9";
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PeerEntry {
@@ -31,4 +36,10 @@ pub struct PartySignup {
 pub struct Entry {
     pub key: String,
     pub value: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SignResult {
+    pub r: String,
+    pub s: String,
 }

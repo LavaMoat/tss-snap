@@ -1,4 +1,11 @@
-type BroadcastKind = "commitment_answer" | "peer_answer";
+type BroadcastKind =
+  | "keygen_commitment_answer"
+  | "keygen_peer_answer"
+  | "sign_proposal"
+  | "sign_progress"
+  | "sign_commitment_answer"
+  | "sign_peer_answer"
+  | "sign_result";
 
 export interface BroadcastMessage {
   kind: BroadcastKind;
@@ -8,11 +15,23 @@ export interface BroadcastMessage {
 type RequestKind =
   | "parameters"
   | "party_signup"
-  | "set_round1_entry"
-  | "set_round2_entry"
-  | "relay_round3"
-  | "set_round4_entry"
-  | "set_round5_entry";
+  | "keygen_round1"
+  | "keygen_round2"
+  | "keygen_round3_relay_peers"
+  | "keygen_round4"
+  | "keygen_round5"
+  | "sign_proposal"
+  | "sign_round0"
+  | "sign_round1"
+  | "sign_round2_relay_peers"
+  | "sign_round3"
+  | "sign_round4"
+  | "sign_round5"
+  | "sign_round6"
+  | "sign_round7"
+  | "sign_round8"
+  | "sign_round9"
+  | "sign_result";
 
 export interface RequestMessage {
   id?: number;
@@ -60,6 +79,11 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
     }
   };
 
+  // Send a message without any expectation of a reply.
+  function send(message: RequestMessage): void {
+    websocket.send(JSON.stringify(message));
+  }
+
   // Wrap a websocket request in a promise that expects
   // a response from the server
   function request(message: RequestMessage): Promise<ResponseMessage> {
@@ -72,12 +96,13 @@ export const makeWebSocketClient = (options: webSocketOptions) => {
       messageRequests.set(id, { resolve, reject });
     });
     message.id = id;
-    websocket.send(JSON.stringify(message));
+    send(message);
     return p;
   }
 
   return {
     websocket,
     request,
+    send,
   };
 };
