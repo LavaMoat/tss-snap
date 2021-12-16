@@ -551,7 +551,10 @@ pub fn signRound5(
     let message_str: String = message.into_serde().unwrap();
     let message = match hex::decode(message_str.clone()) {
         Ok(x) => x,
-        Err(e) => panic!("{}", e),
+        Err(e) => panic!(
+            "message must be hex encoded, got error decoding hex ({})",
+            e
+        ),
     };
 
     let mut decommit_vec: Vec<SignDecommitPhase1> = Vec::new();
