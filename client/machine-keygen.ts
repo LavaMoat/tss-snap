@@ -55,7 +55,7 @@ export function makeKeygenStateMachine(
           };
           peerState.parties = res.data.parties;
           const client = { conn_id: res.data.conn_id };
-          return Promise.resolve({ parameters, client });
+          return { parameters, client };
         },
       },
       // Generate the PartySignup and keygen round 1 entry
@@ -84,8 +84,7 @@ export function makeKeygenStateMachine(
             },
           });
 
-          const data = { parameters, partySignup, roundEntry };
-          return Promise.resolve(data);
+          return { parameters, partySignup, roundEntry };
         },
       },
       // All parties committed to round 1 so generate the round 2 entry
@@ -116,8 +115,7 @@ export function makeKeygenStateMachine(
             },
           });
 
-          const data = { parameters, partySignup, roundEntry };
-          return Promise.resolve(data);
+          return { parameters, partySignup, roundEntry };
         },
       },
       // All parties committed to round 2 so generate the round 3 peer to peer calls
@@ -145,8 +143,7 @@ export function makeKeygenStateMachine(
             data: { entries: roundEntry.peer_entries },
           });
 
-          const data = { parameters, partySignup, roundEntry };
-          return Promise.resolve(data);
+          return { parameters, partySignup, roundEntry };
         },
       },
       // Got all the round 3 peer to peer messages, proceed to round  4
@@ -180,8 +177,7 @@ export function makeKeygenStateMachine(
             },
           });
 
-          const data = { parameters, partySignup, roundEntry };
-          return Promise.resolve(data);
+          return { parameters, partySignup, roundEntry };
         },
       },
       // Got all the round 4 entries
@@ -212,8 +208,7 @@ export function makeKeygenStateMachine(
             },
           });
 
-          const data = { parameters, partySignup, roundEntry };
-          return Promise.resolve(data);
+          return { parameters, partySignup, roundEntry };
         },
       },
       // Got all the round 5 entries, create the final key data
@@ -235,7 +230,7 @@ export function makeKeygenStateMachine(
             answer
           );
 
-          return Promise.resolve({ parameters, partySignup, key });
+          return { parameters, partySignup, key };
         },
       },
     ],

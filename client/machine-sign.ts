@@ -76,12 +76,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -109,12 +109,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -142,12 +142,12 @@ export function makeSignMessageStateMachine(
             data: { entries: roundEntry.peer_entries },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -181,12 +181,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -214,12 +214,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -254,12 +254,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -287,12 +287,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -322,12 +322,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -355,12 +355,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -390,12 +390,12 @@ export function makeSignMessageStateMachine(
             },
           });
 
-          return Promise.resolve({
+          return {
             message,
             partySignup,
             keygenResult,
             roundEntry,
-          });
+          };
         },
       },
       {
@@ -425,7 +425,7 @@ export function makeSignMessageStateMachine(
             data: { sign_result: signResult, uuid: partySignup.uuid },
           });
 
-          return Promise.resolve(null);
+          return null;
         },
       },
     ],
