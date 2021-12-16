@@ -20,6 +20,7 @@ aes-gcm = "0.9"
 sha2 = "0.9"
 serde = {version = "1", features = ["derive"]}
 libsecp256k1 = "0.3.2"
+hex = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.paillier]
 version = "0.4.2"

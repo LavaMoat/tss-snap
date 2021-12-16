@@ -445,6 +445,7 @@ dependencies = [
  "console_error_panic_hook",
  "curv-kzen",
  "getrandom 0.1.16",
+ "hex",
  "kzen-paillier",
  "libsecp256k1",
  "multi-party-ecdsa",

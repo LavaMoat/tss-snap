@@ -548,7 +548,11 @@ pub fn signRound5(
         ..
     } = round4_entry;
 
-    let message: Vec<u8> = message.into_serde().unwrap();
+    let message_str: String = message.into_serde().unwrap();
+    let message = match hex::decode(message_str.clone()) {
+        Ok(x) => x,
+        Err(e) => panic!("{}", e),
+    };
 
     let mut decommit_vec: Vec<SignDecommitPhase1> = Vec::new();
     format_vec_from_reads(

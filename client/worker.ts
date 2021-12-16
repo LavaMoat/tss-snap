@@ -140,6 +140,9 @@ type KeygenState = Handshake | KeygenRoundEntry<RoundEntry> | KeygenResult;
 type SignState = SignRoundEntry<RoundEntry>;
 type SignTransition = SignInit | BroadcastAnswer;
 
+//const toHexString = (bytes: Uint8Array) =>
+//bytes.reduce((str: string, byte: number) => str + byte.toString(16).padStart(2, '0'), '');
+
 let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
@@ -551,17 +554,16 @@ const sign = new StateMachine<SignState, SignTransition>(
         const { key } = keygenResult;
         const { answer } = transitionData as BroadcastAnswer;
 
-        const encoder = new TextEncoder();
-        // NOTE: UInt8Array serializes to a map but we want
-        // NOTE: a Vec<u8> in webassembly so must call Array.from()
-        const messageBytes = Array.from(encoder.encode(message));
+        //const encoder = new TextEncoder();
+        //const messageBytes = encoder.encode(message);
+        //const messageHex = toHexString(messageBytes);
 
         const roundEntry = signRound5(
           partySignup,
           key,
           signState.roundEntry,
           answer,
-          messageBytes
+          message
         );
 
         // Send the round 5 entry to the server

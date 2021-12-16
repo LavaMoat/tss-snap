@@ -18,6 +18,9 @@ server:
 client:
 	@cd client && yarn start
 
+message:
+	@cd common && cargo run --example message
+
 fmt:
 	@cd client && yarn prettier
 	@cd server && cargo fmt

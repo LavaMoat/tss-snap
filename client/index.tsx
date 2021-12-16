@@ -27,7 +27,7 @@ const SignForm = (props: SignFormProps) => {
     <>
       <form onSubmit={onSignFormSubmit}>
         <textarea
-          placeholder="Enter a message to sign"
+          placeholder="Enter a hex encoded message to sign (eg: 68656c6c6f20776f726c64)"
           rows={4}
           name="message"
           onChange={onMessageChange}
