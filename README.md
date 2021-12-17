@@ -60,6 +60,15 @@ During development you should link the WASM module:
 (cd client && yarn link ecdsa-wasm)
 ```
 
+## Docker
+
+For deplyoment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
+
+```
+docker build . -t ecdsa-wasm
+docker run -p 3030:8080 -it ecdsa-wasm
+```
+
 ## Notes
 
 ### Thread Support (Rayon)
