@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
-use std::path::PathBuf;
 
 use anyhow::{bail, Result};
 use futures_util::{SinkExt, StreamExt, TryFutureExt};

@@ -2,7 +2,7 @@ FROM rust:1.57-buster as builder
 WORKDIR /usr/src/ecdsa-wasm
 RUN apt-get update
 # secp256k1-sys requires clang
-RUN apt-get install -y pkg-config clang
+RUN apt-get install -y pkg-config clang libssl-dev
 COPY common common
 COPY server server
 COPY wasm wasm
