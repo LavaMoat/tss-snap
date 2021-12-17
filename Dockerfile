@@ -2,6 +2,8 @@ FROM rust:1.40 as builder
 WORKDIR /usr/src/ecdsa-wasm
 COPY common common
 COPY server server
+COPY client client
+RUN cd client && yarn install && yarn build
 RUN rustup override set nightly; \
     cargo install --path ./server
 

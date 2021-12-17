@@ -4,6 +4,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+use std::path::PathBuf;
 
 use anyhow::Result;
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
@@ -213,6 +214,7 @@ impl Server {
         path: &'static str,
         addr: impl Into<SocketAddr>,
         params: Parameters,
+        static_files: Option<PathBuf>,
     ) -> Result<()> {
         let state = Arc::new(RwLock::new(State {
             params,
@@ -225,10 +227,15 @@ impl Server {
         }));
         let state = warp::any().map(move || state.clone());
 
-        let mut static_files = std::env::current_dir()?;
-        static_files.pop();
-        static_files.push("client");
-        static_files.push("dist");
+        let static_files = if let Some(static_files) = static_files {
+            static_files
+        } else {
+            let mut static_files = std::env::current_dir()?;
+            static_files.pop();
+            static_files.push("client");
+            static_files.push("dist");
+            static_files
+        };
 
         let client = warp::any().and(warp::fs::dir(static_files));
 

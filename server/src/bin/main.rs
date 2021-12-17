@@ -1,6 +1,7 @@
 use anyhow::Result;
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
 
@@ -22,6 +23,9 @@ struct Options {
     /// Bind to host:port.
     #[structopt(short, long)]
     bind: Option<String>,
+    /// Path to static files to serve
+    #[structopt(parse(from_os_str))]
+    files: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -41,5 +45,5 @@ async fn main() -> Result<()> {
 
     let bind = opts.bind.unwrap_or_else(|| "127.0.0.1:3030".to_string());
     let addr = SocketAddr::from_str(&bind)?;
-    Server::start("demo", (addr.ip(), addr.port()), params).await
+    Server::start("demo", (addr.ip(), addr.port()), params, opts.files).await
 }
