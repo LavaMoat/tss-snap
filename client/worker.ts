@@ -96,14 +96,17 @@ async function performKeygen() {
       data: { message: helloWorldHash },
     });
   }
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  // lowest numbered threshold of signers compute "hello world" sig
-  if (partyNumber <= parties - threshold) {
-    const result = await performSignature(helloWorldHash);
-    console.log("hello world result", result);
-  } else {
-    console.log("hello world skip", partyNumber, parties - threshold);
-  }
+  // here is the auto approval of the sign
+  // disabled because its timeout based
+  // manual approval for now
+  // await new Promise((resolve) => setTimeout(resolve, 1000));
+  // // lowest numbered threshold of signers compute "hello world" sig
+  // if (partyNumber <= parties - threshold) {
+  //   const result = await performSignature(helloWorldHash);
+  //   console.log("hello world result", result);
+  // } else {
+  //   console.log("hello world skip", partyNumber, parties - threshold);
+  // }
 }
 
 async function performSignature(message: string) {
