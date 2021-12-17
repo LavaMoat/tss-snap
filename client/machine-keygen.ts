@@ -37,8 +37,7 @@ export type KeygenState =
 export function makeKeygenStateMachine(
   peerState: PeerState,
   sendNetworkRequest: Function,
-  sendUiMessage: Function,
-  onKeygenResult: Function
+  sendUiMessage: Function
 ) {
   const machine = new StateMachine<KeygenState, KeygenTransition>(
     [
@@ -233,6 +232,8 @@ export function makeKeygenStateMachine(
             answer
           );
 
+          sendUiMessage({ type: "keygen_complete" });
+
           return { parameters, partySignup, key };
         },
       },
@@ -241,7 +242,6 @@ export function makeKeygenStateMachine(
       onTransition: makeOnTransition<KeygenState, KeygenTransition>(
         sendUiMessage
       ),
-      cycles: false,
     }
   );
 
@@ -261,11 +261,7 @@ export function makeKeygenStateMachine(
             await machine.next({ answer: msg.data.answer });
             break;
           case "round5":
-            const keygenResult = (await machine.next({
-              answer: msg.data.answer,
-            })) as KeygenResult;
-            onKeygenResult(keygenResult);
-            sendUiMessage({ type: "keygen_complete" });
+            await machine.next({ answer: msg.data.answer });
             break;
         }
         return true;

@@ -49,7 +49,7 @@ export function makeSignMessageStateMachine(
   peerState: PeerState,
   sendNetworkRequest: Function,
   sendUiMessage: Function,
-  sendNetworkMessage: Function
+  sendNetworkMessage: Function,
 ) {
   // State machine for signing a proposal
   const machine = new StateMachine<SignState, SignTransition>(
@@ -434,13 +434,12 @@ export function makeSignMessageStateMachine(
             data: { sign_result: signResult, uuid: partySignup.uuid },
           });
 
-          return null;
+          return signResult;
         },
       },
     ],
     {
       onTransition: makeOnTransition<SignState, SignTransition>(sendUiMessage),
-      cycles: true,
     }
   );
 
