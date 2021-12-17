@@ -4,7 +4,9 @@ import ReactDOM from "react-dom";
 import WalletConnect from "@walletconnect/client";
 import { Transaction } from "@ethereumjs/tx";
 import { ecrecover, pubToAddress } from "ethereumjs-util";
+import { once, EventEmitter } from "events";
 
+const workerEvents = new EventEmitter();
 let addressString: string = null;
 
 interface FormProps {
@@ -185,7 +187,7 @@ const App = (props: AppProps) => {
       });
 
       // Subscribe to call requests
-      connector.on("call_request", (error, payload) => {
+      connector.on("call_request", async (error, payload) => {
         if (error) {
           throw error;
         }
@@ -215,12 +217,29 @@ const App = (props: AppProps) => {
           to: "0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1"
           value: "0x0"
         */
-
-        const tx = Transaction.fromTxData(payload.params);
+        const [txParams] = payload.params;
+        const tx = Transaction.fromTxData(txParams);
         console.log("tx", tx);
         const hash = tx.getMessageToSign();
         const hashString = hash.toString("hex");
         onSignFormSubmit(hashString);
+        const [{ signResult }] = (await once(
+          workerEvents,
+          "sign_result"
+        )) as any;
+        console.log("got WC sign result", signResult);
+        const signedTx = Transaction.fromTxData({
+          ...txParams,
+          r: Buffer.from(signResult.r, "hex"),
+          s: Buffer.from(signResult.s, "hex"),
+          v: 27 + signResult.recid,
+        });
+        const txHash = signedTx.hash();
+        // Approve Call Request
+        connector.approveRequest({
+          id: payload.id,
+          result: `0x${txHash.toString("hex")}`,
+        });
       });
     };
 
@@ -238,6 +257,7 @@ const App = (props: AppProps) => {
     // Handle message from the worker
     worker.onmessage = (e) => {
       const { type } = e.data;
+      workerEvents.emit(type, e.data);
       switch (type) {
         // Worker sends us the backend server URL
         case "connected":
