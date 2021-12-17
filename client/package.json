@@ -25,9 +25,14 @@
   },
   "homepage": "https://github.com/tmpfs/ecdsa-wasm",
   "dependencies": {
+    "@ethereumjs/tx": "^3.4.0",
+    "@walletconnect/client": "1.6.5",
+    "assert": "^2.0.0",
+    "buffer": "^6.0.3",
     "ecdsa-wasm": "file:../wasm/pkg",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "stream-browserify": "^3.0.0"
   },
   "devDependencies": {
     "@types/react": "^17.0.37",

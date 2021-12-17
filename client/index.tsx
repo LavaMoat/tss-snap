@@ -1,7 +1,10 @@
+import './polyfills';
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import WalletConnect from "@walletconnect/client";
+import { Transaction } from "@ethereumjs/tx"
 
-interface SignFormProps {
+interface FormProps {
   onSubmit: (message: string) => void;
 }
 
@@ -16,7 +19,41 @@ const isHex = (message: string) => {
   return true;
 };
 
-const SignForm = (props: SignFormProps) => {
+const WalletConnectForm = (props: FormProps) => {
+  const [uri, setUri] = useState("");
+
+  const onWalletConnectFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (uri.trim() === "") {
+      return alert("Please enter a message to sign");
+    }
+
+    props.onSubmit(uri);
+  };
+
+  const onMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setUri(event.currentTarget.value);
+  };
+
+  return (
+    <>
+      <form onSubmit={onWalletConnectFormSubmit}>
+        <textarea
+          placeholder="Enter a walletconnect uri (eg: 'wc:8a5e5bdc-a0e4-47...TJRNmhWJmoxdFo6UDk2WlhaOyQ5N0U=')"
+          rows={4}
+          name="message"
+          onChange={onMessageChange}
+          value={uri}
+        ></textarea>
+        <input type="submit" name="Sign" value="Connect" />
+      </form>
+    </>
+  );
+};
+
+const SignForm = (props: FormProps) => {
   const [message, setMessage] = useState("");
 
   const onSignFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -96,6 +133,8 @@ const App = (props: AppProps) => {
 
     const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
 
+    const [walletConnectFormVisible, setWalletConnectFormVisible] = useState(false);
+    
     const [signMessage, setSignMessage] = useState(null);
     const [signStatusMessage, setSignStatusMessage] = useState("");
     const [signFormVisible, setSignFormVisible] = useState(false);
@@ -109,9 +148,84 @@ const App = (props: AppProps) => {
       setKeygenSignupVisible(false);
     };
 
+    const onWalletConnectFormSubmit = (uri: string) => {
+      // worker.postMessage({ type: "sign_proposal", message });
+      setSignFormVisible(false);
+      setWalletConnectFormVisible(false);
+      
+      const connector = new WalletConnect(
+        {
+          uri,
+          bridge: "https://bridge.walletconnect.org",
+          clientMeta: {
+            description: "WalletConnect Developer App",
+            url: "https://walletconnect.org",
+            icons: ["https://walletconnect.org/walletconnect-logo.png"],
+            name: "WalletConnect",
+          },
+        },
+      );
+
+      connector.on("session_request", (error: Error, payload: object) => {
+        if (error) {
+          throw error;
+        }
+        console.log('session_request', payload)
+
+        // Approve Session
+        connector.approveSession({
+          accounts: [
+            '0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1',
+          ],
+          chainId: 1 
+        })
+
+      })
+
+      // Subscribe to call requests
+      connector.on("call_request", (error, payload) => {
+        if (error) {
+          throw error;
+        }
+        console.log('call_request', payload)
+
+        // Handle Call Request
+
+        /* payload:
+        {
+          id: 1,
+          jsonrpc: '2.0'.
+          method: 'eth_sign',
+          params: [
+            "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
+            "My email is john@doe.com - 1537836206101"
+          ]
+        }
+        id: 1639703933151242
+        jsonrpc: "2.0"
+        method: "eth_sendTransaction"
+        params: Array(1)
+          data: "0x"
+          from: "0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1"
+          gas: "0x5208"
+          gasPrice: "0x11ed8ec200"
+          nonce: "0x5d"
+          to: "0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1"
+          value: "0x0"
+        */
+
+        const tx = Transaction.fromTxData(payload.params)
+        console.log("tx", tx)
+        const hash = tx.getMessageToSign()
+        const hashString = hash.toString('hex')
+        onSignFormSubmit(hashString)
+      });
+    }
+
     const onSignFormSubmit = (message: string) => {
       worker.postMessage({ type: "sign_proposal", message });
       setSignFormVisible(false);
+      setWalletConnectFormVisible(false);
     };
 
     const onSignMessage = (message: string) => {
@@ -152,6 +266,7 @@ const App = (props: AppProps) => {
         case "keygen_complete":
           setLogMessage("SIGN_MESSAGE_PROPOSAL");
           setSignFormVisible(true);
+          setWalletConnectFormVisible(true);
           break;
         case "sign_progress":
           setSignStatusMessage("Signing in progress...");
@@ -161,6 +276,7 @@ const App = (props: AppProps) => {
           const { message } = e.data;
           // clean up
           setSignFormVisible(false);
+          setWalletConnectFormVisible(false);
           setSignResult(null);
           setSignStatusMessage("");
           // show proposal
@@ -173,6 +289,7 @@ const App = (props: AppProps) => {
           setSignProposalVisible(false);
           setSignResult(signResult);
           setSignFormVisible(true);
+          // setWalletConnectFormVisible(true);
           break;
       }
     };
@@ -189,6 +306,7 @@ const App = (props: AppProps) => {
           <button onClick={onKeygenPartySignup}>Keygen Signup</button>
         ) : null}
         {signFormVisible ? <SignForm onSubmit={onSignFormSubmit} /> : null}
+        {walletConnectFormVisible ? <WalletConnectForm onSubmit={onWalletConnectFormSubmit} /> : null}
         {signProposalVisible ? (
           <SignProposal
             signMessage={signMessage}
