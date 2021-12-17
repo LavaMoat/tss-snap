@@ -53,25 +53,71 @@ let keygenResult: KeygenResult = null;
 const keygenMachine = makeKeygenStateMachine(
   peerState,
   sendNetworkRequest,
-  sendUiMessage,
-  onKeygenResult
+  sendUiMessage
 );
 let signMachine: SignMessageMachineContainer;
+
+// sha256 of "hello world"
+const helloWorldHash =
+  "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
 
 // Receive messages sent to the worker from the ui
 self.onmessage = async (e) => {
   const { data } = e;
   if (data.type === "party_signup") {
-    await keygenMachine.machine.next();
+    // request for keygen - perform keygen
+    await performKeygen();
   } else if (data.type === "sign_proposal") {
+    // proposal for message - forward to network
     const { message } = data;
     sendNetworkMessage({ kind: "sign_proposal", data: { message } });
   } else if (data.type === "sign_message") {
+    // request to sign message - perform sign
     const { message } = data;
-    prepareSignMessageStateMachine();
-    await signMachine.machine.next({ message, keygenResult });
+    await performSignature(message);
   }
 };
+
+async function performKeygen() {
+  // start keygen
+  await keygenMachine.machine.next();
+  // get party number
+  keygenResult = (await keygenMachine.machine
+    .completionPromise) as KeygenResult;
+  const {
+    partySignup: { number: partyNumber },
+    parameters: { threshold, parties },
+  } = keygenResult;
+  // wait a moment to make sure everyones compelted their last transition
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  if (partyNumber === 1) {
+    sendNetworkMessage({
+      kind: "sign_proposal",
+      data: { message: helloWorldHash },
+    });
+  }
+  // here is the auto approval of the sign
+  // disabled because its timeout based
+  // manual approval for now
+  // await new Promise((resolve) => setTimeout(resolve, 1000));
+  // // lowest numbered threshold of signers compute "hello world" sig
+  // if (partyNumber <= (threshold + 1)) {
+  //   const result = await performSignature(helloWorldHash);
+  //   console.log("hello world result", result);
+  // } else {
+  //   console.log("hello world skip", partyNumber, parties - threshold);
+  // }
+}
+
+async function performSignature(message: string) {
+  // create signature machine
+  prepareSignMessageStateMachine();
+  // start signature process
+  console.log("perform sig", keygenResult);
+  await signMachine.machine.next({ message, keygenResult });
+  // return signature results
+  return await signMachine.machine.completionPromise;
+}
 
 // Weapper for late binding of keygenMachine
 async function getKeygenHandshake() {
@@ -89,11 +135,6 @@ async function onBroadcastMessage(msg: BroadcastMessage) {
 
   if (await signMachine.onBroadcastMessage(msg)) return true;
   return false;
-}
-
-// get result out of keygen state machine
-function onKeygenResult(result: KeygenResult) {
-  keygenResult = result;
 }
 
 function prepareSignMessageStateMachine() {

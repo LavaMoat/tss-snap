@@ -434,13 +434,12 @@ export function makeSignMessageStateMachine(
             data: { sign_result: signResult, uuid: partySignup.uuid },
           });
 
-          return null;
+          return signResult;
         },
       },
     ],
     {
       onTransition: makeOnTransition<SignState, SignTransition>(sendUiMessage),
-      cycles: true,
     }
   );
 
