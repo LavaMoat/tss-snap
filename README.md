@@ -56,8 +56,8 @@ Now visit `http://localhost:8080`.
 During development you should link the WASM module:
 
 ```
-cd wasm/pkg && yarn link
-cd client && yarn link ecdsa-wasm
+(cd wasm/pkg && yarn link)
+(cd client && yarn link ecdsa-wasm)
 ```
 
 ## Notes
