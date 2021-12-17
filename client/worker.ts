@@ -101,7 +101,7 @@ async function performKeygen() {
   // manual approval for now
   // await new Promise((resolve) => setTimeout(resolve, 1000));
   // // lowest numbered threshold of signers compute "hello world" sig
-  // if (partyNumber <= parties - threshold) {
+  // if (partyNumber <= (threshold + 1)) {
   //   const result = await performSignature(helloWorldHash);
   //   console.log("hello world result", result);
   // } else {
