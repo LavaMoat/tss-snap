@@ -1,0 +1,22 @@
+name: Client
+
+on: [pull_request]
+
+env:
+  WORKING_DIRECTORY: ./client
+
+jobs:
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: yarn install
+      - name: Run prettier check
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: npx prettier . --check
