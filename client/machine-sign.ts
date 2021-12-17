@@ -37,8 +37,13 @@ interface SignRoundEntry<T> {
   roundEntry: T;
 }
 
-type SignState = SignRoundEntry<RoundEntry>;
-type SignTransition = SignInit | BroadcastAnswer;
+export type SignState = SignRoundEntry<RoundEntry>;
+export type SignTransition = SignInit | BroadcastAnswer;
+
+export interface SignMessageMachineContainer {
+  machine: StateMachine<SignState, SignTransition>;
+  onBroadcastMessage: Function;
+}
 
 export function makeSignMessageStateMachine(
   peerState: PeerState,
