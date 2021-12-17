@@ -4,6 +4,7 @@ on: [pull_request]
 
 env:
   WORKING_DIRECTORY: ./client
+  WASM_DIRECTORY: ./wasm
 
 jobs:
   fmt:
@@ -11,6 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rust-src
+          target: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.3.0
+        with:
+          version: 'v0.9.1'
+      - name: Run wasm-pack
+        working-directory: ${{env.WASM_DIRECTORY}}
+        run: wasm-pack build --target web
+
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
