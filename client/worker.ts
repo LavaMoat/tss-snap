@@ -2,7 +2,10 @@ import init, { initThreadPool } from "ecdsa-wasm";
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
 import { PeerState, KeygenResult, Handshake } from "./machine-common";
 import { makeKeygenStateMachine } from "./machine-keygen";
-import { makeSignMessageStateMachine } from "./machine-sign";
+import {
+  makeSignMessageStateMachine,
+  SignMessageMachineContainer,
+} from "./machine-sign";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
@@ -53,12 +56,7 @@ const keygenMachine = makeKeygenStateMachine(
   sendUiMessage,
   onKeygenResult
 );
-const signMachine = makeSignMessageStateMachine(
-  peerState,
-  sendNetworkRequest,
-  sendUiMessage,
-  sendNetworkMessage
-);
+let signMachine: SignMessageMachineContainer;
 
 // Receive messages sent to the worker from the ui
 self.onmessage = async (e) => {
@@ -70,6 +68,7 @@ self.onmessage = async (e) => {
     sendNetworkMessage({ kind: "sign_proposal", data: { message } });
   } else if (data.type === "sign_message") {
     const { message } = data;
+    prepareSignMessageStateMachine();
     await signMachine.machine.next({ message, keygenResult });
   }
 };
@@ -83,6 +82,11 @@ async function getKeygenHandshake() {
 // without a client request
 async function onBroadcastMessage(msg: BroadcastMessage) {
   if (await keygenMachine.onBroadcastMessage(msg)) return true;
+
+  if (!signMachine && msg.kind === "sign_proposal") {
+    prepareSignMessageStateMachine();
+  }
+
   if (await signMachine.onBroadcastMessage(msg)) return true;
   return false;
 }
@@ -90,4 +94,13 @@ async function onBroadcastMessage(msg: BroadcastMessage) {
 // get result out of keygen state machine
 function onKeygenResult(result: KeygenResult) {
   keygenResult = result;
+}
+
+function prepareSignMessageStateMachine() {
+  signMachine = makeSignMessageStateMachine(
+    peerState,
+    sendNetworkRequest,
+    sendUiMessage,
+    sendNetworkMessage
+  );
 }

@@ -37,8 +37,13 @@ interface SignRoundEntry<T> {
   roundEntry: T;
 }
 
-type SignState = SignRoundEntry<RoundEntry>;
-type SignTransition = SignInit | BroadcastAnswer;
+export type SignState = SignRoundEntry<RoundEntry>;
+export type SignTransition = SignInit | BroadcastAnswer;
+
+export interface SignMessageMachineContainer {
+  machine: StateMachine<SignState, SignTransition>;
+  onBroadcastMessage: Function;
+}
 
 export function makeSignMessageStateMachine(
   peerState: PeerState,
@@ -57,7 +62,10 @@ export function makeSignMessageStateMachine(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           // Generate a new party signup for the sign phase
-          const signup = await sendNetworkRequest({ kind: "party_signup" });
+          const signup = await sendNetworkRequest({
+            kind: "party_signup",
+            data: { phase: "sign" },
+          });
           const { party_signup: partySignup } = signup.data;
 
           // So the UI thread can update the party number for the sign phase
@@ -94,6 +102,7 @@ export function makeSignMessageStateMachine(
             previousState as SignRoundEntry<RoundEntry>;
           const { parameters, key } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
+
           const roundEntry = signRound1(parameters, partySignup, key, answer);
 
           // Set up for the peer to peer calls in round 2
@@ -429,7 +438,10 @@ export function makeSignMessageStateMachine(
         },
       },
     ],
-    makeOnTransition<SignState, SignTransition>(sendUiMessage)
+    {
+      onTransition: makeOnTransition<SignState, SignTransition>(sendUiMessage),
+      cycles: true,
+    }
   );
 
   // Handle messages from the server that were broadcast

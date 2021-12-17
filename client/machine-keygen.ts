@@ -66,7 +66,10 @@ export function makeKeygenStateMachine(
         ): Promise<KeygenState | null> => {
           const handshake = previousState as Handshake;
           const { parameters } = handshake;
-          const signup = await sendNetworkRequest({ kind: "party_signup" });
+          const signup = await sendNetworkRequest({
+            kind: "party_signup",
+            data: { phase: "keygen" },
+          });
           const { party_signup: partySignup } = signup.data;
 
           // So the UI thread can show the party number
@@ -234,7 +237,12 @@ export function makeKeygenStateMachine(
         },
       },
     ],
-    makeOnTransition<KeygenState, KeygenTransition>(sendUiMessage)
+    {
+      onTransition: makeOnTransition<KeygenState, KeygenTransition>(
+        sendUiMessage
+      ),
+      cycles: false,
+    }
   );
 
   // Handle messages from the server that were broadcast

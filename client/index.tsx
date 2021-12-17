@@ -159,8 +159,12 @@ const App = (props: AppProps) => {
         case "sign_proposal":
           setLogMessage("SIGN_PENDING");
           const { message } = e.data;
-          setSignMessage(message);
+          // clean up
           setSignFormVisible(false);
+          setSignResult(null);
+          setSignStatusMessage("");
+          // show proposal
+          setSignMessage(message);
           setSignProposalVisible(true);
           break;
         case "sign_result":
@@ -168,6 +172,7 @@ const App = (props: AppProps) => {
           const { signResult } = e.data;
           setSignProposalVisible(false);
           setSignResult(signResult);
+          setSignFormVisible(true);
           break;
       }
     };

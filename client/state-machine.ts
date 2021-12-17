@@ -1,3 +1,8 @@
+export interface StateMachineOptions<T, U> {
+  cycles: boolean;
+  onTransition: transitionHandler<T, U>;
+}
+
 export interface State<T, U> {
   name: string;
   data?: T;
@@ -5,6 +10,7 @@ export interface State<T, U> {
 }
 
 type transitionHandler<T, U> = (
+  index: number,
   previousState?: State<T, U>,
   nextState?: State<T, U>
 ) => void;
@@ -14,13 +20,13 @@ export class StateMachine<T, U> {
   index: number;
   stateData: T | null;
   inTransition: boolean;
-  onTransition: transitionHandler<T, U>;
+  options: StateMachineOptions<T, U>;
 
-  constructor(states: State<T, U>[], onTransition: transitionHandler<T, U>) {
+  constructor(states: State<T, U>[], options: StateMachineOptions<T, U>) {
     this.states = states;
     this.index = 0;
     this.stateData = null;
-    this.onTransition = onTransition;
+    this.options = options;
   }
 
   async next(transitionData?: U): Promise<T | null> {
@@ -33,7 +39,7 @@ export class StateMachine<T, U> {
     const nextState = this.states[this.index];
     if (nextState) {
       const previousState = this.states[this.index - 1];
-      this.onTransition(previousState, nextState);
+      this.options.onTransition(this.index, previousState, nextState);
       this.inTransition = true;
       this.stateData = await nextState.transition(
         this.stateData,
@@ -42,6 +48,14 @@ export class StateMachine<T, U> {
       this.inTransition = false;
       this.index++;
     }
+
+    // Returning null signals the end of the machine,
+    // if we cycle to allow replaying the machine then
+    // reset the index
+    if (this.stateData === null && this.options.cycles) {
+      this.index = 0;
+    }
+
     return this.stateData;
   }
 }
