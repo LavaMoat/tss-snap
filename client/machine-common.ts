@@ -85,12 +85,16 @@ export function getSortedPeerEntriesAnswer(peerState: PeerState): string[] {
 }
 
 export function makeOnTransition<T, U>(postMessage: Function) {
-  return (previousState: State<T, U>, nextState: State<T, U>) => {
+  return (
+    index: number,
+    previousState: State<T, U>,
+    nextState: State<T, U>
+  ) => {
     let message = "";
     if (previousState) {
-      message = `transition from ${previousState.name} to ${nextState.name}`;
+      message = `transition ${index} from ${previousState.name} to ${nextState.name}`;
     } else {
-      message = `transition to ${nextState.name}`;
+      message = `transition ${index} to ${nextState.name}`;
     }
     console.log(message);
     postMessage({ type: "log", message });
