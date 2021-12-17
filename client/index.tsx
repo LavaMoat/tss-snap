@@ -1,8 +1,8 @@
-import './polyfills';
+import "./polyfills";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import WalletConnect from "@walletconnect/client";
-import { Transaction } from "@ethereumjs/tx"
+import { Transaction } from "@ethereumjs/tx";
 
 interface FormProps {
   onSubmit: (message: string) => void;
@@ -22,7 +22,9 @@ const isHex = (message: string) => {
 const WalletConnectForm = (props: FormProps) => {
   const [uri, setUri] = useState("");
 
-  const onWalletConnectFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onWalletConnectFormSubmit = (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     if (uri.trim() === "") {
@@ -133,8 +135,9 @@ const App = (props: AppProps) => {
 
     const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
 
-    const [walletConnectFormVisible, setWalletConnectFormVisible] = useState(false);
-    
+    const [walletConnectFormVisible, setWalletConnectFormVisible] =
+      useState(false);
+
     const [signMessage, setSignMessage] = useState(null);
     const [signStatusMessage, setSignStatusMessage] = useState("");
     const [signFormVisible, setSignFormVisible] = useState(false);
@@ -152,42 +155,37 @@ const App = (props: AppProps) => {
       // worker.postMessage({ type: "sign_proposal", message });
       setSignFormVisible(false);
       setWalletConnectFormVisible(false);
-      
-      const connector = new WalletConnect(
-        {
-          uri,
-          bridge: "https://bridge.walletconnect.org",
-          clientMeta: {
-            description: "WalletConnect Developer App",
-            url: "https://walletconnect.org",
-            icons: ["https://walletconnect.org/walletconnect-logo.png"],
-            name: "WalletConnect",
-          },
+
+      const connector = new WalletConnect({
+        uri,
+        bridge: "https://bridge.walletconnect.org",
+        clientMeta: {
+          description: "WalletConnect Developer App",
+          url: "https://walletconnect.org",
+          icons: ["https://walletconnect.org/walletconnect-logo.png"],
+          name: "WalletConnect",
         },
-      );
+      });
 
       connector.on("session_request", (error: Error, payload: object) => {
         if (error) {
           throw error;
         }
-        console.log('session_request', payload)
+        console.log("session_request", payload);
 
         // Approve Session
         connector.approveSession({
-          accounts: [
-            '0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1',
-          ],
-          chainId: 1 
-        })
-
-      })
+          accounts: ["0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1"],
+          chainId: 1,
+        });
+      });
 
       // Subscribe to call requests
       connector.on("call_request", (error, payload) => {
         if (error) {
           throw error;
         }
-        console.log('call_request', payload)
+        console.log("call_request", payload);
 
         // Handle Call Request
 
@@ -214,13 +212,13 @@ const App = (props: AppProps) => {
           value: "0x0"
         */
 
-        const tx = Transaction.fromTxData(payload.params)
-        console.log("tx", tx)
-        const hash = tx.getMessageToSign()
-        const hashString = hash.toString('hex')
-        onSignFormSubmit(hashString)
+        const tx = Transaction.fromTxData(payload.params);
+        console.log("tx", tx);
+        const hash = tx.getMessageToSign();
+        const hashString = hash.toString("hex");
+        onSignFormSubmit(hashString);
       });
-    }
+    };
 
     const onSignFormSubmit = (message: string) => {
       worker.postMessage({ type: "sign_proposal", message });
@@ -306,7 +304,9 @@ const App = (props: AppProps) => {
           <button onClick={onKeygenPartySignup}>Keygen Signup</button>
         ) : null}
         {signFormVisible ? <SignForm onSubmit={onSignFormSubmit} /> : null}
-        {walletConnectFormVisible ? <WalletConnectForm onSubmit={onWalletConnectFormSubmit} /> : null}
+        {walletConnectFormVisible ? (
+          <WalletConnectForm onSubmit={onWalletConnectFormSubmit} />
+        ) : null}
         {signProposalVisible ? (
           <SignProposal
             signMessage={signMessage}
@@ -325,6 +325,7 @@ const App = (props: AppProps) => {
         <h1>ECDSA WASM Demo</h1>
         <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />
+        <p>State: {logMessage}</p>
         {connected ? <Connected /> : <p>Not connected</p>}
       </>
     );

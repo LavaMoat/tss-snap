@@ -15,9 +15,9 @@ module.exports = {
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
     fallback: {
-      "stream": require.resolve("stream-browserify"),
-      "assert": require.resolve("assert/"),
-    }
+      stream: require.resolve("stream-browserify"),
+      assert: require.resolve("assert/"),
+    },
   },
   output: {
     path: path.resolve(__dirname, "dist"),
