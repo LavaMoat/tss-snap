@@ -29,7 +29,9 @@ export class StateMachine<T, U> {
     this.stateData = null;
     this.options = options;
     this.onComplete = null;
-    this.completionPromise = new Promise(resolve => { this.onComplete = resolve })
+    this.completionPromise = new Promise((resolve) => {
+      this.onComplete = resolve;
+    });
   }
 
   async next(transitionData?: U): Promise<T | null> {
@@ -55,8 +57,8 @@ export class StateMachine<T, U> {
     // Returning null signals the end of the machine,
     // if we cycle to allow replaying the machine then
     // reset the index
-    if (this.index === (this.states.length)) {
-      this.onComplete(this.stateData)
+    if (this.index === this.states.length) {
+      this.onComplete(this.stateData);
     }
 
     return this.stateData;

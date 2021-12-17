@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import WalletConnect from "@walletconnect/client";
 import { Transaction } from "@ethereumjs/tx";
+import { ecrecover, pubToAddress } from "ethereumjs-util";
 
 interface FormProps {
   onSubmit: (message: string) => void;
@@ -285,8 +286,19 @@ const App = (props: AppProps) => {
           setLogMessage("SIGN_RESULT");
           const { signResult } = e.data;
           setSignProposalVisible(false);
-          setSignResult(signResult);
           setSignFormVisible(true);
+          const msgHash = Buffer.from(signMessage, "hex");
+          console.log("signMessage", signMessage);
+          const publicKey = ecrecover(
+            msgHash,
+            27 + signResult.recid,
+            Buffer.from(signResult.r, "hex"),
+            Buffer.from(signResult.s, "hex")
+          );
+          const address = pubToAddress(publicKey);
+          console.log("publicKey", publicKey.toString("hex"));
+          signResult.address = `0x${address.toString("hex")}`;
+          setSignResult(signResult);
           // setWalletConnectFormVisible(true);
           break;
       }

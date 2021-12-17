@@ -49,7 +49,7 @@ export function makeSignMessageStateMachine(
   peerState: PeerState,
   sendNetworkRequest: Function,
   sendUiMessage: Function,
-  sendNetworkMessage: Function,
+  sendNetworkMessage: Function
 ) {
   // State machine for signing a proposal
   const machine = new StateMachine<SignState, SignTransition>(
