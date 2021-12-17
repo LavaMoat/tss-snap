@@ -6,7 +6,7 @@ use std::sync::{
 };
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use log::{error, info, trace, warn};
 use once_cell::sync::Lazy;
@@ -228,7 +228,12 @@ impl Server {
         let state = warp::any().map(move || state.clone());
 
         let static_files = if let Some(static_files) = static_files {
-            static_files
+            if static_files.is_absolute() {
+                static_files
+            } else {
+                let cwd = std::env::current_dir()?;
+                cwd.join(static_files)
+            }
         } else {
             let mut static_files = std::env::current_dir()?;
             static_files.pop();
@@ -236,6 +241,13 @@ impl Server {
             static_files.push("dist");
             static_files
         };
+
+        if !static_files.is_dir() {
+            bail!("static files {} is not a directory", static_files.display());
+        }
+
+        let static_files = static_files.canonicalize()?;
+        info!("Assets: {}", static_files.display());
 
         let client = warp::any().and(warp::fs::dir(static_files));
 
