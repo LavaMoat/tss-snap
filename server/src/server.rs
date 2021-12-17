@@ -225,11 +225,16 @@ impl Server {
         }));
         let state = warp::any().map(move || state.clone());
 
-        let routes = warp::path(path).and(warp::ws()).and(state).map(
+        let welcome = warp::path::end().map(|| "ECDSA WASM Demo Service");
+
+        let websocket = warp::path(path).and(warp::ws()).and(state).map(
             |ws: warp::ws::Ws, state| {
                 ws.on_upgrade(move |socket| client_connected(socket, state))
             },
         );
+
+        let routes = welcome.or(websocket);
+
         warp::serve(routes).run(addr).await;
         Ok(())
     }
