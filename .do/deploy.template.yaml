@@ -1,0 +1,11 @@
+spec:
+  name: ecdsa-wasm
+  services:
+  - dockerfile_path: Dockerfile
+    git:
+      branch: main
+      repo_clone_url: https://github.com/LavaMoat/ecdsa-wasm.git
+    name: ecdsa-wasm
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs

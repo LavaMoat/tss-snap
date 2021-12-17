@@ -2,6 +2,7 @@
 name = "ecdsa-wasm"
 version = "0.1.0"
 edition = "2018"
+default-run = "ecdsa-wasm"
 
 [dependencies]
 anyhow = "1"
@@ -18,3 +19,7 @@ once_cell = "1.8"
 uuid = { version = "0.8", features = ["v4"] }
 
 common = {path = "../common"}
+
+[[bin]]
+name = "ecdsa-wasm"
+path = "src/bin/main.rs"
