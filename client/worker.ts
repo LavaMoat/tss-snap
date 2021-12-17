@@ -61,7 +61,6 @@ let signMachine: SignMessageMachineContainer;
 // Receive messages sent to the worker from the ui
 self.onmessage = async (e) => {
   const { data } = e;
-  console.log("from ui:", data);
   if (data.type === "party_signup") {
     await keygenMachine.machine.next();
   } else if (data.type === "sign_proposal") {
@@ -82,12 +81,12 @@ async function getKeygenHandshake() {
 // Handle messages from the server that were broadcast
 // without a client request
 async function onBroadcastMessage(msg: BroadcastMessage) {
-  console.log("from network:", msg);
   if (await keygenMachine.onBroadcastMessage(msg)) return true;
-  // prep the sign machine if not ready yet
-  if (!signMachine && msg.kind.startsWith("sign_")) {
+
+  if (!signMachine && msg.kind === "sign_proposal") {
     prepareSignMessageStateMachine();
   }
+
   if (await signMachine.onBroadcastMessage(msg)) return true;
   return false;
 }

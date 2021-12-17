@@ -100,8 +100,19 @@ enum IncomingKind {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+enum PartySignupPhase {
+    #[serde(rename = "keygen")]
+    Keygen,
+    #[serde(rename = "sign")]
+    Sign,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
+    PartySignup {
+        phase: PartySignupPhase,
+    },
     Entry {
         entry: Entry,
         uuid: String,
@@ -163,7 +174,7 @@ enum OutgoingData {
         threshold: u16,
         conn_id: usize,
     },
-    KeygenSignup {
+    PartySignup {
         party_signup: PartySignup,
     },
     CommitmentAnswer {
@@ -312,33 +323,44 @@ async fn client_request(
         }
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
-            let party_signup = {
-                let client_signup = &info.party_signup;
-                if client_signup.number < info.params.parties {
-                    PartySignup {
-                        number: client_signup.number + 1,
-                        uuid: client_signup.uuid.clone(),
+            if let IncomingData::PartySignup { phase } =
+                req.data.as_ref().unwrap()
+            {
+                let total = match phase {
+                    PartySignupPhase::Keygen => info.params.parties,
+                    PartySignupPhase::Sign => info.params.threshold + 1,
+                };
+
+                let party_signup = {
+                    let client_signup = &info.party_signup;
+                    if client_signup.number < total {
+                        PartySignup {
+                            number: client_signup.number + 1,
+                            uuid: client_signup.uuid.clone(),
+                        }
+                    } else {
+                        PartySignup {
+                            number: 1,
+                            uuid: Uuid::new_v4().to_string(),
+                        }
                     }
-                } else {
-                    PartySignup {
-                        number: 1,
-                        uuid: Uuid::new_v4().to_string(),
-                    }
-                }
-            };
+                };
 
-            drop(info);
-            let mut writer = state.write().await;
-            writer.party_signup = party_signup.clone();
+                drop(info);
+                let mut writer = state.write().await;
+                writer.party_signup = party_signup.clone();
 
-            let conn_info = writer.clients.get_mut(&conn_id).unwrap();
-            conn_info.1 = Some(party_signup.clone());
+                let conn_info = writer.clients.get_mut(&conn_id).unwrap();
+                conn_info.1 = Some(party_signup.clone());
 
-            Some(Outgoing {
-                id: req.id,
-                kind: None,
-                data: Some(OutgoingData::KeygenSignup { party_signup }),
-            })
+                Some(Outgoing {
+                    id: req.id,
+                    kind: None,
+                    data: Some(OutgoingData::PartySignup { party_signup }),
+                })
+            } else {
+                None
+            }
         }
         // Propose a message to be signed
         IncomingKind::SignProposal => {
