@@ -73,7 +73,7 @@ self.onmessage = async (e) => {
   }
 };
 
-// wapper for late binding of keygenMachine
+// Weapper for late binding of keygenMachine
 async function getKeygenHandshake() {
   return await keygenMachine.machine.next();
 }

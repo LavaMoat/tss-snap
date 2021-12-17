@@ -65,7 +65,7 @@ jobs:
       - name: Install wasm-pack
         uses: jetli/wasm-pack-action@v0.3.0
         with:
-          version: 'v0.9.1'
+          version: 'v0.10.1'
       - name: Run wasm-pack
         working-directory: ${{env.WORKING_DIRECTORY}}
         run: wasm-pack build --target web
