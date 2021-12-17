@@ -225,7 +225,12 @@ impl Server {
         }));
         let state = warp::any().map(move || state.clone());
 
-        let welcome = warp::path::end().map(|| "ECDSA WASM Demo Service");
+        let mut static_files = std::env::current_dir()?;
+        static_files.pop();
+        static_files.push("client");
+        static_files.push("dist");
+
+        let client = warp::any().and(warp::fs::dir(static_files));
 
         let websocket = warp::path(path).and(warp::ws()).and(state).map(
             |ws: warp::ws::Ws, state| {
@@ -233,7 +238,7 @@ impl Server {
             },
         );
 
-        let routes = welcome.or(websocket);
+        let routes = websocket.or(client);
 
         warp::serve(routes).run(addr).await;
         Ok(())
