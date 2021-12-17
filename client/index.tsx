@@ -5,6 +5,8 @@ import WalletConnect from "@walletconnect/client";
 import { Transaction } from "@ethereumjs/tx";
 import { ecrecover, pubToAddress } from "ethereumjs-util";
 
+let addressString: string = null;
+
 interface FormProps {
   onSubmit: (message: string) => void;
 }
@@ -136,8 +138,8 @@ const App = (props: AppProps) => {
 
     const [keygenSignupVisible, setKeygenSignupVisible] = useState(false);
 
-    const [walletConnectFormVisible, setWalletConnectFormVisible] =
-      useState(false);
+    const [wcFormVisible, setWcFormVisible] = useState(false);
+    const [wcConnected, setWcConnected] = useState(false);
 
     const [signMessage, setSignMessage] = useState(null);
     const [signStatusMessage, setSignStatusMessage] = useState("");
@@ -155,7 +157,7 @@ const App = (props: AppProps) => {
     const onWalletConnectFormSubmit = (uri: string) => {
       // worker.postMessage({ type: "sign_proposal", message });
       setSignFormVisible(false);
-      setWalletConnectFormVisible(false);
+      setWcFormVisible(false);
 
       const connector = new WalletConnect({
         uri,
@@ -173,10 +175,11 @@ const App = (props: AppProps) => {
           throw error;
         }
         console.log("session_request", payload);
+        setWcConnected(true);
 
         // Approve Session
         connector.approveSession({
-          accounts: ["0xf1703c935c8d5fc95b8e3c7686fc87369351c3d1"],
+          accounts: [addressString],
           chainId: 1,
         });
       });
@@ -224,7 +227,7 @@ const App = (props: AppProps) => {
     const onSignFormSubmit = (message: string) => {
       worker.postMessage({ type: "sign_proposal", message });
       setSignFormVisible(false);
-      setWalletConnectFormVisible(false);
+      setWcFormVisible(false);
     };
 
     const onSignMessage = (message: string) => {
@@ -265,7 +268,7 @@ const App = (props: AppProps) => {
         case "keygen_complete":
           setLogMessage("SIGN_MESSAGE_PROPOSAL");
           setSignFormVisible(true);
-          setWalletConnectFormVisible(true);
+          setWcFormVisible(true);
           break;
         case "sign_progress":
           setSignStatusMessage("Signing in progress...");
@@ -275,7 +278,7 @@ const App = (props: AppProps) => {
           const { message } = e.data;
           // clean up
           setSignFormVisible(false);
-          setWalletConnectFormVisible(false);
+          setWcFormVisible(false);
           setSignResult(null);
           setSignStatusMessage("");
           // show proposal
@@ -296,10 +299,10 @@ const App = (props: AppProps) => {
             Buffer.from(signResult.s, "hex")
           );
           const address = pubToAddress(publicKey);
-          console.log("publicKey", publicKey.toString("hex"));
-          signResult.address = `0x${address.toString("hex")}`;
+          addressString = `0x${address.toString("hex")}`;
+          signResult.address = addressString;
           setSignResult(signResult);
-          // setWalletConnectFormVisible(true);
+          setWcFormVisible(true);
           break;
       }
     };
@@ -316,7 +319,7 @@ const App = (props: AppProps) => {
           <button onClick={onKeygenPartySignup}>Keygen Signup</button>
         ) : null}
         {signFormVisible ? <SignForm onSubmit={onSignFormSubmit} /> : null}
-        {walletConnectFormVisible ? (
+        {!wcConnected && wcFormVisible ? (
           <WalletConnectForm onSubmit={onWalletConnectFormSubmit} />
         ) : null}
         {signProposalVisible ? (
