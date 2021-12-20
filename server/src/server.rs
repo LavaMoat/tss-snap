@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use uuid::Uuid;
+use warp::http::header::{HeaderMap, HeaderValue};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
@@ -251,13 +252,25 @@ impl Server {
 
         let client = warp::any().and(warp::fs::dir(static_files));
 
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "Cross-Origin-Embedder-Policy",
+            HeaderValue::from_static("require-corp"),
+        );
+        headers.insert(
+            "Cross-Origin-Opener-Policy",
+            HeaderValue::from_static("same-origin"),
+        );
+
         let websocket = warp::path(path).and(warp::ws()).and(state).map(
             |ws: warp::ws::Ws, state| {
                 ws.on_upgrade(move |socket| client_connected(socket, state))
             },
         );
 
-        let routes = websocket.or(client);
+        let routes = websocket
+            .or(client)
+            .with(warp::reply::with::headers(headers));
 
         warp::serve(routes).run(addr).await;
         Ok(())
