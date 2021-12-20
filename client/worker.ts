@@ -28,7 +28,7 @@ void (async function () {
 
 const sendUiMessage = self.postMessage;
 
-const url = `ws://${location.hostname}:3030/demo`;
+const url = `__URL__`;
 const { send: sendNetworkMessage, request: sendNetworkRequest } =
   makeWebSocketClient({
     url,

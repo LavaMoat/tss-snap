@@ -1,6 +1,9 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require("path");
 
+const isProduction = process.env.NODE_ENV === "production";
+const url = isProduction ? "/demo" : "ws://${location.hostname}:3030/demo";
+
 module.exports = {
   entry: "./index.tsx",
   module: {
@@ -9,6 +12,14 @@ module.exports = {
         test: /\.tsx?$/,
         use: "ts-loader",
         exclude: /node_modules/,
+      },
+      {
+        test: /worker\.ts$/,
+        loader: "string-replace-loader",
+        options: {
+          search: "__URL__",
+          replace: url,
+        },
       },
     ],
   },
