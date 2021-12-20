@@ -2,7 +2,9 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require("path");
 
 const isProduction = process.env.NODE_ENV === "production";
-const url = isProduction ? "/demo" : "ws://${location.hostname}:3030/demo";
+const url = isProduction
+  ? "wss://${location.hostname}/demo"
+  : "ws://${location.hostname}:3030/demo";
 
 module.exports = {
   entry: "./index.tsx",
