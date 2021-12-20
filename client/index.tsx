@@ -360,7 +360,6 @@ const App = (props: AppProps) => {
         <h1>ECDSA WASM Demo</h1>
         <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />
-        <p>State: {logMessage}</p>
         {connected ? <Connected /> : <p>Not connected</p>}
       </>
     );
