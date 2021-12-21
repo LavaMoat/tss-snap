@@ -202,12 +202,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 3 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round3",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -464,7 +461,6 @@ export function makeSignMessageStateMachine(
   async function onBroadcastMessage(msg: BroadcastMessage) {
     switch (msg.kind) {
       case "party_signup":
-        // FIXME: only call next for participants!!!
         await machine.next();
         return true;
       case "sign_proposal":
@@ -487,9 +483,6 @@ export function makeSignMessageStateMachine(
             // We performed a sign of the message and also need to update the UI
             sendUiMessage({ type: "sign_progress" });
             //await machine.next({ answer: msg.data.answer });
-            break;
-          case "round3":
-            await machine.next({ answer: msg.data.answer });
             break;
           case "round4":
             await machine.next({ answer: msg.data.answer });

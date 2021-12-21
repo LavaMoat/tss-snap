@@ -649,7 +649,45 @@ async fn client_request(
                     data: None,
                 };
 
-                /*
+                // Notify the non-participants
+                if let Some(IncomingData::PartySignup { phase }) =
+                    req.data.as_ref()
+                {
+                    if let PartySignupPhase::Sign = phase {
+                        let mut non_signing_clients: Vec<usize> = Vec::new();
+                        {
+                            let mut writer = state.write().await;
+                            let uuid = writer.party_signup.uuid.clone();
+                            writer.clients.iter_mut().for_each(|(k, v)| {
+                                if let Some(mut party_signup) = v.1.as_mut() {
+                                    // Got a connection that is not participating
+                                    // in the signing phase, we need to set the party
+                                    // number to zero otherwise there are collisions
+                                    // betweeen parties participating in the signing and
+                                    // stale party signup numbers from the key generation
+                                    // phase. These collisions would cause broadcast messages
+                                    // to go to the wrong recipients due to the simple logic
+                                    // for associating a connection with a party number.
+                                    if party_signup.uuid != uuid {
+                                        party_signup.number = 0;
+                                        non_signing_clients.push(*k);
+                                    }
+                                }
+                            })
+                        }
+
+                        // Notify non-participants that signing is in progress
+                        for conn_id in non_signing_clients {
+                            let res = Outgoing {
+                                id: None,
+                                kind: Some(OutgoingKind::SignProgress),
+                                data: None,
+                            };
+                            send_message(conn_id, &res, state).await;
+                        }
+                    }
+                }
+
                 let parties: Vec<u16> = {
                     let info = state.read().await;
                     info.ephemeral_state
@@ -658,14 +696,8 @@ async fn client_request(
                         .collect()
                 };
 
-                println!("Sending party signup broadcast {:#?}", parties);
-                */
-
                 let lock = BROADCAST_LOCK.try_lock();
                 if let Ok(_) = lock {
-                    broadcast_message(&msg, state).await;
-
-                    /*
                     for party_num in parties {
                         if let Some(conn_id) =
                             conn_id_for_party(state, party_num).await
@@ -673,7 +705,6 @@ async fn client_request(
                             send_message(conn_id, &msg, state).await;
                         }
                     }
-                    */
 
                     {
                         let mut writer = state.write().await;

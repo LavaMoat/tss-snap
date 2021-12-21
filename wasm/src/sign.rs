@@ -55,7 +55,7 @@ struct Round2Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round3Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decommit: SignDecommitPhase1,
     delta_i: Scalar<Secp256k1>,
     sigma: Scalar<Secp256k1>,
@@ -490,15 +490,27 @@ pub fn signRound3(
     let delta_i = sign_keys.phase2_delta_i(&alpha_vec, &beta_vec);
     let sigma = sign_keys.phase2_sigma_i(&miu_vec, &ni_vec);
 
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_3,
-        serde_json::to_string(&delta_i).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_3,
+                serde_json::to_string(&delta_i).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round3Entry {
-        entry,
+        peer_entries,
         sigma,
         delta_i,
         decommit,
