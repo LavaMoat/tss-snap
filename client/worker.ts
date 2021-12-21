@@ -1,7 +1,6 @@
 import init, { initThreadPool } from "ecdsa-wasm";
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
 import { KeygenResult, Handshake } from "./machine-common";
-import { PeerState } from "./peer-state";
 import { makeKeygenStateMachine } from "./machine-keygen";
 import {
   makeSignMessageStateMachine,
@@ -48,7 +47,6 @@ const { send: sendNetworkMessage, request: sendNetworkRequest } =
     onBroadcastMessage,
   });
 
-let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
 const keygenMachine = makeKeygenStateMachine(sendNetworkRequest, sendUiMessage);
@@ -136,7 +134,6 @@ async function onBroadcastMessage(msg: BroadcastMessage) {
 
 function prepareSignMessageStateMachine() {
   signMachine = makeSignMessageStateMachine(
-    peerState,
     sendNetworkRequest,
     sendUiMessage,
     sendNetworkMessage

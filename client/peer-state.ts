@@ -8,12 +8,6 @@ export interface PeerEntry {
   entry: Entry;
 }
 
-// Temporary state for caching peer entries during a single round.
-export interface PeerState {
-  parties: number;
-  received: PeerEntry[];
-}
-
 export function getSortedPeerEntriesAnswer(received: PeerEntry[]): string[] {
   // Must sort the entries otherwise the decryption
   // keys will not match the peer entries

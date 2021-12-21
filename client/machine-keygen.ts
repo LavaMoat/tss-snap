@@ -18,11 +18,7 @@ import {
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
-import {
-  getSortedPeerEntriesAnswer,
-  makePeerState,
-  PeerEntryHandler,
-} from "./peer-state";
+import { makePeerState, PeerEntryHandler } from "./peer-state";
 
 // Type to pass through the client state machine during key generation.
 interface KeygenRoundEntry<T> {

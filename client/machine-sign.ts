@@ -20,7 +20,11 @@ import {
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
-import { PeerState, getSortedPeerEntriesAnswer } from "./peer-state";
+import {
+  getSortedPeerEntriesAnswer,
+  PeerEntryHandler,
+  makePeerState,
+} from "./peer-state";
 
 // Type used to start the signing process.
 interface SignInit {
@@ -45,11 +49,12 @@ export interface SignMessageMachineContainer {
 }
 
 export function makeSignMessageStateMachine(
-  peerState: PeerState,
   sendNetworkRequest: Function,
   sendUiMessage: Function,
   sendNetworkMessage: Function
 ) {
+  let peerEntryHandler: PeerEntryHandler = null;
+
   // State machine for signing a proposal
   const machine = new StateMachine<SignState, SignTransition>(
     [
@@ -71,8 +76,12 @@ export function makeSignMessageStateMachine(
           sendUiMessage({ type: "party_signup", partySignup });
 
           const { message, keygenResult } = transitionData as SignInit;
-          const { key } = keygenResult;
+          const { key, parameters } = keygenResult;
           const roundEntry = signRound0(partySignup, key);
+
+          // NOTE: We don't add 1 to threshold here as
+          // NOTE: we only expect answers from *other* peers
+          peerEntryHandler = makePeerState(parameters.threshold);
 
           // Send the round 0 entry to the server
           sendNetworkRequest({
@@ -103,10 +112,6 @@ export function makeSignMessageStateMachine(
           const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound1(parameters, partySignup, key, answer);
-
-          // Set up for the peer to peer calls in round 2
-          peerState.parties = parameters.threshold + 1;
-          peerState.received = [];
 
           // Send the round 1 entry to the server
           sendNetworkRequest({
@@ -167,10 +172,7 @@ export function makeSignMessageStateMachine(
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
           const { parameters, key } = keygenResult;
-
-          const answer = getSortedPeerEntriesAnswer(peerState.received);
-          // Clean up the peer entries
-          peerState.received = [];
+          const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound3(
             parameters,
@@ -495,11 +497,10 @@ export function makeSignMessageStateMachine(
         return true;
       case "sign_peer_answer":
         const { peer_entry: signPeerEntry } = msg.data;
-        peerState.received.push(signPeerEntry);
-
         // Got all the p2p answers
-        if (peerState.received.length === peerState.parties - 1) {
-          await machine.next();
+        const answer = peerEntryHandler(signPeerEntry);
+        if (answer) {
+          await machine.next({ answer });
         }
 
         return true;
