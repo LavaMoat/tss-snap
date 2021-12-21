@@ -143,7 +143,7 @@ export function makeKeygenStateMachine(
 
           // Send the round 3 entry to the server
           sendNetworkRequest({
-            kind: "keygen_round3_relay_peers",
+            kind: "peer_relay",
             data: { entries: roundEntry.peer_entries },
           });
 
@@ -264,7 +264,7 @@ export function makeKeygenStateMachine(
             break;
         }
         return true;
-      case "keygen_peer_answer":
+      case "peer_relay":
         const { peer_entry: keygenPeerEntry } = msg.data;
         // Got all the p2p answers
         const answer = peerEntryHandler(keygenPeerEntry);

@@ -692,9 +692,7 @@ async fn client_request(
         | IncomingKind::SignRound2RelayPeers => {
             if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
                 let kind = match req.kind {
-                    IncomingKind::PeerRelay => {
-                        OutgoingKind::PeerRelay
-                    }
+                    IncomingKind::PeerRelay => OutgoingKind::PeerRelay,
                     IncomingKind::KeygenRound3RelayPeers => {
                         OutgoingKind::KeygenPeerAnswer
                     }
