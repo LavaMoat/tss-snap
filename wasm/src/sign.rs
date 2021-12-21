@@ -117,7 +117,7 @@ struct Round7Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round8Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decommit5a_and_elgamal_and_dlog_vec_includes_i: Vec<(
         Phase5ADecom1,
         HomoELGamalProof<Secp256k1, Sha256>,
@@ -863,10 +863,14 @@ pub fn signRound7(
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn signRound8(
+    parameters: JsValue,
     party_signup: JsValue,
     round7_entry: JsValue,
     round7_ans_vec: JsValue,
 ) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -891,15 +895,27 @@ pub fn signRound8(
     );
 
     //phase (5B)  broadcast decommit and (5B) ZK proof
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_8,
-        serde_json::to_string(&phase_5d_decom2).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_8,
+                serde_json::to_string(&phase_5d_decom2).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round8Entry {
-        entry,
+        peer_entries,
         local_sig,
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
         phase_5d_decom2,
