@@ -332,12 +332,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 7 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round7",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -481,9 +478,6 @@ export function makeSignMessageStateMachine(
             // We performed a sign of the message and also need to update the UI
             sendUiMessage({ type: "sign_progress" });
             //await machine.next({ answer: msg.data.answer });
-            break;
-          case "round7":
-            await machine.next({ answer: msg.data.answer });
             break;
           case "round8":
             await machine.next({ answer: msg.data.answer });

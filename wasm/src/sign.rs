@@ -103,7 +103,7 @@ struct Round6Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round7Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decommit5a_and_elgamal_and_dlog_vec_includes_i: Vec<(
         Phase5ADecom1,
         HomoELGamalProof<Secp256k1, Sha256>,
@@ -830,15 +830,27 @@ pub fn signRound7(
         )
         .expect("error phase5");
 
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_7,
-        serde_json::to_string(&phase5_com2).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_7,
+                serde_json::to_string(&phase5_com2).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round7Entry {
-        entry,
+        peer_entries,
         decommit5a_and_elgamal_and_dlog_vec_includes_i,
         phase_5d_decom2,
         phase5_com2,
