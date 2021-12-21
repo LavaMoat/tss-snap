@@ -16,7 +16,6 @@ type RequestKind =
   | "party_signup"
   | "peer_relay"
   | "sign_proposal"
-  | "sign_round6"
   | "sign_round7"
   | "sign_round8"
   | "sign_round9"

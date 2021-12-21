@@ -91,7 +91,7 @@ struct Round5Entry {
 #[allow(non_snake_case)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round6Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     helgamal_proof: HomoELGamalProof<Secp256k1, Sha256>,
     dlog_proof_rho: DLogProof<Secp256k1, Sha256>,
     local_sig: LocalSignature,
@@ -696,10 +696,14 @@ pub fn signRound5(
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn signRound6(
+    parameters: JsValue,
     party_signup: JsValue,
     round5_entry: JsValue,
     round5_ans_vec: JsValue,
 ) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -726,20 +730,32 @@ pub fn signRound6(
     );
 
     //phase (5B)  broadcast decommit and (5B) ZK proof
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_6,
-        serde_json::to_string(&(
-            phase_5a_decom.clone(),
-            helgamal_proof.clone(),
-            dlog_proof_rho.clone(),
-        ))
-        .unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_6,
+                serde_json::to_string(&(
+                    phase_5a_decom.clone(),
+                    helgamal_proof.clone(),
+                    dlog_proof_rho.clone(),
+                ))
+                .unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round6Entry {
-        entry,
+        peer_entries,
         helgamal_proof,
         dlog_proof_rho,
         local_sig,
