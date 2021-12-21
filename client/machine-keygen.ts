@@ -12,14 +12,13 @@ import {
   PartySignup,
   KeygenResult,
   PartyKey,
-  PeerState,
   RoundEntry,
   BroadcastAnswer,
   Handshake,
-  getSortedPeerEntriesAnswer,
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
+import { PeerState, getSortedPeerEntriesAnswer } from "./peer-state";
 
 // Type to pass through the client state machine during key generation.
 interface KeygenRoundEntry<T> {

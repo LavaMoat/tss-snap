@@ -17,11 +17,10 @@ import {
   PartySignup,
   RoundEntry,
   BroadcastAnswer,
-  PeerState,
-  getSortedPeerEntriesAnswer,
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
+import { PeerState, getSortedPeerEntriesAnswer } from "./peer-state";
 
 // Type used to start the signing process.
 interface SignInit {

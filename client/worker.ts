@@ -1,6 +1,7 @@
 import init, { initThreadPool } from "ecdsa-wasm";
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
-import { PeerState, KeygenResult, Handshake } from "./machine-common";
+import { KeygenResult, Handshake } from "./machine-common";
+import { PeerState } from "./peer-state";
 import { makeKeygenStateMachine } from "./machine-keygen";
 import {
   makeSignMessageStateMachine,
