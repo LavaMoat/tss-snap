@@ -78,7 +78,7 @@ struct Round4Entry {
 #[allow(non_snake_case)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round5Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     phase5_com: Phase5Com1,
     phase_5a_decom: Phase5ADecom1,
     helgamal_proof: HomoELGamalProof<Secp256k1, Sha256>,
@@ -592,12 +592,16 @@ pub fn signRound4(
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn signRound5(
+    parameters: JsValue,
     party_signup: JsValue,
     party_key: JsValue,
     round4_entry: JsValue,
     round4_ans_vec: JsValue,
     message: JsValue,
 ) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -657,15 +661,27 @@ pub fn signRound5(
         local_sig.phase5a_broadcast_5b_zkproof();
 
     //phase (5A)  broadcast commit
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_5,
-        serde_json::to_string(&phase5_com).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_5,
+                serde_json::to_string(&phase5_com).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round5Entry {
-        entry,
+        peer_entries,
         phase5_com,
         phase_5a_decom,
         helgamal_proof,
