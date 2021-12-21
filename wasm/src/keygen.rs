@@ -56,11 +56,11 @@ struct Round2Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round3Entry {
     party_keys: Keys,
+    peer_entries: Vec<PeerEntry>,
     enc_keys: Vec<Vec<u8>>,
     vss_scheme: VerifiableSS<Secp256k1>,
     secret_shares: Vec<Scalar<Secp256k1>>,
     y_sum: Point<Secp256k1>,
-    peer_entries: Vec<PeerEntry>,
     point_vec: Vec<Point<Secp256k1>>,
     bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
@@ -68,7 +68,7 @@ struct Round3Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round4Entry {
     party_keys: Keys,
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     party_shares: Vec<Scalar<Secp256k1>>,
     vss_scheme: VerifiableSS<Secp256k1>,
     point_vec: Vec<Point<Secp256k1>>,
@@ -126,7 +126,7 @@ pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
         party_keys.phase1_broadcast_phase3_proof_of_correct_key();
 
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
-    for (_k, i) in (1..=parties).enumerate() {
+    for i in 1..=parties {
         if i != party_num_int {
             let entry = into_p2p_entry(
                 party_num_int,
@@ -192,18 +192,8 @@ pub fn keygenRound2(
 
     bc1_vec.insert(party_num_int as usize - 1, bc_i);
 
-    /*
-    // Generate the entry for round 2
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_2,
-        serde_json::to_string(&decom_i).unwrap(),
-        uuid,
-    );
-    */
-
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
-    for (_k, i) in (1..=parties).enumerate() {
+    for i in 1..=parties {
         if i != party_num_int {
             let entry = into_p2p_entry(
                 party_num_int,
@@ -384,19 +374,40 @@ pub fn keygenRound4(
         }
     }
 
+    /*
     let entry = into_round_entry(
         party_num_int,
         ROUND_4,
         serde_json::to_string(&vss_scheme).unwrap(),
         uuid,
     );
+    */
+
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=parties {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_4,
+                serde_json::to_string(&vss_scheme).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round4Entry {
         party_keys,
+        peer_entries,
         party_shares,
         vss_scheme,
         point_vec,
-        entry,
         y_sum,
         bc1_vec,
     };

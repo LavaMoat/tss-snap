@@ -180,12 +180,9 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 4 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round4",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
@@ -263,12 +260,6 @@ export function makeKeygenStateMachine(
         return true;
       case "keygen_commitment_answer":
         switch (msg.data.round) {
-          case "round2":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round4":
-            await machine.next({ answer: msg.data.answer });
-            break;
           case "round5":
             await machine.next({ answer: msg.data.answer });
             break;
