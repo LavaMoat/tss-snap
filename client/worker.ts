@@ -122,7 +122,11 @@ async function getKeygenHandshake() {
 // Handle messages from the server that were broadcast
 // without a client request
 async function onBroadcastMessage(msg: BroadcastMessage) {
-  if (await keygenMachine.onBroadcastMessage(msg)) return true;
+  // So it doesn't interfere with the signing peer replies;
+  // an event listener model would be better!
+  if (!keygenResult) {
+    if (await keygenMachine.onBroadcastMessage(msg)) return true;
+  }
 
   if (!signMachine && msg.kind === "sign_proposal") {
     prepareSignMessageStateMachine();

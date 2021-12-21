@@ -4,7 +4,6 @@ type BroadcastKind =
   | "sign_proposal"
   | "sign_progress"
   | "sign_commitment_answer"
-  | "sign_peer_answer"
   | "sign_result";
 
 export interface BroadcastMessage {
@@ -23,7 +22,6 @@ type RequestKind =
   | "sign_proposal"
   | "sign_round0"
   | "sign_round1"
-  | "sign_round2_relay_peers"
   | "sign_round3"
   | "sign_round4"
   | "sign_round5"

@@ -151,7 +151,7 @@ export function makeSignMessageStateMachine(
 
           // Send the round 2 entry to the server
           sendNetworkRequest({
-            kind: "sign_round2_relay_peers",
+            kind: "peer_relay",
             data: { entries: roundEntry.peer_entries },
           });
 
@@ -495,8 +495,9 @@ export function makeSignMessageStateMachine(
             break;
         }
         return true;
-      case "sign_peer_answer":
+      case "peer_relay":
         const { peer_entry: signPeerEntry } = msg.data;
+
         // Got all the p2p answers
         const answer = peerEntryHandler(signPeerEntry);
         if (answer) {
