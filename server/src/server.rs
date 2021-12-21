@@ -46,6 +46,10 @@ enum IncomingKind {
     /// Initialize the key generation process with a party signup
     #[serde(rename = "party_signup")]
     PartySignup,
+
+    #[serde(rename = "peer_relay")]
+    PeerRelay,
+
     /// All clients send this message once `party_signup` is complete
     /// to store the round 1 entry
     #[serde(rename = "keygen_round1")]
@@ -133,6 +137,10 @@ enum IncomingData {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
+    /// Relayed peer to peer answer.
+    #[serde(rename = "peer_relay")]
+    PeerRelay,
+
     /// Answer sent to a party with the commitments from the other parties
     /// during the keygen phase.
     #[serde(rename = "keygen_commitment_answer")]
@@ -184,7 +192,6 @@ enum OutgoingData {
         answer: Vec<String>,
     },
     PeerAnswer {
-        round: String,
         peer_entry: PeerEntry,
     },
     Message {
@@ -464,7 +471,8 @@ async fn client_request(
                 None
             }
         }
-        IncomingKind::KeygenRound3RelayPeers
+        IncomingKind::PeerRelay
+        | IncomingKind::KeygenRound3RelayPeers
         | IncomingKind::SignRound2RelayPeers => {
             // Send an ACK so the client promise will resolve
             Some(Outgoing {
@@ -679,10 +687,14 @@ async fn client_request(
                 }
             }
         }
-        IncomingKind::KeygenRound3RelayPeers
+        IncomingKind::PeerRelay
+        | IncomingKind::KeygenRound3RelayPeers
         | IncomingKind::SignRound2RelayPeers => {
             if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
                 let kind = match req.kind {
+                    IncomingKind::PeerRelay => {
+                        OutgoingKind::PeerRelay
+                    }
                     IncomingKind::KeygenRound3RelayPeers => {
                         OutgoingKind::KeygenPeerAnswer
                     }
@@ -700,7 +712,6 @@ async fn client_request(
                             id: None,
                             kind: Some(kind),
                             data: Some(OutgoingData::PeerAnswer {
-                                round: ROUND_3.to_string(),
                                 peer_entry: entry,
                             }),
                         };
