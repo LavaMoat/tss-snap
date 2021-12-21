@@ -33,7 +33,7 @@ struct Round0Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round1Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     xi_com_vec: Vec<Point<Secp256k1>>,
     decommit: SignDecommitPhase1,
     signers_vec: Vec<u16>,
@@ -172,15 +172,6 @@ pub fn signRound0(
 
     let PartyKey { party_id, .. } = party_key.into_serde::<PartyKey>().unwrap();
 
-    /*
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_0,
-        serde_json::to_string(&party_id).unwrap(),
-        uuid,
-    );
-    */
-
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
@@ -257,15 +248,36 @@ pub fn signRound1(
     let (com, decommit) = sign_keys.phase1_broadcast();
     let (m_a_k, _) = MessageA::a(&sign_keys.k_i, &party_keys.ek, &[]);
 
+    /*
     let entry = into_round_entry(
         party_num_int,
         ROUND_1,
         serde_json::to_string(&(com.clone(), m_a_k)).unwrap(),
         uuid,
     );
+    */
+
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_1,
+                serde_json::to_string(&(com.clone(), m_a_k.clone())).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round1Entry {
-        entry,
+        peer_entries,
         xi_com_vec,
         decommit,
         signers_vec,

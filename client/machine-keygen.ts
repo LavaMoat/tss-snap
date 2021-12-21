@@ -82,7 +82,6 @@ export function makeKeygenStateMachine(
           return { parameters, partySignup };
         },
       },
-      // Generate the PartySignup and keygen round 1 entry
       {
         name: "KEYGEN_ROUND_1",
         transition: async (
@@ -103,7 +102,6 @@ export function makeKeygenStateMachine(
           return { parameters, partySignup, roundEntry };
         },
       },
-      // All parties committed to round 1 so generate the round 2 entry
       {
         name: "KEYGEN_ROUND_2",
         transition: async (
@@ -132,7 +130,6 @@ export function makeKeygenStateMachine(
           return { parameters, partySignup, roundEntry };
         },
       },
-      // All parties committed to round 2 so generate the round 3 peer to peer calls
       {
         name: "KEYGEN_ROUND_3",
         transition: async (
@@ -160,7 +157,6 @@ export function makeKeygenStateMachine(
           return { parameters, partySignup, roundEntry };
         },
       },
-      // Got all the round 3 peer to peer messages, proceed to round  4
       {
         name: "KEYGEN_ROUND_4",
         transition: async (
@@ -188,7 +184,6 @@ export function makeKeygenStateMachine(
           return { parameters, partySignup, roundEntry };
         },
       },
-      // Got all the round 4 entries
       {
         name: "KEYGEN_ROUND_5",
         transition: async (
@@ -216,7 +211,6 @@ export function makeKeygenStateMachine(
           return { parameters, partySignup, roundEntry };
         },
       },
-      // Got all the round 5 entries, create the final key data
       {
         name: "KEYGEN_FINALIZE",
         transition: async (

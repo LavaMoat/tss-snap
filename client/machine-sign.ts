@@ -136,12 +136,9 @@ export function makeSignMessageStateMachine(
           const roundEntry = signRound1(parameters, partySignup, key, answer);
 
           // Send the round 1 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round1",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -264,10 +261,6 @@ export function makeSignMessageStateMachine(
           const { message, partySignup, keygenResult } = signState;
           const { key } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
-
-          //const encoder = new TextEncoder();
-          //const messageBytes = encoder.encode(message);
-          //const messageHex = toHexString(messageBytes);
 
           const roundEntry = signRound5(
             partySignup,
@@ -495,9 +488,6 @@ export function makeSignMessageStateMachine(
             sendUiMessage({ type: "sign_progress" });
             //await machine.next({ answer: msg.data.answer });
             break;
-          case "round1":
-            await machine.next({ answer: msg.data.answer });
-            break;
           case "round3":
             await machine.next({ answer: msg.data.answer });
             break;
@@ -522,8 +512,8 @@ export function makeSignMessageStateMachine(
         }
         return true;
       case "peer_relay":
-        const { peer_entry: signPeerEntry } = msg.data;
-        const answer = peerEntryHandler(signPeerEntry);
+        const { peer_entry: peerEntry } = msg.data;
+        const answer = peerEntryHandler(peerEntry);
         // Got all the p2p answers
         if (answer) {
           await machine.next({ answer });

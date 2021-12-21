@@ -53,12 +53,6 @@ enum IncomingKind {
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_proposal")]
     SignProposal,
-    // Start the signing process by sharing party identifiers
-    #[serde(rename = "sign_round0")]
-    SignRound0,
-    /// Store the round 1 entry sent by each client.
-    #[serde(rename = "sign_round1")]
-    SignRound1,
     /// Store the round 3 entry sent by each client.
     #[serde(rename = "sign_round3")]
     SignRound3,
@@ -417,9 +411,7 @@ async fn client_request(
             }
         }
         // Store the round Entry
-        IncomingKind::SignRound0
-        | IncomingKind::SignRound1
-        | IncomingKind::SignRound3
+        IncomingKind::SignRound3
         | IncomingKind::SignRound4
         | IncomingKind::SignRound5
         | IncomingKind::SignRound6
@@ -496,9 +488,7 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::SignRound0
-        | IncomingKind::SignRound1
-        | IncomingKind::SignRound3
+        IncomingKind::SignRound3
         | IncomingKind::SignRound4
         | IncomingKind::SignRound5
         | IncomingKind::SignRound6
@@ -512,9 +502,7 @@ async fn client_request(
             drop(info);
 
             let required_num_entries = match req.kind {
-                IncomingKind::SignRound0
-                | IncomingKind::SignRound1
-                | IncomingKind::SignRound3
+                IncomingKind::SignRound3
                 | IncomingKind::SignRound4
                 | IncomingKind::SignRound5
                 | IncomingKind::SignRound6
@@ -528,8 +516,6 @@ async fn client_request(
             // to each client with the answer vectors
             if num_entries == required_num_entries {
                 let round = match req.kind {
-                    IncomingKind::SignRound0 => ROUND_0,
-                    IncomingKind::SignRound1 => ROUND_1,
                     IncomingKind::SignRound3 => ROUND_3,
                     IncomingKind::SignRound4 => ROUND_4,
                     IncomingKind::SignRound5 => ROUND_5,
@@ -543,6 +529,7 @@ async fn client_request(
                 if let IncomingData::Entry { uuid, .. } =
                     req.data.as_ref().unwrap()
                 {
+                    /*
                     // Round 0 only exists for the sign phase
                     if round == ROUND_0 {
                         let mut non_signing_clients: Vec<usize> = Vec::new();
@@ -576,6 +563,7 @@ async fn client_request(
                             send_message(conn_id, &res, state).await;
                         }
                     }
+                    */
 
                     let lock = BROADCAST_LOCK.try_lock();
                     if let Ok(_) = lock {
@@ -598,9 +586,7 @@ async fn client_request(
                                 conn_id_for_party(state, party_num).await
                             {
                                 let kind = match req.kind {
-                                    IncomingKind::SignRound0
-                                    | IncomingKind::SignRound1
-                                    | IncomingKind::SignRound3
+                                    IncomingKind::SignRound3
                                     | IncomingKind::SignRound4
                                     | IncomingKind::SignRound5
                                     | IncomingKind::SignRound6

@@ -1,4 +1,5 @@
 import { State } from "./state-machine";
+import { PeerEntry } from "./peer-state";
 
 // Configuration parameters retrieved from the server
 // during the handshake.
@@ -25,6 +26,7 @@ export interface PartySignup {
   uuid: string;
 }
 
+// FIXME: DEPRECATED
 // Opaque type proxied from WASM to the server
 export interface Entry {
   key: string;
@@ -34,6 +36,8 @@ export interface Entry {
 // Temporary object passed back and forth between javascript
 // and webassembly for the various rounds.
 export interface RoundEntry {
+  peer_entries: PeerEntry[];
+  // FIXME: DEPRECATED
   entry: Entry;
   // Webassembly adds a bunch of temporary properties
   // to each round entry for further rounds but
@@ -59,7 +63,7 @@ export interface Handshake {
   parameters: Parameters;
 }
 
-// Encapsulates server handshake information.
+// State for party signup round during keygen.
 export interface PartySignupInfo {
   parameters: Parameters;
   partySignup: PartySignup;
