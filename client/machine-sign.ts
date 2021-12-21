@@ -396,12 +396,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 9 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round9",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -470,6 +467,8 @@ export function makeSignMessageStateMachine(
           partySignup: { number: 0, uuid: "" },
         });
         return true;
+
+      /*
       case "sign_commitment_answer":
         switch (msg.data.round) {
           case "round0":
@@ -478,11 +477,9 @@ export function makeSignMessageStateMachine(
             sendUiMessage({ type: "sign_progress" });
             //await machine.next({ answer: msg.data.answer });
             break;
-          case "round9":
-            await machine.next({ answer: msg.data.answer });
-            break;
         }
         return true;
+      */
       case "peer_relay":
         const { peer_entry: peerEntry } = msg.data;
         const answer = peerEntryHandler(peerEntry);

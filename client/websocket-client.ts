@@ -3,7 +3,6 @@ type BroadcastKind =
   | "peer_relay"
   | "sign_proposal"
   | "sign_progress"
-  | "sign_commitment_answer"
   | "sign_result";
 
 export interface BroadcastMessage {
@@ -16,7 +15,6 @@ type RequestKind =
   | "party_signup"
   | "peer_relay"
   | "sign_proposal"
-  | "sign_round9"
   | "sign_result";
 
 export interface RequestMessage {

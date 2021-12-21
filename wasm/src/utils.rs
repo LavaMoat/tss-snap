@@ -35,16 +35,6 @@ pub struct PartyKey {
     pub y_sum: Point<Secp256k1>,
 }
 
-pub(crate) fn into_round_entry(
-    party_num: u16,
-    round: &str,
-    value: String,
-    sender_uuid: String,
-) -> Entry {
-    let key = format!("{}-{}-{}", party_num, round, sender_uuid);
-    Entry { key, value }
-}
-
 pub(crate) fn into_p2p_entry(
     party_from: u16,
     party_to: u16,

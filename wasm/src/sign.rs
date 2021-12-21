@@ -16,13 +16,13 @@ use multi_party_ecdsa::utilities::mta::*;
 use sha2::Sha256;
 
 use common::{
-    Entry, PartySignup, PeerEntry, SignResult, ROUND_0, ROUND_1, ROUND_2,
-    ROUND_3, ROUND_4, ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
+    PartySignup, PeerEntry, SignResult, ROUND_0, ROUND_1, ROUND_2, ROUND_3,
+    ROUND_4, ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
+use super::utils::{into_p2p_entry, Params, PartyKey};
 
 //use super::{console_log, log};
 
@@ -131,7 +131,7 @@ struct Round8Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round9Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     local_sig: LocalSignature,
     s_i: Scalar<Secp256k1>,
     message_bn: BigInt,
@@ -974,15 +974,27 @@ pub fn signRound9(
         )
         .expect("bad com 5d");
 
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_9,
-        serde_json::to_string(&s_i).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_9,
+                serde_json::to_string(&s_i).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round9Entry {
-        entry,
+        peer_entries,
         local_sig,
         s_i,
         message_bn,
