@@ -66,7 +66,7 @@ struct Round3Entry {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round4Entry {
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decommit: SignDecommitPhase1,
     delta_inv: Scalar<Secp256k1>,
     sigma: Scalar<Secp256k1>,
@@ -524,10 +524,14 @@ pub fn signRound3(
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn signRound4(
+    parameters: JsValue,
     party_signup: JsValue,
     round3_entry: JsValue,
     round3_ans_vec: JsValue,
 ) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, uuid) = (number, uuid);
@@ -554,15 +558,27 @@ pub fn signRound4(
     let delta_inv = SignKeys::phase3_reconstruct_delta(&delta_vec);
 
     // decommit to gamma_i
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_4,
-        serde_json::to_string(&decommit).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_4,
+                serde_json::to_string(&decommit).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round4Entry {
-        entry,
+        peer_entries,
         delta_inv,
         decommit,
         sigma,

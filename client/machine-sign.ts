@@ -223,21 +223,20 @@ export function makeSignMessageStateMachine(
         ): Promise<SignState | null> => {
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
+          const { parameters } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound4(
+            parameters,
             partySignup,
             signState.roundEntry,
             answer
           );
 
           // Send the round 4 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round4",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -483,9 +482,6 @@ export function makeSignMessageStateMachine(
             // We performed a sign of the message and also need to update the UI
             sendUiMessage({ type: "sign_progress" });
             //await machine.next({ answer: msg.data.answer });
-            break;
-          case "round4":
-            await machine.next({ answer: msg.data.answer });
             break;
           case "round5":
             await machine.next({ answer: msg.data.answer });
