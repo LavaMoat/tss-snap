@@ -50,20 +50,6 @@ enum IncomingKind {
     #[serde(rename = "peer_relay")]
     PeerRelay,
 
-    /// All clients send this message once `party_signup` is complete
-    /// to store the round 1 entry
-    #[serde(rename = "keygen_round1")]
-    KeygenRound1,
-    /// Store the round 2 entry sent by each client.
-    #[serde(rename = "keygen_round2")]
-    KeygenRound2,
-    /// Store the round 4 entry sent by each client.
-    #[serde(rename = "keygen_round4")]
-    KeygenRound4,
-    /// Store the round 5 entry sent by each client.
-    #[serde(rename = "keygen_round5")]
-    KeygenRound5,
-
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_proposal")]
     SignProposal,
@@ -138,10 +124,6 @@ enum OutgoingKind {
     #[serde(rename = "party_signup")]
     PartySignup,
 
-    /// Answer sent to a party with the commitments from the other parties
-    /// during the keygen phase.
-    #[serde(rename = "keygen_commitment_answer")]
-    KeygenCommitmentAnswer,
     /// Relayed peer to peer answer.
     #[serde(rename = "keygen_peer_answer")]
     KeygenPeerAnswer,
@@ -439,11 +421,7 @@ async fn client_request(
             }
         }
         // Store the round Entry
-        IncomingKind::KeygenRound1
-        | IncomingKind::KeygenRound2
-        | IncomingKind::KeygenRound4
-        | IncomingKind::KeygenRound5
-        | IncomingKind::SignRound0
+        IncomingKind::SignRound0
         | IncomingKind::SignRound1
         | IncomingKind::SignRound3
         | IncomingKind::SignRound4
@@ -522,11 +500,7 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::KeygenRound1
-        | IncomingKind::KeygenRound2
-        | IncomingKind::KeygenRound4
-        | IncomingKind::KeygenRound5
-        | IncomingKind::SignRound0
+        IncomingKind::SignRound0
         | IncomingKind::SignRound1
         | IncomingKind::SignRound3
         | IncomingKind::SignRound4
@@ -551,33 +525,24 @@ async fn client_request(
                 | IncomingKind::SignRound7
                 | IncomingKind::SignRound8
                 | IncomingKind::SignRound9 => threshold + 1,
-                IncomingKind::KeygenRound1
-                | IncomingKind::KeygenRound2
-                | IncomingKind::KeygenRound4
-                | IncomingKind::KeygenRound5 => parties,
                 _ => unreachable!(),
             };
 
             // Got all the party round commitments so broadcast
             // to each client with the answer vectors
             if num_entries == required_num_entries {
-                let round =
-                    match req.kind {
-                        IncomingKind::SignRound0 => ROUND_0,
-                        IncomingKind::KeygenRound1
-                        | IncomingKind::SignRound1 => ROUND_1,
-                        IncomingKind::KeygenRound2 => ROUND_2,
-                        IncomingKind::SignRound3 => ROUND_3,
-                        IncomingKind::KeygenRound4
-                        | IncomingKind::SignRound4 => ROUND_4,
-                        IncomingKind::KeygenRound5
-                        | IncomingKind::SignRound5 => ROUND_5,
-                        IncomingKind::SignRound6 => ROUND_6,
-                        IncomingKind::SignRound7 => ROUND_7,
-                        IncomingKind::SignRound8 => ROUND_8,
-                        IncomingKind::SignRound9 => ROUND_9,
-                        _ => unreachable!(),
-                    };
+                let round = match req.kind {
+                    IncomingKind::SignRound0 => ROUND_0,
+                    IncomingKind::SignRound1 => ROUND_1,
+                    IncomingKind::SignRound3 => ROUND_3,
+                    IncomingKind::SignRound4 => ROUND_4,
+                    IncomingKind::SignRound5 => ROUND_5,
+                    IncomingKind::SignRound6 => ROUND_6,
+                    IncomingKind::SignRound7 => ROUND_7,
+                    IncomingKind::SignRound8 => ROUND_8,
+                    IncomingKind::SignRound9 => ROUND_9,
+                    _ => unreachable!(),
+                };
 
                 if let IncomingData::Entry { uuid, .. } =
                     req.data.as_ref().unwrap()
@@ -637,12 +602,6 @@ async fn client_request(
                                 conn_id_for_party(state, party_num).await
                             {
                                 let kind = match req.kind {
-                                    IncomingKind::KeygenRound1
-                                    | IncomingKind::KeygenRound2
-                                    | IncomingKind::KeygenRound4
-                                    | IncomingKind::KeygenRound5 => {
-                                        OutgoingKind::KeygenCommitmentAnswer
-                                    }
                                     IncomingKind::SignRound0
                                     | IncomingKind::SignRound1
                                     | IncomingKind::SignRound3

@@ -207,13 +207,10 @@ export function makeKeygenStateMachine(
             answer
           );
 
-          // Send the round 5 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round5",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          // Send the round 5  entry to the server
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
@@ -258,17 +255,10 @@ export function makeKeygenStateMachine(
       case "party_signup":
         await machine.next();
         return true;
-      case "keygen_commitment_answer":
-        switch (msg.data.round) {
-          case "round5":
-            await machine.next({ answer: msg.data.answer });
-            break;
-        }
-        return true;
       case "peer_relay":
         const { peer_entry: peerEntry } = msg.data;
-        // Got all the p2p answers
         const answer = peerEntryHandler(peerEntry);
+        // Got all the p2p answers
         if (answer) {
           await machine.next({ answer });
         }

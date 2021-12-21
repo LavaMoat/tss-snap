@@ -1,7 +1,6 @@
 type BroadcastKind =
   | "party_signup"
   | "peer_relay"
-  | "keygen_commitment_answer"
   | "sign_proposal"
   | "sign_progress"
   | "sign_commitment_answer"
@@ -16,7 +15,6 @@ type RequestKind =
   | "parameters"
   | "party_signup"
   | "peer_relay"
-  | "keygen_round5"
   | "sign_proposal"
   | "sign_round0"
   | "sign_round1"

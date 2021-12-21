@@ -5,7 +5,7 @@ use aes_gcm::{
 use rand::Rng;
 
 use common::{
-    Entry, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
+    PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
 };
 use curv::{
     arithmetic::Converter,
@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
+use super::utils::{into_p2p_entry, Params, PartyKey};
 
 //use super::{console_log, log};
 
@@ -79,8 +79,8 @@ struct Round4Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round5Entry {
     party_keys: Keys,
+    peer_entries: Vec<PeerEntry>,
     shared_keys: SharedKeys,
-    entry: Entry,
     dlog_proof: DLogProof<Secp256k1, Sha256>,
     point_vec: Vec<Point<Secp256k1>>,
     vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
@@ -374,15 +374,6 @@ pub fn keygenRound4(
         }
     }
 
-    /*
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_4,
-        serde_json::to_string(&vss_scheme).unwrap(),
-        uuid,
-    );
-    */
-
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=parties {
         if i != party_num_int {
@@ -470,16 +461,37 @@ pub fn keygenRound5(
         )
         .expect("invalid vss");
 
+    /*
     let entry = into_round_entry(
         party_num_int,
         ROUND_5,
         serde_json::to_string(&dlog_proof).unwrap(),
         uuid,
     );
+    */
+
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=parties {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_5,
+                serde_json::to_string(&dlog_proof).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round5Entry {
         shared_keys,
-        entry,
+        peer_entries,
         dlog_proof,
         point_vec,
         party_keys,
