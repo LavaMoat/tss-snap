@@ -40,7 +40,6 @@ struct AeadPack {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round1Entry {
     party_keys: Keys,
-    //entry: Entry,
     peer_entries: Vec<PeerEntry>,
     decom_i: KeyGenDecommitMessage1,
     bc_i: KeyGenBroadcastMessage1,
@@ -49,7 +48,7 @@ struct Round1Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round2Entry {
     party_keys: Keys,
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decom_i: KeyGenDecommitMessage1,
     bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
@@ -126,17 +125,6 @@ pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
     let (bc_i, decom_i) =
         party_keys.phase1_broadcast_phase3_proof_of_correct_key();
 
-    // This is the entry that needs to be sent to the server
-    // by all parties
-    /*
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_1,
-        serde_json::to_string(&bc_i).unwrap(),
-        uuid,
-    );
-    */
-
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for (_k, i) in (1..=parties).enumerate() {
         if i != party_num_int {
@@ -172,11 +160,16 @@ pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygenRound2(
+    parameters: JsValue,
     party_signup: JsValue,
     round1_entry: JsValue,
     round1_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 2");
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
+        share_count: parties,
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -199,6 +192,7 @@ pub fn keygenRound2(
 
     bc1_vec.insert(party_num_int as usize - 1, bc_i);
 
+    /*
     // Generate the entry for round 2
     let entry = into_round_entry(
         party_num_int,
@@ -206,10 +200,30 @@ pub fn keygenRound2(
         serde_json::to_string(&decom_i).unwrap(),
         uuid,
     );
+    */
+
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for (_k, i) in (1..=parties).enumerate() {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_2,
+                serde_json::to_string(&decom_i).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     let round_entry = Round2Entry {
         party_keys,
-        entry,
+        peer_entries,
         decom_i,
         bc1_vec,
     };

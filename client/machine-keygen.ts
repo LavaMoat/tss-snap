@@ -117,18 +117,16 @@ export function makeKeygenStateMachine(
 
           // Get round 2 entry using round 1 commitments
           const roundEntry = keygenRound2(
+            parameters,
             partySignup,
             keygenRoundEntry.roundEntry,
             answer
           );
 
           // Send the round 2 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round2",
-            data: {
-              entry: roundEntry.entry,
-              uuid: keygenRoundEntry.partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
