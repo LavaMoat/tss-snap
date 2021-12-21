@@ -57,9 +57,6 @@ enum IncomingKind {
     /// Store the round 2 entry sent by each client.
     #[serde(rename = "keygen_round2")]
     KeygenRound2,
-    /// Relay round 3 entries peer 2 peer
-    #[serde(rename = "keygen_round3_relay_peers")]
-    KeygenRound3RelayPeers,
     /// Store the round 4 entry sent by each client.
     #[serde(rename = "keygen_round4")]
     KeygenRound4,
@@ -76,9 +73,6 @@ enum IncomingKind {
     /// Store the round 1 entry sent by each client.
     #[serde(rename = "sign_round1")]
     SignRound1,
-    /// Relay round 2 entries peer 2 peer
-    #[serde(rename = "sign_round2_relay_peers")]
-    SignRound2RelayPeers,
     /// Store the round 3 entry sent by each client.
     #[serde(rename = "sign_round3")]
     SignRound3,
@@ -140,6 +134,9 @@ enum OutgoingKind {
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_relay")]
     PeerRelay,
+    /// Broadcast to indicate party signup is completed.
+    #[serde(rename = "party_signup")]
+    PartySignup,
 
     /// Answer sent to a party with the commitments from the other parties
     /// during the keygen phase.
@@ -399,6 +396,11 @@ async fn client_request(
                 let mut writer = state.write().await;
                 writer.party_signup = party_signup.clone();
 
+                writer.ephemeral_state.insert(
+                    party_signup.number.to_string(),
+                    party_signup.uuid.clone(),
+                );
+
                 let conn_info = writer.clients.get_mut(&conn_id).unwrap();
                 conn_info.1 = Some(party_signup.clone());
 
@@ -471,15 +473,9 @@ async fn client_request(
                 None
             }
         }
-        IncomingKind::PeerRelay
-        | IncomingKind::KeygenRound3RelayPeers
-        | IncomingKind::SignRound2RelayPeers => {
-            // Send an ACK so the client promise will resolve
-            Some(Outgoing {
-                id: req.id,
-                kind: None,
-                data: None,
-            })
+        IncomingKind::PeerRelay => {
+            // Nothing to do for peer relays - no response
+            None
         }
         // FIXME: this is broadcast multiple times because
         // FIXME: we receive this message from each signer
@@ -687,18 +683,46 @@ async fn client_request(
                 }
             }
         }
-        IncomingKind::PeerRelay
-        | IncomingKind::KeygenRound3RelayPeers
-        | IncomingKind::SignRound2RelayPeers => {
+        IncomingKind::PartySignup => {
+            let info = state.read().await;
+            let parties = info.params.parties as usize;
+            let threshold = info.params.threshold as usize;
+            let num_entries = info.ephemeral_state.len();
+            drop(info);
+            let required_num_entries =
+                if let Some(IncomingData::PartySignup { phase }) =
+                    req.data.as_ref()
+                {
+                    match phase {
+                        PartySignupPhase::Keygen => parties,
+                        PartySignupPhase::Sign => threshold + 1,
+                    }
+                } else {
+                    0
+                };
+
+            if num_entries == required_num_entries {
+                let msg = Outgoing {
+                    id: None,
+                    kind: Some(OutgoingKind::PartySignup),
+                    data: None,
+                };
+                let lock = BROADCAST_LOCK.try_lock();
+                if let Ok(_) = lock {
+                    broadcast_message(&msg, state).await;
+
+                    {
+                        let mut writer = state.write().await;
+                        // TODO: zeroize the state information
+                        writer.ephemeral_state = Default::default();
+                    }
+                }
+            }
+        }
+        IncomingKind::PeerRelay => {
             if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
                 let kind = match req.kind {
                     IncomingKind::PeerRelay => OutgoingKind::PeerRelay,
-                    IncomingKind::KeygenRound3RelayPeers => {
-                        OutgoingKind::KeygenPeerAnswer
-                    }
-                    IncomingKind::SignRound2RelayPeers => {
-                        OutgoingKind::SignPeerAnswer
-                    }
                     _ => unreachable!(),
                 };
 
@@ -715,6 +739,11 @@ async fn client_request(
                         };
 
                         send_message(conn_id, &res, state).await;
+                    } else {
+                        eprintln!(
+                            "failed to find conn_id for {}",
+                            entry.party_to
+                        );
                     }
                 }
             }

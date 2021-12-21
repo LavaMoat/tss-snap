@@ -40,7 +40,8 @@ struct AeadPack {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round1Entry {
     party_keys: Keys,
-    entry: Entry,
+    //entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decom_i: KeyGenDecommitMessage1,
     bc_i: KeyGenBroadcastMessage1,
 }
@@ -110,8 +111,12 @@ fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {
 
 #[allow(non_snake_case)]
 #[wasm_bindgen]
-pub fn keygenRound1(party_signup: JsValue) -> JsValue {
-    //console_log!("WASM: keygen round 1");
+pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
+        share_count: parties,
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -123,18 +128,39 @@ pub fn keygenRound1(party_signup: JsValue) -> JsValue {
 
     // This is the entry that needs to be sent to the server
     // by all parties
+    /*
     let entry = into_round_entry(
         party_num_int,
         ROUND_1,
         serde_json::to_string(&bc_i).unwrap(),
         uuid,
     );
+    */
+
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for (_k, i) in (1..=parties).enumerate() {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_1,
+                serde_json::to_string(&bc_i).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
 
     // Store decom_i and bc_i so that Javascript can pass it back to WASM
     // for future key generation phases
     let round_entry = Round1Entry {
         party_keys,
-        entry,
+        peer_entries,
         decom_i,
         bc_i,
     };

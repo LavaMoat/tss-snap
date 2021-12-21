@@ -10,6 +10,7 @@ import { StateMachine } from "./state-machine";
 import {
   Parameters,
   PartySignup,
+  PartySignupInfo,
   KeygenResult,
   PartyKey,
   RoundEntry,
@@ -30,6 +31,7 @@ interface KeygenRoundEntry<T> {
 export type KeygenTransition = BroadcastAnswer;
 export type KeygenState =
   | Handshake
+  | PartySignupInfo
   | KeygenRoundEntry<RoundEntry>
   | KeygenResult;
 
@@ -60,9 +62,9 @@ export function makeKeygenStateMachine(
           return { parameters, client };
         },
       },
-      // Generate the PartySignup and keygen round 1 entry
+      // Generate the PartySignup
       {
-        name: "KEYGEN_ROUND_1",
+        name: "PARTY_SIGNUP",
         transition: async (
           previousState: KeygenState
         ): Promise<KeygenState | null> => {
@@ -77,16 +79,25 @@ export function makeKeygenStateMachine(
           // So the UI thread can show the party number
           sendUiMessage({ type: "party_signup", partySignup });
 
+          return { parameters, partySignup };
+        },
+      },
+      // Generate the PartySignup and keygen round 1 entry
+      {
+        name: "KEYGEN_ROUND_1",
+        transition: async (
+          previousState: KeygenState
+        ): Promise<KeygenState | null> => {
+          const partySignupInfo = previousState as PartySignupInfo;
+          const { parameters, partySignup } = partySignupInfo;
+
           // Create the round 1 key entry
-          const roundEntry = keygenRound1(partySignup);
+          const roundEntry = keygenRound1(parameters, partySignup);
 
           // Send the round 1 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round1",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
@@ -249,11 +260,11 @@ export function makeKeygenStateMachine(
   // without a client request
   async function onBroadcastMessage(msg: BroadcastMessage) {
     switch (msg.kind) {
+      case "party_signup":
+        await machine.next();
+        return true;
       case "keygen_commitment_answer":
         switch (msg.data.round) {
-          case "round1":
-            await machine.next({ answer: msg.data.answer });
-            break;
           case "round2":
             await machine.next({ answer: msg.data.answer });
             break;
@@ -266,9 +277,9 @@ export function makeKeygenStateMachine(
         }
         return true;
       case "peer_relay":
-        const { peer_entry: keygenPeerEntry } = msg.data;
+        const { peer_entry: peerEntry } = msg.data;
         // Got all the p2p answers
-        const answer = peerEntryHandler(keygenPeerEntry);
+        const answer = peerEntryHandler(peerEntry);
         if (answer) {
           await machine.next({ answer });
         }

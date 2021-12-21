@@ -1,4 +1,5 @@
 type BroadcastKind =
+  | "party_signup"
   | "peer_relay"
   | "keygen_commitment_answer"
   | "sign_proposal"

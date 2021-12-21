@@ -59,6 +59,12 @@ export interface Handshake {
   parameters: Parameters;
 }
 
+// Encapsulates server handshake information.
+export interface PartySignupInfo {
+  parameters: Parameters;
+  partySignup: PartySignup;
+}
+
 export function makeOnTransition<T, U>(postMessage: Function) {
   return (
     index: number,

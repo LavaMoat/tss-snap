@@ -497,13 +497,11 @@ export function makeSignMessageStateMachine(
         return true;
       case "peer_relay":
         const { peer_entry: signPeerEntry } = msg.data;
-
         // Got all the p2p answers
         const answer = peerEntryHandler(signPeerEntry);
         if (answer) {
           await machine.next({ answer });
         }
-
         return true;
       case "sign_result":
         const { sign_result: signResult } = msg.data;

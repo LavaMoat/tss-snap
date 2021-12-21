@@ -136,7 +136,9 @@ async function onBroadcastMessage(msg: BroadcastMessage) {
     prepareSignMessageStateMachine();
   }
 
-  if (await signMachine.onBroadcastMessage(msg)) return true;
+  if (signMachine) {
+    if (await signMachine.onBroadcastMessage(msg)) return true;
+  }
   return false;
 }
 
