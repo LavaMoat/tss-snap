@@ -150,7 +150,7 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 2 entry to the server
-          sendNetworkRequest({
+          sendNetworkMessage({
             kind: "peer_relay",
             data: { entries: roundEntry.peer_entries },
           });

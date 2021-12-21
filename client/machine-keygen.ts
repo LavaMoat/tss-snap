@@ -35,7 +35,8 @@ export type KeygenState =
 
 export function makeKeygenStateMachine(
   sendNetworkRequest: Function,
-  sendUiMessage: Function
+  sendUiMessage: Function,
+  sendNetworkMessage: Function
 ) {
   let peerEntryHandler: PeerEntryHandler = null;
 
@@ -142,7 +143,7 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 3 entry to the server
-          sendNetworkRequest({
+          sendNetworkMessage({
             kind: "peer_relay",
             data: { entries: roundEntry.peer_entries },
           });

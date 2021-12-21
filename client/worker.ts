@@ -49,7 +49,11 @@ const { send: sendNetworkMessage, request: sendNetworkRequest } =
 
 let keygenResult: KeygenResult = null;
 
-const keygenMachine = makeKeygenStateMachine(sendNetworkRequest, sendUiMessage);
+const keygenMachine = makeKeygenStateMachine(
+  sendNetworkRequest,
+  sendUiMessage,
+  sendNetworkMessage
+);
 let signMachine: SignMessageMachineContainer;
 
 // sha256 of "hello world"
