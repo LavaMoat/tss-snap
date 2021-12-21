@@ -18,7 +18,11 @@ import {
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
-import { PeerState, getSortedPeerEntriesAnswer } from "./peer-state";
+import {
+  getSortedPeerEntriesAnswer,
+  makePeerState,
+  PeerEntryHandler,
+} from "./peer-state";
 
 // Type to pass through the client state machine during key generation.
 interface KeygenRoundEntry<T> {
@@ -34,10 +38,11 @@ export type KeygenState =
   | KeygenResult;
 
 export function makeKeygenStateMachine(
-  peerState: PeerState,
   sendNetworkRequest: Function,
   sendUiMessage: Function
 ) {
+  let peerEntryHandler: PeerEntryHandler = null;
+
   const machine = new StateMachine<KeygenState, KeygenTransition>(
     [
       // Handshake to get server parameters and client identifier
@@ -51,7 +56,9 @@ export function makeKeygenStateMachine(
             parties: res.data.parties,
             threshold: res.data.threshold,
           };
-          peerState.parties = res.data.parties;
+
+          peerEntryHandler = makePeerState(res.data.parties - 1);
+
           const client = { conn_id: res.data.conn_id };
           return { parameters, client };
         },
@@ -157,10 +164,7 @@ export function makeKeygenStateMachine(
           const keygenRoundEntry =
             previousState as KeygenRoundEntry<RoundEntry>;
           const { parameters, partySignup } = keygenRoundEntry;
-
-          const answer = getSortedPeerEntriesAnswer(peerState);
-          // Clean up the peer entries
-          peerState.received = [];
+          const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = keygenRound4(
             parameters,
@@ -266,13 +270,11 @@ export function makeKeygenStateMachine(
         return true;
       case "keygen_peer_answer":
         const { peer_entry: keygenPeerEntry } = msg.data;
-        peerState.received.push(keygenPeerEntry);
-
         // Got all the p2p answers
-        if (peerState.received.length === peerState.parties - 1) {
-          await machine.next();
+        const answer = peerEntryHandler(keygenPeerEntry);
+        if (answer) {
+          await machine.next({ answer });
         }
-
         return true;
     }
     return false;

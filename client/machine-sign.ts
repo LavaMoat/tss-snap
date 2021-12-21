@@ -168,7 +168,7 @@ export function makeSignMessageStateMachine(
           const { message, partySignup, keygenResult } = signState;
           const { parameters, key } = keygenResult;
 
-          const answer = getSortedPeerEntriesAnswer(peerState);
+          const answer = getSortedPeerEntriesAnswer(peerState.received);
           // Clean up the peer entries
           peerState.received = [];
 

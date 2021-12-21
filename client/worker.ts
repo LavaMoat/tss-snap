@@ -51,11 +51,7 @@ const { send: sendNetworkMessage, request: sendNetworkRequest } =
 let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
-const keygenMachine = makeKeygenStateMachine(
-  peerState,
-  sendNetworkRequest,
-  sendUiMessage
-);
+const keygenMachine = makeKeygenStateMachine(sendNetworkRequest, sendUiMessage);
 let signMachine: SignMessageMachineContainer;
 
 // sha256 of "hello world"
