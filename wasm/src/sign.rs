@@ -28,7 +28,7 @@ use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round0Entry {
-    pub entry: Entry,
+    peer_entries: Vec<PeerEntry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -157,7 +157,14 @@ fn format_vec_from_reads<'a, T: serde::Deserialize<'a> + Clone>(
 
 #[allow(non_snake_case)]
 #[wasm_bindgen]
-pub fn signRound0(party_signup: JsValue, party_key: JsValue) -> JsValue {
+pub fn signRound0(
+    parameters: JsValue,
+    party_signup: JsValue,
+    party_key: JsValue,
+) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters { threshold, .. } = params;
+
     // Round zero broadcasts the party identifiers
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -165,14 +172,35 @@ pub fn signRound0(party_signup: JsValue, party_key: JsValue) -> JsValue {
 
     let PartyKey { party_id, .. } = party_key.into_serde::<PartyKey>().unwrap();
 
+    /*
     let entry = into_round_entry(
         party_num_int,
         ROUND_0,
         serde_json::to_string(&party_id).unwrap(),
         uuid,
     );
+    */
 
-    let round_entry = Round0Entry { entry };
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=threshold + 1 {
+        if i != party_num_int {
+            let entry = into_p2p_entry(
+                party_num_int,
+                i,
+                ROUND_0,
+                serde_json::to_string(&party_id).unwrap(),
+                uuid.clone(),
+            );
+
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                entry,
+            });
+        }
+    }
+
+    let round_entry = Round0Entry { peer_entries };
     JsValue::from_serde(&round_entry).unwrap()
 }
 

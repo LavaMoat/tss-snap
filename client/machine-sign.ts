@@ -103,30 +103,15 @@ export function makeSignMessageStateMachine(
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
-          /*
-          // Generate a new party signup for the sign phase
-          const signup = await sendNetworkRequest({
-            kind: "party_signup",
-            data: { phase: "sign" },
-          });
-          const { party_signup: partySignup } = signup.data;
-
-          // So the UI thread can update the party number for the sign phase
-          sendUiMessage({ type: "party_signup", partySignup });
-          */
-
           const { message, keygenResult, partySignup } =
             previousState as SignPartySignupInfo;
           const { key, parameters } = keygenResult;
-          const roundEntry = signRound0(partySignup, key);
+          const roundEntry = signRound0(parameters, partySignup, key);
 
           // Send the round 0 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round0",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -486,7 +471,6 @@ export function makeSignMessageStateMachine(
   async function onBroadcastMessage(msg: BroadcastMessage) {
     switch (msg.kind) {
       case "party_signup":
-        console.log("GOT SIGN PARTY SIGNUP COMMITMENT");
         // FIXME: only call next for participants!!!
         await machine.next();
         return true;
@@ -509,7 +493,7 @@ export function makeSignMessageStateMachine(
           case "round0":
             // We performed a sign of the message and also need to update the UI
             sendUiMessage({ type: "sign_progress" });
-            await machine.next({ answer: msg.data.answer });
+            //await machine.next({ answer: msg.data.answer });
             break;
           case "round1":
             await machine.next({ answer: msg.data.answer });
