@@ -46,7 +46,7 @@ enum IncomingKind {
     /// Initialize the key generation process with a party signup
     #[serde(rename = "party_signup")]
     PartySignup,
-
+    /// Relay a message to peers.
     #[serde(rename = "peer_relay")]
     PeerRelay,
 
@@ -124,22 +124,18 @@ enum OutgoingKind {
     #[serde(rename = "party_signup")]
     PartySignup,
 
-    /// Relayed peer to peer answer.
-    #[serde(rename = "keygen_peer_answer")]
-    KeygenPeerAnswer,
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
     /// Broadcast to parties not signing the message to let them know a sign is in progress.
     #[serde(rename = "sign_progress")]
     SignProgress,
+
     /// Answer sent to a party with the commitments from the other parties
     /// during the sign phase.
     #[serde(rename = "sign_commitment_answer")]
     SignCommitmentAnswer,
-    /// Relayed peer to peer answer.
-    #[serde(rename = "sign_peer_answer")]
-    SignPeerAnswer,
+
     /// Notify non-participants of a sign result.
     #[serde(rename = "sign_result")]
     SignResult,
@@ -666,9 +662,32 @@ async fn client_request(
                     kind: Some(OutgoingKind::PartySignup),
                     data: None,
                 };
+
+                /*
+                let parties: Vec<u16> = {
+                    let info = state.read().await;
+                    info.ephemeral_state
+                        .keys()
+                        .map(|k| k.parse::<u16>().unwrap())
+                        .collect()
+                };
+
+                println!("Sending party signup broadcast {:#?}", parties);
+                */
+
                 let lock = BROADCAST_LOCK.try_lock();
                 if let Ok(_) = lock {
                     broadcast_message(&msg, state).await;
+
+                    /*
+                    for party_num in parties {
+                        if let Some(conn_id) =
+                            conn_id_for_party(state, party_num).await
+                        {
+                            send_message(conn_id, &msg, state).await;
+                        }
+                    }
+                    */
 
                     {
                         let mut writer = state.write().await;

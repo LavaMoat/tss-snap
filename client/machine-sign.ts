@@ -32,6 +32,12 @@ interface SignInit {
   keygenResult: KeygenResult;
 }
 
+interface SignPartySignupInfo {
+  message: string;
+  keygenResult: KeygenResult;
+  partySignup: PartySignup;
+}
+
 // Type to pass through the client state machine during message signing.
 interface SignRoundEntry<T> {
   message: string;
@@ -40,7 +46,7 @@ interface SignRoundEntry<T> {
   roundEntry: T;
 }
 
-export type SignState = SignRoundEntry<RoundEntry>;
+export type SignState = SignPartySignupInfo | SignRoundEntry<RoundEntry>;
 export type SignTransition = SignInit | BroadcastAnswer;
 
 export interface SignMessageMachineContainer {
@@ -60,11 +66,14 @@ export function makeSignMessageStateMachine(
     [
       // Start the signing process.
       {
-        name: "SIGN_ROUND_0",
+        name: "SIGN_PARTY_SIGNUP",
         transition: async (
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
+          const { message, keygenResult } = transitionData as SignInit;
+          const { parameters } = keygenResult;
+
           // Generate a new party signup for the sign phase
           const signup = await sendNetworkRequest({
             kind: "party_signup",
@@ -75,13 +84,41 @@ export function makeSignMessageStateMachine(
           // So the UI thread can update the party number for the sign phase
           sendUiMessage({ type: "party_signup", partySignup });
 
-          const { message, keygenResult } = transitionData as SignInit;
-          const { key, parameters } = keygenResult;
-          const roundEntry = signRound0(partySignup, key);
-
           // NOTE: We don't add 1 to threshold here as
           // NOTE: we only expect answers from *other* peers
           peerEntryHandler = makePeerState(parameters.threshold);
+
+          return {
+            message,
+            partySignup,
+            keygenResult,
+          };
+        },
+      },
+
+      // Start the signing process.
+      {
+        name: "SIGN_ROUND_0",
+        transition: async (
+          previousState: SignState,
+          transitionData: SignTransition
+        ): Promise<SignState | null> => {
+          /*
+          // Generate a new party signup for the sign phase
+          const signup = await sendNetworkRequest({
+            kind: "party_signup",
+            data: { phase: "sign" },
+          });
+          const { party_signup: partySignup } = signup.data;
+
+          // So the UI thread can update the party number for the sign phase
+          sendUiMessage({ type: "party_signup", partySignup });
+          */
+
+          const { message, keygenResult, partySignup } =
+            previousState as SignPartySignupInfo;
+          const { key, parameters } = keygenResult;
+          const roundEntry = signRound0(partySignup, key);
 
           // Send the round 0 entry to the server
           sendNetworkRequest({
@@ -448,6 +485,11 @@ export function makeSignMessageStateMachine(
   // without a client request
   async function onBroadcastMessage(msg: BroadcastMessage) {
     switch (msg.kind) {
+      case "party_signup":
+        console.log("GOT SIGN PARTY SIGNUP COMMITMENT");
+        // FIXME: only call next for participants!!!
+        await machine.next();
+        return true;
       case "sign_proposal":
         const { message } = msg.data;
         sendUiMessage({ type: "sign_proposal", message });
@@ -497,8 +539,8 @@ export function makeSignMessageStateMachine(
         return true;
       case "peer_relay":
         const { peer_entry: signPeerEntry } = msg.data;
-        // Got all the p2p answers
         const answer = peerEntryHandler(signPeerEntry);
+        // Got all the p2p answers
         if (answer) {
           await machine.next({ answer });
         }
