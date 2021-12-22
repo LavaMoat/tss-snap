@@ -131,7 +131,7 @@ enum OutgoingData {
 
 #[derive(Debug, Default)]
 struct Group {
-    id: String,
+    uuid: String,
     label: String,
     params: Parameters,
     //keygen: Session,
@@ -140,7 +140,27 @@ struct Group {
 
 #[derive(Debug, Default)]
 struct Session {
-    id: String,
+    uuid: String,
+    party_signups: Vec<u16>,
+    //params: &'a Parameters,
+}
+
+impl Session {
+    fn signup(&mut self) -> PartySignup {
+        let last = self.party_signups.iter().last();
+        if last.is_none() {
+            PartySignup {
+                number: 1,
+                uuid: Uuid::new_v4().to_string(),
+            }
+        } else {
+            let num = last.unwrap();
+            PartySignup {
+                number: num + 1,
+                uuid: self.uuid.clone(),
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
