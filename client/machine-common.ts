@@ -26,19 +26,10 @@ export interface PartySignup {
   uuid: string;
 }
 
-// FIXME: DEPRECATED
-// Opaque type proxied from WASM to the server
-export interface Entry {
-  key: string;
-  value: string;
-}
-
 // Temporary object passed back and forth between javascript
 // and webassembly for the various rounds.
 export interface RoundEntry {
   peer_entries: PeerEntry[];
-  // FIXME: DEPRECATED
-  entry: Entry;
   // Webassembly adds a bunch of temporary properties
   // to each round entry for further rounds but
   // these fields should not be accessed here

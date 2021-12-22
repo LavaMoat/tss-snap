@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-use super::utils::{into_p2p_entry, Params, PartyKey};
+use super::utils::{Params, PartyKey};
 
 //use super::{console_log, log};
 
@@ -128,18 +128,12 @@ pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=parties {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_1,
-                serde_json::to_string(&bc_i).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&bc_i).unwrap(),
+                round: ROUND_1,
+                session: uuid.clone(),
             });
         }
     }
@@ -195,18 +189,12 @@ pub fn keygenRound2(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=parties {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_2,
-                serde_json::to_string(&decom_i).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&decom_i).unwrap(),
+                round: ROUND_2,
+                session: uuid.clone(),
             });
         }
     }
@@ -229,8 +217,6 @@ pub fn keygenRound3(
     round2_entry: JsValue,
     round2_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 3");
-
     let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
     let Parameters {
         share_count: parties,
@@ -292,18 +278,12 @@ pub fn keygenRound3(
             let key_i = &enc_keys[j];
             let plaintext = BigInt::to_bytes(&secret_shares[k].to_bigint());
             let aead_pack_i = aes_encrypt(key_i, &plaintext);
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_3,
-                serde_json::to_string(&aead_pack_i).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&aead_pack_i).unwrap(),
+                round: ROUND_3,
+                session: uuid.clone(),
             });
             j += 1;
         }
@@ -332,8 +312,6 @@ pub fn keygenRound4(
     round3_entry: JsValue,
     round3_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 4");
-
     let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
     let Parameters {
         share_count: parties,
@@ -377,18 +355,12 @@ pub fn keygenRound4(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=parties {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_4,
-                serde_json::to_string(&vss_scheme).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&vss_scheme).unwrap(),
+                round: ROUND_4,
+                session: uuid.clone(),
             });
         }
     }
@@ -414,8 +386,6 @@ pub fn keygenRound5(
     round4_entry: JsValue,
     round4_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 5");
-
     let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
     let Parameters {
         share_count: parties,
@@ -461,30 +431,15 @@ pub fn keygenRound5(
         )
         .expect("invalid vss");
 
-    /*
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_5,
-        serde_json::to_string(&dlog_proof).unwrap(),
-        uuid,
-    );
-    */
-
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=parties {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_5,
-                serde_json::to_string(&dlog_proof).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&dlog_proof).unwrap(),
+                round: ROUND_5,
+                session: uuid.clone(),
             });
         }
     }

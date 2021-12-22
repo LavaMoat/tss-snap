@@ -1,4 +1,3 @@
-use common::Entry;
 use curv::{
     cryptographic_primitives::secret_sharing::feldman_vss::VerifiableSS,
     elliptic::curves::{secp256_k1::Secp256k1, Point},
@@ -35,6 +34,7 @@ pub struct PartyKey {
     pub y_sum: Point<Secp256k1>,
 }
 
+/*
 pub(crate) fn into_p2p_entry(
     party_from: u16,
     party_to: u16,
@@ -45,3 +45,4 @@ pub(crate) fn into_p2p_entry(
     let key = format!("{}-{}-{}-{}", party_from, party_to, round, sender_uuid);
     Entry { key, value }
 }
+*/

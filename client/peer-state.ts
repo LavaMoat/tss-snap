@@ -1,11 +1,9 @@
-import { Entry } from "./machine-common";
-
 // PeerEntry is sent by the server when relaying messages
 // peer to peer.
 export interface PeerEntry {
   party_from: number;
   party_to: number;
-  entry: Entry;
+  value: string;
 }
 
 export function getSortedPeerEntriesAnswer(received: PeerEntry[]): string[] {
@@ -16,7 +14,7 @@ export function getSortedPeerEntriesAnswer(received: PeerEntry[]): string[] {
     if (a.party_from > b.party_from) return 1;
     return 0;
   });
-  return received.map((peer: PeerEntry) => peer.entry.value);
+  return received.map((peer: PeerEntry) => peer.value);
 }
 
 export type PeerEntryHandler = (entry: PeerEntry) => string[] | null;

@@ -22,7 +22,7 @@ use common::{
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-use super::utils::{into_p2p_entry, Params, PartyKey};
+use super::utils::{Params, PartyKey};
 
 //use super::{console_log, log};
 
@@ -175,18 +175,12 @@ pub fn signRound0(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_0,
-                serde_json::to_string(&party_id).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&party_id).unwrap(),
+                round: ROUND_0,
+                session: uuid.clone(),
             });
         }
     }
@@ -248,30 +242,16 @@ pub fn signRound1(
     let (com, decommit) = sign_keys.phase1_broadcast();
     let (m_a_k, _) = MessageA::a(&sign_keys.k_i, &party_keys.ek, &[]);
 
-    /*
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_1,
-        serde_json::to_string(&(com.clone(), m_a_k)).unwrap(),
-        uuid,
-    );
-    */
-
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_1,
-                serde_json::to_string(&(com.clone(), m_a_k.clone())).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&(com.clone(), m_a_k.clone()))
+                    .unwrap(),
+                round: ROUND_1,
+                session: uuid.clone(),
             });
         }
     }
@@ -376,24 +356,17 @@ pub fn signRound2(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..threshold + 2 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_2,
-                serde_json::to_string(&(
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                value: serde_json::to_string(&(
                     m_b_gamma_send_vec[j].clone(),
                     m_b_w_send_vec[j].clone(),
                 ))
                 .unwrap(),
-                uuid.clone(),
-            );
-
-            peer_entries.push(PeerEntry {
-                party_from: party_num_int,
-                party_to: i,
-                entry,
+                round: ROUND_2,
+                session: uuid.clone(),
             });
-
             j += 1;
         }
     }
@@ -493,18 +466,12 @@ pub fn signRound3(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_3,
-                serde_json::to_string(&delta_i).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&delta_i).unwrap(),
+                round: ROUND_3,
+                session: uuid.clone(),
             });
         }
     }
@@ -561,18 +528,12 @@ pub fn signRound4(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_4,
-                serde_json::to_string(&decommit).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&decommit).unwrap(),
+                round: ROUND_4,
+                session: uuid.clone(),
             });
         }
     }
@@ -664,18 +625,12 @@ pub fn signRound5(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_5,
-                serde_json::to_string(&phase5_com).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&phase5_com).unwrap(),
+                round: ROUND_5,
+                session: uuid.clone(),
             });
         }
     }
@@ -733,23 +688,17 @@ pub fn signRound6(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_6,
-                serde_json::to_string(&(
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                value: serde_json::to_string(&(
                     phase_5a_decom.clone(),
                     helgamal_proof.clone(),
                     dlog_proof_rho.clone(),
                 ))
                 .unwrap(),
-                uuid.clone(),
-            );
-
-            peer_entries.push(PeerEntry {
-                party_from: party_num_int,
-                party_to: i,
-                entry,
+                round: ROUND_6,
+                session: uuid.clone(),
             });
         }
     }
@@ -833,18 +782,12 @@ pub fn signRound7(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_7,
-                serde_json::to_string(&phase5_com2).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&phase5_com2).unwrap(),
+                round: ROUND_7,
+                session: uuid.clone(),
             });
         }
     }
@@ -898,18 +841,12 @@ pub fn signRound8(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_8,
-                serde_json::to_string(&phase_5d_decom2).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&phase_5d_decom2).unwrap(),
+                round: ROUND_8,
+                session: uuid.clone(),
             });
         }
     }
@@ -977,18 +914,12 @@ pub fn signRound9(
     let mut peer_entries: Vec<PeerEntry> = Vec::new();
     for i in 1..=threshold + 1 {
         if i != party_num_int {
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_9,
-                serde_json::to_string(&s_i).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&s_i).unwrap(),
+                round: ROUND_9,
+                session: uuid.clone(),
             });
         }
     }
