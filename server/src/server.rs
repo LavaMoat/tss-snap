@@ -138,27 +138,35 @@ struct Group {
     //signing: Vec<Session>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Session {
     uuid: String,
     party_signups: Vec<u16>,
-    //params: &'a Parameters,
+    //params: Parameters,
+}
+
+impl Default for Session {
+    fn default() -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            party_signups: Default::default(),
+        }
+    }
 }
 
 impl Session {
     fn signup(&mut self) -> PartySignup {
-        let last = self.party_signups.iter().last();
-        if last.is_none() {
-            PartySignup {
-                number: 1,
-                uuid: Uuid::new_v4().to_string(),
-            }
+        let last = self.party_signups.last();
+        let num = if last.is_none() {
+            1
         } else {
             let num = last.unwrap();
-            PartySignup {
-                number: num + 1,
-                uuid: self.uuid.clone(),
-            }
+            num + 1
+        };
+        self.party_signups.push(num.clone());
+        PartySignup {
+            number: num,
+            uuid: self.uuid.clone(),
         }
     }
 }
@@ -336,6 +344,9 @@ async fn client_request(
         IncomingKind::PartySignup => {
             if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
             {
+                //let mut session: Session = Default::default();
+                //let party_signup = session.signup();
+
                 let (party_signup, uuid) = {
                     let last = info.party_signups.iter().last();
                     if last.is_none() {
