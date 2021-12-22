@@ -131,6 +131,7 @@ enum OutgoingData {
 
 #[derive(Debug, Default)]
 struct Group {
+    clients: Vec<usize>,
     uuid: String,
     params: Parameters,
     label: Option<String>,
@@ -139,8 +140,9 @@ struct Group {
 }
 
 impl Group {
-    fn new(params: Parameters, label: Option<String>) -> Self {
+    fn new(conn: usize, params: Parameters, label: Option<String>) -> Self {
         Self {
+            clients: vec![conn],
             uuid: Uuid::new_v4().to_string(),
             params,
             label,
@@ -207,11 +209,12 @@ impl Server {
         static_files: Option<PathBuf>,
     ) -> Result<()> {
         let state = Arc::new(RwLock::new(State {
-            params,
             clients: HashMap::new(),
+            groups: Default::default(),
+            // TODO: remove these old fields later
+            params,
             uuid: String::new(),
             party_signups: Default::default(),
-            groups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -624,8 +627,32 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     info!("disconnected (uid={})", conn_id);
-    // Stream closed up, so remove from the client list
-    state.write().await.clients.remove(&conn_id);
+
+    let mut empty_groups: Vec<String> = Vec::new();
+    {
+        let mut writer = state.write().await;
+        // Stream closed up, so remove from the client list
+        writer.clients.remove(&conn_id);
+        // Remove the connection from any client groups
+        for (key, group) in writer.groups.iter_mut() {
+            if let Some(index) =
+                group.clients.iter().position(|x| *x == conn_id)
+            {
+                group.clients.remove(index);
+            }
+
+            // Group has no more connected clients so flag it for removal
+            if group.clients.is_empty() {
+                empty_groups.push(key.clone());
+            }
+        }
+    }
+
+    // Prune empty groups
+    let mut writer = state.write().await;
+    for key in empty_groups {
+        writer.groups.remove(&key);
+    }
 }
 
 async fn conn_id_for_party(
