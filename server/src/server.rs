@@ -132,10 +132,20 @@ enum OutgoingData {
 #[derive(Debug, Default)]
 struct Group {
     uuid: String,
-    label: String,
     params: Parameters,
+    label: Option<String>,
     //keygen: Session,
     //signing: Vec<Session>,
+}
+
+impl Group {
+    fn new(params: Parameters, label: Option<String>) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            params,
+            label,
+        }
+    }
 }
 
 #[derive(Debug)]
