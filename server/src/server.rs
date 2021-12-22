@@ -136,8 +136,9 @@ struct State {
     /// Connected clients.
     clients:
         HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
-    /// Current keygen signup state.
-    party_signup: PartySignup,
+    // TODO: remove uuid when we have signup groups
+    /// UUID of the last party signup
+    uuid: String,
     /// Store party signups so we know when they have all been received
     party_signups: HashMap<u16, String>,
 }
@@ -154,10 +155,7 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             params,
             clients: HashMap::new(),
-            party_signup: PartySignup {
-                number: 0,
-                uuid: Uuid::new_v4().to_string(),
-            },
+            uuid: String::new(),
             party_signups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
@@ -302,30 +300,32 @@ async fn client_request(
             if let IncomingData::PartySignup { phase } =
                 req.data.as_ref().unwrap()
             {
-                let total = match phase {
-                    PartySignupPhase::Keygen => info.params.parties,
-                    PartySignupPhase::Sign => info.params.threshold + 1,
-                };
-
-                let party_signup = {
-                    let client_signup = &info.party_signup;
-                    if client_signup.number < total {
-                        PartySignup {
-                            number: client_signup.number + 1,
-                            uuid: client_signup.uuid.clone(),
-                        }
+                let (party_signup, uuid) = {
+                    let last = info.party_signups.iter().last();
+                    if last.is_none() {
+                        let uuid = Uuid::new_v4().to_string();
+                        (
+                            PartySignup {
+                                number: 1,
+                                uuid: uuid.clone(),
+                            },
+                            uuid,
+                        )
                     } else {
-                        PartySignup {
-                            number: 1,
-                            uuid: Uuid::new_v4().to_string(),
-                        }
+                        let (num, uuid) = last.unwrap();
+                        (
+                            PartySignup {
+                                number: num + 1,
+                                uuid: uuid.clone(),
+                            },
+                            uuid.clone(),
+                        )
                     }
                 };
 
                 drop(info);
                 let mut writer = state.write().await;
-                writer.party_signup = party_signup.clone();
-
+                writer.uuid = uuid;
                 writer
                     .party_signups
                     .insert(party_signup.number, party_signup.uuid.clone());
@@ -449,7 +449,7 @@ async fn client_request(
                         let mut non_signing_clients: Vec<usize> = Vec::new();
                         {
                             let mut writer = state.write().await;
-                            let uuid = writer.party_signup.uuid.clone();
+                            let uuid = writer.uuid.clone();
                             writer.clients.iter_mut().for_each(|(k, v)| {
                                 if let Some(mut party_signup) = v.1.as_mut() {
                                     // Got a connection that is not participating
