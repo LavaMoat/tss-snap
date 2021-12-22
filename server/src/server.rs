@@ -129,6 +129,20 @@ enum OutgoingData {
     },
 }
 
+#[derive(Debug, Default)]
+struct Group {
+    id: String,
+    label: String,
+    params: Parameters,
+    //keygen: Session,
+    //signing: Vec<Session>,
+}
+
+#[derive(Debug, Default)]
+struct Session {
+    id: String,
+}
+
 #[derive(Debug)]
 struct State {
     /// Initial parameters.
@@ -136,6 +150,8 @@ struct State {
     /// Connected clients.
     clients:
         HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
+    /// Groups keyed by unique identifier (UUID)
+    groups: HashMap<String, Group>,
     // TODO: remove uuid when we have signup groups
     /// UUID of the last party signup
     uuid: String,
@@ -157,6 +173,7 @@ impl Server {
             clients: HashMap::new(),
             uuid: String::new(),
             party_signups: Default::default(),
+            groups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -297,8 +314,7 @@ async fn client_request(
         }
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
-            if let IncomingData::PartySignup { phase } =
-                req.data.as_ref().unwrap()
+            if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
             {
                 let (party_signup, uuid) = {
                     let last = info.party_signups.iter().last();

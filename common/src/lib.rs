@@ -32,6 +32,15 @@ pub struct Parameters {
     pub threshold: u16,
 }
 
+impl Default for Parameters {
+    fn default() -> Self {
+        return Self {
+            parties: 3,
+            threshold: 1,
+        };
+    }
+}
+
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PartySignup {
     pub number: u16,
