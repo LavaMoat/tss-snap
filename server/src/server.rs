@@ -131,19 +131,19 @@ enum OutgoingData {
 
 #[derive(Debug, Default)]
 struct Group {
-    clients: Vec<usize>,
     uuid: String,
+    clients: Vec<usize>,
+    sessions: HashMap<String, Session>,
     params: Parameters,
     label: Option<String>,
-    //keygen: Session,
-    //signing: Vec<Session>,
 }
 
 impl Group {
     fn new(conn: usize, params: Parameters, label: Option<String>) -> Self {
         Self {
-            clients: vec![conn],
             uuid: Uuid::new_v4().to_string(),
+            clients: vec![conn],
+            sessions: Default::default(),
             params,
             label,
         }
@@ -153,7 +153,7 @@ impl Group {
 #[derive(Debug)]
 struct Session {
     uuid: String,
-    party_signups: Vec<u16>,
+    party_signups: Vec<(u16, usize)>,
     //params: Parameters,
 }
 
@@ -167,15 +167,15 @@ impl Default for Session {
 }
 
 impl Session {
-    fn signup(&mut self) -> PartySignup {
+    fn signup(&mut self, conn: usize) -> PartySignup {
         let last = self.party_signups.last();
         let num = if last.is_none() {
             1
         } else {
-            let num = last.unwrap();
+            let (num, _) = last.unwrap();
             num + 1
         };
-        self.party_signups.push(num.clone());
+        self.party_signups.push((num, conn));
         PartySignup {
             number: num,
             uuid: self.uuid.clone(),
