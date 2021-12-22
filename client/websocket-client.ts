@@ -1,10 +1,8 @@
 type BroadcastKind =
-  | "keygen_commitment_answer"
-  | "keygen_peer_answer"
+  | "party_signup"
+  | "peer_relay"
   | "sign_proposal"
   | "sign_progress"
-  | "sign_commitment_answer"
-  | "sign_peer_answer"
   | "sign_result";
 
 export interface BroadcastMessage {
@@ -15,22 +13,8 @@ export interface BroadcastMessage {
 type RequestKind =
   | "parameters"
   | "party_signup"
-  | "keygen_round1"
-  | "keygen_round2"
-  | "keygen_round3_relay_peers"
-  | "keygen_round4"
-  | "keygen_round5"
+  | "peer_relay"
   | "sign_proposal"
-  | "sign_round0"
-  | "sign_round1"
-  | "sign_round2_relay_peers"
-  | "sign_round3"
-  | "sign_round4"
-  | "sign_round5"
-  | "sign_round6"
-  | "sign_round7"
-  | "sign_round8"
-  | "sign_round9"
   | "sign_result";
 
 export interface RequestMessage {

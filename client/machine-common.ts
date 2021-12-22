@@ -1,4 +1,5 @@
 import { State } from "./state-machine";
+import { PeerEntry } from "./peer-state";
 
 // Configuration parameters retrieved from the server
 // during the handshake.
@@ -25,16 +26,10 @@ export interface PartySignup {
   uuid: string;
 }
 
-// Opaque type proxied from WASM to the server
-export interface Entry {
-  key: string;
-  value: string;
-}
-
 // Temporary object passed back and forth between javascript
 // and webassembly for the various rounds.
 export interface RoundEntry {
-  entry: Entry;
+  peer_entries: PeerEntry[];
   // Webassembly adds a bunch of temporary properties
   // to each round entry for further rounds but
   // these fields should not be accessed here
@@ -48,21 +43,6 @@ export interface BroadcastAnswer {
   answer: string[];
 }
 
-// PeerEntry is sent by the server when relaying messages
-// peer to peer during round 3 of key generation.
-export interface PeerEntry {
-  party_from: number;
-  party_to: number;
-  entry: Entry;
-}
-
-// Temporary state for caching peer entries during round 3
-// of the key generation.
-export interface PeerState {
-  parties: number;
-  received: PeerEntry[];
-}
-
 // Holds the websocket identifier.
 export interface ClientId {
   conn_id: number;
@@ -74,15 +54,10 @@ export interface Handshake {
   parameters: Parameters;
 }
 
-export function getSortedPeerEntriesAnswer(peerState: PeerState): string[] {
-  // Must sort the entries otherwise the decryption
-  // keys will not match the peer entries
-  peerState.received.sort((a: PeerEntry, b: PeerEntry) => {
-    if (a.party_from < b.party_from) return -1;
-    if (a.party_from > b.party_from) return 1;
-    return 0;
-  });
-  return peerState.received.map((peer: PeerEntry) => peer.entry.value);
+// State for party signup round during keygen.
+export interface PartySignupInfo {
+  parameters: Parameters;
+  partySignup: PartySignup;
 }
 
 export function makeOnTransition<T, U>(postMessage: Function) {

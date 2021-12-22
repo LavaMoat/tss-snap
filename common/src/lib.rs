@@ -16,7 +16,13 @@ pub const ROUND_9: &str = "round9";
 pub struct PeerEntry {
     pub party_from: u16,
     pub party_to: u16,
-    pub entry: Entry,
+    pub value: String,
+
+    #[serde(skip)]
+    pub session: String,
+
+    #[serde(skip)]
+    pub round: &'static str,
 }
 
 /// Parameters for key generation and signing.
@@ -30,12 +36,6 @@ pub struct Parameters {
 pub struct PartySignup {
     pub number: u16,
     pub uuid: String,
-}
-
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct Entry {
-    pub key: String,
-    pub value: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -17,16 +17,25 @@ import {
   PartySignup,
   RoundEntry,
   BroadcastAnswer,
-  PeerState,
-  getSortedPeerEntriesAnswer,
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
+import {
+  getSortedPeerEntriesAnswer,
+  PeerEntryHandler,
+  makePeerState,
+} from "./peer-state";
 
 // Type used to start the signing process.
 interface SignInit {
   message: string;
   keygenResult: KeygenResult;
+}
+
+interface SignPartySignupInfo {
+  message: string;
+  keygenResult: KeygenResult;
+  partySignup: PartySignup;
 }
 
 // Type to pass through the client state machine during message signing.
@@ -37,7 +46,7 @@ interface SignRoundEntry<T> {
   roundEntry: T;
 }
 
-export type SignState = SignRoundEntry<RoundEntry>;
+export type SignState = SignPartySignupInfo | SignRoundEntry<RoundEntry>;
 export type SignTransition = SignInit | BroadcastAnswer;
 
 export interface SignMessageMachineContainer {
@@ -46,21 +55,25 @@ export interface SignMessageMachineContainer {
 }
 
 export function makeSignMessageStateMachine(
-  peerState: PeerState,
   sendNetworkRequest: Function,
   sendUiMessage: Function,
   sendNetworkMessage: Function
 ) {
+  let peerEntryHandler: PeerEntryHandler = null;
+
   // State machine for signing a proposal
   const machine = new StateMachine<SignState, SignTransition>(
     [
       // Start the signing process.
       {
-        name: "SIGN_ROUND_0",
+        name: "SIGN_PARTY_SIGNUP",
         transition: async (
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
+          const { message, keygenResult } = transitionData as SignInit;
+          const { parameters } = keygenResult;
+
           // Generate a new party signup for the sign phase
           const signup = await sendNetworkRequest({
             kind: "party_signup",
@@ -71,17 +84,34 @@ export function makeSignMessageStateMachine(
           // So the UI thread can update the party number for the sign phase
           sendUiMessage({ type: "party_signup", partySignup });
 
-          const { message, keygenResult } = transitionData as SignInit;
-          const { key } = keygenResult;
-          const roundEntry = signRound0(partySignup, key);
+          // NOTE: We don't add 1 to threshold here as
+          // NOTE: we only expect answers from *other* peers
+          peerEntryHandler = makePeerState(parameters.threshold);
+
+          return {
+            message,
+            partySignup,
+            keygenResult,
+          };
+        },
+      },
+
+      // Start the signing process.
+      {
+        name: "SIGN_ROUND_0",
+        transition: async (
+          previousState: SignState,
+          transitionData: SignTransition
+        ): Promise<SignState | null> => {
+          const { message, keygenResult, partySignup } =
+            previousState as SignPartySignupInfo;
+          const { key, parameters } = keygenResult;
+          const roundEntry = signRound0(parameters, partySignup, key);
 
           // Send the round 0 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round0",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -105,17 +135,10 @@ export function makeSignMessageStateMachine(
 
           const roundEntry = signRound1(parameters, partySignup, key, answer);
 
-          // Set up for the peer to peer calls in round 2
-          peerState.parties = parameters.threshold + 1;
-          peerState.received = [];
-
           // Send the round 1 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round1",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -146,8 +169,8 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 2 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round2_relay_peers",
+          sendNetworkMessage({
+            kind: "peer_relay",
             data: { entries: roundEntry.peer_entries },
           });
 
@@ -168,10 +191,7 @@ export function makeSignMessageStateMachine(
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
           const { parameters, key } = keygenResult;
-
-          const answer = getSortedPeerEntriesAnswer(peerState);
-          // Clean up the peer entries
-          peerState.received = [];
+          const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound3(
             parameters,
@@ -182,12 +202,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 3 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round3",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -206,21 +223,20 @@ export function makeSignMessageStateMachine(
         ): Promise<SignState | null> => {
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
+          const { parameters } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound4(
+            parameters,
             partySignup,
             signState.roundEntry,
             answer
           );
 
           // Send the round 4 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round4",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -239,14 +255,11 @@ export function makeSignMessageStateMachine(
         ): Promise<SignState | null> => {
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
-          const { key } = keygenResult;
+          const { key, parameters } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
 
-          //const encoder = new TextEncoder();
-          //const messageBytes = encoder.encode(message);
-          //const messageHex = toHexString(messageBytes);
-
           const roundEntry = signRound5(
+            parameters,
             partySignup,
             key,
             signState.roundEntry,
@@ -255,12 +268,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 5 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round5",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -279,21 +289,20 @@ export function makeSignMessageStateMachine(
         ): Promise<SignState | null> => {
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
+          const { parameters } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound6(
+            parameters,
             partySignup,
             signState.roundEntry,
             answer
           );
 
           // Send the round 6 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round6",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -323,12 +332,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 7 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round7",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -347,21 +353,20 @@ export function makeSignMessageStateMachine(
         ): Promise<SignState | null> => {
           const signState = previousState as SignRoundEntry<RoundEntry>;
           const { message, partySignup, keygenResult } = signState;
+          const { parameters } = keygenResult;
           const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = signRound8(
+            parameters,
             partySignup,
             signState.roundEntry,
             answer
           );
 
           // Send the round 8 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round8",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -391,12 +396,9 @@ export function makeSignMessageStateMachine(
           );
 
           // Send the round 9 entry to the server
-          sendNetworkRequest({
-            kind: "sign_round9",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return {
@@ -447,6 +449,9 @@ export function makeSignMessageStateMachine(
   // without a client request
   async function onBroadcastMessage(msg: BroadcastMessage) {
     switch (msg.kind) {
+      case "party_signup":
+        await machine.next();
+        return true;
       case "sign_proposal":
         const { message } = msg.data;
         sendUiMessage({ type: "sign_proposal", message });
@@ -455,54 +460,33 @@ export function makeSignMessageStateMachine(
         // Parties that did not commit to signing should update the UI only
         sendUiMessage({ type: "sign_progress" });
 
-        // Parties not participating in the signing should reset their party number
+        // Parties not participating in the signing should
+        // reset their party number
         sendUiMessage({
           type: "party_signup",
           partySignup: { number: 0, uuid: "" },
         });
         return true;
+
+      /*
       case "sign_commitment_answer":
         switch (msg.data.round) {
           case "round0":
+            // FIXME: restore this call!
             // We performed a sign of the message and also need to update the UI
             sendUiMessage({ type: "sign_progress" });
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round1":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round3":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round4":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round5":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round6":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round7":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round8":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round9":
-            await machine.next({ answer: msg.data.answer });
+            //await machine.next({ answer: msg.data.answer });
             break;
         }
         return true;
-      case "sign_peer_answer":
-        const { peer_entry: signPeerEntry } = msg.data;
-        peerState.received.push(signPeerEntry);
-
+      */
+      case "peer_relay":
+        const { peer_entry: peerEntry } = msg.data;
+        const answer = peerEntryHandler(peerEntry);
         // Got all the p2p answers
-        if (peerState.received.length === peerState.parties - 1) {
-          await machine.next();
+        if (answer) {
+          await machine.next({ answer });
         }
-
         return true;
       case "sign_result":
         const { sign_result: signResult } = msg.data;

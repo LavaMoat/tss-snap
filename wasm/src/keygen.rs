@@ -5,7 +5,7 @@ use aes_gcm::{
 use rand::Rng;
 
 use common::{
-    Entry, PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
+    PartySignup, PeerEntry, ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
 };
 use curv::{
     arithmetic::Converter,
@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-use super::utils::{into_p2p_entry, into_round_entry, Params, PartyKey};
+use super::utils::{Params, PartyKey};
 
 //use super::{console_log, log};
 
@@ -40,7 +40,7 @@ struct AeadPack {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round1Entry {
     party_keys: Keys,
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decom_i: KeyGenDecommitMessage1,
     bc_i: KeyGenBroadcastMessage1,
 }
@@ -48,7 +48,7 @@ struct Round1Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round2Entry {
     party_keys: Keys,
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     decom_i: KeyGenDecommitMessage1,
     bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
@@ -56,11 +56,11 @@ struct Round2Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round3Entry {
     party_keys: Keys,
+    peer_entries: Vec<PeerEntry>,
     enc_keys: Vec<Vec<u8>>,
     vss_scheme: VerifiableSS<Secp256k1>,
     secret_shares: Vec<Scalar<Secp256k1>>,
     y_sum: Point<Secp256k1>,
-    peer_entries: Vec<PeerEntry>,
     point_vec: Vec<Point<Secp256k1>>,
     bc1_vec: Vec<KeyGenBroadcastMessage1>,
 }
@@ -68,7 +68,7 @@ struct Round3Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round4Entry {
     party_keys: Keys,
-    entry: Entry,
+    peer_entries: Vec<PeerEntry>,
     party_shares: Vec<Scalar<Secp256k1>>,
     vss_scheme: VerifiableSS<Secp256k1>,
     point_vec: Vec<Point<Secp256k1>>,
@@ -79,8 +79,8 @@ struct Round4Entry {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Round5Entry {
     party_keys: Keys,
+    peer_entries: Vec<PeerEntry>,
     shared_keys: SharedKeys,
-    entry: Entry,
     dlog_proof: DLogProof<Secp256k1, Sha256>,
     point_vec: Vec<Point<Secp256k1>>,
     vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
@@ -110,8 +110,12 @@ fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {
 
 #[allow(non_snake_case)]
 #[wasm_bindgen]
-pub fn keygenRound1(party_signup: JsValue) -> JsValue {
-    //console_log!("WASM: keygen round 1");
+pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
+        share_count: parties,
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -121,20 +125,24 @@ pub fn keygenRound1(party_signup: JsValue) -> JsValue {
     let (bc_i, decom_i) =
         party_keys.phase1_broadcast_phase3_proof_of_correct_key();
 
-    // This is the entry that needs to be sent to the server
-    // by all parties
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_1,
-        serde_json::to_string(&bc_i).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=parties {
+        if i != party_num_int {
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                value: serde_json::to_string(&bc_i).unwrap(),
+                round: ROUND_1,
+                session: uuid.clone(),
+            });
+        }
+    }
 
     // Store decom_i and bc_i so that Javascript can pass it back to WASM
     // for future key generation phases
     let round_entry = Round1Entry {
         party_keys,
-        entry,
+        peer_entries,
         decom_i,
         bc_i,
     };
@@ -146,11 +154,16 @@ pub fn keygenRound1(party_signup: JsValue) -> JsValue {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn keygenRound2(
+    parameters: JsValue,
     party_signup: JsValue,
     round1_entry: JsValue,
     round1_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 2");
+    let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
+    let Parameters {
+        share_count: parties,
+        ..
+    } = params;
 
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
@@ -173,17 +186,22 @@ pub fn keygenRound2(
 
     bc1_vec.insert(party_num_int as usize - 1, bc_i);
 
-    // Generate the entry for round 2
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_2,
-        serde_json::to_string(&decom_i).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=parties {
+        if i != party_num_int {
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                value: serde_json::to_string(&decom_i).unwrap(),
+                round: ROUND_2,
+                session: uuid.clone(),
+            });
+        }
+    }
 
     let round_entry = Round2Entry {
         party_keys,
-        entry,
+        peer_entries,
         decom_i,
         bc1_vec,
     };
@@ -199,8 +217,6 @@ pub fn keygenRound3(
     round2_entry: JsValue,
     round2_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 3");
-
     let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
     let Parameters {
         share_count: parties,
@@ -262,18 +278,12 @@ pub fn keygenRound3(
             let key_i = &enc_keys[j];
             let plaintext = BigInt::to_bytes(&secret_shares[k].to_bigint());
             let aead_pack_i = aes_encrypt(key_i, &plaintext);
-            let entry = into_p2p_entry(
-                party_num_int,
-                i,
-                ROUND_3,
-                serde_json::to_string(&aead_pack_i).unwrap(),
-                uuid.clone(),
-            );
-
             peer_entries.push(PeerEntry {
                 party_from: party_num_int,
                 party_to: i,
-                entry,
+                value: serde_json::to_string(&aead_pack_i).unwrap(),
+                round: ROUND_3,
+                session: uuid.clone(),
             });
             j += 1;
         }
@@ -302,8 +312,6 @@ pub fn keygenRound4(
     round3_entry: JsValue,
     round3_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 4");
-
     let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
     let Parameters {
         share_count: parties,
@@ -344,19 +352,25 @@ pub fn keygenRound4(
         }
     }
 
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_4,
-        serde_json::to_string(&vss_scheme).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=parties {
+        if i != party_num_int {
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                value: serde_json::to_string(&vss_scheme).unwrap(),
+                round: ROUND_4,
+                session: uuid.clone(),
+            });
+        }
+    }
 
     let round_entry = Round4Entry {
         party_keys,
+        peer_entries,
         party_shares,
         vss_scheme,
         point_vec,
-        entry,
         y_sum,
         bc1_vec,
     };
@@ -372,8 +386,6 @@ pub fn keygenRound5(
     round4_entry: JsValue,
     round4_ans_vec: JsValue,
 ) -> JsValue {
-    //console_log!("WASM: keygen round 5");
-
     let params: Parameters = parameters.into_serde::<Params>().unwrap().into();
     let Parameters {
         share_count: parties,
@@ -419,16 +431,22 @@ pub fn keygenRound5(
         )
         .expect("invalid vss");
 
-    let entry = into_round_entry(
-        party_num_int,
-        ROUND_5,
-        serde_json::to_string(&dlog_proof).unwrap(),
-        uuid,
-    );
+    let mut peer_entries: Vec<PeerEntry> = Vec::new();
+    for i in 1..=parties {
+        if i != party_num_int {
+            peer_entries.push(PeerEntry {
+                party_from: party_num_int,
+                party_to: i,
+                value: serde_json::to_string(&dlog_proof).unwrap(),
+                round: ROUND_5,
+                session: uuid.clone(),
+            });
+        }
+    }
 
     let round_entry = Round5Entry {
         shared_keys,
-        entry,
+        peer_entries,
         dlog_proof,
         point_vec,
         party_keys,

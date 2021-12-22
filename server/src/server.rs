@@ -18,15 +18,10 @@ use warp::http::header::{HeaderMap, HeaderValue};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
-use std::convert::TryInto;
+use common::{Parameters, PartySignup, PeerEntry, SignResult};
 
-use common::{
-    Entry, Parameters, PartySignup, PeerEntry, SignResult, ROUND_0, ROUND_1,
-    ROUND_2, ROUND_3, ROUND_4, ROUND_5, ROUND_6, ROUND_7, ROUND_8, ROUND_9,
-};
-
-/// Global unique user id counter.
-static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
+/// Global unique connection id counter.
+static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
 static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
@@ -46,56 +41,12 @@ enum IncomingKind {
     /// Initialize the key generation process with a party signup
     #[serde(rename = "party_signup")]
     PartySignup,
-    /// All clients send this message once `party_signup` is complete
-    /// to store the round 1 entry
-    #[serde(rename = "keygen_round1")]
-    KeygenRound1,
-    /// Store the round 2 entry sent by each client.
-    #[serde(rename = "keygen_round2")]
-    KeygenRound2,
-    /// Relay round 3 entries peer 2 peer
-    #[serde(rename = "keygen_round3_relay_peers")]
-    KeygenRound3RelayPeers,
-    /// Store the round 4 entry sent by each client.
-    #[serde(rename = "keygen_round4")]
-    KeygenRound4,
-    /// Store the round 5 entry sent by each client.
-    #[serde(rename = "keygen_round5")]
-    KeygenRound5,
-
+    /// Relay a message to peers.
+    #[serde(rename = "peer_relay")]
+    PeerRelay,
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_proposal")]
     SignProposal,
-    // Start the signing process by sharing party identifiers
-    #[serde(rename = "sign_round0")]
-    SignRound0,
-    /// Store the round 1 entry sent by each client.
-    #[serde(rename = "sign_round1")]
-    SignRound1,
-    /// Relay round 2 entries peer 2 peer
-    #[serde(rename = "sign_round2_relay_peers")]
-    SignRound2RelayPeers,
-    /// Store the round 3 entry sent by each client.
-    #[serde(rename = "sign_round3")]
-    SignRound3,
-    /// Store the round 4 entry sent by each client.
-    #[serde(rename = "sign_round4")]
-    SignRound4,
-    /// Store the round 5 entry sent by each client.
-    #[serde(rename = "sign_round5")]
-    SignRound5,
-    /// Store the round 6 entry sent by each client.
-    #[serde(rename = "sign_round6")]
-    SignRound6,
-    /// Store the round 7 entry sent by each client.
-    #[serde(rename = "sign_round7")]
-    SignRound7,
-    /// Store the round 8 entry sent by each client.
-    #[serde(rename = "sign_round8")]
-    SignRound8,
-    /// Store the round 9 entry sent by each client.
-    #[serde(rename = "sign_round9")]
-    SignRound9,
     /// Notify non-participants that a signed message was generated.
     #[serde(rename = "sign_result")]
     SignResult,
@@ -115,10 +66,6 @@ enum IncomingData {
     PartySignup {
         phase: PartySignupPhase,
     },
-    Entry {
-        entry: Entry,
-        uuid: String,
-    },
     PeerEntries {
         entries: Vec<PeerEntry>,
     },
@@ -133,26 +80,18 @@ enum IncomingData {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
-    /// Answer sent to a party with the commitments from the other parties
-    /// during the keygen phase.
-    #[serde(rename = "keygen_commitment_answer")]
-    KeygenCommitmentAnswer,
     /// Relayed peer to peer answer.
-    #[serde(rename = "keygen_peer_answer")]
-    KeygenPeerAnswer,
+    #[serde(rename = "peer_relay")]
+    PeerRelay,
+    /// Broadcast to indicate party signup is completed.
+    #[serde(rename = "party_signup")]
+    PartySignup,
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
     /// Broadcast to parties not signing the message to let them know a sign is in progress.
     #[serde(rename = "sign_progress")]
     SignProgress,
-    /// Answer sent to a party with the commitments from the other parties
-    /// during the sign phase.
-    #[serde(rename = "sign_commitment_answer")]
-    SignCommitmentAnswer,
-    /// Relayed peer to peer answer.
-    #[serde(rename = "sign_peer_answer")]
-    SignPeerAnswer,
     /// Notify non-participants of a sign result.
     #[serde(rename = "sign_result")]
     SignResult,
@@ -179,12 +118,7 @@ enum OutgoingData {
     PartySignup {
         party_signup: PartySignup,
     },
-    CommitmentAnswer {
-        round: String,
-        answer: Vec<String>,
-    },
     PeerAnswer {
-        round: String,
         peer_entry: PeerEntry,
     },
     Message {
@@ -202,10 +136,11 @@ struct State {
     /// Connected clients.
     clients:
         HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
-    /// Current keygen signup state.
-    party_signup: PartySignup,
-    /// Map of key / values sent to the server by clients for ephemeral states
-    ephemeral_state: HashMap<String, String>,
+    // TODO: remove uuid when we have signup groups
+    /// UUID of the last party signup
+    uuid: String,
+    /// Store party signups so we know when they have all been received
+    party_signups: HashMap<u16, String>,
 }
 
 pub struct Server;
@@ -220,11 +155,8 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             params,
             clients: HashMap::new(),
-            party_signup: PartySignup {
-                number: 0,
-                uuid: Uuid::new_v4().to_string(),
-            },
-            ephemeral_state: Default::default(),
+            uuid: String::new(),
+            party_signups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -278,7 +210,7 @@ impl Server {
 }
 
 async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
-    let conn_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
+    let conn_id = CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
 
     info!("connected (uid={})", conn_id);
 
@@ -368,29 +300,35 @@ async fn client_request(
             if let IncomingData::PartySignup { phase } =
                 req.data.as_ref().unwrap()
             {
-                let total = match phase {
-                    PartySignupPhase::Keygen => info.params.parties,
-                    PartySignupPhase::Sign => info.params.threshold + 1,
-                };
-
-                let party_signup = {
-                    let client_signup = &info.party_signup;
-                    if client_signup.number < total {
-                        PartySignup {
-                            number: client_signup.number + 1,
-                            uuid: client_signup.uuid.clone(),
-                        }
+                let (party_signup, uuid) = {
+                    let last = info.party_signups.iter().last();
+                    if last.is_none() {
+                        let uuid = Uuid::new_v4().to_string();
+                        (
+                            PartySignup {
+                                number: 1,
+                                uuid: uuid.clone(),
+                            },
+                            uuid,
+                        )
                     } else {
-                        PartySignup {
-                            number: 1,
-                            uuid: Uuid::new_v4().to_string(),
-                        }
+                        let (num, uuid) = last.unwrap();
+                        (
+                            PartySignup {
+                                number: num + 1,
+                                uuid: uuid.clone(),
+                            },
+                            uuid.clone(),
+                        )
                     }
                 };
 
                 drop(info);
                 let mut writer = state.write().await;
-                writer.party_signup = party_signup.clone();
+                writer.uuid = uuid;
+                writer
+                    .party_signups
+                    .insert(party_signup.number, party_signup.uuid.clone());
 
                 let conn_info = writer.clients.get_mut(&conn_id).unwrap();
                 conn_info.1 = Some(party_signup.clone());
@@ -429,49 +367,9 @@ async fn client_request(
                 None
             }
         }
-        // Store the round Entry
-        IncomingKind::KeygenRound1
-        | IncomingKind::KeygenRound2
-        | IncomingKind::KeygenRound4
-        | IncomingKind::KeygenRound5
-        | IncomingKind::SignRound0
-        | IncomingKind::SignRound1
-        | IncomingKind::SignRound3
-        | IncomingKind::SignRound4
-        | IncomingKind::SignRound5
-        | IncomingKind::SignRound6
-        | IncomingKind::SignRound7
-        | IncomingKind::SignRound8
-        | IncomingKind::SignRound9 => {
-            // Assume the client is well behaved and sends the request data
-            if let IncomingData::Entry { entry, .. } =
-                req.data.as_ref().unwrap()
-            {
-                // Store the key state broadcast by the client
-                drop(info);
-                let mut writer = state.write().await;
-                writer
-                    .ephemeral_state
-                    .insert(entry.key.clone(), entry.value.clone());
-
-                // Send an ACK so the client promise will resolve
-                Some(Outgoing {
-                    id: req.id,
-                    kind: None,
-                    data: None,
-                })
-            } else {
-                None
-            }
-        }
-        IncomingKind::KeygenRound3RelayPeers
-        | IncomingKind::SignRound2RelayPeers => {
-            // Send an ACK so the client promise will resolve
-            Some(Outgoing {
-                id: req.id,
-                kind: None,
-                data: None,
-            })
+        IncomingKind::PeerRelay => {
+            // Nothing to do for peer relays - no response
+            None
         }
         // FIXME: this is broadcast multiple times because
         // FIXME: we receive this message from each signer
@@ -518,71 +416,40 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
-        IncomingKind::KeygenRound1
-        | IncomingKind::KeygenRound2
-        | IncomingKind::KeygenRound4
-        | IncomingKind::KeygenRound5
-        | IncomingKind::SignRound0
-        | IncomingKind::SignRound1
-        | IncomingKind::SignRound3
-        | IncomingKind::SignRound4
-        | IncomingKind::SignRound5
-        | IncomingKind::SignRound6
-        | IncomingKind::SignRound7
-        | IncomingKind::SignRound8
-        | IncomingKind::SignRound9 => {
+        IncomingKind::PartySignup => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
             let threshold = info.params.threshold as usize;
-            let num_entries = info.ephemeral_state.len();
+            let num_entries = info.party_signups.len();
             drop(info);
-
-            let required_num_entries = match req.kind {
-                IncomingKind::SignRound0
-                | IncomingKind::SignRound1
-                | IncomingKind::SignRound3
-                | IncomingKind::SignRound4
-                | IncomingKind::SignRound5
-                | IncomingKind::SignRound6
-                | IncomingKind::SignRound7
-                | IncomingKind::SignRound8
-                | IncomingKind::SignRound9 => threshold + 1,
-                IncomingKind::KeygenRound1
-                | IncomingKind::KeygenRound2
-                | IncomingKind::KeygenRound4
-                | IncomingKind::KeygenRound5 => parties,
-                _ => unreachable!(),
-            };
-
-            // Got all the party round commitments so broadcast
-            // to each client with the answer vectors
-            if num_entries == required_num_entries {
-                let round =
-                    match req.kind {
-                        IncomingKind::SignRound0 => ROUND_0,
-                        IncomingKind::KeygenRound1
-                        | IncomingKind::SignRound1 => ROUND_1,
-                        IncomingKind::KeygenRound2 => ROUND_2,
-                        IncomingKind::SignRound3 => ROUND_3,
-                        IncomingKind::KeygenRound4
-                        | IncomingKind::SignRound4 => ROUND_4,
-                        IncomingKind::KeygenRound5
-                        | IncomingKind::SignRound5 => ROUND_5,
-                        IncomingKind::SignRound6 => ROUND_6,
-                        IncomingKind::SignRound7 => ROUND_7,
-                        IncomingKind::SignRound8 => ROUND_8,
-                        IncomingKind::SignRound9 => ROUND_9,
-                        _ => unreachable!(),
-                    };
-
-                if let IncomingData::Entry { uuid, .. } =
-                    req.data.as_ref().unwrap()
+            let required_num_entries =
+                if let Some(IncomingData::PartySignup { phase }) =
+                    req.data.as_ref()
                 {
-                    // Round 0 only exists for the sign phase
-                    if round == ROUND_0 {
+                    match phase {
+                        PartySignupPhase::Keygen => parties,
+                        PartySignupPhase::Sign => threshold + 1,
+                    }
+                } else {
+                    0
+                };
+
+            if num_entries == required_num_entries {
+                let msg = Outgoing {
+                    id: None,
+                    kind: Some(OutgoingKind::PartySignup),
+                    data: None,
+                };
+
+                // Notify the non-participants
+                if let Some(IncomingData::PartySignup { phase }) =
+                    req.data.as_ref()
+                {
+                    if let PartySignupPhase::Sign = phase {
                         let mut non_signing_clients: Vec<usize> = Vec::new();
                         {
                             let mut writer = state.write().await;
+                            let uuid = writer.uuid.clone();
                             writer.clients.iter_mut().for_each(|(k, v)| {
                                 if let Some(mut party_signup) = v.1.as_mut() {
                                     // Got a connection that is not participating
@@ -593,7 +460,7 @@ async fn client_request(
                                     // phase. These collisions would cause broadcast messages
                                     // to go to the wrong recipients due to the simple logic
                                     // for associating a connection with a party number.
-                                    if &party_signup.uuid != uuid {
+                                    if party_signup.uuid != uuid {
                                         party_signup.number = 0;
                                         non_signing_clients.push(*k);
                                     }
@@ -611,84 +478,34 @@ async fn client_request(
                             send_message(conn_id, &res, state).await;
                         }
                     }
+                }
 
-                    let lock = BROADCAST_LOCK.try_lock();
-                    if let Ok(_) = lock {
-                        trace!(
-                            "got all {} commitments, broadcasting answers",
-                            round
-                        );
+                let parties: Vec<u16> = {
+                    let info = state.read().await;
+                    info.party_signups.keys().cloned().collect()
+                };
 
-                        for i in 0..parties {
-                            let party_num: u16 = (i + 1).try_into().unwrap();
-                            let ans_vec = round_commitment_answers(
-                                state,
-                                party_num,
-                                round,
-                                uuid.clone(),
-                            )
-                            .await;
-
-                            if let Some(conn_id) =
-                                conn_id_for_party(state, party_num).await
-                            {
-                                let kind = match req.kind {
-                                    IncomingKind::KeygenRound1
-                                    | IncomingKind::KeygenRound2
-                                    | IncomingKind::KeygenRound4
-                                    | IncomingKind::KeygenRound5 => {
-                                        OutgoingKind::KeygenCommitmentAnswer
-                                    }
-                                    IncomingKind::SignRound0
-                                    | IncomingKind::SignRound1
-                                    | IncomingKind::SignRound3
-                                    | IncomingKind::SignRound4
-                                    | IncomingKind::SignRound5
-                                    | IncomingKind::SignRound6
-                                    | IncomingKind::SignRound7
-                                    | IncomingKind::SignRound8
-                                    | IncomingKind::SignRound9 => {
-                                        OutgoingKind::SignCommitmentAnswer
-                                    }
-                                    _ => unreachable!(),
-                                };
-
-                                let res = Outgoing {
-                                    id: None,
-                                    kind: Some(kind),
-                                    data: Some(
-                                        OutgoingData::CommitmentAnswer {
-                                            round: round.to_string(),
-                                            answer: ans_vec,
-                                        },
-                                    ),
-                                };
-
-                                send_message(conn_id, &res, state).await;
-                            }
-                        }
-
-                        // We just sent commitments to all clients for the round
-                        // so clean up the temporary state
+                let lock = BROADCAST_LOCK.try_lock();
+                if let Ok(_) = lock {
+                    for party_num in parties {
+                        if let Some(conn_id) =
+                            conn_id_for_party(state, party_num).await
                         {
-                            let mut writer = state.write().await;
-                            // TODO: zeroize the state information
-                            writer.ephemeral_state = Default::default();
+                            send_message(conn_id, &msg, state).await;
                         }
+                    }
+
+                    {
+                        let mut writer = state.write().await;
+                        writer.party_signups = Default::default();
                     }
                 }
             }
         }
-        IncomingKind::KeygenRound3RelayPeers
-        | IncomingKind::SignRound2RelayPeers => {
+        IncomingKind::PeerRelay => {
             if let IncomingData::PeerEntries { entries } = req.data.unwrap() {
                 let kind = match req.kind {
-                    IncomingKind::KeygenRound3RelayPeers => {
-                        OutgoingKind::KeygenPeerAnswer
-                    }
-                    IncomingKind::SignRound2RelayPeers => {
-                        OutgoingKind::SignPeerAnswer
-                    }
+                    IncomingKind::PeerRelay => OutgoingKind::PeerRelay,
                     _ => unreachable!(),
                 };
 
@@ -700,12 +517,16 @@ async fn client_request(
                             id: None,
                             kind: Some(kind),
                             data: Some(OutgoingData::PeerAnswer {
-                                round: ROUND_3.to_string(),
                                 peer_entry: entry,
                             }),
                         };
 
                         send_message(conn_id, &res, state).await;
+                    } else {
+                        eprintln!(
+                            "failed to find conn_id for {}",
+                            entry.party_to
+                        );
                     }
                 }
             }
@@ -742,29 +563,6 @@ async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
     for conn_id in clients {
         send_message(conn_id, res, state).await;
     }
-}
-
-async fn round_commitment_answers(
-    state: &Arc<RwLock<State>>,
-    //parties: u16,
-    party_num: u16,
-    round: &str,
-    sender_uuid: String,
-) -> Vec<String> {
-    let info = state.read().await;
-    let parties: u16 = info.params.parties;
-    let mut ans_vec = Vec::new();
-    for i in 1..=parties {
-        if i != party_num {
-            let key = format!("{}-{}-{}", i, round, sender_uuid);
-            let value = info.ephemeral_state.get(&key);
-            if let Some(value) = value {
-                trace!("[{:?}] party {:?} => party {:?}", round, i, party_num);
-                ans_vec.push(value.clone());
-            }
-        }
-    }
-    ans_vec
 }
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {

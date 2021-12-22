@@ -1,6 +1,6 @@
 import init, { initThreadPool } from "ecdsa-wasm";
 import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
-import { PeerState, KeygenResult, Handshake } from "./machine-common";
+import { KeygenResult, Handshake } from "./machine-common";
 import { makeKeygenStateMachine } from "./machine-keygen";
 import {
   makeSignMessageStateMachine,
@@ -47,13 +47,12 @@ const { send: sendNetworkMessage, request: sendNetworkRequest } =
     onBroadcastMessage,
   });
 
-let peerState: PeerState = { parties: 0, received: [] };
 let keygenResult: KeygenResult = null;
 
 const keygenMachine = makeKeygenStateMachine(
-  peerState,
   sendNetworkRequest,
-  sendUiMessage
+  sendUiMessage,
+  sendNetworkMessage
 );
 let signMachine: SignMessageMachineContainer;
 
@@ -127,19 +126,24 @@ async function getKeygenHandshake() {
 // Handle messages from the server that were broadcast
 // without a client request
 async function onBroadcastMessage(msg: BroadcastMessage) {
-  if (await keygenMachine.onBroadcastMessage(msg)) return true;
+  // So it doesn't interfere with the signing peer replies;
+  // an event listener model would be better!
+  if (!keygenResult) {
+    if (await keygenMachine.onBroadcastMessage(msg)) return true;
+  }
 
   if (!signMachine && msg.kind === "sign_proposal") {
     prepareSignMessageStateMachine();
   }
 
-  if (await signMachine.onBroadcastMessage(msg)) return true;
+  if (signMachine) {
+    if (await signMachine.onBroadcastMessage(msg)) return true;
+  }
   return false;
 }
 
 function prepareSignMessageStateMachine() {
   signMachine = makeSignMessageStateMachine(
-    peerState,
     sendNetworkRequest,
     sendUiMessage,
     sendNetworkMessage

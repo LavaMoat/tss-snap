@@ -54,9 +54,6 @@ export class StateMachine<T, U> {
       this.index++;
     }
 
-    // Returning null signals the end of the machine,
-    // if we cycle to allow replaying the machine then
-    // reset the index
     if (this.index === this.states.length) {
       this.onComplete(this.stateData);
     }

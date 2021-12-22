@@ -10,16 +10,16 @@ import { StateMachine } from "./state-machine";
 import {
   Parameters,
   PartySignup,
+  PartySignupInfo,
   KeygenResult,
   PartyKey,
-  PeerState,
   RoundEntry,
   BroadcastAnswer,
   Handshake,
-  getSortedPeerEntriesAnswer,
   makeOnTransition,
 } from "./machine-common";
 import { BroadcastMessage } from "./websocket-client";
+import { makePeerState, PeerEntryHandler } from "./peer-state";
 
 // Type to pass through the client state machine during key generation.
 interface KeygenRoundEntry<T> {
@@ -31,14 +31,17 @@ interface KeygenRoundEntry<T> {
 export type KeygenTransition = BroadcastAnswer;
 export type KeygenState =
   | Handshake
+  | PartySignupInfo
   | KeygenRoundEntry<RoundEntry>
   | KeygenResult;
 
 export function makeKeygenStateMachine(
-  peerState: PeerState,
   sendNetworkRequest: Function,
-  sendUiMessage: Function
+  sendUiMessage: Function,
+  sendNetworkMessage: Function
 ) {
+  let peerEntryHandler: PeerEntryHandler = null;
+
   const machine = new StateMachine<KeygenState, KeygenTransition>(
     [
       // Handshake to get server parameters and client identifier
@@ -52,14 +55,16 @@ export function makeKeygenStateMachine(
             parties: res.data.parties,
             threshold: res.data.threshold,
           };
-          peerState.parties = res.data.parties;
+
+          peerEntryHandler = makePeerState(res.data.parties - 1);
+
           const client = { conn_id: res.data.conn_id };
           return { parameters, client };
         },
       },
-      // Generate the PartySignup and keygen round 1 entry
+      // Generate the PartySignup
       {
-        name: "KEYGEN_ROUND_1",
+        name: "PARTY_SIGNUP",
         transition: async (
           previousState: KeygenState
         ): Promise<KeygenState | null> => {
@@ -74,22 +79,29 @@ export function makeKeygenStateMachine(
           // So the UI thread can show the party number
           sendUiMessage({ type: "party_signup", partySignup });
 
+          return { parameters, partySignup };
+        },
+      },
+      {
+        name: "KEYGEN_ROUND_1",
+        transition: async (
+          previousState: KeygenState
+        ): Promise<KeygenState | null> => {
+          const partySignupInfo = previousState as PartySignupInfo;
+          const { parameters, partySignup } = partySignupInfo;
+
           // Create the round 1 key entry
-          const roundEntry = keygenRound1(partySignup);
+          const roundEntry = keygenRound1(parameters, partySignup);
 
           // Send the round 1 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round1",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
         },
       },
-      // All parties committed to round 1 so generate the round 2 entry
       {
         name: "KEYGEN_ROUND_2",
         transition: async (
@@ -103,24 +115,21 @@ export function makeKeygenStateMachine(
 
           // Get round 2 entry using round 1 commitments
           const roundEntry = keygenRound2(
+            parameters,
             partySignup,
             keygenRoundEntry.roundEntry,
             answer
           );
 
           // Send the round 2 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round2",
-            data: {
-              entry: roundEntry.entry,
-              uuid: keygenRoundEntry.partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
         },
       },
-      // All parties committed to round 2 so generate the round 3 peer to peer calls
       {
         name: "KEYGEN_ROUND_3",
         transition: async (
@@ -140,15 +149,14 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 3 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round3_relay_peers",
+          sendNetworkMessage({
+            kind: "peer_relay",
             data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
         },
       },
-      // Got all the round 3 peer to peer messages, proceed to round  4
       {
         name: "KEYGEN_ROUND_4",
         transition: async (
@@ -158,10 +166,7 @@ export function makeKeygenStateMachine(
           const keygenRoundEntry =
             previousState as KeygenRoundEntry<RoundEntry>;
           const { parameters, partySignup } = keygenRoundEntry;
-
-          const answer = getSortedPeerEntriesAnswer(peerState);
-          // Clean up the peer entries
-          peerState.received = [];
+          const { answer } = transitionData as BroadcastAnswer;
 
           const roundEntry = keygenRound4(
             parameters,
@@ -171,18 +176,14 @@ export function makeKeygenStateMachine(
           );
 
           // Send the round 4 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round4",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
         },
       },
-      // Got all the round 4 entries
       {
         name: "KEYGEN_ROUND_5",
         transition: async (
@@ -201,19 +202,15 @@ export function makeKeygenStateMachine(
             answer
           );
 
-          // Send the round 5 entry to the server
-          sendNetworkRequest({
-            kind: "keygen_round5",
-            data: {
-              entry: roundEntry.entry,
-              uuid: partySignup.uuid,
-            },
+          // Send the round 5  entry to the server
+          sendNetworkMessage({
+            kind: "peer_relay",
+            data: { entries: roundEntry.peer_entries },
           });
 
           return { parameters, partySignup, roundEntry };
         },
       },
-      // Got all the round 5 entries, create the final key data
       {
         name: "KEYGEN_FINALIZE",
         transition: async (
@@ -249,31 +246,16 @@ export function makeKeygenStateMachine(
   // without a client request
   async function onBroadcastMessage(msg: BroadcastMessage) {
     switch (msg.kind) {
-      case "keygen_commitment_answer":
-        switch (msg.data.round) {
-          case "round1":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round2":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round4":
-            await machine.next({ answer: msg.data.answer });
-            break;
-          case "round5":
-            await machine.next({ answer: msg.data.answer });
-            break;
-        }
+      case "party_signup":
+        await machine.next();
         return true;
-      case "keygen_peer_answer":
-        const { peer_entry: keygenPeerEntry } = msg.data;
-        peerState.received.push(keygenPeerEntry);
-
+      case "peer_relay":
+        const { peer_entry: peerEntry } = msg.data;
+        const answer = peerEntryHandler(peerEntry);
         // Got all the p2p answers
-        if (peerState.received.length === peerState.parties - 1) {
-          await machine.next();
+        if (answer) {
+          await machine.next({ answer });
         }
-
         return true;
     }
     return false;
