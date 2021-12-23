@@ -28,11 +28,14 @@ void (async function () {
 
 const sendUiMessage = self.postMessage;
 
+console.log("worker initiated!!!");
+
 const url = `__URL__`;
 const { send: sendNetworkMessage, request: sendNetworkRequest } =
   makeWebSocketClient({
     url,
-    onOpen: async () => {
+    onOpen: async (e) => {
+      console.log("Got open event", e);
       sendUiMessage({ type: "connected", url });
       const handshake = (await getKeygenHandshake()) as Handshake;
       sendUiMessage({
@@ -129,6 +132,7 @@ async function performSignature(message: string) {
 
 // Weapper for late binding of keygenMachine
 async function getKeygenHandshake() {
+  console.log("GOT KEY GEN HANDSHAKE");
   return await keygenMachine.machine.next();
 }
 

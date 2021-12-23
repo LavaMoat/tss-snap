@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js --node-env production",
+    "build:dev": "webpack --config webpack.config.js --node-env development",
     "start": "webpack-dev-server --no-client-overlay",
     "prettier": "prettier --write . --no-color"
   },

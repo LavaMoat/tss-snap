@@ -39,6 +39,8 @@ export interface webSocketOptions {
 export const makeWebSocketClient = (options: webSocketOptions) => {
   const { url, onOpen, onClose, onBroadcastMessage } = options;
 
+  console.log("MAKE WEB SOCKET CLIENT CALLED");
+
   // Websocket state
   let messageId = 0;
   let messageRequests = new Map();

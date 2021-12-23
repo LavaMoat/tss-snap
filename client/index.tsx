@@ -8,6 +8,7 @@ const App = () => {
   console.log("App is rendering...");
 
   if (window.Worker) {
+    console.log("CREATING WORKER");
     const worker = window.Worker
       ? new Worker(new URL("./worker.ts", import.meta.url))
       : null;
