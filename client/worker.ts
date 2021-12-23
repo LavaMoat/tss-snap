@@ -28,14 +28,11 @@ void (async function () {
 
 const sendUiMessage = self.postMessage;
 
-console.log("worker initiated!!!");
-
 const url = `__URL__`;
 const { send: sendNetworkMessage, request: sendNetworkRequest } =
   makeWebSocketClient({
     url,
     onOpen: async (e) => {
-      console.log("Got open event", e);
       sendUiMessage({ type: "connected", url });
       const handshake = (await getKeygenHandshake()) as Handshake;
       sendUiMessage({
@@ -74,7 +71,7 @@ self.onmessage = async (e) => {
     });
 
     const group = { ...groupData, ...groupInfo.data };
-    console.log("Got created group", group);
+    sendUiMessage({ type: "group_create", group });
   } else if (data.type === "party_signup") {
     // request for keygen - perform keygen
     await performKeygen();
@@ -132,7 +129,6 @@ async function performSignature(message: string) {
 
 // Weapper for late binding of keygenMachine
 async function getKeygenHandshake() {
-  console.log("GOT KEY GEN HANDSHAKE");
   return await keygenMachine.machine.next();
 }
 

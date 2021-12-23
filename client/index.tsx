@@ -1,17 +1,30 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
+import { Provider, useDispatch } from "react-redux";
 
+import Home from "./routes/home";
 import Group from "./routes/group";
 
+import store from "./store";
+import { setGroup } from "./store/group";
+
 const App = () => {
-  console.log("App is rendering...");
+  const dispatch = useDispatch();
 
   if (window.Worker) {
-    console.log("CREATING WORKER");
     const worker = window.Worker
       ? new Worker(new URL("./worker.ts", import.meta.url))
       : null;
+
+    worker.onmessage = (e) => {
+      const { type } = e.data;
+      switch (type) {
+        case "group_create":
+          dispatch(setGroup(e.data.group));
+          break;
+      }
+    };
 
     const sendWorkerMessage = (...args: any) =>
       worker.postMessage.call(worker, ...args);
@@ -24,6 +37,10 @@ const App = () => {
         <Routes>
           <Route
             path="/"
+            element={<Home sendWorkerMessage={sendWorkerMessage} />}
+          />
+          <Route
+            path="/group/:uuid"
             element={<Group sendWorkerMessage={sendWorkerMessage} />}
           />
         </Routes>
@@ -36,9 +53,11 @@ const App = () => {
 
 ReactDOM.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <Provider store={store}>
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </Provider>
   </React.StrictMode>,
   document.querySelector("main")
 );

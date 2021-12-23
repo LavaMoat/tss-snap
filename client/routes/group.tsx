@@ -1,49 +1,30 @@
-import React, { useState } from "react";
-
-interface CreateGroupProps {
-  onSubmit: (data: GroupData) => void;
-}
-
-interface GroupData {
-  label: string;
-  parties: number;
-  threshold: number;
-}
-
-const CreateGroup = (props: CreateGroupProps) => {
-  const [label, setLabel] = useState("");
-
-  const onLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    setLabel(event.currentTarget.value);
-  };
-
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    // TODO: get parties / threshold from form fields
-    props.onSubmit({ label, parties: 3, threshold: 1 });
-  };
-
-  return (
-    <form onSubmit={onSubmit}>
-      <label htmlFor="label">Group label:</label>
-      <input id="label" type="text" onChange={onLabelChange} value={label} />
-      <input type="submit" value="Create Group" />
-    </form>
-  );
-};
+import React, { useState, useEffect } from "react";
 
 interface GroupProps {
   sendWorkerMessage: (message: any, transfer?: Transferable[]) => void;
 }
 
 export default (props: GroupProps) => {
+  /*
+  const navigate = useNavigate();
   const { sendWorkerMessage } = props;
+  const { group } = useSelector(groupSelector);
 
-  const onCreateGroupSubmit = (groupData: GroupData) => {
-    console.log("Got create group data", groupData);
+  const onCreateGroupSubmit = (groupData: GroupFormData) => {
     sendWorkerMessage({ type: "group_create", groupData });
   };
 
-  return <CreateGroup onSubmit={onCreateGroupSubmit} />;
+  useEffect(() => {
+    if (group) {
+      navigate(`/group/${group.uuid}`);
+    }
+  }, [group]);
+
+  if (group) {
+    return null;
+  }
+
+  */
+
+  return <p>Render the group view...</p>;
 };

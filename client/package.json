@@ -27,6 +27,7 @@
   "homepage": "https://github.com/tmpfs/ecdsa-wasm",
   "dependencies": {
     "@ethereumjs/tx": "^3.4.0",
+    "@reduxjs/toolkit": "^1.7.1",
     "@walletconnect/client": "1.6.5",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
@@ -34,12 +35,14 @@
     "history": "^5.2.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-redux": "^7.2.6",
     "react-router-dom": "^6.2.1",
     "stream-browserify": "^3.0.0"
   },
   "devDependencies": {
     "@types/react": "^17.0.37",
     "@types/react-dom": "^17.0.11",
+    "@types/react-redux": "^7.1.20",
     "copy-webpack-plugin": "^5.0.0",
     "prettier": "^2.5.0",
     "string-replace-loader": "^3.1.0",
