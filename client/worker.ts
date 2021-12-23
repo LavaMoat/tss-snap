@@ -63,7 +63,16 @@ const helloWorldHash =
 // Receive messages sent to the worker from the ui
 self.onmessage = async (e) => {
   const { data } = e;
-  if (data.type === "party_signup") {
+  if (data.type === "group_create") {
+    const { groupData } = data;
+    const groupInfo = await sendNetworkRequest({
+      kind: "group_create",
+      data: groupData,
+    });
+
+    const group = { ...groupData, ...groupInfo.data };
+    console.log("Got created group", group);
+  } else if (data.type === "party_signup") {
     // request for keygen - perform keygen
     await performKeygen();
   } else if (data.type === "sign_proposal") {

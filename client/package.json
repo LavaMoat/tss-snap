@@ -30,8 +30,10 @@
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "ecdsa-wasm": "file:../wasm/pkg",
+    "history": "^5.2.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-router-dom": "^6.2.1",
     "stream-browserify": "^3.0.0"
   },
   "devDependencies": {

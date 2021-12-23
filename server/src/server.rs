@@ -71,6 +71,11 @@ enum PartySignupPhase {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
+    GroupCreate {
+        label: String,
+        parties: u16,
+        threshold: u16,
+    },
     PartySignup {
         phase: PartySignupPhase,
     },
@@ -88,6 +93,9 @@ enum IncomingData {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
+    /// Send group create reply.
+    #[serde(rename = "group_create")]
+    GroupCreate,
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_relay")]
     PeerRelay,
@@ -116,6 +124,9 @@ struct Outgoing {
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 enum OutgoingData {
+    GroupCreate {
+        uuid: String,
+    },
     /// Sent when a client connects so they know
     /// the number of paramters.
     Parameters {
@@ -143,11 +154,11 @@ struct Group {
     clients: Vec<usize>,
     sessions: HashMap<String, Session>,
     params: Parameters,
-    label: Option<String>,
+    label: String,
 }
 
 impl Group {
-    fn new(conn: usize, params: Parameters, label: Option<String>) -> Self {
+    fn new(conn: usize, params: Parameters, label: String) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
             clients: vec![conn],
@@ -346,7 +357,33 @@ async fn client_request(
     let response: Option<Outgoing> = match req.kind {
         // Create a group
         IncomingKind::GroupCreate => {
-            todo!("Create a group")
+            if let IncomingData::GroupCreate {
+                label,
+                parties,
+                threshold,
+            } = req.data.as_ref().unwrap()
+            {
+                let params = Parameters {
+                    parties: *parties,
+                    threshold: *threshold,
+                };
+                let group = Group::new(conn_id, params, label.clone());
+
+                let group_key = group.uuid.clone();
+                let uuid = group.uuid.clone();
+                let mut writer = state.write().await;
+                writer.groups.insert(group_key, group);
+
+                Some(Outgoing {
+                    id: req.id,
+                    kind: None,
+                    data: Some(OutgoingData::GroupCreate { uuid }),
+                })
+            } else {
+                warn!("bad request data for group create");
+                // TODO: send error response
+                None
+            }
         }
 
         IncomingKind::GroupJoin => {
@@ -668,6 +705,7 @@ async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     let mut writer = state.write().await;
     for key in empty_groups {
         writer.groups.remove(&key);
+        info!("removed group {}", &key);
     }
 }
 
