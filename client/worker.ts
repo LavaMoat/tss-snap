@@ -69,9 +69,16 @@ self.onmessage = async (e) => {
       kind: "group_create",
       data: groupData,
     });
-
     const group = { ...groupData, ...groupInfo.data };
     sendUiMessage({ type: "group_create", group });
+  } else if (data.type === "group_join") {
+    const { uuid } = data;
+
+    // FIXME: wait for onopen event before sending this request!
+    const groupInfo = await sendNetworkRequest({
+      kind: "group_join",
+      data: { uuid },
+    });
   } else if (data.type === "party_signup") {
     // request for keygen - perform keygen
     await performKeygen();

@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Parameters } from "../machine-common";
 
 export interface GroupInfo {
   uuid: string;
   label: string;
-  parties: number;
-  threshold: number;
+  params: Parameters;
 }
 
 export interface GroupState {

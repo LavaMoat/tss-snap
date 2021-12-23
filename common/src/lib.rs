@@ -26,7 +26,7 @@ pub struct PeerEntry {
 }
 
 /// Parameters for key generation and signing.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parameters {
     pub parties: u16,
     pub threshold: u16,

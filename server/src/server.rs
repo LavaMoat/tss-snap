@@ -73,8 +73,10 @@ enum PartySignupPhase {
 enum IncomingData {
     GroupCreate {
         label: String,
-        parties: u16,
-        threshold: u16,
+        params: Parameters,
+    },
+    GroupJoin {
+        uuid: String,
     },
     PartySignup {
         phase: PartySignupPhase,
@@ -127,6 +129,9 @@ enum OutgoingData {
     GroupCreate {
         uuid: String,
     },
+    GroupJoin {
+        group: Group,
+    },
     /// Sent when a client connects so they know
     /// the number of paramters.
     Parameters {
@@ -148,13 +153,15 @@ enum OutgoingData {
     },
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Serialize)]
 struct Group {
     uuid: String,
-    clients: Vec<usize>,
-    sessions: HashMap<String, Session>,
     params: Parameters,
     label: String,
+    #[serde(skip)]
+    clients: Vec<usize>,
+    #[serde(skip)]
+    sessions: HashMap<String, Session>,
 }
 
 impl Group {
@@ -169,7 +176,7 @@ impl Group {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Session {
     uuid: String,
     party_signups: Vec<(u16, usize)>,
@@ -357,18 +364,10 @@ async fn client_request(
     let response: Option<Outgoing> = match req.kind {
         // Create a group
         IncomingKind::GroupCreate => {
-            if let IncomingData::GroupCreate {
-                label,
-                parties,
-                threshold,
-            } = req.data.as_ref().unwrap()
+            if let IncomingData::GroupCreate { label, params } =
+                req.data.as_ref().unwrap()
             {
-                let params = Parameters {
-                    parties: *parties,
-                    threshold: *threshold,
-                };
-                let group = Group::new(conn_id, params, label.clone());
-
+                let group = Group::new(conn_id, params.clone(), label.clone());
                 let group_key = group.uuid.clone();
                 let uuid = group.uuid.clone();
                 let mut writer = state.write().await;
@@ -387,7 +386,27 @@ async fn client_request(
         }
 
         IncomingKind::GroupJoin => {
-            todo!("Join a group")
+            if let IncomingData::GroupJoin { uuid } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(uuid) {
+                    Some(Outgoing {
+                        id: req.id,
+                        kind: None,
+                        data: Some(OutgoingData::GroupJoin {
+                            group: group.clone(),
+                        }),
+                    })
+                } else {
+                    warn!("group does not exist");
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for group join");
+                // TODO: send error response
+                None
+            }
         }
 
         // Handshake gets the parameters the server was started with

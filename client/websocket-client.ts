@@ -12,6 +12,7 @@ export interface BroadcastMessage {
 
 type RequestKind =
   | "group_create"
+  | "group_join"
   | "parameters"
   | "party_signup"
   | "peer_relay"

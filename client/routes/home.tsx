@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { groupSelector } from "../store/group";
 import { useNavigate } from "react-router-dom";
+import { Parameters } from "../machine-common";
 
 interface CreateGroupProps {
   onSubmit: (data: GroupFormData) => void;
@@ -9,8 +10,7 @@ interface CreateGroupProps {
 
 interface GroupFormData {
   label: string;
-  parties: number;
-  threshold: number;
+  params: Parameters;
 }
 
 const CreateGroup = (props: CreateGroupProps) => {
@@ -24,7 +24,7 @@ const CreateGroup = (props: CreateGroupProps) => {
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: get parties / threshold from form fields
-    props.onSubmit({ label, parties: 3, threshold: 1 });
+    props.onSubmit({ label, params: { parties: 3, threshold: 1 } });
   };
 
   return (
