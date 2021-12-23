@@ -35,6 +35,14 @@ struct Incoming {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum IncomingKind {
+    /// Create a group.
+    #[serde(rename = "group_create")]
+    GroupCreate,
+
+    /// Join a group.
+    #[serde(rename = "group_join")]
+    GroupJoin,
+
     /// Get the parameters.
     #[serde(rename = "parameters")]
     Parameters,
@@ -334,11 +342,20 @@ async fn client_request(
     req: Incoming,
     state: &Arc<RwLock<State>>,
 ) {
-    let info = state.read().await;
     trace!("processing request {:#?}", req);
     let response: Option<Outgoing> = match req.kind {
+        // Create a group
+        IncomingKind::GroupCreate => {
+            todo!("Create a group")
+        }
+
+        IncomingKind::GroupJoin => {
+            todo!("Join a group")
+        }
+
         // Handshake gets the parameters the server was started with
         IncomingKind::Parameters => {
+            let info = state.read().await;
             let parties = info.params.parties;
             let threshold = info.params.threshold;
             drop(info);
@@ -357,6 +374,7 @@ async fn client_request(
         IncomingKind::PartySignup => {
             if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
             {
+                let info = state.read().await;
                 //let mut session: Session = Default::default();
                 //let party_signup = session.signup();
 
@@ -407,8 +425,6 @@ async fn client_request(
             if let IncomingData::Message { message } =
                 req.data.as_ref().unwrap()
             {
-                drop(info);
-
                 let msg = Outgoing {
                     id: None,
                     kind: Some(OutgoingKind::SignProposal),
