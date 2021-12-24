@@ -40,14 +40,8 @@ const App = () => {
         <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />
         <Routes>
-          <Route
-            path="/"
-            element={<Home sendWorkerMessage={sendWorkerMessage} />}
-          />
-          <Route
-            path="/group/:uuid"
-            element={<Group sendWorkerMessage={sendWorkerMessage} />}
-          />
+          <Route path="/" element={<Home />} />
+          <Route path="/group/:uuid" element={<Group />} />
         </Routes>
       </>
     );

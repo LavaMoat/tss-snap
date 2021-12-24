@@ -38,28 +38,21 @@ const CreateGroup = (props: CreateGroupProps) => {
   );
 };
 
-interface HomeProps {
-  sendWorkerMessage: (message: any, transfer?: Transferable[]) => void;
-}
+interface HomeProps {}
 
 export default (props: HomeProps) => {
   const navigate = useNavigate();
-  const { sendWorkerMessage } = props;
   const { group } = useSelector(groupSelector);
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
 
   const onCreateGroupSubmit = async (groupData: GroupFormData) => {
-    console.log("Creating group...", groupData);
-
     const groupInfo = await websocket.request({
       kind: "group_create",
       data: groupData,
     });
     const group = { ...groupData, ...groupInfo.data };
     dispatch(setGroup(group));
-
-    console.log("Create the group ", group);
   };
 
   useEffect(() => {

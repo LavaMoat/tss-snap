@@ -42,11 +42,15 @@ export class WebSocketClient extends EventEmitter {
   messageId: number;
   messageRequests: Map<number, PromiseCache>;
   websocket: WebSocket;
+  connected: boolean;
+  queue: RequestMessage[];
 
   constructor() {
     super();
     this.messageId = 0;
     this.messageRequests = new Map();
+    this.connected = false;
+    this.queue = [];
   }
 
   connect(url: string) {
@@ -57,9 +61,15 @@ export class WebSocketClient extends EventEmitter {
     this.websocket = new WebSocket(url);
     this.websocket.onopen = (e) => {
       console.log("GOT OPEN EVENT", this.websocket.readyState);
+      this.connected = true;
+      while (this.queue.length > 0) {
+        const message = this.queue.shift();
+        this.send(message);
+      }
       this.emit("open");
     };
     this.websocket.onclose = (e) => {
+      this.connected = false;
       this.emit("close");
     };
     this.websocket.onmessage = async (e) => {
@@ -88,7 +98,11 @@ export class WebSocketClient extends EventEmitter {
 
   // Send a message over the websocket as JSON
   send(message: RequestMessage): void {
-    this.websocket.send(JSON.stringify(message));
+    if (!this.connected) {
+      this.queue.push(message);
+    } else {
+      this.websocket.send(JSON.stringify(message));
+    }
   }
 
   // Wrap a websocket request in a promise that expects
