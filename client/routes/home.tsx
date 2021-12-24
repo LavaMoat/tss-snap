@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import React, { useState, useEffect, useContext } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { groupSelector } from "../store/group";
 import { useNavigate } from "react-router-dom";
 import { Parameters } from "../machine-common";
+import { WebSocketContext } from "../websocket";
+import { setGroup } from "../store/group";
 
 interface CreateGroupProps {
   onSubmit: (data: GroupFormData) => void;
@@ -44,8 +46,20 @@ export default (props: HomeProps) => {
   const navigate = useNavigate();
   const { sendWorkerMessage } = props;
   const { group } = useSelector(groupSelector);
-  const onCreateGroupSubmit = (groupData: GroupFormData) => {
-    sendWorkerMessage({ type: "group_create", groupData });
+  const dispatch = useDispatch();
+  const websocket = useContext(WebSocketContext);
+
+  const onCreateGroupSubmit = async (groupData: GroupFormData) => {
+    console.log("Creating group...", groupData);
+
+    const groupInfo = await websocket.request({
+      kind: "group_create",
+      data: groupData,
+    });
+    const group = { ...groupData, ...groupInfo.data };
+    dispatch(setGroup(group));
+
+    console.log("Create the group ", group);
   };
 
   useEffect(() => {

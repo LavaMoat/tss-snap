@@ -26,8 +26,9 @@ void (async function () {
   await initThreadPool(navigator.hardwareConcurrency);
 })();
 
-const sendUiMessage = self.postMessage;
+//const sendUiMessage = self.postMessage;
 
+/*
 const url = `__URL__`;
 const { send: sendNetworkMessage, request: sendNetworkRequest } =
   makeWebSocketClient({
@@ -165,3 +166,4 @@ function prepareSignMessageStateMachine() {
     sendNetworkMessage
   );
 }
+*/

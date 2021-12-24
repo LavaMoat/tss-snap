@@ -16,7 +16,7 @@ module.exports = {
         exclude: /node_modules/,
       },
       {
-        test: /worker\.ts$/,
+        test: /(worker|websocket)\.tsx?$/,
         loader: "string-replace-loader",
         options: {
           search: "__URL__",

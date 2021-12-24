@@ -9,6 +9,8 @@ import Group from "./routes/group";
 import store from "./store";
 import { setGroup } from "./store/group";
 
+import WebSocketProvider from "./websocket";
+
 const App = () => {
   const dispatch = useDispatch();
 
@@ -19,11 +21,14 @@ const App = () => {
 
     worker.onmessage = (e) => {
       const { type } = e.data;
+
+      /*
       switch (type) {
         case "group_create":
           dispatch(setGroup(e.data.group));
           break;
       }
+      */
     };
 
     const sendWorkerMessage = (...args: any) =>
@@ -55,7 +60,9 @@ ReactDOM.render(
   <React.StrictMode>
     <Provider store={store}>
       <HashRouter>
-        <App />
+        <WebSocketProvider>
+          <App />
+        </WebSocketProvider>
       </HashRouter>
     </Provider>
   </React.StrictMode>,
