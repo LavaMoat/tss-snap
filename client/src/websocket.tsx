@@ -62,10 +62,14 @@ export class WebSocketClient extends EventEmitter {
     this.websocket.onopen = (e) => {
       console.log("GOT OPEN EVENT", this.websocket.readyState);
       this.connected = true;
+
+      // Some routes make requests before the connection
+      // has been established
       while (this.queue.length > 0) {
         const message = this.queue.shift();
         this.send(message);
       }
+
       this.emit("open");
     };
     this.websocket.onclose = (e) => {
@@ -80,18 +84,12 @@ export class WebSocketClient extends EventEmitter {
         resolve(msg);
         this.messageRequests.delete(msg.id);
       } else {
-        console.log("GOT BROADCAST MESSAGE, EMIT AN EVENT");
+        console.log("GOT BROADCAST MESSAGE, EMIT AN EVENT", msg);
 
         // Without an `id` we treat as a broadcast message that
         // was sent from the server without a request from the client
-        /*
-        if (!(await onBroadcastMessage(msg))) {
-          console.error(
-            "websocket client received a message it could not handle: ",
-            msg
-          );
-        }
-        */
+        const { kind } = msg;
+        this.emit(kind, msg);
       }
     };
   }

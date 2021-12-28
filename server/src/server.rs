@@ -114,6 +114,11 @@ enum OutgoingKind {
     /// Send group create reply.
     #[serde(rename = "group_create")]
     GroupCreate,
+
+    /// Send session create reply.
+    #[serde(rename = "session_create")]
+    SessionCreate,
+
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_relay")]
     PeerRelay,
@@ -436,12 +441,37 @@ async fn client_request(
                     // member of the session
                     session.signup(conn_id);
 
+                    //let recipients: Vec<&usize> = group
+                    //.clients
+                    //.iter()
+                    //.filter(|conn| {
+                    //**conn != conn_id
+                    //})
+                    ////.cloned()
+                    //.collect();
+
                     let key = session.uuid.clone();
                     group.sessions.insert(key, session.clone());
+                    drop(writer);
+
+                    let notification = Outgoing {
+                        id: None,
+                        kind: Some(OutgoingKind::SessionCreate),
+                        data: Some(OutgoingData::SessionCreate {
+                            session: session.clone(),
+                        }),
+                    };
+
+                    broadcast_message(
+                        &notification,
+                        state,
+                        Some(vec![conn_id]),
+                    )
+                    .await;
 
                     Some(Outgoing {
                         id: req.id,
-                        kind: None,
+                        kind: Some(OutgoingKind::SessionCreate),
                         data: Some(OutgoingData::SessionCreate { session }),
                     })
                 } else {
@@ -521,7 +551,7 @@ async fn client_request(
 
                 let lock = BROADCAST_LOCK.try_lock();
                 if let Ok(_) = lock {
-                    broadcast_message(&msg, state).await;
+                    broadcast_message(&msg, state, None).await;
                 }
 
                 None
@@ -717,12 +747,21 @@ async fn send_message(
     }
 }
 
-/// Broadcast a message to all clients.
-async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
+/// Broadcast a message to all clients ignoring any connection ids in filter.
+async fn broadcast_message(
+    res: &Outgoing,
+    state: &Arc<RwLock<State>>,
+    filter: Option<Vec<usize>>,
+) {
     let info = state.read().await;
     let clients: Vec<usize> = info.clients.keys().cloned().collect();
     drop(info);
     for conn_id in clients {
+        if let Some(filter) = &filter {
+            if let Some(_) = filter.iter().find(|conn| **conn == conn_id) {
+                continue;
+            }
+        }
         send_message(conn_id, res, state).await;
     }
 }

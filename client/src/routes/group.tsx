@@ -16,6 +16,10 @@ export default (props: GroupProps) => {
   const { uuid } = params;
   const websocket = useContext(WebSocketContext);
 
+  websocket.on("session_create", () => {
+    console.log("Client got websocket session create broadcast message");
+  });
+
   const createKeygenSession = async (
     e: React.MouseEvent<HTMLButtonElement>
   ) => {
