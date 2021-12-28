@@ -7,7 +7,7 @@ const url = isProduction
   : "ws://${location.hostname}:3030/demo";
 
 module.exports = {
-  entry: "./index.tsx",
+  entry: "./src/index.tsx",
   module: {
     rules: [
       {

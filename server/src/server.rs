@@ -223,17 +223,21 @@ impl Session {
 
 #[derive(Debug)]
 struct State {
-    /// Initial parameters.
-    params: Parameters,
     /// Connected clients.
     clients:
         HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
     /// Groups keyed by unique identifier (UUID)
     groups: HashMap<String, Group>,
+
+    /// Initial parameters.
+    #[deprecated]
+    params: Parameters,
     // TODO: remove uuid when we have signup groups
     /// UUID of the last party signup
+    #[deprecated]
     uuid: String,
     /// Store party signups so we know when they have all been received
+    #[deprecated]
     party_signups: HashMap<u16, String>,
 }
 
@@ -422,7 +426,6 @@ async fn client_request(
         }
 
         IncomingKind::SessionCreate => {
-            println!("Create a session....");
             if let IncomingData::SessionCreate { group_id, phase } =
                 req.data.as_ref().unwrap()
             {
