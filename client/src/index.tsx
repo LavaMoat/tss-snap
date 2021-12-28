@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Link } from "react-router-dom";
 import { Provider, useDispatch } from "react-redux";
 
 import Home from "./routes/home";
@@ -36,7 +36,9 @@ const App = () => {
 
     return (
       <>
-        <h1>ECDSA WASM Demo</h1>
+        <h1>
+          <Link to="/">ECDSA WASM Demo</Link>
+        </h1>
         <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />
         <Routes>

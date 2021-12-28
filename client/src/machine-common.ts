@@ -1,6 +1,11 @@
 import { State } from "./state-machine";
 import { PeerEntry } from "./peer-state";
 
+export enum Phase {
+  KEYGEN = "keygen",
+  SIGN = "sign",
+}
+
 // Configuration parameters retrieved from the server
 // during the handshake.
 export interface Parameters {
