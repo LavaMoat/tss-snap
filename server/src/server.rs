@@ -43,6 +43,10 @@ enum IncomingKind {
     #[serde(rename = "group_join")]
     GroupJoin,
 
+    /// Create a session.
+    #[serde(rename = "session_create")]
+    SessionCreate,
+
     /*
     /// Get the parameters.
     #[serde(rename = "parameters")]
@@ -63,11 +67,17 @@ enum IncomingKind {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-enum PartySignupPhase {
+enum Phase {
     #[serde(rename = "keygen")]
     Keygen,
     #[serde(rename = "sign")]
     Sign,
+}
+
+impl Default for Phase {
+    fn default() -> Self {
+        Phase::Keygen
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -80,8 +90,12 @@ enum IncomingData {
     GroupJoin {
         uuid: String,
     },
+    SessionCreate {
+        group_id: String,
+        phase: Phase,
+    },
     PartySignup {
-        phase: PartySignupPhase,
+        phase: Phase,
     },
     PeerEntries {
         entries: Vec<PeerEntry>,
@@ -128,34 +142,13 @@ struct Outgoing {
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 enum OutgoingData {
-    GroupCreate {
-        uuid: String,
-    },
-    GroupJoin {
-        group: Group,
-    },
-
-    /*
-    /// Sent when a client connects so they know
-    /// the number of paramters.
-    Parameters {
-        parties: u16,
-        threshold: u16,
-        conn_id: usize,
-    },
-    */
-    PartySignup {
-        party_signup: PartySignup,
-    },
-    PeerAnswer {
-        peer_entry: PeerEntry,
-    },
-    Message {
-        message: String,
-    },
-    SignResult {
-        sign_result: SignResult,
-    },
+    GroupCreate { uuid: String },
+    GroupJoin { group: Group },
+    SessionCreate { session: Session },
+    PartySignup { party_signup: PartySignup },
+    PeerAnswer { peer_entry: PeerEntry },
+    Message { message: String },
+    SignResult { sign_result: SignResult },
 }
 
 #[derive(Debug, Default, Clone, Serialize)]
@@ -181,9 +174,12 @@ impl Group {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 struct Session {
     uuid: String,
+    phase: Phase,
+
+    #[serde(skip)]
     party_signups: Vec<(u16, usize)>,
     //params: Parameters,
 }
@@ -193,6 +189,17 @@ impl Default for Session {
         Self {
             uuid: Uuid::new_v4().to_string(),
             party_signups: Default::default(),
+            phase: Default::default(),
+        }
+    }
+}
+
+impl From<Phase> for Session {
+    fn from(phase: Phase) -> Session {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            party_signups: Default::default(),
+            phase,
         }
     }
 }
@@ -403,7 +410,7 @@ async fn client_request(
                         }),
                     })
                 } else {
-                    warn!("group does not exist");
+                    warn!("group does not exist: {}", uuid);
                     // TODO: send error response
                     None
                 }
@@ -414,25 +421,38 @@ async fn client_request(
             }
         }
 
-        /*
-        // Handshake gets the parameters the server was started with
-        IncomingKind::Parameters => {
-            let info = state.read().await;
-            let parties = info.params.parties;
-            let threshold = info.params.threshold;
-            drop(info);
+        IncomingKind::SessionCreate => {
+            println!("Create a session....");
+            if let IncomingData::SessionCreate { group_id, phase } =
+                req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    let mut session = Session::from(phase.clone());
+                    // Caller automatically becomes the first
+                    // member of the session
+                    session.signup(conn_id);
 
-            Some(Outgoing {
-                id: req.id,
-                kind: None,
-                data: Some(OutgoingData::Parameters {
-                    parties,
-                    threshold,
-                    conn_id,
-                }),
-            })
+                    let key = session.uuid.clone();
+                    group.sessions.insert(key, session.clone());
+
+                    Some(Outgoing {
+                        id: req.id,
+                        kind: None,
+                        data: Some(OutgoingData::SessionCreate { session }),
+                    })
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for session create");
+                // TODO: send error response
+                None
+            }
         }
-        */
+
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
             if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
@@ -566,8 +586,8 @@ async fn client_request(
                     req.data.as_ref()
                 {
                     match phase {
-                        PartySignupPhase::Keygen => parties,
-                        PartySignupPhase::Sign => threshold + 1,
+                        Phase::Keygen => parties,
+                        Phase::Sign => threshold + 1,
                     }
                 } else {
                     0
@@ -584,7 +604,7 @@ async fn client_request(
                 if let Some(IncomingData::PartySignup { phase }) =
                     req.data.as_ref()
                 {
-                    if let PartySignupPhase::Sign = phase {
+                    if let Phase::Sign = phase {
                         let mut non_signing_clients: Vec<usize> = Vec::new();
                         {
                             let mut writer = state.write().await;
