@@ -35,7 +35,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
   constructor(props: KeygenProps) {
     super(props);
-    this.state = { session: null, targetSession: null };
+    this.state = { session: null, targetSession: "" };
   }
 
   componentDidMount() {
@@ -77,6 +77,17 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
+
+      const response = await websocket.request({
+        kind: "session_join",
+        data: { group_id: this.props.group.uuid, session_id: targetSession },
+      });
+
+      console.log("Got join session response...", response);
+    };
+
+    const signupToSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
       console.log("Party opts in to key generation sign up...", targetSession);
     };
 
@@ -93,7 +104,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             value={targetSession}
             onChange={onTargetSessionChange}
           />
-          <button>Join Session</button>
+          <button onClick={joinSession}>Join Session</button>
         </>
       );
     };
@@ -108,7 +119,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             </a>
             ), do you wish to signup the key generation?
           </p>
-          <button onClick={joinSession}>Keygen Signup</button>
+          <button onClick={signupToSession}>Keygen Signup</button>
         </>
       );
     };

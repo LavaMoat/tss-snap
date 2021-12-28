@@ -47,6 +47,10 @@ enum IncomingKind {
     #[serde(rename = "session_create")]
     SessionCreate,
 
+    /// Join a session.
+    #[serde(rename = "session_join")]
+    SessionJoin,
+
     /*
     /// Get the parameters.
     #[serde(rename = "parameters")]
@@ -94,6 +98,10 @@ enum IncomingData {
         group_id: String,
         phase: Phase,
     },
+    SessionJoin {
+        group_id: String,
+        session_id: String,
+    },
     PartySignup {
         phase: Phase,
     },
@@ -118,6 +126,10 @@ enum OutgoingKind {
     /// Send session create reply.
     #[serde(rename = "session_create")]
     SessionCreate,
+
+    /// Send session join reply.
+    #[serde(rename = "session_join")]
+    SessionJoin,
 
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_relay")]
@@ -147,13 +159,33 @@ struct Outgoing {
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 enum OutgoingData {
-    GroupCreate { uuid: String },
-    GroupJoin { group: Group },
-    SessionCreate { session: Session },
-    PartySignup { party_signup: PartySignup },
-    PeerAnswer { peer_entry: PeerEntry },
-    Message { message: String },
-    SignResult { sign_result: SignResult },
+    GroupCreate {
+        uuid: String,
+    },
+    GroupJoin {
+        group: Group,
+    },
+    SessionCreate {
+        session: Session,
+    },
+    SessionJoin {
+        party_signup: PartySignup,
+    },
+
+    #[deprecated]
+    PartySignup {
+        party_signup: PartySignup,
+    },
+
+    PeerAnswer {
+        peer_entry: PeerEntry,
+    },
+    Message {
+        message: String,
+    },
+    SignResult {
+        sign_result: SignResult,
+    },
 }
 
 #[derive(Debug, Default, Clone, Serialize)]
@@ -411,6 +443,10 @@ async fn client_request(
             {
                 let mut writer = state.write().await;
                 if let Some(group) = writer.groups.get_mut(uuid) {
+                    if let None = group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        group.clients.push(conn_id);
+                    }
                     Some(Outgoing {
                         id: req.id,
                         kind: None,
@@ -436,35 +472,39 @@ async fn client_request(
             {
                 let mut writer = state.write().await;
                 if let Some(group) = writer.groups.get_mut(group_id) {
-                    let mut session = Session::from(phase.clone());
-                    // Caller automatically becomes the first
-                    // member of the session
-                    session.signup(conn_id);
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        let session = Session::from(phase.clone());
+                        let key = session.uuid.clone();
+                        group.sessions.insert(key, session.clone());
+                        drop(writer);
 
-                    let key = session.uuid.clone();
-                    group.sessions.insert(key, session.clone());
-                    drop(writer);
+                        let notification = Outgoing {
+                            id: None,
+                            kind: Some(OutgoingKind::SessionCreate),
+                            data: Some(OutgoingData::SessionCreate {
+                                session: session.clone(),
+                            }),
+                        };
 
-                    let notification = Outgoing {
-                        id: None,
-                        kind: Some(OutgoingKind::SessionCreate),
-                        data: Some(OutgoingData::SessionCreate {
-                            session: session.clone(),
-                        }),
-                    };
+                        broadcast_message(
+                            &notification,
+                            state,
+                            Some(vec![conn_id]),
+                        )
+                        .await;
 
-                    broadcast_message(
-                        &notification,
-                        state,
-                        Some(vec![conn_id]),
-                    )
-                    .await;
-
-                    Some(Outgoing {
-                        id: req.id,
-                        kind: Some(OutgoingKind::SessionCreate),
-                        data: Some(OutgoingData::SessionCreate { session }),
-                    })
+                        Some(Outgoing {
+                            id: req.id,
+                            kind: Some(OutgoingKind::SessionCreate),
+                            data: Some(OutgoingData::SessionCreate { session }),
+                        })
+                    } else {
+                        warn!("connection for session create does not belong to the group");
+                        None
+                    }
                 } else {
                     warn!("group does not exist: {}", group_id);
                     // TODO: send error response
@@ -476,14 +516,57 @@ async fn client_request(
                 None
             }
         }
+        // Join an existing session
+        IncomingKind::SessionJoin => {
+            if let IncomingData::SessionJoin {
+                group_id,
+                session_id,
+            } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // FIXME: verify connection is part of the group clients
 
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(session_id)
+                        {
+                            let party_signup = session.signup(conn_id);
+                            Some(Outgoing {
+                                id: req.id,
+                                kind: Some(OutgoingKind::SessionJoin),
+                                data: Some(OutgoingData::SessionJoin {
+                                    party_signup,
+                                }),
+                            })
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session join does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for session join");
+                // TODO: send error response
+                None
+            }
+        }
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
             if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
             {
                 let info = state.read().await;
-                //let mut session: Session = Default::default();
-                //let party_signup = session.signup();
 
                 let (party_signup, uuid) = {
                     let last = info.party_signups.iter().last();
