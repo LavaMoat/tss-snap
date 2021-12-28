@@ -30,11 +30,19 @@ const CreateGroup = (props: CreateGroupProps) => {
   };
 
   return (
-    <form onSubmit={onSubmit}>
-      <label htmlFor="label">Group label:</label>
-      <input id="label" type="text" onChange={onLabelChange} value={label} />
-      <input type="submit" value="Create Group" />
-    </form>
+    <>
+      <h3>Create Group</h3>
+      <p>To get started create a group for key generation and signing</p>
+      <form onSubmit={onSubmit}>
+        <input
+          placeholder="Enter a group label"
+          type="text"
+          onChange={onLabelChange}
+          value={label}
+        />
+        <input type="submit" value="Create Group" />
+      </form>
+    </>
   );
 };
 

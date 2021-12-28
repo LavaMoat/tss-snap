@@ -8,35 +8,58 @@ import { AppDispatch } from "../store";
 
 import { Phase } from "../machine-common";
 
+const copyToClipboard = async (
+  e: React.MouseEvent<HTMLElement>,
+  text: string
+) => {
+  e.preventDefault();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    console.error("Permission to write to clipboard was denied");
+  }
+};
+
 interface KeygenProps {
   group: GroupInfo;
   dispatch: AppDispatch;
 }
 
-class Keygen extends Component<KeygenProps> {
+interface KeygenStateProps {
+  session: Session;
+  targetSession: string;
+}
+
+class Keygen extends Component<KeygenProps, KeygenStateProps> {
   static contextType = WebSocketContext;
+
+  constructor(props: KeygenProps) {
+    super(props);
+    this.state = { session: null, targetSession: null };
+  }
 
   componentDidMount() {
     const websocket = this.context;
     websocket.on("session_create", (msg: BroadcastMessage) => {
-      console.log(
-        "Client got websocket session create broadcast message",
-        msg.data
-      );
+      const { session } = msg.data;
+      this.setState({ ...this.state, session });
     });
   }
 
   componentWillUnmount() {
     const websocket = this.context;
     websocket.removeAllListeners("session_create");
-    console.log(
-      "Keygen did unmount !!!!",
-      websocket.listenerCount("session_create")
-    );
   }
 
   render() {
     const websocket = this.context;
+    const { session, targetSession } = this.state;
+
+    const onTargetSessionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      this.setState({ ...this.state, targetSession: e.currentTarget.value });
+    };
+
     const createKeygenSession = async (
       e: React.MouseEvent<HTMLButtonElement>
     ) => {
@@ -49,17 +72,48 @@ class Keygen extends Component<KeygenProps> {
 
       const { session } = response.data;
       this.props.dispatch(setKeygen(session));
-      console.log("Got session create for keygen...", response);
+      this.setState({ ...this.state, session });
     };
 
-    return (
-      <>
-        <h3>Key generation</h3>
-        <button onClick={createKeygenSession}>
-          Create a key generation session
-        </button>
-      </>
-    );
+    const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      console.log("Party opts in to key generation sign up...", targetSession);
+    };
+
+    const CreateOrJoinSession = () => {
+      return (
+        <>
+          <h3>Key generation</h3>
+          <button onClick={createKeygenSession}>
+            Create a key generation session
+          </button>
+          <p>Or join an existing key generation session:</p>
+          <input
+            type="text"
+            value={targetSession}
+            onChange={onTargetSessionChange}
+          />
+          <button>Join Session</button>
+        </>
+      );
+    };
+
+    const KeygenSession = () => {
+      return (
+        <>
+          <p>
+            Key generation session has been created (
+            <a onClick={(e) => copyToClipboard(e, session.uuid)}>
+              <strong>{session.uuid}</strong>
+            </a>
+            ), do you wish to signup the key generation?
+          </p>
+          <button onClick={joinSession}>Keygen Signup</button>
+        </>
+      );
+    };
+
+    return session ? <KeygenSession /> : <CreateOrJoinSession />;
   }
 }
 
@@ -83,7 +137,6 @@ export default (props: GroupProps) => {
       });
       const { group } = response.data;
       setGroup(group);
-      //dispatch(setGroup(group));
     };
 
     // Group creator already has the group info
@@ -99,11 +152,18 @@ export default (props: GroupProps) => {
     return (
       <>
         <h3>{group.label}</h3>
-        <p>
-          Join <a href={location.href}>this group</a> in another window or tab
-        </p>
         <p>Parties: {group.params.parties}</p>
         <p>Threshold: {group.params.threshold}</p>
+        <p>
+          Join <a href={location.href}>this group</a> in another window/tab or
+          open this link on another device:
+        </p>
+        <pre>{location.href}</pre>
+        <p>
+          <button onClick={(e) => copyToClipboard(e, location.href)}>
+            Copy to clipboard
+          </button>
+        </p>
         <hr />
         <ConnectedKeygen group={group} />
       </>

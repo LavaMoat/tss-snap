@@ -441,15 +441,6 @@ async fn client_request(
                     // member of the session
                     session.signup(conn_id);
 
-                    //let recipients: Vec<&usize> = group
-                    //.clients
-                    //.iter()
-                    //.filter(|conn| {
-                    //**conn != conn_id
-                    //})
-                    ////.cloned()
-                    //.collect();
-
                     let key = session.uuid.clone();
                     group.sessions.insert(key, session.clone());
                     drop(writer);
