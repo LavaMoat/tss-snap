@@ -43,9 +43,11 @@ enum IncomingKind {
     #[serde(rename = "group_join")]
     GroupJoin,
 
+    /*
     /// Get the parameters.
     #[serde(rename = "parameters")]
     Parameters,
+    */
     /// Initialize the key generation process with a party signup
     #[serde(rename = "party_signup")]
     PartySignup,
@@ -132,6 +134,8 @@ enum OutgoingData {
     GroupJoin {
         group: Group,
     },
+
+    /*
     /// Sent when a client connects so they know
     /// the number of paramters.
     Parameters {
@@ -139,6 +143,7 @@ enum OutgoingData {
         threshold: u16,
         conn_id: usize,
     },
+    */
     PartySignup {
         party_signup: PartySignup,
     },
@@ -409,6 +414,7 @@ async fn client_request(
             }
         }
 
+        /*
         // Handshake gets the parameters the server was started with
         IncomingKind::Parameters => {
             let info = state.read().await;
@@ -426,6 +432,7 @@ async fn client_request(
                 }),
             })
         }
+        */
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
             if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
