@@ -40,8 +40,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
   componentDidMount() {
     const websocket = this.context;
-    websocket.on("session_create", (msg: BroadcastMessage) => {
-      const { session } = msg.data;
+    websocket.on("session_create", (session: Session) => {
+      console.log("Got session_create event with session", session);
       this.setState({ ...this.state, session });
     });
 

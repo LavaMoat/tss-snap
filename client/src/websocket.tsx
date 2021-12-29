@@ -83,11 +83,18 @@ export class WebSocketClient extends EventEmitter {
         const { resolve } = this.messageRequests.get(msg.id);
         resolve(msg);
         this.messageRequests.delete(msg.id);
+        // Without an `id` we treat as a broadcast message
       } else {
-        // Without an `id` we treat as a broadcast message that
-        // was sent from the server without a request from the client
-        const { kind } = msg;
-        this.emit(kind, msg);
+        console.log("GOT BROADCAST MESSAGE", msg);
+        if (msg.error) {
+          throw new Error(msg.error.message);
+        } else if (msg.result) {
+          // Expects a tuple of (event, payload)
+          if (Array.isArray(msg.result)) {
+            const [event, payload] = msg.result;
+            this.emit(event, payload);
+          }
+        }
       }
     };
   }

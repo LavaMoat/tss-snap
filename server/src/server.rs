@@ -18,13 +18,17 @@ use warp::http::header::{HeaderMap, HeaderValue};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
-use common::{Parameters, PartySignup, PeerEntry, SignResult};
+use crate::services::*;
+use json_rpc2::{Request, Response};
+
+use common::{Parameters, PeerEntry, SignResult};
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
 static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
+/*
 /// Incoming message from a websocket client.
 #[derive(Debug, Deserialize)]
 struct Incoming {
@@ -35,26 +39,6 @@ struct Incoming {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum IncomingKind {
-    /// Create a group.
-    #[serde(rename = "group_create")]
-    GroupCreate,
-
-    /// Join a group.
-    #[serde(rename = "group_join")]
-    GroupJoin,
-
-    /// Create a session.
-    #[serde(rename = "session_create")]
-    SessionCreate,
-
-    /// Join a session.
-    #[serde(rename = "session_join")]
-    SessionJoin,
-
-    /// Signup to a session.
-    #[serde(rename = "session_signup")]
-    SessionSignup,
-
     /// Initialize the key generation process with a party signup
     #[deprecated]
     #[serde(rename = "party_signup")]
@@ -70,6 +54,7 @@ enum IncomingKind {
     #[serde(rename = "sign_result")]
     SignResult,
 }
+*/
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Phase {
@@ -120,24 +105,9 @@ enum IncomingData {
     },
 }
 
+/*
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
-    /// Send group create reply.
-    #[serde(rename = "group_create")]
-    GroupCreate,
-
-    /// Send session create reply.
-    #[serde(rename = "session_create")]
-    SessionCreate,
-
-    /// Send session join reply.
-    #[serde(rename = "session_join")]
-    SessionJoin,
-
-    /// Send session signup reply.
-    #[serde(rename = "session_signup")]
-    SessionSignup,
-
     /// Send session ready notification when all parties have signed up to a session.
     #[serde(rename = "session_ready")]
     SessionReady,
@@ -206,6 +176,7 @@ enum OutgoingData {
         sign_result: SignResult,
     },
 }
+*/
 
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct Group {
@@ -276,11 +247,10 @@ impl Session {
 #[derive(Debug)]
 pub struct State {
     /// Connected clients.
-    pub clients:
-        HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
+    pub clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
     /// Groups keyed by unique identifier (UUID)
     pub groups: HashMap<String, Group>,
-
+    /*
     /// Initial parameters.
     #[deprecated]
     params: Parameters,
@@ -291,6 +261,7 @@ pub struct State {
     /// Store party signups so we know when they have all been received
     #[deprecated]
     party_signups: HashMap<u16, String>,
+    */
 }
 
 pub struct Server;
@@ -299,16 +270,12 @@ impl Server {
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
-        params: Parameters,
+        _params: Parameters,
         static_files: Option<PathBuf>,
     ) -> Result<()> {
         let state = Arc::new(RwLock::new(State {
             clients: HashMap::new(),
             groups: Default::default(),
-            // TODO: remove these old fields later
-            params,
-            uuid: String::new(),
-            party_signups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -386,7 +353,7 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     });
 
     // Save the sender in our list of connected clients.
-    state.write().await.clients.insert(conn_id, (tx, None));
+    state.write().await.clients.insert(conn_id, tx);
 
     // Handle incoming requests from clients
     while let Some(result) = user_ws_rx.next().await {
@@ -420,49 +387,97 @@ async fn client_incoming_message(
         Ok(req) => rpc_request(conn_id, req, state).await,
         Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
     }
-
-    //match serde_json::from_str::<Incoming>(msg) {
-    //Ok(req) => client_request(conn_id, req, state).await,
-    //Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
-    //}
 }
 
 /// Process a request message from a client.
 async fn rpc_request(
     conn_id: usize,
-    mut request: json_rpc2::Request,
+    mut request: Request,
     state: &Arc<RwLock<State>>,
 ) {
-    use super::services::ServiceHandler;
     use json_rpc2::futures::*;
 
     let service: Box<dyn Service<Data = (usize, Arc<RwLock<State>>)>> =
         Box::new(ServiceHandler {});
     let server = Server::new(vec![&service]);
 
-    println!("Got request {:#?}", request);
-
-    //let notification_request = if request.matches() {
-
-    //}
+    // Requests that require post-processing notification logic
+    let notification = match request.method() {
+        SESSION_CREATE => Some(request.clone()),
+        _ => None,
+    };
 
     if let Some(response) = server
         .serve(&mut request, &(conn_id, Arc::clone(state)))
         .await
     {
-        println!("Got response to send to client... {:#?}", response);
-        send_response(conn_id, &response, state).await;
+        rpc_response(conn_id, &response, state).await;
+    }
+
+    if let Some(notification) = notification {
+        rpc_notify(conn_id, notification, state).await;
+    }
+}
+
+/// Post processing notifications.
+async fn rpc_notify(
+    conn_id: usize,
+    mut request: Request,
+    state: &Arc<RwLock<State>>,
+) {
+    use json_rpc2::futures::*;
+    let service: Box<dyn Service<Data = (usize, Arc<RwLock<State>>)>> =
+        Box::new(NotifyHandler {});
+    let server = Server::new(vec![&service]);
+
+    if let Some(response) = server
+        .serve(&mut request, &(conn_id, Arc::clone(state)))
+        .await
+    {
+        let lock = BROADCAST_LOCK.try_lock();
+        if let Ok(_) = lock {
+            match request.method() {
+                SESSION_CREATE => {
+                    broadcast_rpc_message(
+                        &response,
+                        state,
+                        Some(vec![conn_id]),
+                    )
+                    .await;
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+/// Broadcast a message to all clients ignoring any connection ids in filter.
+async fn broadcast_rpc_message(
+    res: &Response,
+    state: &Arc<RwLock<State>>,
+    filter: Option<Vec<usize>>,
+) {
+    let info = state.read().await;
+    let clients: Vec<usize> = info.clients.keys().cloned().collect();
+    drop(info);
+    for conn_id in clients {
+        if let Some(filter) = &filter {
+            if let Some(_) = filter.iter().find(|conn| **conn == conn_id) {
+                continue;
+            }
+        }
+        rpc_response(conn_id, res, state).await;
     }
 }
 
 /// Send a message to a single client.
-async fn send_response(
+async fn rpc_response(
     conn_id: usize,
     response: &json_rpc2::Response,
     state: &Arc<RwLock<State>>,
 ) {
     trace!("send_message (uid={})", conn_id);
-    if let Some((tx, _)) = state.read().await.clients.get(&conn_id) {
+    if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(response).unwrap();
         trace!("sending message {:#?}", msg);
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
@@ -475,6 +490,7 @@ async fn send_response(
     }
 }
 
+/*
 /// Process a request message from a client.
 async fn client_request(
     conn_id: usize,
@@ -976,45 +992,7 @@ async fn client_request(
         _ => {}
     }
 }
-
-/// Send a message to a single client.
-async fn send_message(
-    conn_id: usize,
-    res: &Outgoing,
-    state: &Arc<RwLock<State>>,
-) {
-    trace!("send_message (uid={})", conn_id);
-    if let Some((tx, _)) = state.read().await.clients.get(&conn_id) {
-        let msg = serde_json::to_string(res).unwrap();
-        trace!("sending message {:#?}", msg);
-        if let Err(_disconnected) = tx.send(Message::text(msg)) {
-            // The tx is disconnected, our `client_disconnected` code
-            // should be happening in another task, nothing more to
-            // do here.
-        }
-    } else {
-        warn!("could not find tx for (uid={})", conn_id);
-    }
-}
-
-/// Broadcast a message to all clients ignoring any connection ids in filter.
-async fn broadcast_message(
-    res: &Outgoing,
-    state: &Arc<RwLock<State>>,
-    filter: Option<Vec<usize>>,
-) {
-    let info = state.read().await;
-    let clients: Vec<usize> = info.clients.keys().cloned().collect();
-    drop(info);
-    for conn_id in clients {
-        if let Some(filter) = &filter {
-            if let Some(_) = filter.iter().find(|conn| **conn == conn_id) {
-                continue;
-            }
-        }
-        send_message(conn_id, res, state).await;
-    }
-}
+*/
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     info!("disconnected (uid={})", conn_id);
@@ -1045,22 +1023,4 @@ async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
         writer.groups.remove(&key);
         info!("removed group {}", &key);
     }
-}
-
-async fn conn_id_for_party(
-    state: &Arc<RwLock<State>>,
-    party_num: u16,
-) -> Option<usize> {
-    let info = state.read().await;
-    info.clients.iter().find_map(|(k, v)| {
-        if let Some(party_signup) = &v.1 {
-            if party_signup.number == party_num {
-                Some(k.clone())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    })
 }
