@@ -27,6 +27,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee10e43ae4a853c0a3591d4e2ada1719e553be18199d9da9d4a83f5927c2f5c7"
 
 [[package]]
+name = "async-trait"
+version = "0.1.52"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "061a7acccaa286c011ddc30970520b98fa40e00c9d644633fb26b5fc63a265e3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -317,8 +328,10 @@ name = "ecdsa-wasm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "common",
  "futures-util",
+ "json-rpc2",
  "log",
  "once_cell",
  "pretty_env_logger",
@@ -725,6 +738,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cc9ffccd38c451a86bf13657df244e9c3f37493cce8e5e21e940963777acc84"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "json-rpc2"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78b49f717fad135c34796717cd5d932dc193aab2034c5c7a18caf29602f127a5"
+dependencies = [
+ "async-trait",
+ "rand 0.8.4",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

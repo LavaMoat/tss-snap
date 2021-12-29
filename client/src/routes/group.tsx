@@ -44,11 +44,25 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       const { session } = msg.data;
       this.setState({ ...this.state, session });
     });
+
+    websocket.on("session_ready", (msg: BroadcastMessage) => {
+      const { session_id: sessionId } = msg.data;
+      if (sessionId === this.state.session.uuid) {
+        console.log("GOT KEYGEN SESSION READY EVENT FROM SERVER");
+      } else {
+        console.warn(
+          "Keygen got session_ready event for wrong session",
+          sessionId,
+          this.state.session.uuid
+        );
+      }
+    });
   }
 
   componentWillUnmount() {
     const websocket = this.context;
     websocket.removeAllListeners("session_create");
+    websocket.removeAllListeners("session_ready");
   }
 
   render() {
@@ -84,7 +98,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e.preventDefault();
       const response = await websocket.request({
         kind: "session_join",
-        data: { group_id: this.props.group.uuid, session_id: targetSession },
+        data: {
+          group_id: this.props.group.uuid,
+          session_id: targetSession,
+          phase: Phase.KEYGEN,
+        },
       });
 
       const { session } = response.data;
@@ -99,6 +117,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         data: {
           group_id: this.props.group.uuid,
           session_id: this.state.session.uuid,
+          phase: Phase.KEYGEN,
         },
       });
 

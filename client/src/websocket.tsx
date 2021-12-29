@@ -27,6 +27,26 @@ export interface RequestMessage {
   data?: any;
 }
 
+export interface RpcRequest {
+  jsonrpc: string;
+  id?: number;
+  method: string;
+  params?: any[];
+}
+
+export interface RpcResponse {
+  jsonrpc: string;
+  id?: number;
+  result?: any;
+  error?: RpcError;
+}
+
+export interface RpcError {
+  code: number;
+  message: string;
+  data?: any;
+}
+
 export interface ResponseMessage {
   id?: number;
   data?: any;
@@ -94,12 +114,35 @@ export class WebSocketClient extends EventEmitter {
   }
 
   // Send a message over the websocket as JSON
-  send(message: RequestMessage): void {
+  // TODO : MIGRATE TO RpcRequest instead of any
+  send(message: any): void {
     if (!this.connected) {
       this.queue.push(message);
     } else {
       this.websocket.send(JSON.stringify(message));
     }
+  }
+
+  rpc(message: RpcRequest): Promise<ResponseMessage> {
+    const id = ++this.messageId;
+    const p = new Promise((_resolve, reject) => {
+      //const reject = (e: Error) => {
+      //_reject(e);
+      //};
+
+      const resolve = (response: RpcResponse) => {
+        if (response.error) {
+          return reject(new Error(response.error.message));
+        }
+        return _resolve(response.result);
+      };
+
+      this.messageRequests.set(id, { resolve, reject });
+    });
+    message.id = id;
+    message.jsonrpc = "2.0";
+    this.send(message);
+    return p;
   }
 
   // Wrap a websocket request in a promise that expects

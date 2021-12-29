@@ -72,7 +72,7 @@ enum IncomingKind {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-enum Phase {
+pub enum Phase {
     #[serde(rename = "keygen")]
     Keygen,
     #[serde(rename = "sign")]
@@ -99,9 +99,11 @@ enum IncomingData {
         group_id: String,
         phase: Phase,
     },
+    // Session join and signup
     Session {
         group_id: String,
         session_id: String,
+        phase: Phase,
     },
     PartySignup {
         phase: Phase,
@@ -135,6 +137,10 @@ enum OutgoingKind {
     /// Send session signup reply.
     #[serde(rename = "session_signup")]
     SessionSignup,
+
+    /// Send session ready notification when all parties have signed up to a session.
+    #[serde(rename = "session_ready")]
+    SessionReady,
 
     /// Broadcast to indicate party signup is completed.
     #[deprecated]
@@ -181,6 +187,9 @@ enum OutgoingData {
     SessionSignup {
         party_number: u16,
     },
+    SessionReady {
+        session_id: String,
+    },
 
     #[deprecated]
     PartySignup {
@@ -199,18 +208,18 @@ enum OutgoingData {
 }
 
 #[derive(Debug, Default, Clone, Serialize)]
-struct Group {
-    uuid: String,
-    params: Parameters,
-    label: String,
+pub struct Group {
+    pub uuid: String,
+    pub params: Parameters,
+    pub label: String,
     #[serde(skip)]
-    clients: Vec<usize>,
+    pub clients: Vec<usize>,
     #[serde(skip)]
-    sessions: HashMap<String, Session>,
+    pub sessions: HashMap<String, Session>,
 }
 
 impl Group {
-    fn new(conn: usize, params: Parameters, label: String) -> Self {
+    pub fn new(conn: usize, params: Parameters, label: String) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
             clients: vec![conn],
@@ -222,13 +231,12 @@ impl Group {
 }
 
 #[derive(Debug, Clone, Serialize)]
-struct Session {
-    uuid: String,
-    phase: Phase,
+pub struct Session {
+    pub uuid: String,
+    pub phase: Phase,
 
     #[serde(skip)]
-    party_signups: Vec<(u16, usize)>,
-    //params: Parameters,
+    pub party_signups: Vec<(u16, usize)>,
 }
 
 impl Default for Session {
@@ -266,12 +274,12 @@ impl Session {
 }
 
 #[derive(Debug)]
-struct State {
+pub struct State {
     /// Connected clients.
-    clients:
+    pub clients:
         HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
     /// Groups keyed by unique identifier (UUID)
-    groups: HashMap<String, Group>,
+    pub groups: HashMap<String, Group>,
 
     /// Initial parameters.
     #[deprecated]
@@ -408,9 +416,58 @@ async fn client_incoming_message(
         return;
     };
 
-    match serde_json::from_str::<Incoming>(msg) {
-        Ok(req) => client_request(conn_id, req, state).await,
+    match json_rpc2::from_str(msg) {
+        Ok(req) => rpc_request(conn_id, req, state).await,
         Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
+    }
+
+    //match serde_json::from_str::<Incoming>(msg) {
+    //Ok(req) => client_request(conn_id, req, state).await,
+    //Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
+    //}
+}
+
+/// Process a request message from a client.
+async fn rpc_request(
+    conn_id: usize,
+    mut request: json_rpc2::Request,
+    state: &Arc<RwLock<State>>,
+) {
+    use super::services::ServiceHandler;
+    use json_rpc2::futures::*;
+
+    let service: Box<dyn Service<Data = (usize, Arc<RwLock<State>>)>> =
+        Box::new(ServiceHandler {});
+    let server = Server::new(vec![&service]);
+
+    println!("Got request {:#?}", request);
+
+    if let Some(response) = server
+        .serve(&mut request, &(conn_id, Arc::clone(state)))
+        .await
+    {
+        println!("Got response to send to client... {:#?}", response);
+        send_response(conn_id, &response, state).await;
+    }
+}
+
+/// Send a message to a single client.
+async fn send_response(
+    conn_id: usize,
+    response: &json_rpc2::Response,
+    state: &Arc<RwLock<State>>,
+) {
+    trace!("send_message (uid={})", conn_id);
+    if let Some((tx, _)) = state.read().await.clients.get(&conn_id) {
+        let msg = serde_json::to_string(response).unwrap();
+        trace!("sending message {:#?}", msg);
+        if let Err(_disconnected) = tx.send(Message::text(msg)) {
+            // The tx is disconnected, our `client_disconnected` code
+            // should be happening in another task, nothing more to
+            // do here.
+        }
+    } else {
+        warn!("could not find tx for (uid={})", conn_id);
     }
 }
 
@@ -525,9 +582,12 @@ async fn client_request(
         }
         // Join an existing session
         IncomingKind::SessionJoin => {
+            println!("Got seesion join {:#?}", req);
+
             if let IncomingData::Session {
                 group_id,
                 session_id,
+                ..
             } = req.data.as_ref().unwrap()
             {
                 let mut writer = state.write().await;
@@ -572,6 +632,7 @@ async fn client_request(
             if let IncomingData::Session {
                 group_id,
                 session_id,
+                ..
             } = req.data.as_ref().unwrap()
             {
                 let mut writer = state.write().await;
@@ -731,6 +792,68 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
+        // Broadcast session ready when all parties have completed signup to a session
+        IncomingKind::SessionSignup => {
+            if let IncomingData::Session {
+                group_id,
+                session_id,
+                phase,
+            } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(session_id)
+                        {
+                            let parties = group.params.parties as usize;
+                            let threshold = group.params.threshold as usize;
+                            let num_entries = session.party_signups.len();
+                            let required_num_entries = match phase {
+                                Phase::Keygen => parties,
+                                Phase::Sign => threshold + 1,
+                            };
+
+                            // Enough parties are signed up to the session
+                            if num_entries == required_num_entries {
+                                let msg = Outgoing {
+                                    id: None,
+                                    kind: Some(OutgoingKind::SessionReady),
+                                    data: Some(OutgoingData::SessionReady {
+                                        session_id: session.uuid.clone(),
+                                    }),
+                                };
+
+                                let lock = BROADCAST_LOCK.try_lock();
+                                if let Ok(_) = lock {
+                                    let signed_up_parties: Vec<usize> = session
+                                        .party_signups
+                                        .iter()
+                                        .map(|s| s.1.clone())
+                                        .collect();
+
+                                    for conn in signed_up_parties {
+                                        send_message(conn, &msg, state).await;
+                                    }
+                                }
+                            }
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                        }
+                    } else {
+                        warn!("connection for session signup does not belong to the group");
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                }
+            } else {
+                warn!("bad request data for session signup");
+            }
+        }
+
         IncomingKind::PartySignup => {
             let info = state.read().await;
             let parties = info.params.parties as usize;

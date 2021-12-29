@@ -55,11 +55,12 @@ export default (props: HomeProps) => {
   const websocket = useContext(WebSocketContext);
 
   const onCreateGroupSubmit = async (groupData: GroupFormData) => {
-    const groupInfo = await websocket.request({
-      kind: "group_create",
-      data: groupData,
+    const groupInfo = await websocket.rpc({
+      method: "group_create",
+      params: [groupData],
     });
-    const group = { ...groupData, ...groupInfo.data };
+
+    const group = { ...groupData, ...groupInfo };
     dispatch(setGroup(group));
   };
 
