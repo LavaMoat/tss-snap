@@ -192,11 +192,11 @@ export default (props: GroupProps) => {
 
   useEffect(() => {
     const joinGroup = async () => {
-      const response = await websocket.request({
-        kind: "group_join",
-        data: { uuid },
+      const response = await websocket.rpc({
+        method: "group_join",
+        params: [uuid],
       });
-      const { group } = response.data;
+      const { group } = response;
       setGroup(group);
     };
 
