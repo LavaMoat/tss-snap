@@ -15,6 +15,9 @@ use log::warn;
 const GROUP_CREATE: &str = "group_create";
 const GROUP_JOIN: &str = "group_join";
 const SESSION_CREATE: &str = "session_create";
+const SESSION_JOIN: &str = "session_join";
+
+type Uuid = String;
 
 #[derive(Debug, Deserialize)]
 struct GroupCreateParams {
@@ -22,22 +25,9 @@ struct GroupCreateParams {
     params: Parameters,
 }
 
-#[derive(Debug, Serialize)]
-struct GroupCreateReply {
-    uuid: String,
-}
+type SessionCreateParams = (Uuid, Phase);
 
-#[derive(Debug, Serialize)]
-struct GroupJoinReply {
-    group: Group,
-}
-
-type SessionCreateParams = (String, Phase);
-
-#[derive(Debug, Serialize)]
-struct SessionCreateReply {
-    session: Session,
-}
+type SessionJoinParams = (Uuid, Uuid, Phase);
 
 pub(crate) struct ServiceHandler;
 
@@ -56,12 +46,11 @@ impl Service for ServiceHandler {
 
             let group =
                 Group::new(*conn_id, info.params.clone(), info.label.clone());
+            let res = serde_json::to_value(&group.uuid).unwrap();
             let group_key = group.uuid.clone();
-            let uuid = group.uuid.clone();
             let mut writer = state.write().await;
             writer.groups.insert(group_key, group);
 
-            let res = serde_json::to_value(&GroupCreateReply { uuid }).unwrap();
             Some((req, res).into())
         } else if (req.matches(GROUP_JOIN)) {
             let (conn_id, state) = ctx;
@@ -75,10 +64,7 @@ impl Service for ServiceHandler {
                     group.clients.push(*conn_id);
                 }
 
-                let res = serde_json::to_value(&GroupJoinReply {
-                    group: group.clone(),
-                })
-                .unwrap();
+                let res = serde_json::to_value(group).unwrap();
                 Some((req, res).into())
             } else {
                 warn!("group does not exist: {}", uuid);
@@ -98,9 +84,7 @@ impl Service for ServiceHandler {
                     let key = session.uuid.clone();
                     group.sessions.insert(key, session.clone());
 
-                    let res =
-                        serde_json::to_value(&SessionCreateReply { session })
-                            .unwrap();
+                    let res = serde_json::to_value(&session).unwrap();
                     Some((req, res).into())
 
                     // FIXME: restore session create notification
@@ -122,6 +106,32 @@ impl Service for ServiceHandler {
                     */
                 } else {
                     warn!("connection for session create does not belong to the group");
+                    None
+                }
+            } else {
+                warn!("group does not exist: {}", group_id);
+                // TODO: send error response
+                None
+            }
+        } else if (req.matches(SESSION_JOIN)) {
+            let (conn_id, state) = ctx;
+            let params: SessionJoinParams = req.deserialize()?;
+            let (group_id, session_id, _phase) = params;
+
+            let mut writer = state.write().await;
+            if let Some(group) = writer.groups.get_mut(&group_id) {
+                // Verify connection is part of the group clients
+                if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
+                    if let Some(session) = group.sessions.get_mut(&session_id) {
+                        let res = serde_json::to_value(&session).unwrap();
+                        Some((req, res).into())
+                    } else {
+                        warn!("session does not exist: {}", session_id);
+                        // TODO: send error response
+                        None
+                    }
+                } else {
+                    warn!("connection for session join does not belong to the group");
                     None
                 }
             } else {

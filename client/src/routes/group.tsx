@@ -84,28 +84,21 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         phase: Phase.KEYGEN,
       });
 
-      const response = await websocket.rpc({
+      const session = await websocket.rpc({
         method: "session_create",
         params: [this.props.group.uuid, Phase.KEYGEN],
       });
 
-      const { session } = response;
       this.props.dispatch(setKeygen(session));
       this.setState({ ...this.state, session });
     };
 
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      const response = await websocket.request({
-        kind: "session_join",
-        data: {
-          group_id: this.props.group.uuid,
-          session_id: targetSession,
-          phase: Phase.KEYGEN,
-        },
+      const session = await websocket.rpc({
+        method: "session_join",
+        params: [this.props.group.uuid, targetSession, Phase.KEYGEN],
       });
-
-      const { session } = response.data;
       this.props.dispatch(setKeygen(session));
       this.setState({ ...this.state, session });
     };
@@ -192,11 +185,10 @@ export default (props: GroupProps) => {
 
   useEffect(() => {
     const joinGroup = async () => {
-      const response = await websocket.rpc({
+      const group = await websocket.rpc({
         method: "group_join",
         params: [uuid],
       });
-      const { group } = response;
       setGroup(group);
     };
 
