@@ -19,7 +19,7 @@ import {
   BroadcastAnswer,
   makeOnTransition,
 } from "./machine-common";
-import { BroadcastMessage } from "./websocket-client";
+//import { BroadcastMessage } from "./websocket-client";
 import {
   getSortedPeerEntriesAnswer,
   PeerEntryHandler,
@@ -445,6 +445,7 @@ export function makeSignMessageStateMachine(
     }
   );
 
+  /*
   // Handle messages from the server that were broadcast
   // without a client request
   async function onBroadcastMessage(msg: BroadcastMessage) {
@@ -468,18 +469,16 @@ export function makeSignMessageStateMachine(
         });
         return true;
 
-      /*
-      case "sign_commitment_answer":
-        switch (msg.data.round) {
-          case "round0":
-            // FIXME: restore this call!
-            // We performed a sign of the message and also need to update the UI
-            sendUiMessage({ type: "sign_progress" });
-            //await machine.next({ answer: msg.data.answer });
-            break;
-        }
-        return true;
-      */
+      //case "sign_commitment_answer":
+        //switch (msg.data.round) {
+          //case "round0":
+            //// FIXME: restore this call!
+            //// We performed a sign of the message and also need to update the UI
+            //sendUiMessage({ type: "sign_progress" });
+            ////await machine.next({ answer: msg.data.answer });
+            //break;
+        //}
+        //return true;
       case "peer_relay":
         const { peer_entry: peerEntry } = msg.data;
         const answer = peerEntryHandler(peerEntry);
@@ -496,6 +495,7 @@ export function makeSignMessageStateMachine(
     }
     return false;
   }
+  */
 
-  return { machine, onBroadcastMessage };
+  return { machine };
 }

@@ -21,7 +21,8 @@ use warp::Filter;
 use crate::services::*;
 use json_rpc2::{Request, Response};
 
-use common::{Parameters, PeerEntry, SignResult};
+//use common::{Parameters, PeerEntry, SignResult};
+use common::Parameters;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
@@ -70,6 +71,7 @@ impl Default for Phase {
     }
 }
 
+/*
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
@@ -105,7 +107,6 @@ enum IncomingData {
     },
 }
 
-/*
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
     /// Send session ready notification when all parties have signed up to a session.

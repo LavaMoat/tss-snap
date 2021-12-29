@@ -18,7 +18,7 @@ import {
   Handshake,
   makeOnTransition,
 } from "./machine-common";
-import { BroadcastMessage } from "./websocket-client";
+//import { BroadcastMessage } from "./websocket-client";
 import { makePeerState, PeerEntryHandler } from "./peer-state";
 
 // Type to pass through the client state machine during key generation.
@@ -242,6 +242,7 @@ export function makeKeygenStateMachine(
     }
   );
 
+  /*
   // Handle messages from the server that were broadcast
   // without a client request
   async function onBroadcastMessage(msg: BroadcastMessage) {
@@ -260,6 +261,7 @@ export function makeKeygenStateMachine(
     }
     return false;
   }
+  */
 
-  return { machine, onBroadcastMessage };
+  return { machine };
 }
