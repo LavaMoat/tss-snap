@@ -8,12 +8,13 @@ use tokio::sync::RwLock;
 
 use common::Parameters;
 
-use super::server::{Group, State};
+use super::server::{Group, Phase, Session, State};
 
 use log::warn;
 
 const GROUP_CREATE: &str = "group_create";
 const GROUP_JOIN: &str = "group_join";
+const SESSION_CREATE: &str = "session_create";
 
 #[derive(Debug, Deserialize)]
 struct GroupCreateParams {
@@ -29,6 +30,13 @@ struct GroupCreateReply {
 #[derive(Debug, Serialize)]
 struct GroupJoinReply {
     group: Group,
+}
+
+type SessionCreateParams = (String, Phase);
+
+#[derive(Debug, Serialize)]
+struct SessionCreateReply {
+    session: Session,
 }
 
 pub(crate) struct ServiceHandler;
@@ -74,6 +82,50 @@ impl Service for ServiceHandler {
                 Some((req, res).into())
             } else {
                 warn!("group does not exist: {}", uuid);
+                // TODO: send error response
+                None
+            }
+        } else if (req.matches(SESSION_CREATE)) {
+            let (conn_id, state) = ctx;
+            let params: SessionCreateParams = req.deserialize()?;
+            let (group_id, phase) = params;
+
+            let mut writer = state.write().await;
+            if let Some(group) = writer.groups.get_mut(&group_id) {
+                // Verify connection is part of the group clients
+                if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
+                    let session = Session::from(phase.clone());
+                    let key = session.uuid.clone();
+                    group.sessions.insert(key, session.clone());
+
+                    let res =
+                        serde_json::to_value(&SessionCreateReply { session })
+                            .unwrap();
+                    Some((req, res).into())
+
+                    // FIXME: restore session create notification
+                    /*
+                    let notification = Outgoing {
+                        id: None,
+                        kind: Some(OutgoingKind::SessionCreate),
+                        data: Some(OutgoingData::SessionCreate {
+                            session: session.clone(),
+                        }),
+                    };
+
+                    broadcast_message(
+                        &notification,
+                        state,
+                        Some(vec![conn_id]),
+                    )
+                    .await;
+                    */
+                } else {
+                    warn!("connection for session create does not belong to the group");
+                    None
+                }
+            } else {
+                warn!("group does not exist: {}", group_id);
                 // TODO: send error response
                 None
             }

@@ -84,12 +84,12 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         phase: Phase.KEYGEN,
       });
 
-      const response = await websocket.request({
-        kind: "session_create",
-        data: { group_id: this.props.group.uuid, phase: Phase.KEYGEN },
+      const response = await websocket.rpc({
+        method: "session_create",
+        params: [this.props.group.uuid, Phase.KEYGEN],
       });
 
-      const { session } = response.data;
+      const { session } = response;
       this.props.dispatch(setKeygen(session));
       this.setState({ ...this.state, session });
     };
