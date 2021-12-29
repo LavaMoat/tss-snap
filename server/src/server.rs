@@ -260,7 +260,7 @@ impl From<Phase> for Session {
 }
 
 impl Session {
-    fn signup(&mut self, conn: usize) -> u16 {
+    pub fn signup(&mut self, conn: usize) -> u16 {
         let last = self.party_signups.last();
         let num = if last.is_none() {
             1
@@ -441,6 +441,10 @@ async fn rpc_request(
     let server = Server::new(vec![&service]);
 
     println!("Got request {:#?}", request);
+
+    //let notification_request = if request.matches() {
+
+    //}
 
     if let Some(response) = server
         .serve(&mut request, &(conn_id, Arc::clone(state)))

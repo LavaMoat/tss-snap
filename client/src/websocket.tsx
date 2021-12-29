@@ -13,20 +13,6 @@ export interface BroadcastMessage {
   data: any;
 }
 
-type RequestKind =
-  | "group_create"
-  | "group_join"
-  | "party_signup"
-  | "peer_relay"
-  | "sign_proposal"
-  | "sign_result";
-
-export interface RequestMessage {
-  id?: number;
-  kind: RequestKind;
-  data?: any;
-}
-
 export interface RpcRequest {
   jsonrpc: string;
   id?: number;
@@ -47,11 +33,6 @@ export interface RpcError {
   data?: any;
 }
 
-export interface ResponseMessage {
-  id?: number;
-  data?: any;
-}
-
 interface PromiseCache {
   resolve: (message: unknown) => void;
   reject: (reason: any) => void;
@@ -62,7 +43,7 @@ export class WebSocketClient extends EventEmitter {
   messageRequests: Map<number, PromiseCache>;
   websocket: WebSocket;
   connected: boolean;
-  queue: RequestMessage[];
+  queue: RpcRequest[];
 
   constructor() {
     super();
@@ -86,7 +67,7 @@ export class WebSocketClient extends EventEmitter {
       // has been established
       while (this.queue.length > 0) {
         const message = this.queue.shift();
-        this.send(message);
+        this.notify(message);
       }
 
       this.emit("open");
@@ -103,8 +84,6 @@ export class WebSocketClient extends EventEmitter {
         resolve(msg);
         this.messageRequests.delete(msg.id);
       } else {
-        console.log("GOT BROADCAST MESSAGE, EMIT AN EVENT", msg);
-
         // Without an `id` we treat as a broadcast message that
         // was sent from the server without a request from the client
         const { kind } = msg;
@@ -113,9 +92,7 @@ export class WebSocketClient extends EventEmitter {
     };
   }
 
-  // Send a message over the websocket as JSON
-  // TODO : MIGRATE TO RpcRequest instead of any
-  send(message: any): void {
+  notify(message: RpcRequest): void {
     if (!this.connected) {
       this.queue.push(message);
     } else {
@@ -123,41 +100,20 @@ export class WebSocketClient extends EventEmitter {
     }
   }
 
-  rpc(message: RpcRequest): Promise<ResponseMessage> {
+  rpc(message: RpcRequest): Promise<any> {
     const id = ++this.messageId;
     const p = new Promise((_resolve, reject) => {
-      //const reject = (e: Error) => {
-      //_reject(e);
-      //};
-
       const resolve = (response: RpcResponse) => {
         if (response.error) {
           return reject(new Error(response.error.message));
         }
         return _resolve(response.result);
       };
-
       this.messageRequests.set(id, { resolve, reject });
     });
     message.id = id;
     message.jsonrpc = "2.0";
-    this.send(message);
-    return p;
-  }
-
-  // Wrap a websocket request in a promise that expects
-  // a response from the server
-  request(message: RequestMessage): Promise<ResponseMessage> {
-    const id = ++this.messageId;
-    const resolve = (data: ResponseMessage) => data;
-    const reject = (e: Error) => {
-      throw e;
-    };
-    const p = new Promise((resolve, reject) => {
-      this.messageRequests.set(id, { resolve, reject });
-    });
-    message.id = id;
-    this.send(message);
+    this.notify(message);
     return p;
   }
 }

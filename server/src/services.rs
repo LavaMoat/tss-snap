@@ -16,6 +16,7 @@ const GROUP_CREATE: &str = "group_create";
 const GROUP_JOIN: &str = "group_join";
 const SESSION_CREATE: &str = "session_create";
 const SESSION_JOIN: &str = "session_join";
+const SESSION_SIGNUP: &str = "session_signup";
 
 type Uuid = String;
 
@@ -26,8 +27,8 @@ struct GroupCreateParams {
 }
 
 type SessionCreateParams = (Uuid, Phase);
-
 type SessionJoinParams = (Uuid, Uuid, Phase);
+type SessionSignupParams = (Uuid, Uuid, Phase);
 
 pub(crate) struct ServiceHandler;
 
@@ -132,6 +133,33 @@ impl Service for ServiceHandler {
                     }
                 } else {
                     warn!("connection for session join does not belong to the group");
+                    None
+                }
+            } else {
+                warn!("group does not exist: {}", group_id);
+                // TODO: send error response
+                None
+            }
+        } else if (req.matches(SESSION_SIGNUP)) {
+            let (conn_id, state) = ctx;
+            let params: SessionSignupParams = req.deserialize()?;
+            let (group_id, session_id, _phase) = params;
+
+            let mut writer = state.write().await;
+            if let Some(group) = writer.groups.get_mut(&group_id) {
+                // Verify connection is part of the group clients
+                if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
+                    if let Some(session) = group.sessions.get_mut(&session_id) {
+                        let party_number = session.signup(*conn_id);
+                        let res = serde_json::to_value(&party_number).unwrap();
+                        Some((req, res).into())
+                    } else {
+                        warn!("session does not exist: {}", session_id);
+                        // TODO: send error response
+                        None
+                    }
+                } else {
+                    warn!("connection for session signup does not belong to the group");
                     None
                 }
             } else {

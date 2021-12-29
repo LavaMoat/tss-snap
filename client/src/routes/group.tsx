@@ -105,16 +105,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     const signupToSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      const response = await websocket.request({
-        kind: "session_signup",
-        data: {
-          group_id: this.props.group.uuid,
-          session_id: this.state.session.uuid,
-          phase: Phase.KEYGEN,
-        },
+      const partyNumber = await websocket.rpc({
+        method: "session_signup",
+        params: [this.props.group.uuid, this.state.session.uuid, Phase.KEYGEN],
       });
-
-      const { party_number: partyNumber } = response.data;
+      //const { party_number: partyNumber } = response.data;
       session.partySignup = { number: partyNumber, uuid: session.uuid };
       console.log("Got session party signup", session);
       this.props.dispatch(setKeygen(session));
