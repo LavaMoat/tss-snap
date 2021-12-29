@@ -1,7 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { PartySignup } from "../machine-common";
 
 export interface Session {
   uuid: string;
+  partySignup?: PartySignup;
 }
 
 export interface KeygenState {

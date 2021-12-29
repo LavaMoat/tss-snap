@@ -51,14 +51,15 @@ enum IncomingKind {
     #[serde(rename = "session_join")]
     SessionJoin,
 
-    /*
-    /// Get the parameters.
-    #[serde(rename = "parameters")]
-    Parameters,
-    */
+    /// Signup to a session.
+    #[serde(rename = "session_signup")]
+    SessionSignup,
+
     /// Initialize the key generation process with a party signup
+    #[deprecated]
     #[serde(rename = "party_signup")]
     PartySignup,
+
     /// Relay a message to peers.
     #[serde(rename = "peer_relay")]
     PeerRelay,
@@ -98,7 +99,7 @@ enum IncomingData {
         group_id: String,
         phase: Phase,
     },
-    SessionJoin {
+    Session {
         group_id: String,
         session_id: String,
     },
@@ -131,12 +132,18 @@ enum OutgoingKind {
     #[serde(rename = "session_join")]
     SessionJoin,
 
+    /// Send session signup reply.
+    #[serde(rename = "session_signup")]
+    SessionSignup,
+
+    /// Broadcast to indicate party signup is completed.
+    #[deprecated]
+    #[serde(rename = "party_signup")]
+    PartySignup,
+
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_relay")]
     PeerRelay,
-    /// Broadcast to indicate party signup is completed.
-    #[serde(rename = "party_signup")]
-    PartySignup,
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
@@ -169,8 +176,10 @@ enum OutgoingData {
         session: Session,
     },
     SessionJoin {
-        //party_signup: PartySignup,
         session: Session,
+    },
+    SessionSignup {
+        party_number: u16,
     },
 
     #[deprecated]
@@ -243,7 +252,7 @@ impl From<Phase> for Session {
 }
 
 impl Session {
-    fn signup(&mut self, conn: usize) -> PartySignup {
+    fn signup(&mut self, conn: usize) -> u16 {
         let last = self.party_signups.last();
         let num = if last.is_none() {
             1
@@ -252,10 +261,7 @@ impl Session {
             num + 1
         };
         self.party_signups.push((num, conn));
-        PartySignup {
-            number: num,
-            uuid: self.uuid.clone(),
-        }
+        num
     }
 }
 
@@ -519,15 +525,13 @@ async fn client_request(
         }
         // Join an existing session
         IncomingKind::SessionJoin => {
-            if let IncomingData::SessionJoin {
+            if let IncomingData::Session {
                 group_id,
                 session_id,
             } = req.data.as_ref().unwrap()
             {
                 let mut writer = state.write().await;
                 if let Some(group) = writer.groups.get_mut(group_id) {
-                    // FIXME: verify connection is part of the group clients
-
                     // Verify connection is part of the group clients
                     if let Some(_) =
                         group.clients.iter().find(|c| **c == conn_id)
@@ -559,6 +563,50 @@ async fn client_request(
                 }
             } else {
                 warn!("bad request data for session join");
+                // TODO: send error response
+                None
+            }
+        }
+        // Signup to an existing session
+        IncomingKind::SessionSignup => {
+            if let IncomingData::Session {
+                group_id,
+                session_id,
+            } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(session_id)
+                        {
+                            let party_number = session.signup(conn_id);
+                            Some(Outgoing {
+                                id: req.id,
+                                kind: Some(OutgoingKind::SessionSignup),
+                                data: Some(OutgoingData::SessionSignup {
+                                    party_number,
+                                }),
+                            })
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session signup does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for session signup");
                 // TODO: send error response
                 None
             }

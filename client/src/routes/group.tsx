@@ -65,6 +65,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     ) => {
       e.preventDefault();
 
+      console.log("Create keygen session: ", {
+        group_id: this.props.group.uuid,
+        phase: Phase.KEYGEN,
+      });
+
       const response = await websocket.request({
         kind: "session_create",
         data: { group_id: this.props.group.uuid, phase: Phase.KEYGEN },
@@ -77,12 +82,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-
-      const sessionId = targetSession;
-
       const response = await websocket.request({
         kind: "session_join",
-        data: { group_id: this.props.group.uuid, session_id: sessionId },
+        data: { group_id: this.props.group.uuid, session_id: targetSession },
       });
 
       const { session } = response.data;
@@ -92,10 +94,19 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     const signupToSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      console.log(
-        "Party opts in to key generation sign up...",
-        this.state.session
-      );
+      const response = await websocket.request({
+        kind: "session_signup",
+        data: {
+          group_id: this.props.group.uuid,
+          session_id: this.state.session.uuid,
+        },
+      });
+
+      const { party_number: partyNumber } = response.data;
+      session.partySignup = { number: partyNumber, uuid: session.uuid };
+      console.log("Got session party signup", session);
+      this.props.dispatch(setKeygen(session));
+      this.setState({ ...this.state, session });
     };
 
     const CreateOrJoinSession = () => {
@@ -116,18 +127,30 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       );
     };
 
-    const KeygenSession = () => {
+    const KeygenSessionActions = () => {
       return (
         <>
           <p>
             Key generation session is active do you wish to signup for key
             generation?
           </p>
-          <p>Session ID: {session.uuid}</p>
           <button onClick={signupToSession}>Keygen Signup</button>
           <button onClick={(e) => copyToClipboard(e, session.uuid)}>
             Copy Session ID to Clipboard
           </button>
+        </>
+      );
+    };
+
+    const KeygenSession = () => {
+      return (
+        <>
+          <p>Session ID: {session.uuid}</p>
+          {session.partySignup ? (
+            <p>Party #: {session.partySignup.number}</p>
+          ) : (
+            <KeygenSessionActions />
+          )}
         </>
       );
     };
