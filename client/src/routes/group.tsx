@@ -78,17 +78,24 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
 
+      const sessionId = targetSession;
+
       const response = await websocket.request({
         kind: "session_join",
-        data: { group_id: this.props.group.uuid, session_id: targetSession },
+        data: { group_id: this.props.group.uuid, session_id: sessionId },
       });
 
-      console.log("Got join session response...", response);
+      const { session } = response.data;
+      this.props.dispatch(setKeygen(session));
+      this.setState({ ...this.state, session });
     };
 
     const signupToSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      console.log("Party opts in to key generation sign up...", targetSession);
+      console.log(
+        "Party opts in to key generation sign up...",
+        this.state.session
+      );
     };
 
     const CreateOrJoinSession = () => {
@@ -113,13 +120,14 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       return (
         <>
           <p>
-            Key generation session has been created (
-            <a onClick={(e) => copyToClipboard(e, session.uuid)}>
-              <strong>{session.uuid}</strong>
-            </a>
-            ), do you wish to signup the key generation?
+            Key generation session is active do you wish to signup for key
+            generation?
           </p>
+          <p>Session ID: {session.uuid}</p>
           <button onClick={signupToSession}>Keygen Signup</button>
+          <button onClick={(e) => copyToClipboard(e, session.uuid)}>
+            Copy Session ID to Clipboard
+          </button>
         </>
       );
     };

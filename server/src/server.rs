@@ -169,7 +169,8 @@ enum OutgoingData {
         session: Session,
     },
     SessionJoin {
-        party_signup: PartySignup,
+        //party_signup: PartySignup,
+        session: Session,
     },
 
     #[deprecated]
@@ -534,12 +535,12 @@ async fn client_request(
                         if let Some(session) =
                             group.sessions.get_mut(session_id)
                         {
-                            let party_signup = session.signup(conn_id);
+                            //let party_signup = session.signup(conn_id);
                             Some(Outgoing {
                                 id: req.id,
                                 kind: Some(OutgoingKind::SessionJoin),
                                 data: Some(OutgoingData::SessionJoin {
-                                    party_signup,
+                                    session: session.clone(),
                                 }),
                             })
                         } else {
