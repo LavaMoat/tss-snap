@@ -6,6 +6,17 @@ import init, {
   keygenRound4,
   keygenRound5,
   createKey,
+  signRound0,
+  signRound1,
+  signRound2,
+  signRound3,
+  signRound4,
+  signRound5,
+  signRound6,
+  signRound7,
+  signRound8,
+  signRound9,
+  signMessage,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
 
@@ -35,4 +46,15 @@ Comlink.expose({
   keygenRound4,
   keygenRound5,
   createKey,
+  signRound0,
+  signRound1,
+  signRound2,
+  signRound3,
+  signRound4,
+  signRound5,
+  signRound6,
+  signRound7,
+  signRound8,
+  signRound9,
+  signMessage,
 });

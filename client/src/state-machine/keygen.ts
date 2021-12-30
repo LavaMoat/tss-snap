@@ -57,7 +57,7 @@ export function generateKeyShare(
             );
 
             // Send the round 1 entry to the server
-            websocket.rpc({
+            websocket.notify({
               method: "peer_relay",
               params: roundEntry.peer_entries,
             });
@@ -85,7 +85,7 @@ export function generateKeyShare(
             );
 
             // Send the round 2 entry to the server
-            websocket.rpc({
+            websocket.notify({
               method: "peer_relay",
               params: roundEntry.peer_entries,
             });
@@ -112,7 +112,7 @@ export function generateKeyShare(
             );
 
             // Send the round 3 entry to the server
-            websocket.rpc({
+            websocket.notify({
               method: "peer_relay",
               params: roundEntry.peer_entries,
             });
@@ -139,7 +139,7 @@ export function generateKeyShare(
             );
 
             // Send the round 4 entry to the server
-            websocket.rpc({
+            websocket.notify({
               method: "peer_relay",
               params: roundEntry.peer_entries,
             });
@@ -166,7 +166,7 @@ export function generateKeyShare(
             );
 
             // Send the round 5  entry to the server
-            websocket.rpc({
+            websocket.notify({
               method: "peer_relay",
               params: roundEntry.peer_entries,
             });

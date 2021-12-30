@@ -97,6 +97,7 @@ export class WebSocketClient extends EventEmitter {
   }
 
   notify(message: RpcRequest): void {
+    message.jsonrpc = "2.0";
     if (!this.connected) {
       this.queue.push(message);
     } else {
@@ -116,7 +117,6 @@ export class WebSocketClient extends EventEmitter {
       this.messageRequests.set(id, { resolve, reject });
     });
     message.id = id;
-    message.jsonrpc = "2.0";
     this.notify(message);
     return p;
   }

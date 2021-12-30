@@ -5,7 +5,7 @@ use json_rpc2::{futures::*, Request, Response, Result};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use common::Parameters;
+use common::{Parameters, PeerEntry};
 
 use super::server::{Group, NotificationContext, Phase, Session, State};
 
@@ -16,6 +16,7 @@ pub const GROUP_JOIN: &str = "group_join";
 pub const SESSION_CREATE: &str = "session_create";
 pub const SESSION_JOIN: &str = "session_join";
 pub const SESSION_SIGNUP: &str = "session_signup";
+pub const PEER_RELAY: &str = "peer_relay";
 
 type Uuid = String;
 
@@ -28,6 +29,7 @@ struct GroupCreateParams {
 type SessionCreateParams = (Uuid, Phase);
 type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
+type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
 
 pub(crate) struct ServiceHandler;
 
@@ -208,6 +210,7 @@ impl Service for NotifyHandler {
                             group_id,
                             session_id: None,
                             filter: Some(vec![*conn_id]),
+                            messages: None,
                         };
                         writer.notification = Some(ctx);
 
@@ -258,6 +261,7 @@ impl Service for NotifyHandler {
                                     group_id,
                                     session_id: Some(session_id),
                                     filter: None,
+                                    messages: None,
                                 };
                                 writer.notification = Some(ctx);
 
@@ -265,6 +269,78 @@ impl Service for NotifyHandler {
                             } else {
                                 None
                             }
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session signup does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            }
+            PEER_RELAY => {
+                println!("Server is handling the peer relay logic...");
+
+                let (conn_id, state) = ctx;
+                let params: PeerRelayParams = req.deserialize()?;
+                let (group_id, session_id, peer_entries) = params;
+
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get(&group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| *c == conn_id)
+                    {
+                        if let Some(session) = group.sessions.get(&session_id) {
+                            let recipients: Vec<(u16, String)> = peer_entries
+                                .into_iter()
+                                .map(|e| (e.party_to, e.value))
+                                .collect();
+
+                            println!(
+                                "Peer relay got recipients {:#?}",
+                                recipients
+                            );
+
+                            let messages: Vec<(usize, Response)> = recipients
+                                .into_iter()
+                                .filter_map(|(to, value)| {
+                                    if let Some(s) = session
+                                        .party_signups
+                                        .iter()
+                                        .find(|s| s.0 == to)
+                                    {
+                                        let result =
+                                            serde_json::to_value(value)
+                                                .unwrap();
+                                        let response: Response = result.into();
+                                        Some((s.1, response))
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect();
+
+                            println!("Peer relay got messages {:#?}", messages);
+
+                            let ctx = NotificationContext {
+                                group_id,
+                                session_id: Some(session_id),
+                                filter: None,
+                                messages: Some(messages),
+                            };
+                            writer.notification = Some(ctx);
+
+                            // Must return a response so the server processes
+                            // our notifications even though our actual responses
+                            // are in the messages assigned to the notification context
+                            Some((serde_json::Value::Null).into())
                         } else {
                             warn!("session does not exist: {}", session_id);
                             // TODO: send error response

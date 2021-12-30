@@ -253,18 +253,6 @@ pub struct State {
     pub groups: HashMap<String, Group>,
     /// Broadcast notification context information.
     pub notification: Option<NotificationContext>,
-    /*
-    /// Initial parameters.
-    #[deprecated]
-    params: Parameters,
-    // TODO: remove uuid when we have signup groups
-    /// UUID of the last party signup
-    #[deprecated]
-    uuid: String,
-    /// Store party signups so we know when they have all been received
-    #[deprecated]
-    party_signups: HashMap<u16, String>,
-    */
 }
 
 #[derive(Debug)]
@@ -272,6 +260,7 @@ pub struct NotificationContext {
     pub group_id: String,
     pub session_id: Option<String>,
     pub filter: Option<Vec<usize>>,
+    pub messages: Option<Vec<(usize, Response)>>,
 }
 
 pub struct Server;
@@ -454,31 +443,47 @@ async fn rpc_notify(
 async fn rpc_broadcast(response: &Response, state: &Arc<RwLock<State>>) {
     let mut writer = state.write().await;
     if let Some(notification) = writer.notification.take() {
-        let clients = if let Some(group) =
-            writer.groups.get(&notification.group_id)
-        {
-            if let Some(session_id) = &notification.session_id {
-                if let Some(session) = group.sessions.get(session_id) {
-                    session.party_signups.iter().map(|i| i.1.clone()).collect()
-                } else {
-                    warn!("notification session {} does not exist", session_id);
-                    vec![0usize]
-                }
-            } else {
-                group.clients.clone()
+        // Explicit list of messages for target clients
+        if let Some(messages) = notification.messages {
+            for (conn_id, response) in messages {
+                rpc_response(conn_id, &response, state).await;
             }
         } else {
-            vec![0usize]
-        };
-        drop(writer);
-
-        for conn_id in clients {
-            if let Some(filter) = &notification.filter {
-                if let Some(_) = filter.iter().find(|conn| **conn == conn_id) {
-                    continue;
+            let clients = if let Some(group) =
+                writer.groups.get(&notification.group_id)
+            {
+                if let Some(session_id) = &notification.session_id {
+                    if let Some(session) = group.sessions.get(session_id) {
+                        session
+                            .party_signups
+                            .iter()
+                            .map(|i| i.1.clone())
+                            .collect()
+                    } else {
+                        warn!(
+                            "notification session {} does not exist",
+                            session_id
+                        );
+                        vec![0usize]
+                    }
+                } else {
+                    group.clients.clone()
                 }
+            } else {
+                vec![0usize]
+            };
+            drop(writer);
+
+            for conn_id in clients {
+                if let Some(filter) = &notification.filter {
+                    if let Some(_) =
+                        filter.iter().find(|conn| **conn == conn_id)
+                    {
+                        continue;
+                    }
+                }
+                rpc_response(conn_id, response, state).await;
             }
-            rpc_response(conn_id, response, state).await;
         }
     } else {
         warn!("rpc broadcast was called without a notification context");
