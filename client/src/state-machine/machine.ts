@@ -1,5 +1,5 @@
 export interface StateMachineOptions<T, U> {
-  onTransition: transitionHandler<T, U>;
+  onTransition: TransitionHandler<T, U>;
 }
 
 export interface State<T, U> {
@@ -8,7 +8,7 @@ export interface State<T, U> {
   transition: (previousState?: T, transitionData?: U) => Promise<T | null>;
 }
 
-type transitionHandler<T, U> = (
+export type TransitionHandler<T, U> = (
   index: number,
   previousState?: State<T, U>,
   nextState?: State<T, U>
@@ -20,18 +20,12 @@ export class StateMachine<T, U> {
   stateData: T | null;
   inTransition: boolean;
   options: StateMachineOptions<T, U>;
-  onComplete: Function;
-  completionPromise: Promise<any>;
 
   constructor(states: State<T, U>[], options: StateMachineOptions<T, U>) {
     this.states = states;
     this.index = 0;
     this.stateData = null;
     this.options = options;
-    this.onComplete = null;
-    this.completionPromise = new Promise((resolve) => {
-      this.onComplete = resolve;
-    });
   }
 
   async next(transitionData?: U): Promise<T | null> {
@@ -52,10 +46,6 @@ export class StateMachine<T, U> {
       );
       this.inTransition = false;
       this.index++;
-    }
-
-    if (this.index === this.states.length) {
-      this.onComplete(this.stateData);
     }
 
     return this.stateData;

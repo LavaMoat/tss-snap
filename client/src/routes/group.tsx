@@ -3,11 +3,18 @@ import { useSelector, useDispatch, connect } from "react-redux";
 import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector, setKeygen, Session } from "../store/keygen";
 import { useParams } from "react-router-dom";
-import { WebSocketContext, BroadcastMessage } from "../websocket";
+import { WebSocketContext } from "../websocket";
 import { AppDispatch } from "../store";
 
 import { Phase } from "../machine-common";
 import { WorkerContext } from "../worker-provider";
+
+import {
+  generateKeyShare,
+  KeygenState,
+  KeygenTransition,
+} from "../state-machine/keygen";
+import { State } from "../state-machine/machine";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
@@ -46,21 +53,35 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session });
     });
 
+    // All parties signed up to key generation
     websocket.on("session_signup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
-        // TODO: start key generation first round
-        console.log(
-          "Got wrapped worker reference",
-          this.state.session.partySignup
-        );
-        console.log("Got wrapped worker reference", this.props.worker);
+        const onTransition = (
+          index: number,
+          previousState: State<KeygenState, KeygenTransition>,
+          nextState: State<KeygenState, KeygenTransition>
+        ) => {
+          let message = "";
+          if (previousState) {
+            message = `transition ${index} from ${previousState.name} to ${nextState.name}`;
+          } else {
+            message = `transition ${index} to ${nextState.name}`;
+          }
+          console.log(message);
+        };
+
+        // Generate a key share
         const { group, worker } = this.props;
         const { partySignup } = this.state.session;
-        const keygenRound1 = await worker.keygenRound1(
+        const key = await generateKeyShare(
+          websocket,
+          worker,
+          onTransition,
           group.params,
           partySignup
         );
-        console.log("Got result from calling worker", keygenRound1);
+
+        console.log("Generated key share", key);
       } else {
         console.warn(
           "Keygen got session_ready event for wrong session",
@@ -116,7 +137,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         method: "session_signup",
         params: [this.props.group.uuid, this.state.session.uuid, Phase.KEYGEN],
       });
-      //const { party_number: partyNumber } = response.data;
       session.partySignup = { number: partyNumber, uuid: session.uuid };
       this.props.dispatch(setKeygen(session));
       this.setState({ ...this.state, session });

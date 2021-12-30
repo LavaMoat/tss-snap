@@ -14,7 +14,7 @@ export interface BroadcastMessage {
 }
 
 export interface RpcRequest {
-  jsonrpc: string;
+  jsonrpc?: string;
   id?: number;
   method: string;
   params?: any[];

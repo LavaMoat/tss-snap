@@ -1,7 +1,13 @@
-import init, { initThreadPool } from "ecdsa-wasm";
+import init, {
+  initThreadPool,
+  keygenRound1,
+  keygenRound2,
+  keygenRound3,
+  keygenRound4,
+  keygenRound5,
+  createKey,
+} from "ecdsa-wasm";
 import * as Comlink from "comlink";
-
-import { Parameters, PartySignup } from "./machine-common";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
@@ -22,10 +28,11 @@ void (async function () {
   await initThreadPool(navigator.hardwareConcurrency);
 })();
 
-async function keygenRound1(params: Parameters, signup: PartySignup) {
-  console.log("Worker keygen round 1 was called", params);
-  console.log("Worker keygen round 1 was called", signup);
-  return { params, signup };
-}
-
-Comlink.expose({ keygenRound1 });
+Comlink.expose({
+  keygenRound1,
+  keygenRound2,
+  keygenRound3,
+  keygenRound4,
+  keygenRound5,
+  createKey,
+});
