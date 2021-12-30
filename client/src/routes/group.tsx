@@ -7,6 +7,7 @@ import { WebSocketContext, BroadcastMessage } from "../websocket";
 import { AppDispatch } from "../store";
 
 import { Phase } from "../machine-common";
+import { WorkerContext } from "../worker-provider";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
@@ -23,6 +24,7 @@ const copyToClipboard = async (
 interface KeygenProps {
   group: GroupInfo;
   dispatch: AppDispatch;
+  worker: any;
 }
 
 interface KeygenStateProps {
@@ -44,10 +46,21 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session });
     });
 
-    websocket.on("session_signup", (sessionId: string) => {
+    websocket.on("session_signup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
-        console.log("GOT KEYGEN SESSION READY EVENT FROM SERVER");
         // TODO: start key generation first round
+        console.log(
+          "Got wrapped worker reference",
+          this.state.session.partySignup
+        );
+        console.log("Got wrapped worker reference", this.props.worker);
+        const { group, worker } = this.props;
+        const { partySignup } = this.state.session;
+        const keygenRound1 = await worker.keygenRound1(
+          group.params,
+          partySignup
+        );
+        console.log("Got result from calling worker", keygenRound1);
       } else {
         console.warn(
           "Keygen got session_ready event for wrong session",
@@ -210,7 +223,11 @@ export default (props: GroupProps) => {
           </button>
         </p>
         <hr />
-        <ConnectedKeygen group={group} />
+        <WorkerContext.Consumer>
+          {(worker) => {
+            return <ConnectedKeygen group={group} worker={worker} />;
+          }}
+        </WorkerContext.Consumer>
       </>
     );
   } else {

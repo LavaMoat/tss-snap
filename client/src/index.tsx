@@ -11,6 +11,7 @@ import store from "./store";
 import { setGroup } from "./store/group";
 
 import WebSocketProvider from "./websocket";
+import WorkerProvider from "./worker-provider";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -36,10 +37,12 @@ const App = () => {
         </h1>
         <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/group/:uuid" element={<Group />} />
-        </Routes>
+        <WorkerProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/group/:uuid" element={<Group />} />
+          </Routes>
+        </WorkerProvider>
       </>
     );
   } else {

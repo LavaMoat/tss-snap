@@ -1,11 +1,7 @@
 import init, { initThreadPool } from "ecdsa-wasm";
-//import { makeWebSocketClient, BroadcastMessage } from "./websocket-client";
-import { KeygenResult, Handshake } from "./machine-common";
-import { makeKeygenStateMachine } from "./machine-keygen";
-import {
-  makeSignMessageStateMachine,
-  SignMessageMachineContainer,
-} from "./machine-sign";
+import * as Comlink from "comlink";
+
+import { Parameters, PartySignup } from "./machine-common";
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
@@ -26,144 +22,10 @@ void (async function () {
   await initThreadPool(navigator.hardwareConcurrency);
 })();
 
-//const sendUiMessage = self.postMessage;
-
-/*
-const url = `__URL__`;
-const { send: sendNetworkMessage, request: sendNetworkRequest } =
-  makeWebSocketClient({
-    url,
-    onOpen: async (e) => {
-      sendUiMessage({ type: "connected", url });
-      const handshake = (await getKeygenHandshake()) as Handshake;
-      sendUiMessage({
-        type: "ready",
-        ...handshake.parameters,
-        ...handshake.client,
-      });
-    },
-    onClose: async () => {
-      sendUiMessage({ type: "disconnected" });
-    },
-    onBroadcastMessage,
-  });
-
-let keygenResult: KeygenResult = null;
-
-const keygenMachine = makeKeygenStateMachine(
-  sendNetworkRequest,
-  sendUiMessage,
-  sendNetworkMessage
-);
-let signMachine: SignMessageMachineContainer;
-
-// sha256 of "hello world"
-const helloWorldHash =
-  "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-
-// Receive messages sent to the worker from the ui
-self.onmessage = async (e) => {
-  const { data } = e;
-  if (data.type === "group_create") {
-    const { groupData } = data;
-    const groupInfo = await sendNetworkRequest({
-      kind: "group_create",
-      data: groupData,
-    });
-    const group = { ...groupData, ...groupInfo.data };
-    sendUiMessage({ type: "group_create", group });
-  } else if (data.type === "group_join") {
-    const { uuid } = data;
-
-    // FIXME: wait for onopen event before sending this request!
-    const groupInfo = await sendNetworkRequest({
-      kind: "group_join",
-      data: { uuid },
-    });
-  } else if (data.type === "party_signup") {
-    // request for keygen - perform keygen
-    await performKeygen();
-  } else if (data.type === "sign_proposal") {
-    // proposal for message - forward to network
-    const { message } = data;
-    sendNetworkMessage({ kind: "sign_proposal", data: { message } });
-  } else if (data.type === "sign_message") {
-    // request to sign message - perform sign
-    const { message } = data;
-    await performSignature(message);
-  }
-};
-
-async function performKeygen() {
-  // start keygen
-  await keygenMachine.machine.next();
-  // get party number
-  keygenResult = (await keygenMachine.machine
-    .completionPromise) as KeygenResult;
-  const {
-    partySignup: { number: partyNumber },
-    parameters: { threshold, parties },
-  } = keygenResult;
-  // wait a moment to make sure everyones compelted their last transition
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  if (partyNumber === 1) {
-    sendNetworkMessage({
-      kind: "sign_proposal",
-      data: { message: helloWorldHash },
-    });
-  }
-  // here is the auto approval of the sign
-  // disabled because its timeout based
-  // manual approval for now
-  // await new Promise((resolve) => setTimeout(resolve, 1000));
-  // // lowest numbered threshold of signers compute "hello world" sig
-  // if (partyNumber <= (threshold + 1)) {
-  //   const result = await performSignature(helloWorldHash);
-  //   console.log("hello world result", result);
-  // } else {
-  //   console.log("hello world skip", partyNumber, parties - threshold);
-  // }
+async function keygenRound1(params: Parameters, signup: PartySignup) {
+  console.log("Worker keygen round 1 was called", params);
+  console.log("Worker keygen round 1 was called", signup);
+  return { params, signup };
 }
 
-async function performSignature(message: string) {
-  // create signature machine
-  prepareSignMessageStateMachine();
-  // start signature process
-  console.log("perform sig", keygenResult);
-  await signMachine.machine.next({ message, keygenResult });
-  // return signature results
-  return await signMachine.machine.completionPromise;
-}
-
-// Weapper for late binding of keygenMachine
-async function getKeygenHandshake() {
-  return await keygenMachine.machine.next();
-}
-
-// Handle messages from the server that were broadcast
-// without a client request
-async function onBroadcastMessage(msg: BroadcastMessage) {
-  // So it doesn't interfere with the signing peer replies;
-  // an event listener model would be better!
-  if (!keygenResult) {
-    if (await keygenMachine.onBroadcastMessage(msg)) return true;
-  }
-
-  if (!signMachine && msg.kind === "sign_proposal") {
-    prepareSignMessageStateMachine();
-  }
-
-  if (signMachine) {
-    if (await signMachine.onBroadcastMessage(msg)) return true;
-  }
-  return false;
-}
-
-function prepareSignMessageStateMachine() {
-  signMachine = makeSignMessageStateMachine(
-    sendNetworkRequest,
-    sendUiMessage,
-    sendNetworkMessage
-  );
-}
-*/
+Comlink.expose({ keygenRound1 });

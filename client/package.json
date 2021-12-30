@@ -31,6 +31,7 @@
     "@walletconnect/client": "1.6.5",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
+    "comlink": "^4.3.1",
     "ecdsa-wasm": "file:../wasm/pkg",
     "history": "^5.2.0",
     "react": "^17.0.2",
