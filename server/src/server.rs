@@ -280,7 +280,6 @@ impl Server {
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
-        _params: Parameters,
         static_files: Option<PathBuf>,
     ) -> Result<()> {
         let state = Arc::new(RwLock::new(State {

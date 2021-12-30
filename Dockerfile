@@ -44,4 +44,4 @@ FROM debian:bullseye AS runner
 WORKDIR /usr/app
 COPY --from=builder /usr/bin/ecdsa-wasm /usr/bin/ecdsa-wasm
 COPY --from=client /usr/app/client/dist /usr/app/client/dist
-CMD ecdsa-wasm --parties 3 --threshold 1 --bind 0.0.0.0:8080 client/dist
+CMD ecdsa-wasm --bind 0.0.0.0:8080 client/dist

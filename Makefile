@@ -13,7 +13,7 @@ release:
 	@cd server && cargo build --release
 
 server:
-	@cd server && cargo run -- --parties 3 --threshold 1
+	@cd server && cargo run
 
 client:
 	@cd client && yarn start
