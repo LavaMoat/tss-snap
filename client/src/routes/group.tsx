@@ -41,14 +41,13 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
   componentDidMount() {
     const websocket = this.context;
     websocket.on("session_create", (session: Session) => {
-      console.log("Got session_create event with session", session);
       this.setState({ ...this.state, session });
     });
 
-    websocket.on("session_ready", (msg: BroadcastMessage) => {
-      const { session_id: sessionId } = msg.data;
+    websocket.on("session_signup", (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
         console.log("GOT KEYGEN SESSION READY EVENT FROM SERVER");
+        // TODO: start key generation first round
       } else {
         console.warn(
           "Keygen got session_ready event for wrong session",
@@ -62,7 +61,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
   componentWillUnmount() {
     const websocket = this.context;
     websocket.removeAllListeners("session_create");
-    websocket.removeAllListeners("session_ready");
+    websocket.removeAllListeners("session_signup");
   }
 
   render() {
@@ -78,11 +77,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e: React.MouseEvent<HTMLButtonElement>
     ) => {
       e.preventDefault();
-
-      console.log("Create keygen session: ", {
-        group_id: this.props.group.uuid,
-        phase: Phase.KEYGEN,
-      });
 
       const session = await websocket.rpc({
         method: "session_create",
@@ -111,7 +105,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       });
       //const { party_number: partyNumber } = response.data;
       session.partySignup = { number: partyNumber, uuid: session.uuid };
-      console.log("Got session party signup", session);
       this.props.dispatch(setKeygen(session));
       this.setState({ ...this.state, session });
     };
@@ -119,7 +112,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const CreateOrJoinSession = () => {
       return (
         <>
-          <h3>Key generation</h3>
           <button onClick={createKeygenSession}>
             Create a key generation session
           </button>
@@ -162,7 +154,12 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       );
     };
 
-    return session ? <KeygenSession /> : <CreateOrJoinSession />;
+    return (
+      <>
+        <h3>Key generation</h3>
+        {session ? <KeygenSession /> : <CreateOrJoinSession />}
+      </>
+    );
   }
 }
 

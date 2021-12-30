@@ -26,7 +26,7 @@ use common::Parameters;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
-
+/// Lock for broadcast messages.
 static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
 /*
@@ -411,9 +411,9 @@ async fn rpc_request(
         Box::new(ServiceHandler {});
     let server = Server::new(vec![&service]);
 
-    // Requests that require post-processing notification logic
+    // Requests that require post-processing notifications
     let notification = match request.method() {
-        SESSION_CREATE => Some(request.clone()),
+        SESSION_CREATE | SESSION_SIGNUP => Some(request.clone()),
         _ => None,
     };
 
@@ -446,17 +446,11 @@ async fn rpc_notify(
     {
         let lock = BROADCAST_LOCK.try_lock();
         if let Ok(_) = lock {
-            match request.method() {
-                SESSION_CREATE => {
-                    rpc_broadcast(&response, state).await;
-                }
-                _ => {}
-            }
+            rpc_broadcast(&response, state).await;
         }
     }
 }
 
-/// Broadcast a message to all clients ignoring any connection ids in filter.
 async fn rpc_broadcast(response: &Response, state: &Arc<RwLock<State>>) {
     let mut writer = state.write().await;
     if let Some(notification) = writer.notification.take() {

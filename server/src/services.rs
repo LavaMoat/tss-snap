@@ -203,8 +203,9 @@ impl Service for NotifyHandler {
                         ))
                         .unwrap();
 
+                        // Notify everyone else in the group a session was created
                         let ctx = NotificationContext {
-                            group_id: group.uuid.clone(),
+                            group_id,
                             session_id: None,
                             filter: Some(vec![*conn_id]),
                         };
@@ -213,6 +214,64 @@ impl Service for NotifyHandler {
                         Some(res.into())
                     } else {
                         warn!("connection for session create does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            }
+            SESSION_SIGNUP => {
+                let (conn_id, state) = ctx;
+                let params: SessionSignupParams = req.deserialize()?;
+                let (group_id, session_id, phase) = params;
+
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(&group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| *c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(&session_id)
+                        {
+                            let parties = group.params.parties as usize;
+                            let threshold = group.params.threshold as usize;
+                            let num_entries = session.party_signups.len();
+                            let required_num_entries = match phase {
+                                Phase::Keygen => parties,
+                                Phase::Sign => threshold + 1,
+                            };
+
+                            // Enough parties are signed up to the session
+                            if num_entries == required_num_entries {
+                                let res = serde_json::to_value((
+                                    SESSION_SIGNUP,
+                                    &session_id,
+                                ))
+                                .unwrap();
+
+                                // Notify everyone in the session that enough
+                                // parties have signed up to the session
+                                let ctx = NotificationContext {
+                                    group_id,
+                                    session_id: Some(session_id),
+                                    filter: None,
+                                };
+                                writer.notification = Some(ctx);
+
+                                Some(res.into())
+                            } else {
+                                None
+                            }
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session signup does not belong to the group");
                         None
                     }
                 } else {
