@@ -16,24 +16,18 @@ const App = () => {
   const dispatch = useDispatch();
 
   if (window.Worker) {
+    /*
     const worker = window.Worker
       ? new Worker(new URL("./worker.ts", import.meta.url))
       : null;
 
     worker.onmessage = (e) => {
       const { type } = e.data;
-
-      /*
-      switch (type) {
-        case "group_create":
-          dispatch(setGroup(e.data.group));
-          break;
-      }
-      */
     };
+    */
 
-    const sendWorkerMessage = (...args: any) =>
-      worker.postMessage.call(worker, ...args);
+    //const sendWorkerMessage = (...args: any) =>
+    //worker.postMessage.call(worker, ...args);
 
     return (
       <>

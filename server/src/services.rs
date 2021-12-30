@@ -7,7 +7,7 @@ use tokio::sync::RwLock;
 
 use common::Parameters;
 
-use super::server::{Group, Phase, Session, State};
+use super::server::{Group, NotificationContext, Phase, Session, State};
 
 use log::warn;
 
@@ -202,6 +202,14 @@ impl Service for NotifyHandler {
                             &last_session,
                         ))
                         .unwrap();
+
+                        let ctx = NotificationContext {
+                            group_id: group.uuid.clone(),
+                            session_id: None,
+                            filter: Some(vec![*conn_id]),
+                        };
+                        writer.notification = Some(ctx);
+
                         Some(res.into())
                     } else {
                         warn!("connection for session create does not belong to the group");

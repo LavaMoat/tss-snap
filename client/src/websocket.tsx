@@ -83,7 +83,6 @@ export class WebSocketClient extends EventEmitter {
         this.messageRequests.delete(msg.id);
         // Without an `id` we treat as a broadcast message
       } else {
-        console.log("GOT BROADCAST MESSAGE", msg);
         if (msg.error) {
           throw new Error(msg.error.message);
         } else if (msg.result) {
