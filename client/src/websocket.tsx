@@ -57,10 +57,8 @@ export class WebSocketClient extends EventEmitter {
     if (this.websocket) {
       this.websocket.close();
     }
-    console.log("CONNECTING TO ", url);
     this.websocket = new WebSocket(url);
     this.websocket.onopen = (e) => {
-      console.log("GOT OPEN EVENT", this.websocket.readyState);
       this.connected = true;
 
       // Some routes make requests before the connection
@@ -130,9 +128,13 @@ export { WebSocketContext };
 
 type WebSocketProviderProps = PropsWithChildren<{}>;
 
+// WARN: Must create the client outside of the WebSocketProvider
+// WARN: component render function otherwise multiple websockets
+// WARN: may be created.
+const websocket = new WebSocketClient();
+websocket.connect(`__URL__`);
+
 const WebSocketProvider = (props: WebSocketProviderProps) => {
-  const websocket = new WebSocketClient();
-  websocket.connect(`__URL__`);
   return (
     <WebSocketContext.Provider value={websocket}>
       {props.children}
