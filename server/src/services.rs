@@ -324,6 +324,8 @@ impl Service for NotifyHandler {
                                 })
                                 .collect();
 
+                            //println!("Setting peer relay messages {}", messages.len());
+
                             {
                                 let ctx = NotificationContext {
                                     group_id: Some(group_id),

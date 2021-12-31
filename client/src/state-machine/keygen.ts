@@ -14,6 +14,7 @@ interface KeygenRoundEntry {
   parameters: Parameters;
   partySignup: PartySignup;
   roundEntry: RoundEntry;
+  answer: string[];
 }
 
 export type KeygenTransition = string[];
@@ -32,9 +33,51 @@ export function generateKeyShare(
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
   info: KeygenInfo
 ): Promise<PartyKey> {
-  return new Promise((resolve, reject) => {
-    const peerEntryHandler = makePeerState(info.parameters.parties - 1);
+  const peerEntryHandler = makePeerState(info.parameters.parties - 1);
 
+  /*
+  function relayPeers(peerEntries: PeerEntry[]) {
+    // NOTE: Sometimes p2p messages can all be received before the
+    // NOTE: state machine transition returns which will break everything
+    // NOTE: hence the delay sending p2p entries.
+    setTimeout(() => {
+      websocket.notify({
+        method: "peer_relay",
+        params: [info.groupId, info.sessionId, peerEntries],
+      });
+    }, 25);
+  }
+  */
+
+  function relayPeers(peerEntries: PeerEntry[]): Promise<string[]> {
+    return new Promise((resolve) => {
+      function onPeerEntry(peerEntry: PeerEntry) {
+        console.log("got peer entry", peerEntry);
+        const answer = peerEntryHandler(peerEntry);
+        // Got all the p2p answers
+        if (answer) {
+          console.log("Got all p2p answers", answer);
+          websocket.off("peer_relay", onPeerEntry);
+          resolve(answer);
+        }
+      }
+
+      console.log("adding listener onPeerEntry");
+      websocket.on("peer_relay", onPeerEntry);
+
+      // NOTE: Sometimes p2p messages can all be received before the
+      // NOTE: state machine transition returns which will break everything
+      // NOTE: hence the delay sending p2p entries.
+      setTimeout(() => {
+        websocket.notify({
+          method: "peer_relay",
+          params: [info.groupId, info.sessionId, peerEntries],
+        });
+      }, 50);
+    });
+  }
+
+  return new Promise(async (resolve, reject) => {
     const machine = new StateMachine<KeygenState, KeygenTransition>(
       [
         {
@@ -51,14 +94,9 @@ export function generateKeyShare(
               partySignup
             );
 
-            // Send the round 1 entry to the server
-            websocket.notify({
-              method: "peer_relay",
-              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
-            });
-
-            console.log("RETURNING FROM ROUND 1");
-            return { parameters, partySignup, roundEntry };
+            const answer = await relayPeers(roundEntry.peer_entries);
+            console.log("round 1 answer", answer);
+            return { parameters, partySignup, roundEntry, answer };
           },
         },
         {
@@ -68,31 +106,28 @@ export function generateKeyShare(
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
             const keygenRoundEntry = previousState as KeygenRoundEntry;
-            const { parameters, partySignup } = keygenRoundEntry;
-            const answer = transitionData as string[];
+            const {
+              parameters,
+              partySignup,
+              answer: previousAnswer,
+            } = keygenRoundEntry;
+            //const answer = transitionData as string[];
 
-            console.log("Round 2 got answer", answer);
-
-            /*
             // Get round 2 entry using round 1 commitments
             const roundEntry = await worker.keygenRound2(
               parameters,
               partySignup,
               keygenRoundEntry.roundEntry,
-              answer
+              previousAnswer
             );
 
-            // Send the round 2 entry to the server
-            websocket.notify({
-              method: "peer_relay",
-              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
-            });
-            */
-
-            //return { parameters, partySignup, roundEntry };
-            return null;
+            //relayPeers(roundEntry.peer_entries);
+            const answer = await relayPeers(roundEntry.peer_entries);
+            console.log("round 2 answer", answer);
+            return { parameters, partySignup, roundEntry, answer };
           },
         },
+        /*
         {
           name: "KEYGEN_ROUND_3",
           transition: async (
@@ -110,12 +145,7 @@ export function generateKeyShare(
               answer
             );
 
-            // Send the round 3 entry to the server
-            websocket.notify({
-              method: "peer_relay",
-              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
-            });
-
+            relayPeers(roundEntry.peer_entries);
             return { parameters, partySignup, roundEntry };
           },
         },
@@ -136,12 +166,7 @@ export function generateKeyShare(
               answer
             );
 
-            // Send the round 4 entry to the server
-            websocket.notify({
-              method: "peer_relay",
-              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
-            });
-
+            relayPeers(roundEntry.peer_entries);
             return { parameters, partySignup, roundEntry };
           },
         },
@@ -162,12 +187,7 @@ export function generateKeyShare(
               answer
             );
 
-            // Send the round 5  entry to the server
-            websocket.notify({
-              method: "peer_relay",
-              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
-            });
-
+            relayPeers(roundEntry.peer_entries);
             return { parameters, partySignup, roundEntry };
           },
         },
@@ -194,19 +214,29 @@ export function generateKeyShare(
             return null;
           },
         },
+        */
       ],
       { onTransition }
     );
 
+    /*
     websocket.on("peer_relay", async (peerEntry: PeerEntry) => {
       const answer = peerEntryHandler(peerEntry);
       // Got all the p2p answers
       if (answer) {
-        console.log("Got all p2p answers", answer);
-        await machine.next(answer);
+        //console.log("Got all p2p answers", answer);
+        //
+        if (machine.index < 1) {
+          await machine.next(answer);
+        }
       }
     });
+    */
 
-    machine.next();
+    while (machine.index < machine.states.length) {
+      await machine.next();
+    }
+
+    //machine.next();
   });
 }
