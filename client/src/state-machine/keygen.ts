@@ -10,32 +10,30 @@ import { makePeerState, PeerEntryHandler, PeerEntry } from "./peer-state";
 import { WebSocketClient } from "../websocket";
 
 // Type to pass through the client state machine during key generation.
-interface KeygenRoundEntry<T> {
+interface KeygenRoundEntry {
   parameters: Parameters;
   partySignup: PartySignup;
-  roundEntry: T;
+  roundEntry: RoundEntry;
 }
 
-export type KeygenTransition = PartySignupInfo | string[];
-export type KeygenState = KeygenRoundEntry<RoundEntry>;
+export type KeygenTransition = string[];
+export type KeygenState = KeygenRoundEntry;
+
+export interface KeygenInfo {
+  groupId: string;
+  sessionId: string;
+  parameters: Parameters;
+  partySignup: PartySignup;
+}
 
 export function generateKeyShare(
   websocket: WebSocketClient,
   worker: any,
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
-  parameters: Parameters,
-  partySignup: PartySignup
+  info: KeygenInfo
 ): Promise<PartyKey> {
   return new Promise((resolve, reject) => {
-    let peerEntryHandler: PeerEntryHandler = null;
-
-    websocket.on("peer_relay", async (peerEntry: PeerEntry) => {
-      const answer = peerEntryHandler(peerEntry);
-      // Got all the p2p answers
-      if (answer) {
-        await machine.next(answer);
-      }
-    });
+    const peerEntryHandler = makePeerState(info.parameters.parties - 1);
 
     const machine = new StateMachine<KeygenState, KeygenTransition>(
       [
@@ -45,10 +43,7 @@ export function generateKeyShare(
             previousState: KeygenState,
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
-            const partySignupInfo = transitionData as PartySignupInfo;
-            const { parameters, partySignup } = partySignupInfo;
-
-            peerEntryHandler = makePeerState(parameters.parties - 1);
+            const { parameters, partySignup } = info;
 
             // Create the round 1 key entry
             const roundEntry = await worker.keygenRound1(
@@ -59,9 +54,10 @@ export function generateKeyShare(
             // Send the round 1 entry to the server
             websocket.notify({
               method: "peer_relay",
-              params: roundEntry.peer_entries,
+              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
             });
 
+            console.log("RETURNING FROM ROUND 1");
             return { parameters, partySignup, roundEntry };
           },
         },
@@ -71,11 +67,13 @@ export function generateKeyShare(
             previousState: KeygenState,
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
-            const keygenRoundEntry =
-              previousState as KeygenRoundEntry<RoundEntry>;
+            const keygenRoundEntry = previousState as KeygenRoundEntry;
             const { parameters, partySignup } = keygenRoundEntry;
             const answer = transitionData as string[];
 
+            console.log("Round 2 got answer", answer);
+
+            /*
             // Get round 2 entry using round 1 commitments
             const roundEntry = await worker.keygenRound2(
               parameters,
@@ -87,10 +85,12 @@ export function generateKeyShare(
             // Send the round 2 entry to the server
             websocket.notify({
               method: "peer_relay",
-              params: roundEntry.peer_entries,
+              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
             });
+            */
 
-            return { parameters, partySignup, roundEntry };
+            //return { parameters, partySignup, roundEntry };
+            return null;
           },
         },
         {
@@ -99,8 +99,7 @@ export function generateKeyShare(
             previousState: KeygenState,
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
-            const keygenRoundEntry =
-              previousState as KeygenRoundEntry<RoundEntry>;
+            const keygenRoundEntry = previousState as KeygenRoundEntry;
             const { parameters, partySignup } = keygenRoundEntry;
             const answer = transitionData as string[];
 
@@ -114,7 +113,7 @@ export function generateKeyShare(
             // Send the round 3 entry to the server
             websocket.notify({
               method: "peer_relay",
-              params: roundEntry.peer_entries,
+              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
             });
 
             return { parameters, partySignup, roundEntry };
@@ -126,8 +125,7 @@ export function generateKeyShare(
             previousState: KeygenState,
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
-            const keygenRoundEntry =
-              previousState as KeygenRoundEntry<RoundEntry>;
+            const keygenRoundEntry = previousState as KeygenRoundEntry;
             const { parameters, partySignup } = keygenRoundEntry;
             const answer = transitionData as string[];
 
@@ -141,7 +139,7 @@ export function generateKeyShare(
             // Send the round 4 entry to the server
             websocket.notify({
               method: "peer_relay",
-              params: roundEntry.peer_entries,
+              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
             });
 
             return { parameters, partySignup, roundEntry };
@@ -153,8 +151,7 @@ export function generateKeyShare(
             previousState: KeygenState,
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
-            const keygenRoundEntry =
-              previousState as KeygenRoundEntry<RoundEntry>;
+            const keygenRoundEntry = previousState as KeygenRoundEntry;
             const { parameters, partySignup } = keygenRoundEntry;
             const answer = transitionData as string[];
 
@@ -168,7 +165,7 @@ export function generateKeyShare(
             // Send the round 5  entry to the server
             websocket.notify({
               method: "peer_relay",
-              params: roundEntry.peer_entries,
+              params: [info.groupId, info.sessionId, roundEntry.peer_entries],
             });
 
             return { parameters, partySignup, roundEntry };
@@ -180,8 +177,7 @@ export function generateKeyShare(
             previousState: KeygenState,
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
-            const keygenRoundEntry =
-              previousState as KeygenRoundEntry<RoundEntry>;
+            const keygenRoundEntry = previousState as KeygenRoundEntry;
             const { parameters, partySignup } = keygenRoundEntry;
             const answer = transitionData as string[];
 
@@ -202,6 +198,15 @@ export function generateKeyShare(
       { onTransition }
     );
 
-    machine.next({ parameters, partySignup });
+    websocket.on("peer_relay", async (peerEntry: PeerEntry) => {
+      const answer = peerEntryHandler(peerEntry);
+      // Got all the p2p answers
+      if (answer) {
+        console.log("Got all p2p answers", answer);
+        await machine.next(answer);
+      }
+    });
+
+    machine.next();
   });
 }

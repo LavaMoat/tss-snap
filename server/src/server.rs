@@ -488,7 +488,8 @@ async fn rpc_broadcast(
             }
         } else {
             warn!("notification context is missing group_id");
-            println!("notification {:#?}", notification);
+            //println!("notification {:#?}", notification);
+            //println!("response {:#?}", response);
         }
     }
 

@@ -72,13 +72,20 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
         // Generate a key share
         const { group, worker } = this.props;
-        const { partySignup } = this.state.session;
+        const { partySignup, uuid: sessionId } = this.state.session;
+
+        const keygenInfo = {
+          groupId: group.uuid,
+          sessionId,
+          parameters: group.params,
+          partySignup,
+        };
+
         const key = await generateKeyShare(
           websocket,
           worker,
           onTransition,
-          group.params,
-          partySignup
+          keygenInfo
         );
 
         console.log("Generated key share", key);
