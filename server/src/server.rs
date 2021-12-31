@@ -9,7 +9,6 @@ use std::sync::{
 use anyhow::{bail, Result};
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use log::{error, info, trace, warn};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -26,8 +25,6 @@ use common::Parameters;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
-/// Lock for broadcast messages.
-static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
 /*
 /// Incoming message from a websocket client.
@@ -251,13 +248,11 @@ pub struct State {
     pub clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
     /// Groups keyed by unique identifier (UUID)
     pub groups: HashMap<String, Group>,
-    /// Broadcast notification context information.
-    pub notification: Option<NotificationContext>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct NotificationContext {
-    pub group_id: String,
+    pub group_id: Option<String>,
     pub session_id: Option<String>,
     pub filter: Option<Vec<usize>>,
     pub messages: Option<Vec<(usize, Response)>>,
@@ -274,7 +269,6 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             clients: HashMap::new(),
             groups: Default::default(),
-            notification: None,
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -402,7 +396,7 @@ async fn rpc_request(
 
     // Requests that require post-processing notifications
     let notification = match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP => Some(request.clone()),
+        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY => Some(request.clone()),
         _ => None,
     };
 
@@ -425,22 +419,80 @@ async fn rpc_notify(
     state: &Arc<RwLock<State>>,
 ) {
     use json_rpc2::futures::*;
-    let service: Box<dyn Service<Data = (usize, Arc<RwLock<State>>)>> =
-        Box::new(NotifyHandler {});
+    let service: Box<
+        dyn Service<
+            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>),
+        >,
+    > = Box::new(NotifyHandler {});
     let server = Server::new(vec![&service]);
 
+    let notification = Arc::new(Mutex::new(Default::default()));
+
     if let Some(response) = server
-        .serve(&mut request, &(conn_id, Arc::clone(state)))
+        .serve(
+            &mut request,
+            &(conn_id, Arc::clone(state), Arc::clone(&notification)),
+        )
         .await
     {
-        let lock = BROADCAST_LOCK.try_lock();
-        if let Ok(_) = lock {
-            rpc_broadcast(&response, state).await;
-        }
+        rpc_broadcast(&response, state, notification).await;
     }
 }
 
-async fn rpc_broadcast(response: &Response, state: &Arc<RwLock<State>>) {
+async fn rpc_broadcast(
+    response: &Response,
+    state: &Arc<RwLock<State>>,
+    notification: Arc<Mutex<NotificationContext>>,
+) {
+    let reader = state.read().await;
+    let mut notification = notification.lock().await;
+
+    // Explicit list of messages for target clients
+    if let Some(messages) = notification.messages.take() {
+        for (conn_id, response) in messages {
+            rpc_response(conn_id, &response, state).await;
+        }
+    } else {
+        if let Some(group_id) = &notification.group_id {
+            let clients = if let Some(group) = reader.groups.get(group_id) {
+                if let Some(session_id) = &notification.session_id {
+                    if let Some(session) = group.sessions.get(session_id) {
+                        session
+                            .party_signups
+                            .iter()
+                            .map(|i| i.1.clone())
+                            .collect()
+                    } else {
+                        warn!(
+                            "notification session {} does not exist",
+                            session_id
+                        );
+                        vec![0usize]
+                    }
+                } else {
+                    group.clients.clone()
+                }
+            } else {
+                vec![0usize]
+            };
+
+            for conn_id in clients {
+                if let Some(filter) = &notification.filter {
+                    if let Some(_) =
+                        filter.iter().find(|conn| **conn == conn_id)
+                    {
+                        continue;
+                    }
+                }
+                rpc_response(conn_id, response, state).await;
+            }
+        } else {
+            warn!("notification context is missing group_id");
+            println!("notification {:#?}", notification);
+        }
+    }
+
+    /*
     let mut writer = state.write().await;
     if let Some(notification) = writer.notification.take() {
         // Explicit list of messages for target clients
@@ -488,6 +540,7 @@ async fn rpc_broadcast(response: &Response, state: &Arc<RwLock<State>>) {
     } else {
         warn!("rpc broadcast was called without a notification context");
     }
+    */
 }
 
 /// Send a message to a single client.

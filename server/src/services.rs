@@ -3,7 +3,7 @@ use serde::Deserialize;
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Request, Response, Result};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 use common::{Parameters, PeerEntry};
 
@@ -169,6 +169,10 @@ impl Service for ServiceHandler {
                     None
                 }
             }
+            PEER_RELAY => {
+                // Must ACK so we indicate the service method exists
+                Some(req.into())
+            }
             _ => None,
         };
         Ok(response)
@@ -179,7 +183,7 @@ pub(crate) struct NotifyHandler;
 
 #[async_trait]
 impl Service for NotifyHandler {
-    type Data = (usize, Arc<RwLock<State>>);
+    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>);
     async fn handle(
         &self,
         req: &mut Request,
@@ -187,12 +191,12 @@ impl Service for NotifyHandler {
     ) -> Result<Option<Response>> {
         let response = match req.method() {
             SESSION_CREATE => {
-                let (conn_id, state) = ctx;
+                let (conn_id, state, notification) = ctx;
                 let params: SessionCreateParams = req.deserialize()?;
                 let (group_id, _phase) = params;
 
-                let mut writer = state.write().await;
-                if let Some(group) = writer.groups.get_mut(&group_id) {
+                let reader = state.read().await;
+                if let Some(group) = reader.groups.get(&group_id) {
                     // Verify connection is part of the group clients
                     if let Some(_) =
                         group.clients.iter().find(|c| *c == conn_id)
@@ -206,13 +210,16 @@ impl Service for NotifyHandler {
                         .unwrap();
 
                         // Notify everyone else in the group a session was created
-                        let ctx = NotificationContext {
-                            group_id,
-                            session_id: None,
-                            filter: Some(vec![*conn_id]),
-                            messages: None,
-                        };
-                        writer.notification = Some(ctx);
+                        {
+                            let ctx = NotificationContext {
+                                group_id: Some(group_id),
+                                session_id: None,
+                                filter: Some(vec![*conn_id]),
+                                messages: None,
+                            };
+                            let mut writer = notification.lock().await;
+                            *writer = ctx;
+                        }
 
                         Some(res.into())
                     } else {
@@ -226,19 +233,17 @@ impl Service for NotifyHandler {
                 }
             }
             SESSION_SIGNUP => {
-                let (conn_id, state) = ctx;
+                let (conn_id, state, notification) = ctx;
                 let params: SessionSignupParams = req.deserialize()?;
                 let (group_id, session_id, phase) = params;
 
-                let mut writer = state.write().await;
-                if let Some(group) = writer.groups.get_mut(&group_id) {
+                let reader = state.read().await;
+                if let Some(group) = reader.groups.get(&group_id) {
                     // Verify connection is part of the group clients
                     if let Some(_) =
                         group.clients.iter().find(|c| *c == conn_id)
                     {
-                        if let Some(session) =
-                            group.sessions.get_mut(&session_id)
-                        {
+                        if let Some(session) = group.sessions.get(&session_id) {
                             let parties = group.params.parties as usize;
                             let threshold = group.params.threshold as usize;
                             let num_entries = session.party_signups.len();
@@ -257,13 +262,16 @@ impl Service for NotifyHandler {
 
                                 // Notify everyone in the session that enough
                                 // parties have signed up to the session
-                                let ctx = NotificationContext {
-                                    group_id,
-                                    session_id: Some(session_id),
-                                    filter: None,
-                                    messages: None,
-                                };
-                                writer.notification = Some(ctx);
+                                {
+                                    let ctx = NotificationContext {
+                                        group_id: Some(group_id),
+                                        session_id: Some(session_id),
+                                        filter: None,
+                                        messages: None,
+                                    };
+                                    let mut writer = notification.lock().await;
+                                    *writer = ctx;
+                                }
 
                                 Some(res.into())
                             } else {
@@ -285,40 +293,29 @@ impl Service for NotifyHandler {
                 }
             }
             PEER_RELAY => {
-                println!("Server is handling the peer relay logic...");
-
-                let (conn_id, state) = ctx;
+                let (conn_id, state, notification) = ctx;
                 let params: PeerRelayParams = req.deserialize()?;
                 let (group_id, session_id, peer_entries) = params;
 
-                let mut writer = state.write().await;
-                if let Some(group) = writer.groups.get(&group_id) {
+                let reader = state.read().await;
+                if let Some(group) = reader.groups.get(&group_id) {
                     // Verify connection is part of the group clients
                     if let Some(_) =
                         group.clients.iter().find(|c| *c == conn_id)
                     {
                         if let Some(session) = group.sessions.get(&session_id) {
-                            let recipients: Vec<(u16, String)> = peer_entries
+                            let messages: Vec<(usize, Response)> = peer_entries
                                 .into_iter()
-                                .map(|e| (e.party_to, e.value))
-                                .collect();
-
-                            println!(
-                                "Peer relay got recipients {:#?}",
-                                recipients
-                            );
-
-                            let messages: Vec<(usize, Response)> = recipients
-                                .into_iter()
-                                .filter_map(|(to, value)| {
+                                .filter_map(|entry| {
                                     if let Some(s) = session
                                         .party_signups
                                         .iter()
-                                        .find(|s| s.0 == to)
+                                        .find(|s| s.0 == entry.party_to)
                                     {
-                                        let result =
-                                            serde_json::to_value(value)
-                                                .unwrap();
+                                        let result = serde_json::to_value((
+                                            PEER_RELAY, entry,
+                                        ))
+                                        .unwrap();
                                         let response: Response = result.into();
                                         Some((s.1, response))
                                     } else {
@@ -327,15 +324,17 @@ impl Service for NotifyHandler {
                                 })
                                 .collect();
 
-                            println!("Peer relay got messages {:#?}", messages);
+                            {
+                                let ctx = NotificationContext {
+                                    group_id: Some(group_id),
+                                    session_id: Some(session_id),
+                                    filter: None,
+                                    messages: Some(messages),
+                                };
 
-                            let ctx = NotificationContext {
-                                group_id,
-                                session_id: Some(session_id),
-                                filter: None,
-                                messages: Some(messages),
-                            };
-                            writer.notification = Some(ctx);
+                                let mut writer = notification.lock().await;
+                                *writer = ctx;
+                            }
 
                             // Must return a response so the server processes
                             // our notifications even though our actual responses
