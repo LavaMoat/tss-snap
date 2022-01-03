@@ -212,6 +212,7 @@ impl Service for NotifyHandler {
                         // Notify everyone else in the group a session was created
                         {
                             let ctx = NotificationContext {
+                                noop: false,
                                 group_id: Some(group_id),
                                 session_id: None,
                                 filter: Some(vec![*conn_id]),
@@ -264,6 +265,7 @@ impl Service for NotifyHandler {
                                 // parties have signed up to the session
                                 {
                                     let ctx = NotificationContext {
+                                        noop: false,
                                         group_id: Some(group_id),
                                         session_id: Some(session_id),
                                         filter: None,
@@ -275,6 +277,17 @@ impl Service for NotifyHandler {
 
                                 Some(res.into())
                             } else {
+                                {
+                                    let ctx = NotificationContext {
+                                        noop: true,
+                                        group_id: None,
+                                        session_id: None,
+                                        filter: None,
+                                        messages: None,
+                                    };
+                                    let mut writer = notification.lock().await;
+                                    *writer = ctx;
+                                }
                                 None
                             }
                         } else {
@@ -328,6 +341,7 @@ impl Service for NotifyHandler {
 
                             {
                                 let ctx = NotificationContext {
+                                    noop: false,
                                     group_id: Some(group_id),
                                     session_id: Some(session_id),
                                     filter: None,

@@ -2,7 +2,7 @@ import "./polyfills";
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { HashRouter, Routes, Route, Link } from "react-router-dom";
-import { Provider, useDispatch } from "react-redux";
+import { Provider } from "react-redux";
 
 import Home from "./routes/home";
 import Group from "./routes/group";
@@ -14,26 +14,11 @@ import WebSocketProvider from "./websocket";
 import WorkerProvider from "./worker-provider";
 
 const App = () => {
-  const dispatch = useDispatch();
-
   if (window.Worker) {
-    /*
-    const worker = window.Worker
-      ? new Worker(new URL("./worker.ts", import.meta.url))
-      : null;
-
-    worker.onmessage = (e) => {
-      const { type } = e.data;
-    };
-    */
-
-    //const sendWorkerMessage = (...args: any) =>
-    //worker.postMessage.call(worker, ...args);
-
     return (
       <>
         <h1>
-          <Link to="/">ECDSA WASM Demo</Link>
+          <a href="/">ECDSA WASM Demo</a>
         </h1>
         <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
         <hr />

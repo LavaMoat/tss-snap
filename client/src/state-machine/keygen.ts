@@ -33,6 +33,8 @@ export function generateKeyShare(
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
   info: KeygenInfo
 ): Promise<PartyKey> {
+  console.log("generate KEY SHARE WAS CALLED");
+
   const peerEntryHandler = makePeerState(info.parameters.parties - 1);
 
   /*
@@ -68,12 +70,12 @@ export function generateKeyShare(
       // NOTE: Sometimes p2p messages can all be received before the
       // NOTE: state machine transition returns which will break everything
       // NOTE: hence the delay sending p2p entries.
-      setTimeout(() => {
-        websocket.notify({
-          method: "peer_relay",
-          params: [info.groupId, info.sessionId, peerEntries],
-        });
-      }, 50);
+      //setTimeout(() => {
+      websocket.notify({
+        method: "peer_relay",
+        params: [info.groupId, info.sessionId, peerEntries],
+      });
+      //}, 50);
     });
   }
 
@@ -99,6 +101,7 @@ export function generateKeyShare(
             return { parameters, partySignup, roundEntry, answer };
           },
         },
+        /*
         {
           name: "KEYGEN_ROUND_2",
           transition: async (
@@ -121,12 +124,12 @@ export function generateKeyShare(
               previousAnswer
             );
 
-            //relayPeers(roundEntry.peer_entries);
-            const answer = await relayPeers(roundEntry.peer_entries);
-            console.log("round 2 answer", answer);
-            return { parameters, partySignup, roundEntry, answer };
+            //const answer = await relayPeers(roundEntry.peer_entries);
+            //console.log("round 2 answer", answer);
+            return { parameters, partySignup, roundEntry, answer: [] };
           },
         },
+        */
         /*
         {
           name: "KEYGEN_ROUND_3",

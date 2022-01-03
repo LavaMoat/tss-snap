@@ -252,6 +252,7 @@ pub struct State {
 
 #[derive(Debug, Default)]
 pub struct NotificationContext {
+    pub noop: bool,
     pub group_id: Option<String>,
     pub session_id: Option<String>,
     pub filter: Option<Vec<usize>>,
@@ -446,102 +447,51 @@ async fn rpc_broadcast(
 ) {
     let reader = state.read().await;
     let mut notification = notification.lock().await;
-
-    // Explicit list of messages for target clients
-    if let Some(messages) = notification.messages.take() {
-        for (conn_id, response) in messages {
-            rpc_response(conn_id, &response, state).await;
-        }
-    } else {
-        if let Some(group_id) = &notification.group_id {
-            let clients = if let Some(group) = reader.groups.get(group_id) {
-                if let Some(session_id) = &notification.session_id {
-                    if let Some(session) = group.sessions.get(session_id) {
-                        session
-                            .party_signups
-                            .iter()
-                            .map(|i| i.1.clone())
-                            .collect()
-                    } else {
-                        warn!(
-                            "notification session {} does not exist",
-                            session_id
-                        );
-                        vec![0usize]
-                    }
-                } else {
-                    group.clients.clone()
-                }
-            } else {
-                vec![0usize]
-            };
-
-            for conn_id in clients {
-                if let Some(filter) = &notification.filter {
-                    if let Some(_) =
-                        filter.iter().find(|conn| **conn == conn_id)
-                    {
-                        continue;
-                    }
-                }
-                rpc_response(conn_id, response, state).await;
-            }
-        } else {
-            warn!("notification context is missing group_id");
-            //println!("notification {:#?}", notification);
-            //println!("response {:#?}", response);
-        }
-    }
-
-    /*
-    let mut writer = state.write().await;
-    if let Some(notification) = writer.notification.take() {
+    if !notification.noop {
         // Explicit list of messages for target clients
-        if let Some(messages) = notification.messages {
+        if let Some(messages) = notification.messages.take() {
             for (conn_id, response) in messages {
                 rpc_response(conn_id, &response, state).await;
             }
         } else {
-            let clients = if let Some(group) =
-                writer.groups.get(&notification.group_id)
-            {
-                if let Some(session_id) = &notification.session_id {
-                    if let Some(session) = group.sessions.get(session_id) {
-                        session
-                            .party_signups
-                            .iter()
-                            .map(|i| i.1.clone())
-                            .collect()
+            if let Some(group_id) = &notification.group_id {
+                let clients = if let Some(group) = reader.groups.get(group_id) {
+                    if let Some(session_id) = &notification.session_id {
+                        if let Some(session) = group.sessions.get(session_id) {
+                            session
+                                .party_signups
+                                .iter()
+                                .map(|i| i.1.clone())
+                                .collect()
+                        } else {
+                            warn!(
+                                "notification session {} does not exist",
+                                session_id
+                            );
+                            vec![0usize]
+                        }
                     } else {
-                        warn!(
-                            "notification session {} does not exist",
-                            session_id
-                        );
-                        vec![0usize]
+                        group.clients.clone()
                     }
                 } else {
-                    group.clients.clone()
+                    vec![0usize]
+                };
+
+                for conn_id in clients {
+                    if let Some(filter) = &notification.filter {
+                        if let Some(_) =
+                            filter.iter().find(|conn| **conn == conn_id)
+                        {
+                            continue;
+                        }
+                    }
+                    rpc_response(conn_id, response, state).await;
                 }
             } else {
-                vec![0usize]
-            };
-            drop(writer);
-
-            for conn_id in clients {
-                if let Some(filter) = &notification.filter {
-                    if let Some(_) =
-                        filter.iter().find(|conn| **conn == conn_id)
-                    {
-                        continue;
-                    }
-                }
-                rpc_response(conn_id, response, state).await;
+                warn!("notification context is missing group_id");
             }
         }
-    } else {
-        warn!("rpc broadcast was called without a notification context");
     }
-    */
 }
 
 /// Send a message to a single client.
