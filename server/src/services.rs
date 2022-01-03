@@ -329,6 +329,7 @@ impl Service for NotifyHandler {
                                             PEER_RELAY, entry,
                                         ))
                                         .unwrap();
+
                                         let response: Response = result.into();
                                         Some((s.1, response))
                                     } else {

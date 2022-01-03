@@ -27,7 +27,7 @@ use wasm_bindgen::prelude::*;
 
 use super::utils::{Params, PartyKey};
 
-use super::{console_log, log};
+//use super::{console_log, log};
 
 const AES_KEY_BYTES_LEN: usize = 32;
 
@@ -178,8 +178,6 @@ pub fn keygenRound2(
         bc_i,
         ..
     } = round1_entry;
-
-    console_log!("WASM got round 1 answer vec {:#?}", round1_ans_vec);
 
     let mut bc1_vec = round1_ans_vec
         .iter()

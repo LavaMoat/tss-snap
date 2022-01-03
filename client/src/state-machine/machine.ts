@@ -1,6 +1,4 @@
-export interface StateMachineOptions<T, U> {
-  onTransition: TransitionHandler<T, U>;
-}
+import { EventEmitter } from "events";
 
 export interface State<T, U> {
   name: string;
@@ -14,22 +12,21 @@ export type TransitionHandler<T, U> = (
   nextState?: State<T, U>
 ) => void;
 
-export class StateMachine<T, U> {
+export class StateMachine<T, U> extends EventEmitter {
   states: State<T, U>[];
   index: number;
   stateData: T | null;
-  inTransition: boolean;
-  options: StateMachineOptions<T, U>;
+  transitionGuard: boolean;
 
-  constructor(states: State<T, U>[], options: StateMachineOptions<T, U>) {
+  constructor(states: State<T, U>[]) {
+    super();
     this.states = states;
     this.index = 0;
     this.stateData = null;
-    this.options = options;
   }
 
   async next(transitionData?: U): Promise<T | null> {
-    if (this.inTransition) {
+    if (this.transitionGuard) {
       throw new Error(
         "state machine cannot proceed whilst a transition is running"
       );
@@ -38,14 +35,15 @@ export class StateMachine<T, U> {
     const nextState = this.states[this.index];
     if (nextState) {
       const previousState = this.states[this.index - 1];
-      this.options.onTransition(this.index, previousState, nextState);
-      this.inTransition = true;
+      this.emit("transitionEnter", this.index, previousState, nextState);
+      this.transitionGuard = true;
       this.stateData = await nextState.transition(
         this.stateData,
         transitionData
       );
-      this.inTransition = false;
+      this.transitionGuard = false;
       this.index++;
+      this.emit("transitionExit");
     }
 
     return this.stateData;

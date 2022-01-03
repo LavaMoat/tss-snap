@@ -81,8 +81,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           partySignup,
         };
 
-        console.log("Starting key share generation...");
-
         const key = await generateKeyShare(
           websocket,
           worker,
