@@ -14,7 +14,7 @@ interface KeygenRoundEntry {
   parameters: Parameters;
   partySignup: PartySignup;
   roundEntry: RoundEntry;
-  answer: string[];
+  //answer: string[];
 }
 
 export type KeygenTransition = string[];
@@ -33,24 +33,16 @@ export function generateKeyShare(
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
   info: KeygenInfo
 ): Promise<PartyKey> {
-  console.log("generate KEY SHARE WAS CALLED");
-
   const peerEntryHandler = makePeerState(info.parameters.parties - 1);
 
-  /*
   function relayPeers(peerEntries: PeerEntry[]) {
-    // NOTE: Sometimes p2p messages can all be received before the
-    // NOTE: state machine transition returns which will break everything
-    // NOTE: hence the delay sending p2p entries.
-    setTimeout(() => {
-      websocket.notify({
-        method: "peer_relay",
-        params: [info.groupId, info.sessionId, peerEntries],
-      });
-    }, 25);
+    websocket.notify({
+      method: "peer_relay",
+      params: [info.groupId, info.sessionId, peerEntries],
+    });
   }
-  */
 
+  /*
   function relayPeers(peerEntries: PeerEntry[]): Promise<string[]> {
     return new Promise((resolve) => {
       function onPeerEntry(peerEntry: PeerEntry) {
@@ -66,18 +58,15 @@ export function generateKeyShare(
 
       console.log("adding listener onPeerEntry");
       websocket.on("peer_relay", onPeerEntry);
+      //debugger;
 
-      // NOTE: Sometimes p2p messages can all be received before the
-      // NOTE: state machine transition returns which will break everything
-      // NOTE: hence the delay sending p2p entries.
-      //setTimeout(() => {
       websocket.notify({
         method: "peer_relay",
         params: [info.groupId, info.sessionId, peerEntries],
       });
-      //}, 50);
     });
   }
+  */
 
   return new Promise(async (resolve, reject) => {
     const machine = new StateMachine<KeygenState, KeygenTransition>(
@@ -96,12 +85,11 @@ export function generateKeyShare(
               partySignup
             );
 
-            const answer = await relayPeers(roundEntry.peer_entries);
-            console.log("round 1 answer", answer);
-            return { parameters, partySignup, roundEntry, answer };
+            relayPeers(roundEntry.peer_entries);
+            console.log("After round 1 calling relayPeers");
+            return { parameters, partySignup, roundEntry };
           },
         },
-        /*
         {
           name: "KEYGEN_ROUND_2",
           transition: async (
@@ -109,27 +97,24 @@ export function generateKeyShare(
             transitionData: KeygenTransition
           ): Promise<KeygenState | null> => {
             const keygenRoundEntry = previousState as KeygenRoundEntry;
-            const {
-              parameters,
-              partySignup,
-              answer: previousAnswer,
-            } = keygenRoundEntry;
-            //const answer = transitionData as string[];
+            const answer = transitionData as string[];
+            const { parameters, partySignup } = keygenRoundEntry;
+
+            console.log("round 2 answer", answer);
 
             // Get round 2 entry using round 1 commitments
             const roundEntry = await worker.keygenRound2(
               parameters,
               partySignup,
               keygenRoundEntry.roundEntry,
-              previousAnswer
+              answer
             );
 
-            //const answer = await relayPeers(roundEntry.peer_entries);
-            //console.log("round 2 answer", answer);
-            return { parameters, partySignup, roundEntry, answer: [] };
+            //relayPeerNotify(roundEntry.peer_entries);
+
+            return { parameters, partySignup, roundEntry };
           },
         },
-        */
         /*
         {
           name: "KEYGEN_ROUND_3",
@@ -222,24 +207,17 @@ export function generateKeyShare(
       { onTransition }
     );
 
-    /*
     websocket.on("peer_relay", async (peerEntry: PeerEntry) => {
       const answer = peerEntryHandler(peerEntry);
       // Got all the p2p answers
       if (answer) {
+        console.log("got all p2p answers", machine.index);
         //console.log("Got all p2p answers", answer);
-        //
-        if (machine.index < 1) {
-          await machine.next(answer);
-        }
+        await machine.next(answer);
       }
     });
-    */
 
-    while (machine.index < machine.states.length) {
-      await machine.next();
-    }
-
-    //machine.next();
+    // Start the state machine running
+    await machine.next();
   });
 }
