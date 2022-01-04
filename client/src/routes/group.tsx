@@ -6,9 +6,9 @@ import { useParams } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
 import { AppDispatch } from "../store";
 
-import { Session, Phase } from "../state-machine";
 import { WorkerContext } from "../worker-provider";
 
+import { Session, Phase, makeOnTransition } from "../state-machine";
 import {
   generateKeyShare,
   KeygenState,
@@ -56,19 +56,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     // All parties signed up to key generation
     websocket.on("session_signup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
-        const onTransition = (
-          index: number,
-          previousState: State<KeygenState, KeygenTransition>,
-          nextState: State<KeygenState, KeygenTransition>
-        ) => {
-          let message = "";
-          if (previousState) {
-            message = `transition ${index} from ${previousState.name} to ${nextState.name}`;
-          } else {
-            message = `transition ${index} to ${nextState.name}`;
-          }
-          console.log(message);
-        };
+        const onTransition = makeOnTransition<KeygenState, KeygenTransition>();
 
         // Generate a key share
         const { group, worker } = this.props;

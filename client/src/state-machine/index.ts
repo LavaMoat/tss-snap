@@ -1,4 +1,5 @@
 import { PeerEntry } from "./peer-state";
+import { State } from "./machine";
 
 export enum Phase {
   KEYGEN = "keygen",
@@ -53,4 +54,20 @@ export interface SessionInfo {
   sessionId: string;
   parameters: Parameters;
   partySignup: PartySignup;
+}
+
+export function makeOnTransition<T, U>() {
+  return (
+    index: number,
+    previousState: State<T, U>,
+    nextState: State<T, U>
+  ) => {
+    let message = "";
+    if (previousState) {
+      message = `transition ${index} from ${previousState.name} to ${nextState.name}`;
+    } else {
+      message = `transition ${index} to ${nextState.name}`;
+    }
+    console.log(message);
+  };
 }
