@@ -17,6 +17,7 @@ pub const SESSION_CREATE: &str = "session_create";
 pub const SESSION_JOIN: &str = "session_join";
 pub const SESSION_SIGNUP: &str = "session_signup";
 pub const PEER_RELAY: &str = "peer_relay";
+pub const SESSION_FINISH: &str = "session_finish";
 
 type Uuid = String;
 
@@ -172,6 +173,38 @@ impl Service for ServiceHandler {
             PEER_RELAY => {
                 // Must ACK so we indicate the service method exists
                 Some(req.into())
+            }
+            SESSION_FINISH => {
+                let (conn_id, state) = ctx;
+                let params: SessionSignupParams = req.deserialize()?;
+                let (group_id, session_id, _phase) = params;
+
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(&group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| *c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(&session_id)
+                        {
+                            session.finished += 1;
+                            // Must ACK so we indicate the service method exists
+                            Some(req.into())
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session finish does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
             }
             _ => None,
         };
@@ -364,6 +397,83 @@ impl Service for NotifyHandler {
                         }
                     } else {
                         warn!("connection for session signup does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            }
+            SESSION_FINISH => {
+                let (conn_id, state, notification) = ctx;
+                let params: SessionSignupParams = req.deserialize()?;
+                let (group_id, session_id, phase) = params;
+
+                println!(
+                    "Handle session finish notification {} / {}",
+                    group_id, session_id
+                );
+
+                let reader = state.read().await;
+                if let Some(group) = reader.groups.get(&group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| *c == conn_id)
+                    {
+                        if let Some(session) = group.sessions.get(&session_id) {
+                            let parties = group.params.parties as usize;
+                            let threshold = group.params.threshold as usize;
+                            let num_entries = session.finished as usize;
+                            let required_num_entries = match phase {
+                                Phase::Keygen => parties,
+                                Phase::Sign => threshold + 1,
+                            };
+
+                            // Enough parties are signed up to the session
+                            if num_entries == required_num_entries {
+                                let res = serde_json::to_value((
+                                    SESSION_FINISH,
+                                    &session_id,
+                                ))
+                                .unwrap();
+
+                                // Notify everyone in the session that enough
+                                // parties have signed up to the session
+                                {
+                                    let ctx = NotificationContext {
+                                        noop: false,
+                                        group_id: Some(group_id),
+                                        session_id: Some(session_id),
+                                        filter: None,
+                                        messages: None,
+                                    };
+                                    let mut writer = notification.lock().await;
+                                    *writer = ctx;
+                                }
+
+                                Some(res.into())
+                            } else {
+                                {
+                                    let ctx = NotificationContext {
+                                        noop: true,
+                                        group_id: None,
+                                        session_id: None,
+                                        filter: None,
+                                        messages: None,
+                                    };
+                                    let mut writer = notification.lock().await;
+                                    *writer = ctx;
+                                }
+                                None
+                            }
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session finish does not belong to the group");
                         None
                     }
                 } else {

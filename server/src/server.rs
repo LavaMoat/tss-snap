@@ -20,31 +20,14 @@ use warp::Filter;
 use crate::services::*;
 use json_rpc2::{Request, Response};
 
-//use common::{Parameters, PeerEntry, SignResult};
 use common::Parameters;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
 /*
-/// Incoming message from a websocket client.
-#[derive(Debug, Deserialize)]
-struct Incoming {
-    id: Option<usize>,
-    kind: IncomingKind,
-    data: Option<IncomingData>,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum IncomingKind {
-    /// Initialize the key generation process with a party signup
-    #[deprecated]
-    #[serde(rename = "party_signup")]
-    PartySignup,
-
-    /// Relay a message to peers.
-    #[serde(rename = "peer_relay")]
-    PeerRelay,
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_proposal")]
     SignProposal,
@@ -204,16 +187,22 @@ pub struct Session {
     pub uuid: String,
     pub phase: Phase,
 
+    /// Map party number to connection identifier
     #[serde(skip)]
     pub party_signups: Vec<(u16, usize)>,
+
+    /// Number of clients that have marked the session as finished
+    #[serde(skip)]
+    pub finished: u16,
 }
 
 impl Default for Session {
     fn default() -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
-            party_signups: Default::default(),
             phase: Default::default(),
+            party_signups: Default::default(),
+            finished: Default::default(),
         }
     }
 }
@@ -222,8 +211,9 @@ impl From<Phase> for Session {
     fn from(phase: Phase) -> Session {
         Self {
             uuid: Uuid::new_v4().to_string(),
-            party_signups: Default::default(),
             phase,
+            party_signups: Default::default(),
+            finished: Default::default(),
         }
     }
 }
@@ -397,7 +387,9 @@ async fn rpc_request(
 
     // Requests that require post-processing notifications
     let notification = match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY => Some(request.clone()),
+        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH => {
+            Some(request.clone())
+        }
         _ => None,
     };
 

@@ -78,9 +78,29 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         );
 
         this.props.dispatch(setKeyShare(key));
+
+        // Finish the session, we will be notified
+        // when all clients have finished
+        websocket.notify({
+          method: "session_finish",
+          params: [group.uuid, sessionId, Phase.KEYGEN],
+        });
       } else {
         console.warn(
           "Keygen got session_ready event for wrong session",
+          sessionId,
+          this.state.session.uuid
+        );
+      }
+    });
+
+    websocket.on("session_finish", async (sessionId: string) => {
+      if (sessionId === this.state.session.uuid) {
+        console.log("Client got session finish notification");
+        // TODO: auto-sign hello world message and extract public key / address
+      } else {
+        console.warn(
+          "Keygen got session_finish event for wrong session",
           sessionId,
           this.state.session.uuid
         );
@@ -92,6 +112,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const websocket = this.context;
     websocket.removeAllListeners("session_create");
     websocket.removeAllListeners("session_signup");
+    websocket.removeAllListeners("session_finish");
   }
 
   render() {
