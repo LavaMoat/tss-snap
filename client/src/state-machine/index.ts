@@ -26,6 +26,11 @@ export interface PartySignup {
   uuid: string;
 }
 
+export interface Session {
+  uuid: string;
+  partySignup?: PartySignup;
+}
+
 // Temporary object passed back and forth between javascript
 // and webassembly for the various rounds.
 export interface RoundEntry {

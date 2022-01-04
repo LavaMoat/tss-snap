@@ -1,12 +1,12 @@
 import React, { Component, useState, useEffect, useContext } from "react";
 import { useSelector, useDispatch, connect } from "react-redux";
 import { groupSelector, GroupInfo } from "../store/group";
-import { keygenSelector, setKeygen, Session } from "../store/keygen";
+import { keygenSelector, setKeygenSession, setKeyShare } from "../store/keygen";
 import { useParams } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
 import { AppDispatch } from "../store";
 
-import { Phase } from "../state-machine";
+import { Session, Phase } from "../state-machine";
 import { WorkerContext } from "../worker-provider";
 
 import {
@@ -88,7 +88,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           keygenInfo
         );
 
-        console.log("Generated key share", key);
+        this.props.dispatch(setKeyShare(key));
       } else {
         console.warn(
           "Keygen got session_ready event for wrong session",
@@ -124,7 +124,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         params: [this.props.group.uuid, Phase.KEYGEN],
       });
 
-      this.props.dispatch(setKeygen(session));
+      this.props.dispatch(setKeygenSession(session));
       this.setState({ ...this.state, session });
     };
 
@@ -134,7 +134,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         method: "session_join",
         params: [this.props.group.uuid, targetSession, Phase.KEYGEN],
       });
-      this.props.dispatch(setKeygen(session));
+      this.props.dispatch(setKeygenSession(session));
       this.setState({ ...this.state, session });
     };
 
@@ -145,7 +145,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         params: [this.props.group.uuid, this.state.session.uuid, Phase.KEYGEN],
       });
       session.partySignup = { number: partyNumber, uuid: session.uuid };
-      this.props.dispatch(setKeygen(session));
+      this.props.dispatch(setKeygenSession(session));
       this.setState({ ...this.state, session });
     };
 
