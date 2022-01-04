@@ -12,8 +12,8 @@ export function signMessage(
   worker: any,
   onTransition: TransitionHandler<SignState, SignTransition>,
   info: SessionInfo,
-  message: string,
-  keyShare: PartyKey
+  keyShare: PartyKey,
+  message: string
 ): Promise<SignResult> {
   const peerCache = new PeerEntryCache(info.parameters.threshold);
   const wait = waitFor<SignState, SignTransition>();

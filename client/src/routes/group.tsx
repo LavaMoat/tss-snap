@@ -4,18 +4,18 @@ import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector, setKeygenSession, setKeyShare } from "../store/keygen";
 import { useParams } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
-import { AppDispatch } from "../store";
+import { AppDispatch, RootState } from "../store";
 
 import { WorkerContext } from "../worker-provider";
 
-import { Session, Phase, makeOnTransition } from "../state-machine";
+import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
 import {
   generateKeyShare,
   KeygenState,
   KeygenTransition,
 } from "../state-machine/keygen";
 
-import { signMessage } from "../state-machine/sign";
+import { signMessage, SignState, SignTransition } from "../state-machine/sign";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
@@ -33,6 +33,7 @@ interface KeygenProps {
   group: GroupInfo;
   dispatch: AppDispatch;
   worker: any;
+  keyShare?: PartyKey;
 }
 
 interface KeygenStateProps {
@@ -63,21 +64,21 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         const { group, worker } = this.props;
         const { partySignup, uuid: sessionId } = this.state.session;
 
-        const keygenInfo = {
+        const sessionInfo = {
           groupId: group.uuid,
           sessionId,
           parameters: group.params,
           partySignup,
         };
 
-        const key = await generateKeyShare(
+        const keyShare = await generateKeyShare(
           websocket,
           worker,
           onTransition,
-          keygenInfo
+          sessionInfo
         );
 
-        this.props.dispatch(setKeyShare(key));
+        this.props.dispatch(setKeyShare(keyShare));
 
         // Finish the session, we will be notified
         // when all clients have finished
@@ -96,8 +97,42 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     websocket.on("session_finish", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
+        const { group, worker, keyShare } = this.props;
+        const { partySignup, uuid: sessionId } = this.state.session;
+        const isAutomaticSigner =
+          this.state.session.partySignup.number - 1 <= group.params.threshold;
+
         console.log("Client got session finish notification");
-        // TODO: auto-sign hello world message and extract public key / address
+
+        if (isAutomaticSigner) {
+          // TODO: auto-sign hello world message and extract public key / address
+
+          // sha256 of "hello world"
+          const message =
+            "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+
+          const onTransition = makeOnTransition<SignState, SignTransition>();
+
+          console.log("Signing message with", keyShare);
+
+          const sessionInfo = {
+            groupId: group.uuid,
+            sessionId,
+            parameters: group.params,
+            partySignup,
+          };
+
+          const signResult = await signMessage(
+            websocket,
+            worker,
+            onTransition,
+            sessionInfo,
+            keyShare,
+            message
+          );
+
+          console.log("Got sign message result", signResult);
+        }
       } else {
         console.warn(
           "Keygen got session_finish event for wrong session",
@@ -154,9 +189,12 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         method: "session_signup",
         params: [this.props.group.uuid, this.state.session.uuid, Phase.KEYGEN],
       });
-      session.partySignup = { number: partyNumber, uuid: session.uuid };
-      this.props.dispatch(setKeygenSession(session));
-      this.setState({ ...this.state, session });
+      const newSession = {
+        ...session,
+        partySignup: { number: partyNumber, uuid: session.uuid },
+      };
+      this.props.dispatch(setKeygenSession(newSession));
+      this.setState({ ...this.state, session: newSession });
     };
 
     const CreateOrJoinSession = () => {
@@ -213,7 +251,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
   }
 }
 
-const ConnectedKeygen = connect(null)(Keygen);
+const ConnectedKeygen = connect((state: RootState) => {
+  return { keyShare: state.keygen.keyShare };
+})(Keygen);
 
 interface GroupProps {}
 

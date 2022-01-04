@@ -410,11 +410,6 @@ impl Service for NotifyHandler {
                 let params: SessionSignupParams = req.deserialize()?;
                 let (group_id, session_id, phase) = params;
 
-                println!(
-                    "Handle session finish notification {} / {}",
-                    group_id, session_id
-                );
-
                 let reader = state.read().await;
                 if let Some(group) = reader.groups.get(&group_id) {
                     // Verify connection is part of the group clients

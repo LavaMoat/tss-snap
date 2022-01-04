@@ -1,9 +1,11 @@
 import { configureStore, Action } from "@reduxjs/toolkit";
 import groupReducer from "./group";
+import keygenReducer from "./keygen";
 
 const store = configureStore({
   reducer: {
     group: groupReducer,
+    keygen: keygenReducer,
   },
 });
 
