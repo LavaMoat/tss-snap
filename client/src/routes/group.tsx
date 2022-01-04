@@ -16,6 +16,7 @@ import {
 } from "../state-machine/keygen";
 
 import { signMessage, SignState, SignTransition } from "../state-machine/sign";
+import { getPublicAddressString } from "../public-key";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
@@ -132,6 +133,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           );
 
           console.log("Got sign message result", signResult);
+          const publicAddress = getPublicAddressString(message, signResult);
+          console.log("Got sign public address", publicAddress);
         }
       } else {
         console.warn(
