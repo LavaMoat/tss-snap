@@ -56,6 +56,12 @@ export interface SessionInfo {
   partySignup: PartySignup;
 }
 
+export interface SignResult {
+  r: string;
+  s: string;
+  recid: number;
+}
+
 export function makeOnTransition<T, U>() {
   return (
     index: number,

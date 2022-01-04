@@ -14,7 +14,8 @@ import {
   KeygenState,
   KeygenTransition,
 } from "../state-machine/keygen";
-import { State } from "../state-machine/machine";
+
+import { signMessage } from "../state-machine/sign";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,

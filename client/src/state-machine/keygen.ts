@@ -1,25 +1,11 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import {
-  Parameters,
-  PartySignup,
-  PartySignupInfo,
-  PartyKey,
-  RoundEntry,
-  SessionInfo,
-} from ".";
+import { PartyKey, RoundEntry, SessionInfo } from ".";
 import { PeerEntryCache, PeerEntry } from "./peer-state";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
 
-// Type to pass through the client state machine during key generation.
-interface KeygenRoundEntry {
-  parameters: Parameters;
-  partySignup: PartySignup;
-  roundEntry: RoundEntry;
-}
-
 export type KeygenTransition = string[];
-export type KeygenState = KeygenRoundEntry;
+export type KeygenState = RoundEntry;
 
 export function generateKeyShare(
   websocket: WebSocketClient,
@@ -30,7 +16,7 @@ export function generateKeyShare(
   const peerCache = new PeerEntryCache(info.parameters.parties - 1);
   const wait = waitFor<KeygenState, KeygenTransition>();
 
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve) => {
     const machine = new StateMachine<KeygenState, KeygenTransition>([
       {
         name: "KEYGEN_ROUND_1",
@@ -38,12 +24,12 @@ export function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const { parameters, partySignup } = info;
-
-          const roundEntry = await worker.keygenRound1(parameters, partySignup);
-
+          const roundEntry = await worker.keygenRound1(
+            info.parameters,
+            info.partySignup
+          );
           wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
-          return { parameters, partySignup, roundEntry };
+          return roundEntry;
         },
       },
       {
@@ -52,19 +38,16 @@ export function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const keygenRoundEntry = previousState as KeygenRoundEntry;
+          const previousRoundEntry = previousState as RoundEntry;
           const answer = transitionData as string[];
-          const { parameters, partySignup } = keygenRoundEntry;
-
           const roundEntry = await worker.keygenRound2(
-            parameters,
-            partySignup,
-            keygenRoundEntry.roundEntry,
+            info.parameters,
+            info.partySignup,
+            previousRoundEntry,
             answer
           );
-
           wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
-          return { parameters, partySignup, roundEntry };
+          return roundEntry;
         },
       },
       {
@@ -73,19 +56,16 @@ export function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const keygenRoundEntry = previousState as KeygenRoundEntry;
-          const { parameters, partySignup } = keygenRoundEntry;
+          const previousRoundEntry = previousState as RoundEntry;
           const answer = transitionData as string[];
-
           const roundEntry = await worker.keygenRound3(
-            parameters,
-            partySignup,
-            keygenRoundEntry.roundEntry,
+            info.parameters,
+            info.partySignup,
+            previousRoundEntry,
             answer
           );
-
           wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
-          return { parameters, partySignup, roundEntry };
+          return roundEntry;
         },
       },
       {
@@ -94,19 +74,16 @@ export function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const keygenRoundEntry = previousState as KeygenRoundEntry;
-          const { parameters, partySignup } = keygenRoundEntry;
+          const previousRoundEntry = previousState as RoundEntry;
           const answer = transitionData as string[];
-
           const roundEntry = await worker.keygenRound4(
-            parameters,
-            partySignup,
-            keygenRoundEntry.roundEntry,
+            info.parameters,
+            info.partySignup,
+            previousRoundEntry,
             answer
           );
-
           wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
-          return { parameters, partySignup, roundEntry };
+          return roundEntry;
         },
       },
       {
@@ -115,19 +92,16 @@ export function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const keygenRoundEntry = previousState as KeygenRoundEntry;
-          const { parameters, partySignup } = keygenRoundEntry;
+          const previousRoundEntry = previousState as RoundEntry;
           const answer = transitionData as string[];
-
           const roundEntry = await worker.keygenRound5(
-            parameters,
-            partySignup,
-            keygenRoundEntry.roundEntry,
+            info.parameters,
+            info.partySignup,
+            previousRoundEntry,
             answer
           );
-
           wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
-          return { parameters, partySignup, roundEntry };
+          return roundEntry;
         },
       },
       {
@@ -136,20 +110,17 @@ export function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const keygenRoundEntry = previousState as KeygenRoundEntry;
-          const { parameters, partySignup } = keygenRoundEntry;
+          const previousRoundEntry = previousState as RoundEntry;
           const answer = transitionData as string[];
-
-          const key: PartyKey = await worker.createKey(
-            parameters,
-            partySignup,
-            keygenRoundEntry.roundEntry,
+          const keyShare: PartyKey = await worker.createKey(
+            info.parameters,
+            info.partySignup,
+            previousRoundEntry,
             answer
           );
-
           websocket.removeAllListeners("peer_relay");
           machine.removeAllListeners("transitionEnter");
-          resolve(key);
+          resolve(keyShare);
           return null;
         },
       },
