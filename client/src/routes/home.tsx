@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { groupSelector } from "../store/group";
 import { useNavigate } from "react-router-dom";
-import { Parameters } from "../machine-common";
+import { Parameters } from "../state-machine";
 import { WebSocketContext } from "../websocket";
 import { setGroup } from "../store/group";
 

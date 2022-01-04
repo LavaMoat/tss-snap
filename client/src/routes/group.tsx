@@ -6,7 +6,7 @@ import { useParams } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
 import { AppDispatch } from "../store";
 
-import { Phase } from "../machine-common";
+import { Phase } from "../state-machine";
 import { WorkerContext } from "../worker-provider";
 
 import {

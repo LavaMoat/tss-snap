@@ -5,7 +5,8 @@ import {
   PartySignupInfo,
   PartyKey,
   RoundEntry,
-} from "../machine-common";
+  SessionInfo,
+} from ".";
 import { PeerEntryCache, PeerEntry } from "./peer-state";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
@@ -19,13 +20,6 @@ interface KeygenRoundEntry {
 
 export type KeygenTransition = string[];
 export type KeygenState = KeygenRoundEntry;
-
-export interface SessionInfo {
-  groupId: string;
-  sessionId: string;
-  parameters: Parameters;
-  partySignup: PartySignup;
-}
 
 export function generateKeyShare(
   websocket: WebSocketClient,
