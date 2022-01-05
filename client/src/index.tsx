@@ -5,7 +5,8 @@ import { HashRouter, Routes, Route, Link } from "react-router-dom";
 import { Provider } from "react-redux";
 
 import Home from "./routes/home";
-import Group from "./routes/group";
+import Keygen from "./routes/keygen";
+import Sign from "./routes/sign";
 
 import store from "./store";
 import { setGroup } from "./store/group";
@@ -14,10 +15,6 @@ import WebSocketProvider from "./websocket";
 import WorkerProvider from "./worker-provider";
 
 const NotFound = () => <h3>Page not found</h3>;
-
-const Sign = () => {
-  return <p>Sign using wallet connect view</p>;
-};
 
 const App = () => {
   if (window.Worker) {
@@ -31,7 +28,7 @@ const App = () => {
         <WorkerProvider>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/group/:uuid" element={<Group />} />
+            <Route path="/keygen/:uuid" element={<Keygen />} />
             <Route path="/sign/:address" element={<Sign />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -268,9 +268,7 @@ const ConnectedKeygen = connect((state: RootState) => {
   return { keyShare: state.keygen.keyShare };
 })(Keygen);
 
-interface GroupProps {}
-
-export default (props: GroupProps) => {
+export default () => {
   const navigate = useNavigate();
   const [group, setGroup] = useState(null);
   const dispatch = useDispatch();

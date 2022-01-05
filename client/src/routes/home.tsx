@@ -43,9 +43,7 @@ const CreateGroup = (props: CreateGroupProps) => {
   );
 };
 
-interface HomeProps {}
-
-export default (props: HomeProps) => {
+export default () => {
   const navigate = useNavigate();
   const { group } = useSelector(groupSelector);
   const dispatch = useDispatch();
@@ -63,7 +61,7 @@ export default (props: HomeProps) => {
 
   useEffect(() => {
     if (group) {
-      navigate(`/group/${group.uuid}`);
+      navigate(`/keygen/${group.uuid}`);
     }
   }, [group]);
 
