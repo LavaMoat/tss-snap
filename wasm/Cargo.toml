@@ -32,11 +32,9 @@ default-features = false
 #branch = "0.1"
 #features = ["wasm-bindgen"]
 
-# TODO: use https://github.com/ZenGo-X/multi-party-ecdsa once
-# TODO: https://github.com/ZenGo-X/multi-party-ecdsa/pull/144 is merged
 [target.'cfg(target_arch = "wasm32")'.dependencies.multi-party-ecdsa]
-git = "https://github.com/tmpfs/multi-party-ecdsa"
-branch = "curv-0.8"
+git = "https://github.com/ZenGo-X/multi-party-ecdsa"
+branch = "master"
 default-features = false
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
