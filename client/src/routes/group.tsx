@@ -101,20 +101,16 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         const { group, worker, keyShare } = this.props;
         const { partySignup, uuid: sessionId } = this.state.session;
         const isAutomaticSigner =
-          this.state.session.partySignup.number - 1 <= group.params.threshold;
-
-        console.log("Client got session finish notification");
+          this.state.session.partySignup.number <= group.params.threshold + 1;
 
         if (isAutomaticSigner) {
-          // TODO: auto-sign hello world message and extract public key / address
+          // Automatically sign message and extract public key / address
 
           // sha256 of "hello world"
           const message =
             "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
 
           const onTransition = makeOnTransition<SignState, SignTransition>();
-
-          console.log("Signing message with", keyShare);
 
           const sessionInfo = {
             groupId: group.uuid,
@@ -132,9 +128,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             message
           );
 
-          console.log("Got sign message result", signResult);
           const publicAddress = getPublicAddressString(message, signResult);
           console.log("Got sign public address", publicAddress);
+
+          // TODO: announce public address to all parties
         }
       } else {
         console.warn(
