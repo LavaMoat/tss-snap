@@ -12,11 +12,6 @@ interface CreateGroupProps {
 
 type GroupFormData = [string, Parameters];
 
-//interface GroupFormData {
-//label: string;
-//params: Parameters;
-//}
-
 const CreateGroup = (props: CreateGroupProps) => {
   const [label, setLabel] = useState("");
 

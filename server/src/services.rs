@@ -35,7 +35,7 @@ impl Service for ServiceHandler {
     type Data = (usize, Arc<RwLock<State>>);
     async fn handle(
         &self,
-        req: &mut Request,
+        req: &Request,
         ctx: &Self::Data,
     ) -> Result<Option<Response>> {
         let response = match req.method() {
@@ -213,7 +213,7 @@ impl Service for NotifyHandler {
     type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>);
     async fn handle(
         &self,
-        req: &mut Request,
+        req: &Request,
         ctx: &Self::Data,
     ) -> Result<Option<Response>> {
         let response = match req.method() {

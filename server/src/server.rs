@@ -376,7 +376,7 @@ async fn client_incoming_message(
 /// Process a request message from a client.
 async fn rpc_request(
     conn_id: usize,
-    mut request: Request,
+    request: Request,
     state: &Arc<RwLock<State>>,
 ) {
     use json_rpc2::futures::*;
@@ -385,30 +385,25 @@ async fn rpc_request(
         Box::new(ServiceHandler {});
     let server = Server::new(vec![&service]);
 
-    // Requests that require post-processing notifications
-    let notification = match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH => {
-            Some(request.clone())
-        }
-        _ => None,
-    };
-
-    if let Some(response) = server
-        .serve(&mut request, &(conn_id, Arc::clone(state)))
-        .await
+    if let Some(response) =
+        server.serve(&request, &(conn_id, Arc::clone(state))).await
     {
         rpc_response(conn_id, &response, state).await;
     }
 
-    if let Some(notification) = notification {
-        rpc_notify(conn_id, notification, state).await;
+    // Requests that require post-processing notifications
+    match request.method() {
+        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH => {
+            rpc_notify(conn_id, &request, state).await;
+        }
+        _ => {}
     }
 }
 
 /// Post processing notifications.
 async fn rpc_notify(
     conn_id: usize,
-    mut request: Request,
+    request: &Request,
     state: &Arc<RwLock<State>>,
 ) {
     use json_rpc2::futures::*;
@@ -423,7 +418,7 @@ async fn rpc_notify(
 
     if let Some(response) = server
         .serve(
-            &mut request,
+            request,
             &(conn_id, Arc::clone(state), Arc::clone(&notification)),
         )
         .await
