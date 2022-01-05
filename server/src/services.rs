@@ -25,6 +25,7 @@ type SessionCreateParams = (Uuid, Phase);
 type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
+type SessionFinishParams = (Uuid, Uuid, Phase);
 type PublicAddressParams = (Uuid, String);
 
 pub(crate) struct ServiceHandler;
@@ -141,7 +142,7 @@ impl Service for ServiceHandler {
             }
             SESSION_FINISH => {
                 let (conn_id, state) = ctx;
-                let params: SessionSignupParams = req.deserialize()?;
+                let params: SessionFinishParams = req.deserialize()?;
                 let (group_id, session_id, _phase) = params;
 
                 let mut writer = state.write().await;
@@ -256,15 +257,8 @@ impl Service for NotifyHandler {
                         Some(res.into())
                     } else {
                         {
-                            let ctx = NotificationContext {
-                                noop: true,
-                                group_id: None,
-                                session_id: None,
-                                filter: None,
-                                messages: None,
-                            };
                             let mut writer = notification.lock().await;
-                            *writer = ctx;
+                            *writer = Default::default();
                         }
                         None
                     }
@@ -279,7 +273,7 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
 
-                if let Some((group, session)) = get_group_session(
+                if let Some((_group, session)) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
@@ -330,7 +324,7 @@ impl Service for NotifyHandler {
             }
             SESSION_FINISH => {
                 let (conn_id, state, notification) = ctx;
-                let params: SessionSignupParams = req.deserialize()?;
+                let params: SessionFinishParams = req.deserialize()?;
                 let (group_id, session_id, phase) = params;
 
                 let reader = state.read().await;
@@ -372,15 +366,8 @@ impl Service for NotifyHandler {
                         Some(res.into())
                     } else {
                         {
-                            let ctx = NotificationContext {
-                                noop: true,
-                                group_id: None,
-                                session_id: None,
-                                filter: None,
-                                messages: None,
-                            };
                             let mut writer = notification.lock().await;
-                            *writer = ctx;
+                            *writer = Default::default();
                         }
                         None
                     }
@@ -389,10 +376,26 @@ impl Service for NotifyHandler {
                 }
             }
             PUBLIC_ADDRESS => {
-                let (conn_id, state, notification) = ctx;
+                let (_conn_id, _state, notification) = ctx;
                 let params: PublicAddressParams = req.deserialize()?;
                 let (group_id, public_address) = params;
-                None
+                let res =
+                    serde_json::to_value((PUBLIC_ADDRESS, &public_address))
+                        .unwrap();
+
+                {
+                    let ctx = NotificationContext {
+                        noop: false,
+                        group_id: Some(group_id),
+                        session_id: None,
+                        filter: None,
+                        messages: None,
+                    };
+                    let mut writer = notification.lock().await;
+                    *writer = ctx;
+                }
+
+                Some(res.into())
             }
             _ => None,
         };

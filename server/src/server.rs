@@ -240,13 +240,25 @@ pub struct State {
     pub groups: HashMap<String, Group>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct NotificationContext {
     pub noop: bool,
     pub group_id: Option<String>,
     pub session_id: Option<String>,
     pub filter: Option<Vec<usize>>,
     pub messages: Option<Vec<(usize, Response)>>,
+}
+
+impl Default for NotificationContext {
+    fn default() -> Self {
+        Self {
+            noop: true,
+            group_id: None,
+            session_id: None,
+            filter: None,
+            messages: None,
+        }
+    }
 }
 
 pub struct Server;
@@ -393,7 +405,8 @@ async fn rpc_request(
 
     // Requests that require post-processing notifications
     match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH => {
+        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH
+        | PUBLIC_ADDRESS => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}

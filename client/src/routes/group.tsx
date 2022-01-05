@@ -56,6 +56,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session });
     });
 
+    websocket.on("public_address", (address: string) => {
+      console.log("Got public address notification", address);
+    });
+
     // All parties signed up to key generation
     websocket.on("session_signup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
@@ -154,6 +158,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     websocket.removeAllListeners("session_create");
     websocket.removeAllListeners("session_signup");
     websocket.removeAllListeners("session_finish");
+    websocket.removeAllListeners("public_address");
   }
 
   render() {
