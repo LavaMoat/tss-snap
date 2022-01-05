@@ -50,29 +50,22 @@ impl Service for ServiceHandler {
             GROUP_CREATE => {
                 let (conn_id, state) = ctx;
                 let params: GroupCreateParams = req.deserialize()?;
-                let (label, params) = params;
-                //let info = params.get(0).unwrap();
-
-                let group = Group::new(*conn_id, params.clone(), label.clone());
+                let (label, parameters) = params;
+                let group =
+                    Group::new(*conn_id, parameters.clone(), label.clone());
                 let res = serde_json::to_value(&group.uuid).unwrap();
-                let group_key = group.uuid.clone();
                 let mut writer = state.write().await;
-                writer.groups.insert(group_key, group);
-
+                writer.groups.insert(group.uuid.clone(), group);
                 Some((req, res).into())
             }
             GROUP_JOIN => {
                 let (conn_id, state) = ctx;
-
-                let params: Vec<String> = req.deserialize()?;
-                let uuid = params.get(0).unwrap();
-
+                let uuid: Uuid = req.deserialize()?;
                 let mut writer = state.write().await;
-                if let Some(group) = writer.groups.get_mut(uuid) {
+                if let Some(group) = writer.groups.get_mut(&uuid) {
                     if let None = group.clients.iter().find(|c| *c == conn_id) {
                         group.clients.push(*conn_id);
                     }
-
                     let res = serde_json::to_value(group).unwrap();
                     Some((req, res).into())
                 } else {
@@ -85,9 +78,7 @@ impl Service for ServiceHandler {
                 let (conn_id, state) = ctx;
                 let params: SessionCreateParams = req.deserialize()?;
                 let (group_id, phase) = params;
-
                 let mut writer = state.write().await;
-
                 if let Some(group) =
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)
                 {

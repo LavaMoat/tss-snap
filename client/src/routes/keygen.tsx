@@ -281,7 +281,7 @@ export default () => {
     const joinGroup = async () => {
       const group = await websocket.rpc({
         method: "Group.join",
-        params: [uuid],
+        params: uuid,
       });
       setGroup(group);
     };
