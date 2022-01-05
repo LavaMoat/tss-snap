@@ -10,10 +10,12 @@ interface CreateGroupProps {
   onSubmit: (data: GroupFormData) => void;
 }
 
-interface GroupFormData {
-  label: string;
-  params: Parameters;
-}
+type GroupFormData = [string, Parameters];
+
+//interface GroupFormData {
+//label: string;
+//params: Parameters;
+//}
 
 const CreateGroup = (props: CreateGroupProps) => {
   const [label, setLabel] = useState("");
@@ -26,7 +28,7 @@ const CreateGroup = (props: CreateGroupProps) => {
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: get parties / threshold from form fields
-    props.onSubmit({ label, params: { parties: 3, threshold: 1 } });
+    props.onSubmit([label, { parties: 3, threshold: 1 }]);
   };
 
   return (
@@ -54,13 +56,13 @@ export default (props: HomeProps) => {
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
 
-  const onCreateGroupSubmit = async (groupData: GroupFormData) => {
+  const onCreateGroupSubmit = async (params: GroupFormData) => {
     const uuid = await websocket.rpc({
       method: "group_create",
-      params: [groupData],
+      params,
     });
 
-    const group = { ...groupData, uuid };
+    const group = { label: params[0], params: params[1], uuid };
     dispatch(setGroup(group));
   };
 

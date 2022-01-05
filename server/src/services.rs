@@ -18,19 +18,15 @@ pub const SESSION_JOIN: &str = "session_join";
 pub const SESSION_SIGNUP: &str = "session_signup";
 pub const PEER_RELAY: &str = "peer_relay";
 pub const SESSION_FINISH: &str = "session_finish";
+pub const PUBLIC_ADDRESS: &str = "public_address";
 
 type Uuid = String;
-
-#[derive(Debug, Deserialize)]
-struct GroupCreateParams {
-    label: String,
-    params: Parameters,
-}
-
+type GroupCreateParams = (String, Parameters);
 type SessionCreateParams = (Uuid, Phase);
 type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
+type PublicAddressParams = (Uuid, String);
 
 pub(crate) struct ServiceHandler;
 
@@ -45,14 +41,11 @@ impl Service for ServiceHandler {
         let response = match req.method() {
             GROUP_CREATE => {
                 let (conn_id, state) = ctx;
-                let params: Vec<GroupCreateParams> = req.deserialize()?;
-                let info = params.get(0).unwrap();
+                let params: GroupCreateParams = req.deserialize()?;
+                let (label, params) = params;
+                //let info = params.get(0).unwrap();
 
-                let group = Group::new(
-                    *conn_id,
-                    info.params.clone(),
-                    info.label.clone(),
-                );
+                let group = Group::new(*conn_id, params.clone(), label.clone());
                 let res = serde_json::to_value(&group.uuid).unwrap();
                 let group_key = group.uuid.clone();
                 let mut writer = state.write().await;
@@ -170,8 +163,9 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            PEER_RELAY => {
+            PEER_RELAY | PUBLIC_ADDRESS => {
                 // Must ACK so we indicate the service method exists
+                // the actual logic is handled by the notification service
                 Some(req.into())
             }
             SESSION_FINISH => {
@@ -476,6 +470,12 @@ impl Service for NotifyHandler {
                     // TODO: send error response
                     None
                 }
+            }
+            PUBLIC_ADDRESS => {
+                let (conn_id, state, notification) = ctx;
+                let params: PublicAddressParams = req.deserialize()?;
+                let (group_id, public_address) = params;
+                None
             }
             _ => None,
         };

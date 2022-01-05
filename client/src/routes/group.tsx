@@ -131,7 +131,13 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           const publicAddress = getPublicAddressString(message, signResult);
           console.log("Got sign public address", publicAddress);
 
-          // TODO: announce public address to all parties
+          // Announce public address to all parties in the group
+          if (this.state.session.partySignup.number === 1) {
+            websocket.notify({
+              method: "public_address",
+              params: [group.uuid, publicAddress],
+            });
+          }
         }
       } else {
         console.warn(
