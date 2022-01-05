@@ -2,7 +2,7 @@ import React, { Component, useState, useEffect, useContext } from "react";
 import { useSelector, useDispatch, connect } from "react-redux";
 import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector, setKeygenSession, setKeyShare } from "../store/keygen";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
 import { AppDispatch, RootState } from "../store";
 
@@ -35,6 +35,7 @@ interface KeygenProps {
   dispatch: AppDispatch;
   worker: any;
   keyShare?: PartyKey;
+  navigate: NavigateFunction;
 }
 
 interface KeygenStateProps {
@@ -58,6 +59,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     websocket.on("public_address", (address: string) => {
       console.log("Got public address notification", address);
+      this.props.navigate(`/sign/${address}`);
     });
 
     // All parties signed up to key generation
@@ -269,6 +271,7 @@ const ConnectedKeygen = connect((state: RootState) => {
 interface GroupProps {}
 
 export default (props: GroupProps) => {
+  const navigate = useNavigate();
   const [group, setGroup] = useState(null);
   const dispatch = useDispatch();
   const { group: savedGroup } = useSelector(groupSelector);
@@ -313,7 +316,13 @@ export default (props: GroupProps) => {
         <hr />
         <WorkerContext.Consumer>
           {(worker) => {
-            return <ConnectedKeygen group={group} worker={worker} />;
+            return (
+              <ConnectedKeygen
+                group={group}
+                worker={worker}
+                navigate={navigate}
+              />
+            );
           }}
         </WorkerContext.Consumer>
       </>

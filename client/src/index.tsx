@@ -13,6 +13,12 @@ import { setGroup } from "./store/group";
 import WebSocketProvider from "./websocket";
 import WorkerProvider from "./worker-provider";
 
+const NotFound = () => <h3>Page not found</h3>;
+
+const Sign = () => {
+  return <p>Sign using wallet connect view</p>;
+};
+
 const App = () => {
   if (window.Worker) {
     return (
@@ -26,6 +32,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/group/:uuid" element={<Group />} />
+            <Route path="/sign/:address" element={<Sign />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </WorkerProvider>
       </>
