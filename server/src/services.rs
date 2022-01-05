@@ -21,11 +21,11 @@ pub const SESSION_FINISH: &str = "Session.finish";
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
 
 // Notification event names
-pub const SESSION_CREATE_EVENT: &str = "session_create";
-pub const SESSION_SIGNUP_EVENT: &str = "session_signup";
-pub const PEER_RELAY_EVENT: &str = "peer_relay";
-pub const SESSION_FINISH_EVENT: &str = "session_finish";
-pub const NOTIFY_ADDRESS_EVENT: &str = "public_address";
+pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
+pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
+pub const PEER_RELAY_EVENT: &str = "peerRelay";
+pub const SESSION_FINISH_EVENT: &str = "sessionFinish";
+pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
 
 type Uuid = String;
 type GroupCreateParams = (String, Parameters);

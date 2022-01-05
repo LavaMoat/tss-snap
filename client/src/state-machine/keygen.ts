@@ -118,7 +118,7 @@ export function generateKeyShare(
             previousRoundEntry,
             answer
           );
-          websocket.removeAllListeners("peer_relay");
+          websocket.removeAllListeners("peerRelay");
           machine.removeAllListeners("transitionEnter");
           resolve(keyShare);
           return null;
@@ -126,7 +126,7 @@ export function generateKeyShare(
       },
     ]);
 
-    websocket.on("peer_relay", async (peerEntry: PeerEntry) => {
+    websocket.on("peerRelay", async (peerEntry: PeerEntry) => {
       peerCache.add(peerEntry);
     });
 

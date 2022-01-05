@@ -53,17 +53,17 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
   componentDidMount() {
     const websocket = this.context;
-    websocket.on("session_create", (session: Session) => {
+    websocket.on("sessionCreate", (session: Session) => {
       this.setState({ ...this.state, session });
     });
 
-    websocket.on("public_address", (address: string) => {
+    websocket.on("notifyAddress", (address: string) => {
       console.log("Got public address notification", address);
       this.props.navigate(`/sign/${address}`);
     });
 
     // All parties signed up to key generation
-    websocket.on("session_signup", async (sessionId: string) => {
+    websocket.on("sessionSignup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
         const onTransition = makeOnTransition<KeygenState, KeygenTransition>();
 
@@ -95,14 +95,14 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         });
       } else {
         console.warn(
-          "Keygen got session_ready event for wrong session",
+          "Keygen got sessionSignup event for wrong session",
           sessionId,
           this.state.session.uuid
         );
       }
     });
 
-    websocket.on("session_finish", async (sessionId: string) => {
+    websocket.on("sessionFinish", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
         const { group, worker, keyShare } = this.props;
         const { partySignup, uuid: sessionId } = this.state.session;
@@ -147,7 +147,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         }
       } else {
         console.warn(
-          "Keygen got session_finish event for wrong session",
+          "Keygen got sessionFinish event for wrong session",
           sessionId,
           this.state.session.uuid
         );
@@ -157,10 +157,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
   componentWillUnmount() {
     const websocket = this.context;
-    websocket.removeAllListeners("session_create");
-    websocket.removeAllListeners("session_signup");
-    websocket.removeAllListeners("session_finish");
-    websocket.removeAllListeners("public_address");
+    websocket.removeAllListeners("sessionCreate");
+    websocket.removeAllListeners("sessionSignup");
+    websocket.removeAllListeners("sessionFinish");
+    websocket.removeAllListeners("notifyAddress");
   }
 
   render() {
