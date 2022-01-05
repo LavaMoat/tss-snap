@@ -39,7 +39,7 @@ export function waitFor<T, U>() {
     }
 
     websocket.notify({
-      method: "peer_relay",
+      method: "Peer.relay",
       params: [info.groupId, info.sessionId, peerEntries],
     });
   };

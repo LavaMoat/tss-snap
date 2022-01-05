@@ -10,14 +10,22 @@ use super::server::{Group, NotificationContext, Phase, Session, State};
 
 use log::warn;
 
-pub const GROUP_CREATE: &str = "group_create";
-pub const GROUP_JOIN: &str = "group_join";
-pub const SESSION_CREATE: &str = "session_create";
-pub const SESSION_JOIN: &str = "session_join";
-pub const SESSION_SIGNUP: &str = "session_signup";
-pub const PEER_RELAY: &str = "peer_relay";
-pub const SESSION_FINISH: &str = "session_finish";
-pub const PUBLIC_ADDRESS: &str = "public_address";
+// RPC method calls
+pub const GROUP_CREATE: &str = "Group.create";
+pub const GROUP_JOIN: &str = "Group.join";
+pub const SESSION_CREATE: &str = "Session.create";
+pub const SESSION_JOIN: &str = "Session.join";
+pub const SESSION_SIGNUP: &str = "Session.signup";
+pub const PEER_RELAY: &str = "Peer.relay";
+pub const SESSION_FINISH: &str = "Session.finish";
+pub const NOTIFY_ADDRESS: &str = "Notify.address";
+
+// Notification event names
+pub const SESSION_CREATE_EVENT: &str = "session_create";
+pub const SESSION_SIGNUP_EVENT: &str = "session_signup";
+pub const PEER_RELAY_EVENT: &str = "peer_relay";
+pub const SESSION_FINISH_EVENT: &str = "session_finish";
+pub const NOTIFY_ADDRESS_EVENT: &str = "public_address";
 
 type Uuid = String;
 type GroupCreateParams = (String, Parameters);
@@ -135,7 +143,7 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            PEER_RELAY | PUBLIC_ADDRESS => {
+            PEER_RELAY | NOTIFY_ADDRESS => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -191,9 +199,11 @@ impl Service for NotifyHandler {
                 {
                     let last_session =
                         group.sessions.values().last().unwrap().clone();
-                    let res =
-                        serde_json::to_value((SESSION_CREATE, &last_session))
-                            .unwrap();
+                    let res = serde_json::to_value((
+                        SESSION_CREATE_EVENT,
+                        &last_session,
+                    ))
+                    .unwrap();
 
                     // Notify everyone else in the group a session was created
                     {
@@ -236,9 +246,11 @@ impl Service for NotifyHandler {
 
                     // Enough parties are signed up to the session
                     if num_entries == required_num_entries {
-                        let res =
-                            serde_json::to_value((SESSION_SIGNUP, &session_id))
-                                .unwrap();
+                        let res = serde_json::to_value((
+                            SESSION_SIGNUP_EVENT,
+                            &session_id,
+                        ))
+                        .unwrap();
 
                         // Notify everyone in the session that enough
                         // parties have signed up to the session
@@ -287,9 +299,11 @@ impl Service for NotifyHandler {
                                 .iter()
                                 .find(|s| s.0 == entry.party_to)
                             {
-                                let result =
-                                    serde_json::to_value((PEER_RELAY, entry))
-                                        .unwrap();
+                                let result = serde_json::to_value((
+                                    PEER_RELAY_EVENT,
+                                    entry,
+                                ))
+                                .unwrap();
 
                                 let response: Response = result.into();
                                 Some((s.1, response))
@@ -345,9 +359,11 @@ impl Service for NotifyHandler {
 
                     // Enough parties are signed up to the session
                     if num_entries == required_num_entries {
-                        let res =
-                            serde_json::to_value((SESSION_FINISH, &session_id))
-                                .unwrap();
+                        let res = serde_json::to_value((
+                            SESSION_FINISH_EVENT,
+                            &session_id,
+                        ))
+                        .unwrap();
 
                         // Notify everyone in the session that enough
                         // parties have signed up to the session
@@ -375,13 +391,15 @@ impl Service for NotifyHandler {
                     None
                 }
             }
-            PUBLIC_ADDRESS => {
+            NOTIFY_ADDRESS => {
                 let (_conn_id, _state, notification) = ctx;
                 let params: PublicAddressParams = req.deserialize()?;
                 let (group_id, public_address) = params;
-                let res =
-                    serde_json::to_value((PUBLIC_ADDRESS, &public_address))
-                        .unwrap();
+                let res = serde_json::to_value((
+                    NOTIFY_ADDRESS_EVENT,
+                    &public_address,
+                ))
+                .unwrap();
 
                 {
                     let ctx = NotificationContext {

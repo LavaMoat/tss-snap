@@ -51,10 +51,9 @@ export default () => {
 
   const onCreateGroupSubmit = async (params: GroupFormData) => {
     const uuid = await websocket.rpc({
-      method: "group_create",
+      method: "Group.create",
       params,
     });
-
     const group = { label: params[0], params: params[1], uuid };
     dispatch(setGroup(group));
   };

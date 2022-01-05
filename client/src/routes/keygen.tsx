@@ -90,7 +90,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         // Finish the session, we will be notified
         // when all clients have finished
         websocket.notify({
-          method: "session_finish",
+          method: "Session.finish",
           params: [group.uuid, sessionId, Phase.KEYGEN],
         });
       } else {
@@ -140,7 +140,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           // Announce public address to all parties in the group
           if (this.state.session.partySignup.number === 1) {
             websocket.notify({
-              method: "public_address",
+              method: "Notify.address",
               params: [group.uuid, publicAddress],
             });
           }
@@ -178,7 +178,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e.preventDefault();
 
       const session = await websocket.rpc({
-        method: "session_create",
+        method: "Session.create",
         params: [this.props.group.uuid, Phase.KEYGEN],
       });
 
@@ -189,7 +189,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
       const session = await websocket.rpc({
-        method: "session_join",
+        method: "Session.join",
         params: [this.props.group.uuid, targetSession, Phase.KEYGEN],
       });
       this.props.dispatch(setKeygenSession(session));
@@ -199,7 +199,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const signupToSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
       const partyNumber = await websocket.rpc({
-        method: "session_signup",
+        method: "Session.signup",
         params: [this.props.group.uuid, this.state.session.uuid, Phase.KEYGEN],
       });
       const newSession = {
@@ -280,7 +280,7 @@ export default () => {
   useEffect(() => {
     const joinGroup = async () => {
       const group = await websocket.rpc({
-        method: "group_join",
+        method: "Group.join",
         params: [uuid],
       });
       setGroup(group);
