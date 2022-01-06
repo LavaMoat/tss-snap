@@ -181,35 +181,38 @@ impl Service for NotifyHandler {
             SESSION_CREATE => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionCreateParams = req.deserialize()?;
-                let (group_id, _phase) = params;
+                let (group_id, phase) = params;
 
-                let reader = state.read().await;
-
-                if let Some(group) =
-                    get_group(&conn_id, &group_id, &reader.groups)
-                {
-                    let last_session =
-                        group.sessions.values().last().unwrap().clone();
-                    let res = serde_json::to_value((
-                        SESSION_CREATE_EVENT,
-                        &last_session,
-                    ))
-                    .unwrap();
-
-                    // Notify everyone else in the group a session was created
+                if let Phase::Keygen = phase {
+                    let reader = state.read().await;
+                    if let Some(group) =
+                        get_group(&conn_id, &group_id, &reader.groups)
                     {
-                        let ctx = NotificationContext {
-                            noop: false,
-                            group_id: Some(group_id),
-                            session_id: None,
-                            filter: Some(vec![*conn_id]),
-                            messages: None,
-                        };
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
-                    }
+                        let last_session =
+                            group.sessions.values().last().unwrap().clone();
+                        let res = serde_json::to_value((
+                            SESSION_CREATE_EVENT,
+                            &last_session,
+                        ))
+                        .unwrap();
 
-                    Some(res.into())
+                        // Notify everyone else in the group a session was created
+                        {
+                            let ctx = NotificationContext {
+                                noop: false,
+                                group_id: Some(group_id),
+                                session_id: None,
+                                filter: Some(vec![*conn_id]),
+                                messages: None,
+                            };
+                            let mut writer = notification.lock().await;
+                            *writer = ctx;
+                        }
+
+                        Some(res.into())
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
