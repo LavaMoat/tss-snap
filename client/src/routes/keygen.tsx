@@ -1,6 +1,6 @@
 import React, { Component, useState, useEffect, useContext } from "react";
 import { useSelector, useDispatch, connect } from "react-redux";
-import { groupSelector, GroupInfo } from "../store/group";
+import { groupSelector, GroupInfo, setGroup } from "../store/group";
 import { keygenSelector, setKeygenSession, setKeyShare } from "../store/keygen";
 import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
@@ -249,7 +249,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     return (
       <>
-        <h3>Key generation</h3>
+        <h4>Create key</h4>
         {session ? <KeygenSession /> : <CreateOrJoinSession />}
       </>
     );
@@ -262,9 +262,8 @@ const ConnectedKeygen = connect((state: RootState) => {
 
 export default () => {
   const navigate = useNavigate();
-  const [group, setGroup] = useState(null);
   const dispatch = useDispatch();
-  const { group: savedGroup } = useSelector(groupSelector);
+  const { group } = useSelector(groupSelector);
   const params = useParams();
   const { uuid } = params;
   const websocket = useContext(WebSocketContext);
@@ -275,49 +274,45 @@ export default () => {
         method: "Group.join",
         params: uuid,
       });
-      setGroup(group);
+      dispatch(setGroup(group));
     };
 
-    // Group creator already has the group info
-    if (savedGroup) {
-      setGroup(savedGroup);
-      // Otherwise try to join the group
-    } else {
+    if (!group) {
       joinGroup();
     }
-  }, [savedGroup]);
+  }, []);
 
-  if (group) {
-    return (
-      <>
-        <h3>{group.label}</h3>
-        <p>Parties: {group.params.parties}</p>
-        <p>Threshold: {group.params.threshold}</p>
-        <p>
-          Join <a href={location.href}>this group</a> in another window/tab or
-          open this link on another device:
-        </p>
-        <pre>{location.href}</pre>
-        <p>
-          <button onClick={(e) => copyToClipboard(e, location.href)}>
-            Copy to clipboard
-          </button>
-        </p>
-        <hr />
-        <WorkerContext.Consumer>
-          {(worker) => {
-            return (
-              <ConnectedKeygen
-                group={group}
-                worker={worker}
-                navigate={navigate}
-              />
-            );
-          }}
-        </WorkerContext.Consumer>
-      </>
-    );
-  } else {
+  if (!group) {
     return null;
   }
+
+  return (
+    <>
+      <h2>Keygen in {group.label}</h2>
+      <p>Parties: {group.params.parties}</p>
+      <p>Threshold: {group.params.threshold}</p>
+      <p>
+        Join <a href={location.href}>this group</a> in another window/tab or
+        open this link on another device:
+      </p>
+      <pre>{location.href}</pre>
+      <p>
+        <button onClick={(e) => copyToClipboard(e, location.href)}>
+          Copy to clipboard
+        </button>
+      </p>
+      <hr />
+      <WorkerContext.Consumer>
+        {(worker) => {
+          return (
+            <ConnectedKeygen
+              group={group}
+              worker={worker}
+              navigate={navigate}
+            />
+          );
+        }}
+      </WorkerContext.Consumer>
+    </>
+  );
 };

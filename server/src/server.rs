@@ -406,7 +406,7 @@ async fn rpc_request(
     // Requests that require post-processing notifications
     match request.method() {
         SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH
-        | NOTIFY_ADDRESS => {
+        | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}

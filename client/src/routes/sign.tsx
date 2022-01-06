@@ -7,11 +7,17 @@ import { Transaction } from "@ethereumjs/tx";
 import { groupSelector, GroupInfo } from "../store/group";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketContext, WebSocketClient } from "../websocket";
-import { Phase } from "../state-machine";
+import { Phase, Session } from "../state-machine";
 
 interface Proposal {
-  raw: string;
+  message: string;
   creator: boolean;
+  session?: Session;
+}
+
+interface ProposalNotification {
+  sessionId: string;
+  message: string;
 }
 
 interface ProposalProps {
@@ -22,7 +28,7 @@ interface ProposalProps {
 }
 
 const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(proposal.session);
 
   useEffect(() => {
     if (proposal.creator) {
@@ -44,7 +50,11 @@ const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
           partySignup: { number: partyNumber, uuid: session.uuid },
         };
 
-        // TODO: send proposal notification
+        // Send signing proposal notification
+        websocket.notify({
+          method: "Notify.proposal",
+          params: [group.uuid, session.uuid, proposal.message],
+        });
 
         setSession(session);
       };
@@ -58,7 +68,7 @@ const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
 
   return (
     <div>
-      <p>{proposal.raw}</p>
+      <p>{proposal.message}</p>
       <p>Session ID: {session.uuid}</p>
       <button>Sign</button>
     </div>
@@ -77,6 +87,7 @@ const SignForm = (props: FormProps) => {
     if (message.trim() === "") {
       return alert("Please enter a message to sign");
     }
+    setMessage("");
     props.onSubmit(message);
   };
 
@@ -143,6 +154,30 @@ const Sign = () => {
   const params = useParams();
   const { address } = params;
   const [proposals, setProposals] = useState([]);
+
+  useEffect(() => {
+    websocket.on(
+      "notifyProposal",
+      async (notification: ProposalNotification) => {
+        const { sessionId, message } = notification;
+        const session = await websocket.rpc({
+          method: "Session.join",
+          params: [group.uuid, sessionId, Phase.SIGN],
+        });
+        const partyNumber = await websocket.rpc({
+          method: "Session.signup",
+          params: [group.uuid, session.uuid, Phase.SIGN],
+        });
+        const newSession = {
+          ...session,
+          partySignup: { number: partyNumber, uuid: session.uuid },
+        };
+        const proposal = { message, creator: false, session: newSession };
+        const newProposals = [proposal, ...proposals];
+        setProposals(newProposals);
+      }
+    );
+  }, []);
 
   const onWalletConnectFormSubmit = (uri: string) => {
     const connector = new WalletConnect({
@@ -236,14 +271,14 @@ const Sign = () => {
   //<h4>Connect Wallet</h4>
   //<WalletConnectForm onSubmit={onWalletConnectFormSubmit} />
 
-  const onSignFormSubmit = (raw: string) => {
-    const newProposals = [{ raw, creator: true }, ...proposals];
+  const onSignFormSubmit = (message: string) => {
+    const newProposals = [{ message, creator: true }, ...proposals];
     setProposals(newProposals);
   };
 
   return (
     <>
-      <h2>Sign</h2>
+      <h2>Sign in {group.label}</h2>
       <h3>{address}</h3>
       <hr />
       <h4>Create proposal</h4>

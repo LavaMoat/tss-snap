@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Request, Response, Result};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -19,6 +20,7 @@ pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const PEER_RELAY: &str = "Peer.relay";
 pub const SESSION_FINISH: &str = "Session.finish";
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
+pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 
 // Notification event names
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
@@ -26,6 +28,7 @@ pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
 pub const SESSION_FINISH_EVENT: &str = "sessionFinish";
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
+pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 
 type Uuid = String;
 type GroupCreateParams = (String, Parameters);
@@ -34,7 +37,15 @@ type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
 type SessionFinishParams = (Uuid, Uuid, Phase);
-type PublicAddressParams = (Uuid, String);
+type NotifyAddressParams = (Uuid, String);
+type NotifyProposalParams = (Uuid, Uuid, String);
+
+#[derive(Debug, Serialize)]
+struct Proposal {
+    #[serde(rename = "sessionId")]
+    session_id: String,
+    message: String,
+}
 
 pub(crate) struct ServiceHandler;
 
@@ -134,7 +145,7 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            PEER_RELAY | NOTIFY_ADDRESS => {
+            PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -359,6 +370,10 @@ impl Service for NotifyHandler {
                         ))
                         .unwrap();
 
+                        // FIXME: remove the session once finished
+                        // FIXME: but cannot do it here because writing
+                        // FIXME: to state may cause a deadlock
+
                         // Notify everyone in the session that enough
                         // parties have signed up to the session
                         {
@@ -387,7 +402,7 @@ impl Service for NotifyHandler {
             }
             NOTIFY_ADDRESS => {
                 let (_conn_id, _state, notification) = ctx;
-                let params: PublicAddressParams = req.deserialize()?;
+                let params: NotifyAddressParams = req.deserialize()?;
                 let (group_id, public_address) = params;
                 let res = serde_json::to_value((
                     NOTIFY_ADDRESS_EVENT,
@@ -401,6 +416,34 @@ impl Service for NotifyHandler {
                         group_id: Some(group_id),
                         session_id: None,
                         filter: None,
+                        messages: None,
+                    };
+                    let mut writer = notification.lock().await;
+                    *writer = ctx;
+                }
+
+                Some(res.into())
+            }
+            NOTIFY_PROPOSAL => {
+                let (conn_id, _state, notification) = ctx;
+                let params: NotifyProposalParams = req.deserialize()?;
+                let (group_id, session_id, message) = params;
+
+                let proposal = Proposal {
+                    session_id,
+                    message,
+                };
+
+                let res =
+                    serde_json::to_value((NOTIFY_PROPOSAL_EVENT, &proposal))
+                        .unwrap();
+
+                {
+                    let ctx = NotificationContext {
+                        noop: false,
+                        group_id: Some(group_id),
+                        session_id: None,
+                        filter: Some(vec![*conn_id]),
                         messages: None,
                     };
                     let mut writer = notification.lock().await;
