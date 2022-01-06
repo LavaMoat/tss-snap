@@ -18,6 +18,8 @@ import {
 import { signMessage, SignState, SignTransition } from "../state-machine/sign";
 import { getPublicAddressString } from "../public-key";
 
+import { sign } from "../signer";
+
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
   text: string
@@ -107,7 +109,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         const { group, worker, keyShare } = this.props;
         const { partySignup, uuid: sessionId } = this.state.session;
         const isAutomaticSigner =
-          this.state.session.partySignup.number <= group.params.threshold + 1;
+          partySignup.number <= group.params.threshold + 1;
 
         if (isAutomaticSigner) {
           // Automatically sign message and extract public key / address
@@ -116,29 +118,39 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           const message =
             "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
 
-          const onTransition = makeOnTransition<SignState, SignTransition>();
-
-          const sessionInfo = {
-            groupId: group.uuid,
-            sessionId,
-            parameters: group.params,
-            partySignup,
-          };
-
-          const signResult = await signMessage(
+          const { signResult, publicAddress } = await sign(
+            message,
+            keyShare,
+            group,
             websocket,
             worker,
-            onTransition,
-            sessionInfo,
-            keyShare,
-            message
+            sessionId,
+            partySignup
           );
 
-          const publicAddress = getPublicAddressString(message, signResult);
+          //const onTransition = makeOnTransition<SignState, SignTransition>();
+
+          //const sessionInfo = {
+          //groupId: group.uuid,
+          //sessionId,
+          //parameters: group.params,
+          //partySignup,
+          //};
+
+          //const signResult = await signMessage(
+          //websocket,
+          //worker,
+          //onTransition,
+          //sessionInfo,
+          //keyShare,
+          //message
+          //);
+
+          //const publicAddress = getPublicAddressString(message, signResult);
           console.log("Got sign public address", publicAddress);
 
           // Announce public address to all parties in the group
-          if (this.state.session.partySignup.number === 1) {
+          if (partySignup.number === 1) {
             websocket.notify({
               method: "Notify.address",
               params: [group.uuid, publicAddress],
