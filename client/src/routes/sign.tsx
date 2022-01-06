@@ -52,14 +52,6 @@ const Proposal = ({
           method: "Session.join",
           params: [group.uuid, targetSession.uuid, Phase.SIGN],
         });
-        const partyNumber = await websocket.rpc({
-          method: "Session.signup",
-          params: [group.uuid, session.uuid, Phase.SIGN],
-        });
-        const newSession = {
-          ...session,
-          partySignup: { number: partyNumber, uuid: session.uuid },
-        };
 
         // Send signing proposal notification
         websocket.notify({
@@ -67,7 +59,7 @@ const Proposal = ({
           params: [group.uuid, session.uuid, proposal.message],
         });
 
-        setSession(newSession);
+        setSession(session);
       };
       createProposalSession();
     }
@@ -77,13 +69,29 @@ const Proposal = ({
     event.preventDefault();
     const hash = await worker.sha256(proposal.message);
 
+    const partyNumber = await websocket.rpc({
+      method: "Session.signup",
+      params: [group.uuid, session.uuid, Phase.SIGN],
+    });
+    console.log("proposal receiver got partyNumber", partyNumber);
+
+    const partySignup = { number: partyNumber, uuid: session.uuid };
+    const newSession = {
+      ...session,
+      partySignup: { number: partyNumber, uuid: session.uuid },
+    };
+    setSession(newSession);
+
+    console.log("Signing message", hash);
+    console.log("Party Signup", partySignup);
+
     const { signResult, publicAddress } = await sign(
       hash,
       keyShare,
       group,
       websocket,
       worker,
-      session.partySignup
+      partySignup
     );
 
     console.log("Got sign public address", publicAddress);
@@ -201,15 +209,7 @@ const Sign = () => {
           method: "Session.join",
           params: [group.uuid, sessionId, Phase.SIGN],
         });
-        const partyNumber = await websocket.rpc({
-          method: "Session.signup",
-          params: [group.uuid, session.uuid, Phase.SIGN],
-        });
-        const newSession = {
-          ...session,
-          partySignup: { number: partyNumber, uuid: session.uuid },
-        };
-        const proposal = { message, creator: false, session: newSession };
+        const proposal = { message, creator: false, session };
         const newProposals = [proposal, ...proposals];
         setProposals(newProposals);
       }
