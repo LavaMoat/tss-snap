@@ -17,6 +17,7 @@ import init, {
   signRound8,
   signRound9,
   signMessage,
+  sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
 
@@ -58,4 +59,5 @@ Comlink.expose({
   signRound8,
   signRound9,
   signMessage,
+  sha256,
 });

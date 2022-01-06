@@ -61,6 +61,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     websocket.on("notifyAddress", (address: string) => {
       console.log("Got public address notification", address);
+
       this.props.navigate(`/sign/${address}`);
     });
 
@@ -113,8 +114,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
         if (isAutomaticSigner) {
           // Automatically sign message and extract public key / address
-
-          // sha256 of "hello world"
+          //
+          // Sha256 of "hello world"
           const message =
             "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
 

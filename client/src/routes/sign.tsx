@@ -5,9 +5,11 @@ import WalletConnect from "@walletconnect/client";
 import { Transaction } from "@ethereumjs/tx";
 
 import { groupSelector, GroupInfo } from "../store/group";
+import { keygenSelector } from "../store/keygen";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketContext, WebSocketClient } from "../websocket";
-import { Phase, Session } from "../state-machine";
+import { Phase, Session, PartyKey } from "../state-machine";
+import { sign } from "../signer";
 
 interface Proposal {
   message: string;
@@ -25,9 +27,18 @@ interface ProposalProps {
   group: GroupInfo;
   proposal: Proposal;
   websocket: WebSocketClient;
+  worker: any;
+  keyShare: PartyKey;
 }
 
-const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
+const Proposal = ({
+  address,
+  group,
+  proposal,
+  websocket,
+  worker,
+  keyShare,
+}: ProposalProps) => {
   const [session, setSession] = useState(proposal.session);
 
   useEffect(() => {
@@ -56,11 +67,36 @@ const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
           params: [group.uuid, session.uuid, proposal.message],
         });
 
-        setSession(session);
+        setSession(newSession);
       };
       createProposalSession();
     }
   }, []);
+
+  const onSignMessage = async (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    const hash = await worker.sha256(proposal.message);
+
+    const { signResult, publicAddress } = await sign(
+      hash,
+      keyShare,
+      group,
+      websocket,
+      worker,
+      session.partySignup
+    );
+
+    console.log("Got sign public address", publicAddress);
+
+    if (address !== publicAddress) {
+      console.error(
+        "signed message has different public address, expected",
+        address,
+        "got",
+        publicAddress
+      );
+    }
+  };
 
   if (!session) {
     return null;
@@ -70,7 +106,7 @@ const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
     <div>
       <p>{proposal.message}</p>
       <p>Session ID: {session.uuid}</p>
-      <button>Sign</button>
+      <button onClick={onSignMessage}>Sign</button>
     </div>
   );
 };
@@ -151,6 +187,7 @@ const WalletConnectForm = (props: FormProps) => {
 const Sign = () => {
   const websocket = useContext(WebSocketContext);
   const { group } = useSelector(groupSelector);
+  const { keyShare } = useSelector(keygenSelector);
   const params = useParams();
   const { address } = params;
   const [proposals, setProposals] = useState([]);
@@ -270,6 +307,24 @@ const Sign = () => {
 
   //<h4>Connect Wallet</h4>
   //<WalletConnectForm onSubmit={onWalletConnectFormSubmit} />
+  /*
+
+        {proposals.length > 0 ? (
+          proposals.map((proposal: Proposal, index: number) => {
+            return (
+              <Proposal
+                key={index}
+                address={address}
+                group={group}
+                proposal={proposal}
+                websocket={websocket}
+              />
+            );
+          })
+        ) : (
+          <p>No proposals yet</p>
+        )}
+  */
 
   const onSignFormSubmit = (message: string) => {
     const newProposals = [{ message, creator: true }, ...proposals];
@@ -285,21 +340,31 @@ const Sign = () => {
       <SignForm onSubmit={onSignFormSubmit} />
       <hr />
       <h4>Proposals</h4>
-      {proposals.length > 0 ? (
-        proposals.map((proposal: Proposal, index: number) => {
-          return (
-            <Proposal
-              key={index}
-              address={address}
-              group={group}
-              proposal={proposal}
-              websocket={websocket}
-            />
-          );
-        })
-      ) : (
-        <p>No proposals yet</p>
-      )}
+      <WorkerContext.Consumer>
+        {(worker) => {
+          if (proposals.length > 0) {
+            return (
+              <div>
+                {proposals.map((proposal: Proposal, index: number) => {
+                  return (
+                    <Proposal
+                      key={index}
+                      address={address}
+                      group={group}
+                      proposal={proposal}
+                      websocket={websocket}
+                      worker={worker}
+                      keyShare={keyShare}
+                    />
+                  );
+                })}
+              </div>
+            );
+          } else {
+            return <p>No proposals yet</p>;
+          }
+        }}
+      </WorkerContext.Consumer>
     </>
   );
 };
