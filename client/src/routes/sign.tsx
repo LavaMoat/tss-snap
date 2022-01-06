@@ -1,15 +1,105 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import WalletConnect from "@walletconnect/client";
 import { Transaction } from "@ethereumjs/tx";
 
-import { groupSelector } from "../store/group";
+import { groupSelector, GroupInfo } from "../store/group";
 import { WorkerContext } from "../worker-provider";
+import { WebSocketContext, WebSocketClient } from "../websocket";
+import { Phase } from "../state-machine";
+
+interface Proposal {
+  raw: string;
+  creator: boolean;
+}
+
+interface ProposalProps {
+  address: string;
+  group: GroupInfo;
+  proposal: Proposal;
+  websocket: WebSocketClient;
+}
+
+const Proposal = ({ group, proposal, websocket }: ProposalProps) => {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    if (proposal.creator) {
+      const createProposalSession = async () => {
+        const targetSession = await websocket.rpc({
+          method: "Session.create",
+          params: [group.uuid, Phase.SIGN],
+        });
+        const session = await websocket.rpc({
+          method: "Session.join",
+          params: [group.uuid, targetSession.uuid, Phase.SIGN],
+        });
+        const partyNumber = await websocket.rpc({
+          method: "Session.signup",
+          params: [group.uuid, session.uuid, Phase.SIGN],
+        });
+        const newSession = {
+          ...session,
+          partySignup: { number: partyNumber, uuid: session.uuid },
+        };
+
+        // TODO: send proposal notification
+
+        setSession(session);
+      };
+      createProposalSession();
+    }
+  }, []);
+
+  if (!session) {
+    return null;
+  }
+
+  return (
+    <div>
+      <p>{proposal.raw}</p>
+      <p>Session ID: {session.uuid}</p>
+      <button>Sign</button>
+    </div>
+  );
+};
 
 interface FormProps {
   onSubmit: (message: string) => void;
 }
+
+const SignForm = (props: FormProps) => {
+  const [message, setMessage] = useState("");
+
+  const onSignFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (message.trim() === "") {
+      return alert("Please enter a message to sign");
+    }
+    props.onSubmit(message);
+  };
+
+  const onMessageChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setMessage(event.currentTarget.value);
+  };
+
+  return (
+    <>
+      <form onSubmit={onSignFormSubmit}>
+        <textarea
+          placeholder="Enter a message to sign"
+          rows={4}
+          name="message"
+          onChange={onMessageChange}
+          value={message}
+        ></textarea>
+        <input type="submit" name="Sign" value="Submit Proposal" />
+      </form>
+    </>
+  );
+};
 
 const WalletConnectForm = (props: FormProps) => {
   const [uri, setUri] = useState("");
@@ -48,9 +138,11 @@ const WalletConnectForm = (props: FormProps) => {
 };
 
 const Sign = () => {
+  const websocket = useContext(WebSocketContext);
   const { group } = useSelector(groupSelector);
   const params = useParams();
   const { address } = params;
+  const [proposals, setProposals] = useState([]);
 
   const onWalletConnectFormSubmit = (uri: string) => {
     const connector = new WalletConnect({
@@ -141,13 +233,38 @@ const Sign = () => {
     });
   };
 
+  //<h4>Connect Wallet</h4>
+  //<WalletConnectForm onSubmit={onWalletConnectFormSubmit} />
+
+  const onSignFormSubmit = (raw: string) => {
+    const newProposals = [{ raw, creator: true }, ...proposals];
+    setProposals(newProposals);
+  };
+
   return (
     <>
       <h2>Sign</h2>
       <h3>{address}</h3>
       <hr />
-      <h4>Connect Wallet</h4>
-      <WalletConnectForm onSubmit={onWalletConnectFormSubmit} />
+      <h4>Create proposal</h4>
+      <SignForm onSubmit={onSignFormSubmit} />
+      <hr />
+      <h4>Proposals</h4>
+      {proposals.length > 0 ? (
+        proposals.map((proposal: Proposal, index: number) => {
+          return (
+            <Proposal
+              key={index}
+              address={address}
+              group={group}
+              proposal={proposal}
+              websocket={websocket}
+            />
+          );
+        })
+      ) : (
+        <p>No proposals yet</p>
+      )}
     </>
   );
 };

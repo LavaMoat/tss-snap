@@ -9,7 +9,7 @@ import {
 import { signMessage, SignState, SignTransition } from "./state-machine/sign";
 import { getPublicAddressString } from "./public-key";
 
-interface SignData {
+interface SignResultPublicAddress {
   signResult: SignResult;
   publicAddress: string;
 }
@@ -20,14 +20,13 @@ export async function sign(
   group: GroupInfo,
   websocket: WebSocketClient,
   worker: any,
-  sessionId: string,
   partySignup: PartySignup
-): Promise<SignData> {
+): Promise<SignResultPublicAddress> {
   const onTransition = makeOnTransition<SignState, SignTransition>();
 
   const sessionInfo = {
     groupId: group.uuid,
-    sessionId,
+    sessionId: partySignup.uuid,
     parameters: group.params,
     partySignup,
   };

@@ -124,29 +124,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             group,
             websocket,
             worker,
-            sessionId,
             partySignup
           );
 
-          //const onTransition = makeOnTransition<SignState, SignTransition>();
-
-          //const sessionInfo = {
-          //groupId: group.uuid,
-          //sessionId,
-          //parameters: group.params,
-          //partySignup,
-          //};
-
-          //const signResult = await signMessage(
-          //websocket,
-          //worker,
-          //onTransition,
-          //sessionInfo,
-          //keyShare,
-          //message
-          //);
-
-          //const publicAddress = getPublicAddressString(message, signResult);
           console.log("Got sign public address", publicAddress);
 
           // Announce public address to all parties in the group
