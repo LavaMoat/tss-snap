@@ -13,30 +13,78 @@ interface CreateGroupProps {
 type GroupFormData = [string, Parameters];
 
 const CreateGroup = (props: CreateGroupProps) => {
-  const [label, setLabel] = useState("");
+  const [label, setLabel] = useState("Test Group");
+  const [parties, setParties] = useState(3);
+  const [threshold, setThreshold] = useState(1);
+  const [maxThreshold, setMaxThreshold] = useState(2);
 
   const onLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
     setLabel(event.currentTarget.value);
   };
 
+  const onPartiesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const value = parseInt(event.currentTarget.value);
+    setParties(value);
+    setMaxThreshold(value - 1);
+    if (threshold > value - 1) {
+      setThreshold(value - 1);
+    }
+  };
+
+  const onThresholdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const value = parseInt(event.currentTarget.value);
+    setThreshold(value);
+  };
+
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // TODO: get parties / threshold from form fields
-    props.onSubmit([label, { parties: 3, threshold: 1 }]);
+    props.onSubmit([label, { parties, threshold }]);
   };
 
   return (
     <>
-      <h3>Create Group</h3>
-      <p>To get started create a group for key generation and signing</p>
-      <form onSubmit={onSubmit}>
-        <input
-          placeholder="Enter a group label"
-          type="text"
-          onChange={onLabelChange}
-          value={label}
-        />
+      <h2>Group</h2>
+      <p>
+        To get started create a group; the group will be used for all key
+        generation and message signing communication. Groups are limited to 16
+        parties and the threshold may not exceed the number of parties.
+      </p>
+      <form className="group" onSubmit={onSubmit}>
+        <div>
+          <label htmlFor="label">Label:</label>
+          <input
+            id="label"
+            placeholder="Enter a group label"
+            type="text"
+            onChange={onLabelChange}
+            value={label}
+          />
+        </div>
+        <div>
+          <label htmlFor="parties">Parties:</label>
+          <input
+            id="parties"
+            type="number"
+            onChange={onPartiesChange}
+            min={2}
+            max={16}
+            value={parties}
+          />
+        </div>
+        <div>
+          <label htmlFor="threshold">Threshold:</label>
+          <input
+            id="threshold"
+            type="number"
+            onChange={onThresholdChange}
+            min={1}
+            max={maxThreshold}
+            value={threshold}
+          />
+        </div>
         <input type="submit" value="Create Group" />
       </form>
     </>
