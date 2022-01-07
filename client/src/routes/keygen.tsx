@@ -227,9 +227,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             generation?
           </p>
           <button onClick={signupToSession}>Keygen Signup</button>
-          <button onClick={(e) => copyToClipboard(e, session.uuid)}>
-            Copy Session ID to Clipboard
-          </button>
         </>
       );
     };
@@ -237,7 +234,13 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const KeygenSession = () => {
       return (
         <>
-          <p>Session ID: {session.uuid}</p>
+          <p>
+            Session ID: {session.uuid} (
+            <a href="#" onClick={(e) => copyToClipboard(e, session.uuid)}>
+              copy to clipboard
+            </a>
+            )
+          </p>
           {session.partySignup ? (
             <p>Party #: {session.partySignup.number}</p>
           ) : (
@@ -291,15 +294,14 @@ export default () => {
       <h2>Keygen in {group.label}</h2>
       <p>Parties: {group.params.parties}</p>
       <p>Threshold: {group.params.threshold}</p>
+      <hr />
       <p>
-        Join <a href={location.href}>this group</a> in another window/tab or
-        open this link on another device:
-      </p>
-      <pre>{location.href}</pre>
-      <p>
-        <button onClick={(e) => copyToClipboard(e, location.href)}>
-          Copy to clipboard
-        </button>
+        To create more connected parties open{" "}
+        <a href={location.href}>this link</a> in another window/tab or &nbsp;
+        <a href="#" onClick={(e) => copyToClipboard(e, location.href)}>
+          copy it to your clipboard
+        </a>
+        .
       </p>
       <hr />
       <WorkerContext.Consumer>

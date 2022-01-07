@@ -98,7 +98,9 @@ const Proposal = ({
 
         if (address !== publicAddress) {
           throw new Error(
-            `signed message has different public address, expected ${address} got ${publicAddress}`
+            `signed message has different public address, expected ${address} got ${publicAddress} using ${JSON.stringify(
+              signResult
+            )}`
           );
         }
 
@@ -141,7 +143,7 @@ const Proposal = ({
   };
 
   return (
-    <div>
+    <div className="proposal">
       <p>{proposal.message}</p>
       {result ? <Result /> : <Setup />}
     </div>
