@@ -29,27 +29,9 @@ make server
 make client
 ```
 
-The `make server` command starts the server configured for 3 parties with threshold 1 using the gg18 protocol so requires 2 parties to sign a message (threshold + 1).
-
-***Warning:***: The server is stateful and not idempotent, it is best to run the demo from a clean server (re)start.
-
-For example is you see an error like this:
-
-```
-panicked at 'index out of bounds: the len is 1 but the index is 1', src/keygen.rs:233:39
-```
-
-Try restarting the server.
-
 ## Demo
 
 Now visit `http://localhost:8080`.
-
-* Open 3 browser windows/tabs, one for each party
-* Click the *Keygen Signup* button in each window/tab
-* Once key generation is completed a form is presented to propose a message to sign, enter a message and submit the form
-* Each browser window/tab should now show the message and a *Sign* button
-* Click the *Sign* button in two browser windows/tabs to complete the demo
 
 ## Development
 
@@ -62,7 +44,7 @@ During development you should link the WASM module:
 
 ## Docker
 
-For deplyoment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
+For deployment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
 
 ```
 docker build . -t ecdsa-wasm
