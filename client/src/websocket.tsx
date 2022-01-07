@@ -1,18 +1,6 @@
 import { EventEmitter } from "events";
 import React, { createContext, PropsWithChildren } from "react";
 
-type BroadcastKind =
-  | "party_signup"
-  | "peer_relay"
-  | "sign_proposal"
-  | "sign_progress"
-  | "sign_result";
-
-export interface BroadcastMessage {
-  kind: BroadcastKind;
-  data: any;
-}
-
 export interface RpcRequest {
   jsonrpc?: string;
   id?: number;
@@ -89,6 +77,7 @@ export class WebSocketClient extends EventEmitter {
           // Expects a tuple of (event, payload)
           if (Array.isArray(msg.result)) {
             const [event, payload] = msg.result;
+            console.log(event, payload);
             this.emit(event, payload);
           }
         }
