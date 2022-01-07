@@ -1021,6 +1021,8 @@ async fn client_request(
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     info!("disconnected (uid={})", conn_id);
 
+    // FIXME: prune session party signups for disconnected clients?
+
     let mut empty_groups: Vec<String> = Vec::new();
     {
         let mut writer = state.write().await;
