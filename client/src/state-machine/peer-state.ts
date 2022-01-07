@@ -6,6 +6,7 @@ export interface PeerEntry {
   party_from: number;
   party_to: number;
   value: string;
+  round: string;
 }
 
 export function getSortedPeerEntriesAnswer(received: PeerEntry[]): string[] {
