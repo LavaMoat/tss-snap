@@ -42,9 +42,6 @@ export function signMessage(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           const answer = transitionData as string[];
-
-          console.log("Sign round 1 got answer", answer);
-
           const roundEntry = await worker.signRound1(
             info.parameters,
             info.partySignup,
@@ -226,7 +223,6 @@ export function signMessage(
     ]);
 
     websocket.on("peerRelay", async (peerEntry: PeerEntry) => {
-      console.log("Sign machine got peer relay event", peerEntry);
       peerCache.add(peerEntry);
     });
 

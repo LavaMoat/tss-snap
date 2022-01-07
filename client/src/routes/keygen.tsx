@@ -16,7 +16,6 @@ import {
 } from "../state-machine/keygen";
 
 import { signMessage, SignState, SignTransition } from "../state-machine/sign";
-import { getPublicAddressString } from "../public-key";
 
 import { sign } from "../signer";
 

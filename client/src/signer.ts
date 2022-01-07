@@ -1,3 +1,4 @@
+import { ecrecover, pubToAddress } from "ethereumjs-util";
 import { WebSocketClient } from "./websocket";
 import { GroupInfo } from "./store/group";
 import {
@@ -7,7 +8,35 @@ import {
   makeOnTransition,
 } from "./state-machine";
 import { signMessage, SignState, SignTransition } from "./state-machine/sign";
-import { getPublicAddressString } from "./public-key";
+
+export function getPublicKey(
+  signMessage: string,
+  signResult: SignResult
+): Buffer {
+  const msgHash = Buffer.from(signMessage, "hex");
+  //console.log("signMessage", signMessage);
+  return ecrecover(
+    msgHash,
+    27 + signResult.recid,
+    Buffer.from(signResult.r, "hex"),
+    Buffer.from(signResult.s, "hex")
+  );
+}
+
+export function getPublicAddress(
+  signMessage: string,
+  signResult: SignResult
+): Buffer {
+  return pubToAddress(getPublicKey(signMessage, signResult));
+}
+
+export function getPublicAddressString(
+  signMessage: string,
+  signResult: SignResult
+): string {
+  const address = getPublicAddress(signMessage, signResult);
+  return `0x${address.toString("hex")}`;
+}
 
 interface SignResultPublicAddress {
   signResult: SignResult;

@@ -40,6 +40,8 @@ const Proposal = ({
   keyShare,
 }: ProposalProps) => {
   const [session, setSession] = useState(proposal.session);
+  const [partyNumber, setPartyNumber] = useState(0);
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     if (proposal.creator) {
@@ -67,54 +69,81 @@ const Proposal = ({
 
   const onSignMessage = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    const hash = await worker.sha256(proposal.message);
-
-    const partyNumber = await websocket.rpc({
+    const number = await websocket.rpc({
       method: "Session.signup",
       params: [group.uuid, session.uuid, Phase.SIGN],
     });
-    console.log("proposal receiver got partyNumber", partyNumber);
-
-    const partySignup = { number: partyNumber, uuid: session.uuid };
+    const partySignup = { number, uuid: session.uuid };
     const newSession = {
       ...session,
-      partySignup: { number: partyNumber, uuid: session.uuid },
+      partySignup,
     };
+    setPartyNumber(number);
     setSession(newSession);
 
-    console.log("Signing message", hash);
-    console.log("Party Signup", partySignup);
+    websocket.once("sessionSignup", async (sessionId: string) => {
+      if (sessionId === session.uuid) {
+        const hash = await worker.sha256(proposal.message);
 
-    const { signResult, publicAddress } = await sign(
-      hash,
-      keyShare,
-      group,
-      websocket,
-      worker,
-      partySignup
-    );
+        const { signResult, publicAddress } = await sign(
+          hash,
+          keyShare,
+          group,
+          websocket,
+          worker,
+          partySignup
+        );
 
-    console.log("Got sign public address", publicAddress);
+        console.log("Got sign public address", publicAddress);
 
-    if (address !== publicAddress) {
-      console.error(
-        "signed message has different public address, expected",
-        address,
-        "got",
-        publicAddress
-      );
-    }
+        if (address !== publicAddress) {
+          throw new Error(
+            `signed message has different public address, expected ${address} got ${publicAddress}`
+          );
+        }
+
+        setResult({ signResult, publicAddress });
+      } else {
+        console.warn(
+          "Sign got sessionSignup event for wrong session",
+          sessionId,
+          session.uuid
+        );
+      }
+    });
   };
 
   if (!session) {
     return null;
   }
 
+  const Result = () => {
+    return (
+      <>
+        <p>Address: {result.publicAddress}</p>
+        <pre>
+          <code>{JSON.stringify(result.signResult, undefined, 2)}</code>
+        </pre>
+      </>
+    );
+  };
+
+  const Setup = () => {
+    return (
+      <>
+        <p>Session ID: {session.uuid}</p>
+        <p>Party #: {partyNumber > 0 ? partyNumber : "-"}</p>
+        <button disabled={partyNumber > 0} onClick={onSignMessage}>
+          Sign
+        </button>
+      </>
+    );
+  };
+
   return (
     <div>
       <p>{proposal.message}</p>
-      <p>Session ID: {session.uuid}</p>
-      <button onClick={onSignMessage}>Sign</button>
+      {result ? <Result /> : <Setup />}
     </div>
   );
 };

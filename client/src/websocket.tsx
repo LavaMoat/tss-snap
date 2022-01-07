@@ -77,7 +77,6 @@ export class WebSocketClient extends EventEmitter {
           // Expects a tuple of (event, payload)
           if (Array.isArray(msg.result)) {
             const [event, payload] = msg.result;
-            console.log(event, payload);
             this.emit(event, payload);
           }
         }
