@@ -33,16 +33,3 @@ pub struct PartyKey {
     pub paillier_key_vec: Vec<EncryptionKey>,
     pub y_sum: Point<Secp256k1>,
 }
-
-/*
-pub(crate) fn into_p2p_entry(
-    party_from: u16,
-    party_to: u16,
-    round: &str,
-    value: String,
-    sender_uuid: String,
-) -> Entry {
-    let key = format!("{}-{}-{}-{}", party_from, party_to, round, sender_uuid);
-    Entry { key, value }
-}
-*/

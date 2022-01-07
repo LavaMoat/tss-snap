@@ -9,7 +9,6 @@ use std::sync::{
 use anyhow::{bail, Result};
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use log::{error, info, trace, warn};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -18,32 +17,17 @@ use warp::http::header::{HeaderMap, HeaderValue};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
-use common::{Parameters, PartySignup, PeerEntry, SignResult};
+use crate::services::*;
+use json_rpc2::{Request, Response};
+
+use common::Parameters;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
-static BROADCAST_LOCK: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
-
-/// Incoming message from a websocket client.
-#[derive(Debug, Deserialize)]
-struct Incoming {
-    id: Option<usize>,
-    kind: IncomingKind,
-    data: Option<IncomingData>,
-}
-
+/*
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum IncomingKind {
-    /// Get the parameters.
-    #[serde(rename = "parameters")]
-    Parameters,
-    /// Initialize the key generation process with a party signup
-    #[serde(rename = "party_signup")]
-    PartySignup,
-    /// Relay a message to peers.
-    #[serde(rename = "peer_relay")]
-    PeerRelay,
     // Start the signing process by sharing party identifiers
     #[serde(rename = "sign_proposal")]
     SignProposal,
@@ -51,20 +35,45 @@ enum IncomingKind {
     #[serde(rename = "sign_result")]
     SignResult,
 }
+*/
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-enum PartySignupPhase {
+pub enum Phase {
     #[serde(rename = "keygen")]
     Keygen,
     #[serde(rename = "sign")]
     Sign,
 }
 
+impl Default for Phase {
+    fn default() -> Self {
+        Phase::Keygen
+    }
+}
+
+/*
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 enum IncomingData {
+    GroupCreate {
+        label: String,
+        params: Parameters,
+    },
+    GroupJoin {
+        uuid: String,
+    },
+    SessionCreate {
+        group_id: String,
+        phase: Phase,
+    },
+    // Session join and signup
+    Session {
+        group_id: String,
+        session_id: String,
+        phase: Phase,
+    },
     PartySignup {
-        phase: PartySignupPhase,
+        phase: Phase,
     },
     PeerEntries {
         entries: Vec<PeerEntry>,
@@ -80,12 +89,18 @@ enum IncomingData {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 enum OutgoingKind {
+    /// Send session ready notification when all parties have signed up to a session.
+    #[serde(rename = "session_ready")]
+    SessionReady,
+
+    /// Broadcast to indicate party signup is completed.
+    #[deprecated]
+    #[serde(rename = "party_signup")]
+    PartySignup,
+
     /// Relayed peer to peer answer.
     #[serde(rename = "peer_relay")]
     PeerRelay,
-    /// Broadcast to indicate party signup is completed.
-    #[serde(rename = "party_signup")]
-    PartySignup,
     /// Broadcast to propose a message to sign.
     #[serde(rename = "sign_proposal")]
     SignProposal,
@@ -108,16 +123,30 @@ struct Outgoing {
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 enum OutgoingData {
-    /// Sent when a client connects so they know
-    /// the number of paramters.
-    Parameters {
-        parties: u16,
-        threshold: u16,
-        conn_id: usize,
+    GroupCreate {
+        uuid: String,
     },
+    GroupJoin {
+        group: Group,
+    },
+    SessionCreate {
+        session: Session,
+    },
+    SessionJoin {
+        session: Session,
+    },
+    SessionSignup {
+        party_number: u16,
+    },
+    SessionReady {
+        session_id: String,
+    },
+
+    #[deprecated]
     PartySignup {
         party_signup: PartySignup,
     },
+
     PeerAnswer {
         peer_entry: PeerEntry,
     },
@@ -128,19 +157,108 @@ enum OutgoingData {
         sign_result: SignResult,
     },
 }
+*/
+
+#[derive(Debug, Default, Clone, Serialize)]
+pub struct Group {
+    pub uuid: String,
+    pub params: Parameters,
+    pub label: String,
+    #[serde(skip)]
+    pub clients: Vec<usize>,
+    #[serde(skip)]
+    pub sessions: HashMap<String, Session>,
+}
+
+impl Group {
+    pub fn new(conn: usize, params: Parameters, label: String) -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            clients: vec![conn],
+            sessions: Default::default(),
+            params,
+            label,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Session {
+    pub uuid: String,
+    pub phase: Phase,
+
+    /// Map party number to connection identifier
+    #[serde(skip)]
+    pub party_signups: Vec<(u16, usize)>,
+
+    /// Number of clients that have marked the session as finished
+    #[serde(skip)]
+    pub finished: u16,
+}
+
+impl Default for Session {
+    fn default() -> Self {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            phase: Default::default(),
+            party_signups: Default::default(),
+            finished: Default::default(),
+        }
+    }
+}
+
+impl From<Phase> for Session {
+    fn from(phase: Phase) -> Session {
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            phase,
+            party_signups: Default::default(),
+            finished: Default::default(),
+        }
+    }
+}
+
+impl Session {
+    pub fn signup(&mut self, conn: usize) -> u16 {
+        let last = self.party_signups.last();
+        let num = if last.is_none() {
+            1
+        } else {
+            let (num, _) = last.unwrap();
+            num + 1
+        };
+        self.party_signups.push((num, conn));
+        num
+    }
+}
 
 #[derive(Debug)]
-struct State {
-    /// Initial parameters.
-    params: Parameters,
+pub struct State {
     /// Connected clients.
-    clients:
-        HashMap<usize, (mpsc::UnboundedSender<Message>, Option<PartySignup>)>,
-    // TODO: remove uuid when we have signup groups
-    /// UUID of the last party signup
-    uuid: String,
-    /// Store party signups so we know when they have all been received
-    party_signups: HashMap<u16, String>,
+    pub clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
+    /// Groups keyed by unique identifier (UUID)
+    pub groups: HashMap<String, Group>,
+}
+
+#[derive(Debug)]
+pub struct NotificationContext {
+    pub noop: bool,
+    pub group_id: Option<String>,
+    pub session_id: Option<String>,
+    pub filter: Option<Vec<usize>>,
+    pub messages: Option<Vec<(usize, Response)>>,
+}
+
+impl Default for NotificationContext {
+    fn default() -> Self {
+        Self {
+            noop: true,
+            group_id: None,
+            session_id: None,
+            filter: None,
+            messages: None,
+        }
+    }
 }
 
 pub struct Server;
@@ -149,14 +267,11 @@ impl Server {
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
-        params: Parameters,
         static_files: Option<PathBuf>,
     ) -> Result<()> {
         let state = Arc::new(RwLock::new(State {
-            params,
             clients: HashMap::new(),
-            uuid: String::new(),
-            party_signups: Default::default(),
+            groups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -234,7 +349,7 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     });
 
     // Save the sender in our list of connected clients.
-    state.write().await.clients.insert(conn_id, (tx, None));
+    state.write().await.clients.insert(conn_id, tx);
 
     // Handle incoming requests from clients
     while let Some(result) = user_ws_rx.next().await {
@@ -264,42 +379,349 @@ async fn client_incoming_message(
         return;
     };
 
-    match serde_json::from_str::<Incoming>(msg) {
-        Ok(req) => client_request(conn_id, req, state).await,
+    match json_rpc2::from_str(msg) {
+        Ok(req) => rpc_request(conn_id, req, state).await,
         Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
     }
 }
 
+/// Process a request message from a client.
+async fn rpc_request(
+    conn_id: usize,
+    request: Request,
+    state: &Arc<RwLock<State>>,
+) {
+    use json_rpc2::futures::*;
+
+    let service: Box<dyn Service<Data = (usize, Arc<RwLock<State>>)>> =
+        Box::new(ServiceHandler {});
+    let server = Server::new(vec![&service]);
+
+    if let Some(response) =
+        server.serve(&request, &(conn_id, Arc::clone(state))).await
+    {
+        rpc_response(conn_id, &response, state).await;
+    }
+
+    // Requests that require post-processing notifications
+    match request.method() {
+        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH
+        | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+            rpc_notify(conn_id, &request, state).await;
+        }
+        _ => {}
+    }
+}
+
+/// Post processing notifications.
+async fn rpc_notify(
+    conn_id: usize,
+    request: &Request,
+    state: &Arc<RwLock<State>>,
+) {
+    use json_rpc2::futures::*;
+    let service: Box<
+        dyn Service<
+            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>),
+        >,
+    > = Box::new(NotifyHandler {});
+    let server = Server::new(vec![&service]);
+
+    let notification = Arc::new(Mutex::new(Default::default()));
+
+    if let Some(response) = server
+        .serve(
+            request,
+            &(conn_id, Arc::clone(state), Arc::clone(&notification)),
+        )
+        .await
+    {
+        rpc_broadcast(&response, state, notification).await;
+    }
+}
+
+async fn rpc_broadcast(
+    response: &Response,
+    state: &Arc<RwLock<State>>,
+    notification: Arc<Mutex<NotificationContext>>,
+) {
+    let reader = state.read().await;
+    let mut notification = notification.lock().await;
+    if !notification.noop {
+        // Explicit list of messages for target clients
+        if let Some(messages) = notification.messages.take() {
+            for (conn_id, response) in messages {
+                rpc_response(conn_id, &response, state).await;
+            }
+        } else {
+            if let Some(group_id) = &notification.group_id {
+                let clients = if let Some(group) = reader.groups.get(group_id) {
+                    if let Some(session_id) = &notification.session_id {
+                        if let Some(session) = group.sessions.get(session_id) {
+                            session
+                                .party_signups
+                                .iter()
+                                .map(|i| i.1.clone())
+                                .collect()
+                        } else {
+                            warn!(
+                                "notification session {} does not exist",
+                                session_id
+                            );
+                            vec![0usize]
+                        }
+                    } else {
+                        group.clients.clone()
+                    }
+                } else {
+                    vec![0usize]
+                };
+
+                for conn_id in clients {
+                    if let Some(filter) = &notification.filter {
+                        if let Some(_) =
+                            filter.iter().find(|conn| **conn == conn_id)
+                        {
+                            continue;
+                        }
+                    }
+                    rpc_response(conn_id, response, state).await;
+                }
+            } else {
+                warn!("notification context is missing group_id");
+            }
+        }
+    }
+}
+
+/// Send a message to a single client.
+async fn rpc_response(
+    conn_id: usize,
+    response: &json_rpc2::Response,
+    state: &Arc<RwLock<State>>,
+) {
+    trace!("send_message (uid={})", conn_id);
+    if let Some(tx) = state.read().await.clients.get(&conn_id) {
+        let msg = serde_json::to_string(response).unwrap();
+        trace!("sending message {:#?}", msg);
+        if let Err(_disconnected) = tx.send(Message::text(msg)) {
+            // The tx is disconnected, our `client_disconnected` code
+            // should be happening in another task, nothing more to
+            // do here.
+        }
+    } else {
+        warn!("could not find tx for (uid={})", conn_id);
+    }
+}
+
+/*
 /// Process a request message from a client.
 async fn client_request(
     conn_id: usize,
     req: Incoming,
     state: &Arc<RwLock<State>>,
 ) {
-    let info = state.read().await;
     trace!("processing request {:#?}", req);
     let response: Option<Outgoing> = match req.kind {
-        // Handshake gets the parameters the server was started with
-        IncomingKind::Parameters => {
-            let parties = info.params.parties;
-            let threshold = info.params.threshold;
-            drop(info);
+        // Create a group
+        IncomingKind::GroupCreate => {
+            if let IncomingData::GroupCreate { label, params } =
+                req.data.as_ref().unwrap()
+            {
+                let group = Group::new(conn_id, params.clone(), label.clone());
+                let group_key = group.uuid.clone();
+                let uuid = group.uuid.clone();
+                let mut writer = state.write().await;
+                writer.groups.insert(group_key, group);
 
-            Some(Outgoing {
-                id: req.id,
-                kind: None,
-                data: Some(OutgoingData::Parameters {
-                    parties,
-                    threshold,
-                    conn_id,
-                }),
-            })
+                Some(Outgoing {
+                    id: req.id,
+                    kind: None,
+                    data: Some(OutgoingData::GroupCreate { uuid }),
+                })
+            } else {
+                warn!("bad request data for group create");
+                // TODO: send error response
+                None
+            }
+        }
+
+        IncomingKind::GroupJoin => {
+            if let IncomingData::GroupJoin { uuid } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(uuid) {
+                    if let None = group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        group.clients.push(conn_id);
+                    }
+                    Some(Outgoing {
+                        id: req.id,
+                        kind: None,
+                        data: Some(OutgoingData::GroupJoin {
+                            group: group.clone(),
+                        }),
+                    })
+                } else {
+                    warn!("group does not exist: {}", uuid);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for group join");
+                // TODO: send error response
+                None
+            }
+        }
+
+        IncomingKind::SessionCreate => {
+            if let IncomingData::SessionCreate { group_id, phase } =
+                req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        let session = Session::from(phase.clone());
+                        let key = session.uuid.clone();
+                        group.sessions.insert(key, session.clone());
+                        drop(writer);
+
+                        let notification = Outgoing {
+                            id: None,
+                            kind: Some(OutgoingKind::SessionCreate),
+                            data: Some(OutgoingData::SessionCreate {
+                                session: session.clone(),
+                            }),
+                        };
+
+                        broadcast_message(
+                            &notification,
+                            state,
+                            Some(vec![conn_id]),
+                        )
+                        .await;
+
+                        Some(Outgoing {
+                            id: req.id,
+                            kind: Some(OutgoingKind::SessionCreate),
+                            data: Some(OutgoingData::SessionCreate { session }),
+                        })
+                    } else {
+                        warn!("connection for session create does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for session create");
+                // TODO: send error response
+                None
+            }
+        }
+        // Join an existing session
+        IncomingKind::SessionJoin => {
+            println!("Got seesion join {:#?}", req);
+
+            if let IncomingData::Session {
+                group_id,
+                session_id,
+                ..
+            } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(session_id)
+                        {
+                            //let party_signup = session.signup(conn_id);
+                            Some(Outgoing {
+                                id: req.id,
+                                kind: Some(OutgoingKind::SessionJoin),
+                                data: Some(OutgoingData::SessionJoin {
+                                    session: session.clone(),
+                                }),
+                            })
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session join does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for session join");
+                // TODO: send error response
+                None
+            }
+        }
+        // Signup to an existing session
+        IncomingKind::SessionSignup => {
+            if let IncomingData::Session {
+                group_id,
+                session_id,
+                ..
+            } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(session_id)
+                        {
+                            let party_number = session.signup(conn_id);
+                            Some(Outgoing {
+                                id: req.id,
+                                kind: Some(OutgoingKind::SessionSignup),
+                                data: Some(OutgoingData::SessionSignup {
+                                    party_number,
+                                }),
+                            })
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        warn!("connection for session signup does not belong to the group");
+                        None
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                    // TODO: send error response
+                    None
+                }
+            } else {
+                warn!("bad request data for session signup");
+                // TODO: send error response
+                None
+            }
         }
         // Signup creates a PartySignup
         IncomingKind::PartySignup => {
-            if let IncomingData::PartySignup { phase } =
-                req.data.as_ref().unwrap()
+            if let IncomingData::PartySignup { .. } = req.data.as_ref().unwrap()
             {
+                let info = state.read().await;
+
                 let (party_signup, uuid) = {
                     let last = info.party_signups.iter().last();
                     if last.is_none() {
@@ -347,8 +769,6 @@ async fn client_request(
             if let IncomingData::Message { message } =
                 req.data.as_ref().unwrap()
             {
-                drop(info);
-
                 let msg = Outgoing {
                     id: None,
                     kind: Some(OutgoingKind::SignProposal),
@@ -359,7 +779,7 @@ async fn client_request(
 
                 let lock = BROADCAST_LOCK.try_lock();
                 if let Ok(_) = lock {
-                    broadcast_message(&msg, state).await;
+                    broadcast_message(&msg, state, None).await;
                 }
 
                 None
@@ -416,6 +836,68 @@ async fn client_request(
 
     // Post processing after sending response
     match req.kind {
+        // Broadcast session ready when all parties have completed signup to a session
+        IncomingKind::SessionSignup => {
+            if let IncomingData::Session {
+                group_id,
+                session_id,
+                phase,
+            } = req.data.as_ref().unwrap()
+            {
+                let mut writer = state.write().await;
+                if let Some(group) = writer.groups.get_mut(group_id) {
+                    // Verify connection is part of the group clients
+                    if let Some(_) =
+                        group.clients.iter().find(|c| **c == conn_id)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(session_id)
+                        {
+                            let parties = group.params.parties as usize;
+                            let threshold = group.params.threshold as usize;
+                            let num_entries = session.party_signups.len();
+                            let required_num_entries = match phase {
+                                Phase::Keygen => parties,
+                                Phase::Sign => threshold + 1,
+                            };
+
+                            // Enough parties are signed up to the session
+                            if num_entries == required_num_entries {
+                                let msg = Outgoing {
+                                    id: None,
+                                    kind: Some(OutgoingKind::SessionReady),
+                                    data: Some(OutgoingData::SessionReady {
+                                        session_id: session.uuid.clone(),
+                                    }),
+                                };
+
+                                let lock = BROADCAST_LOCK.try_lock();
+                                if let Ok(_) = lock {
+                                    let signed_up_parties: Vec<usize> = session
+                                        .party_signups
+                                        .iter()
+                                        .map(|s| s.1.clone())
+                                        .collect();
+
+                                    for conn in signed_up_parties {
+                                        send_message(conn, &msg, state).await;
+                                    }
+                                }
+                            }
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                        }
+                    } else {
+                        warn!("connection for session signup does not belong to the group");
+                    }
+                } else {
+                    warn!("group does not exist: {}", group_id);
+                }
+            } else {
+                warn!("bad request data for session signup");
+            }
+        }
+
         IncomingKind::PartySignup => {
             let info = state.read().await;
             let parties = info.params.parties as usize;
@@ -427,8 +909,8 @@ async fn client_request(
                     req.data.as_ref()
                 {
                     match phase {
-                        PartySignupPhase::Keygen => parties,
-                        PartySignupPhase::Sign => threshold + 1,
+                        Phase::Keygen => parties,
+                        Phase::Sign => threshold + 1,
                     }
                 } else {
                     0
@@ -445,7 +927,7 @@ async fn client_request(
                 if let Some(IncomingData::PartySignup { phase }) =
                     req.data.as_ref()
                 {
-                    if let PartySignupPhase::Sign = phase {
+                    if let Phase::Sign = phase {
                         let mut non_signing_clients: Vec<usize> = Vec::new();
                         {
                             let mut writer = state.write().await;
@@ -534,57 +1016,35 @@ async fn client_request(
         _ => {}
     }
 }
-
-/// Send a message to a single client.
-async fn send_message(
-    conn_id: usize,
-    res: &Outgoing,
-    state: &Arc<RwLock<State>>,
-) {
-    trace!("send_message (uid={})", conn_id);
-    if let Some((tx, _)) = state.read().await.clients.get(&conn_id) {
-        let msg = serde_json::to_string(res).unwrap();
-        trace!("sending message {:#?}", msg);
-        if let Err(_disconnected) = tx.send(Message::text(msg)) {
-            // The tx is disconnected, our `client_disconnected` code
-            // should be happening in another task, nothing more to
-            // do here.
-        }
-    } else {
-        warn!("could not find tx for (uid={})", conn_id);
-    }
-}
-
-/// Broadcast a message to all clients.
-async fn broadcast_message(res: &Outgoing, state: &Arc<RwLock<State>>) {
-    let info = state.read().await;
-    let clients: Vec<usize> = info.clients.keys().cloned().collect();
-    drop(info);
-    for conn_id in clients {
-        send_message(conn_id, res, state).await;
-    }
-}
+*/
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     info!("disconnected (uid={})", conn_id);
-    // Stream closed up, so remove from the client list
-    state.write().await.clients.remove(&conn_id);
-}
 
-async fn conn_id_for_party(
-    state: &Arc<RwLock<State>>,
-    party_num: u16,
-) -> Option<usize> {
-    let info = state.read().await;
-    info.clients.iter().find_map(|(k, v)| {
-        if let Some(party_signup) = &v.1 {
-            if party_signup.number == party_num {
-                Some(k.clone())
-            } else {
-                None
+    let mut empty_groups: Vec<String> = Vec::new();
+    {
+        let mut writer = state.write().await;
+        // Stream closed up, so remove from the client list
+        writer.clients.remove(&conn_id);
+        // Remove the connection from any client groups
+        for (key, group) in writer.groups.iter_mut() {
+            if let Some(index) =
+                group.clients.iter().position(|x| *x == conn_id)
+            {
+                group.clients.remove(index);
             }
-        } else {
-            None
+
+            // Group has no more connected clients so flag it for removal
+            if group.clients.is_empty() {
+                empty_groups.push(key.clone());
+            }
         }
-    })
+    }
+
+    // Prune empty groups
+    let mut writer = state.write().await;
+    for key in empty_groups {
+        writer.groups.remove(&key);
+        info!("removed group {}", &key);
+    }
 }

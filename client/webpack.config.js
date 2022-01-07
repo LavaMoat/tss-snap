@@ -7,7 +7,7 @@ const url = isProduction
   : "ws://${location.hostname}:3030/demo";
 
 module.exports = {
-  entry: "./index.tsx",
+  entry: "./src/index.tsx",
   module: {
     rules: [
       {
@@ -16,7 +16,7 @@ module.exports = {
         exclude: /node_modules/,
       },
       {
-        test: /worker\.ts$/,
+        test: /(worker|websocket)\.tsx?$/,
         loader: "string-replace-loader",
         options: {
           search: "__URL__",

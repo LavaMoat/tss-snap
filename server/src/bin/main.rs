@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
 
-use common::Parameters;
 use ecdsa_wasm::Server;
 
 #[derive(Debug, StructOpt)]
@@ -14,12 +13,6 @@ use ecdsa_wasm::Server;
     about = "Websocket server for the ECDSA WASM demo"
 )]
 struct Options {
-    /// Number of parties for key generation.
-    #[structopt(short, long)]
-    parties: u16,
-    /// Threshold for signing.
-    #[structopt(short, long)]
-    threshold: u16,
     /// Bind to host:port.
     #[structopt(short, long)]
     bind: Option<String>,
@@ -31,10 +24,6 @@ struct Options {
 #[tokio::main]
 async fn main() -> Result<()> {
     let opts = Options::from_args();
-    let params = Parameters {
-        parties: opts.parties,
-        threshold: opts.threshold,
-    };
 
     let level = std::env::var("RUST_LOG")
         .ok()
@@ -45,5 +34,5 @@ async fn main() -> Result<()> {
 
     let bind = opts.bind.unwrap_or_else(|| "127.0.0.1:3030".to_string());
     let addr = SocketAddr::from_str(&bind)?;
-    Server::start("demo", (addr.ip(), addr.port()), params, opts.files).await
+    Server::start("demo", (addr.ip(), addr.port()), opts.files).await
 }

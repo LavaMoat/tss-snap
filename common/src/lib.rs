@@ -1,35 +1,44 @@
 /// Common types shared between the server and webassembly modules.
 use serde::{Deserialize, Serialize};
 
-pub const ROUND_0: &str = "round0";
-pub const ROUND_1: &str = "round1";
-pub const ROUND_2: &str = "round2";
-pub const ROUND_3: &str = "round3";
-pub const ROUND_4: &str = "round4";
-pub const ROUND_5: &str = "round5";
-pub const ROUND_6: &str = "round6";
-pub const ROUND_7: &str = "round7";
-pub const ROUND_8: &str = "round8";
-pub const ROUND_9: &str = "round9";
+pub const ROUND_0: u16 = 0;
+pub const ROUND_1: u16 = 1;
+pub const ROUND_2: u16 = 2;
+pub const ROUND_3: u16 = 3;
+pub const ROUND_4: u16 = 4;
+pub const ROUND_5: u16 = 5;
+pub const ROUND_6: u16 = 6;
+pub const ROUND_7: u16 = 7;
+pub const ROUND_8: u16 = 8;
+pub const ROUND_9: u16 = 9;
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PeerEntry {
+    #[serde(rename = "from")]
     pub party_from: u16,
+    #[serde(rename = "to")]
     pub party_to: u16,
     pub value: String,
+    pub round: u16,
 
     #[serde(skip)]
     pub session: String,
-
-    #[serde(skip)]
-    pub round: &'static str,
 }
 
 /// Parameters for key generation and signing.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parameters {
     pub parties: u16,
     pub threshold: u16,
+}
+
+impl Default for Parameters {
+    fn default() -> Self {
+        return Self {
+            parties: 3,
+            threshold: 1,
+        };
+    }
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
