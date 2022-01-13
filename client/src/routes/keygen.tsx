@@ -41,8 +41,9 @@ interface KeygenProps {
 }
 
 interface KeygenStateProps {
-  session: Session;
+  session?: Session;
   targetSession: string;
+  loadedKeyShare?: [string, number, number];
 }
 
 class Keygen extends Component<KeygenProps, KeygenStateProps> {
@@ -50,7 +51,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
   constructor(props: KeygenProps) {
     super(props);
-    this.state = { session: null, targetSession: "" };
+    this.state = { session: null, targetSession: "", loadedKeyShare: null };
   }
 
   componentDidMount() {
@@ -216,6 +217,19 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session: newSession });
     };
 
+    const onKeyShareChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      try {
+        const value = JSON.parse(e.currentTarget.value);
+        this.setState({ ...this.state, loadedKeyShare: value });
+      } catch (e) {
+        /* May not be JSON data */
+      }
+    };
+
+    const useSelectedKeyShare = async (
+      e: React.MouseEvent<HTMLButtonElement>
+    ) => {};
+
     const CreateOrJoinSession = () => {
       return (
         <>
@@ -235,23 +249,39 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     const SavedKeyShares = () => {
       return (
-        <select>
-          {Array.from(savedKeys.keys()).map(
-            ([publicAddress, partyNumber, parties]: [
-              string,
-              number,
-              number
-            ]) => {
-              return (
-                <option
-                  value={JSON.stringify([publicAddress, partyNumber, parties])}
-                >
-                  {publicAddress} : {partyNumber} / {parties}
-                </option>
-              );
-            }
-          )}
-        </select>
+        <>
+          <select
+            onChange={onKeyShareChange}
+            value={JSON.stringify(this.state.loadedKeyShare)}
+          >
+            <option value="null">--- Select a key share ---</option>
+            {Array.from(savedKeys.keys()).map(
+              (
+                [publicAddress, partyNumber, parties]: [string, number, number],
+                index
+              ) => {
+                return (
+                  <option
+                    key={index}
+                    value={JSON.stringify([
+                      publicAddress,
+                      partyNumber,
+                      parties,
+                    ])}
+                  >
+                    {publicAddress} : {partyNumber} / {parties}
+                  </option>
+                );
+              }
+            )}
+          </select>
+          <button
+            disabled={this.state.loadedKeyShare === null}
+            onClick={useSelectedKeyShare}
+          >
+            Use selected key share
+          </button>
+        </>
       );
     };
 
