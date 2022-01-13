@@ -1,17 +1,17 @@
-import { PartyKey } from "./state-machine";
+import { Parameters, PartyKey } from "./state-machine";
 
 const KEY = "keys";
 
-type KeyItem = [number, PartyKey];
-type KeyStorage = Map<string, KeyItem>;
+type KeyStorage = Map<[string, number, number], PartyKey>;
 
 export function saveKeyShare(
   publicAddress: string,
   partyNumber: number,
+  parties: number,
   keyShare: PartyKey
 ) {
-  let keyData = loadKeys();
-  keyData.set(publicAddress, [partyNumber, keyShare]);
+  const keyData = loadKeys();
+  keyData.set([publicAddress, partyNumber, parties], keyShare);
   localStorage.setItem(KEY, JSON.stringify(Array.from(keyData.entries())));
 }
 

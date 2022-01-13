@@ -61,7 +61,12 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     websocket.on("notifyAddress", (address: string) => {
       const { partySignup } = this.state.session;
-      saveKeyShare(address, partySignup.number, this.props.keyShare);
+      saveKeyShare(
+        address,
+        partySignup.number,
+        this.props.group.params.parties,
+        this.props.keyShare
+      );
       console.log(
         "Saved key share for public address",
         address,
@@ -166,6 +171,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const websocket = this.context;
     const { session, targetSession } = this.state;
 
+    const savedKeys = loadKeys();
+
     const onTargetSessionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       e.preventDefault();
       this.setState({ ...this.state, targetSession: e.currentTarget.value });
@@ -226,14 +233,42 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       );
     };
 
+    const SavedKeyShares = () => {
+      return (
+        <select>
+          {Array.from(savedKeys.keys()).map(
+            ([publicAddress, partyNumber, parties]: [
+              string,
+              number,
+              number
+            ]) => {
+              return (
+                <option
+                  value={JSON.stringify([publicAddress, partyNumber, parties])}
+                >
+                  {publicAddress} : {partyNumber} / {parties}
+                </option>
+              );
+            }
+          )}
+        </select>
+      );
+    };
+
     const KeygenSessionActions = () => {
       return (
         <>
-          <p>
-            Key generation session is active do you wish to signup for key
-            generation?
-          </p>
+          <p>Key generation session is active.</p>
+          <hr />
+          <p>Signup to create a new key share</p>
           <button onClick={signupToSession}>Keygen Signup</button>
+          <hr />
+          <p>Load a saved key share</p>
+          {savedKeys.size > 0 ? (
+            <SavedKeyShares />
+          ) : (
+            <p>No saved key shares yet</p>
+          )}
         </>
       );
     };
@@ -259,7 +294,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     return (
       <>
-        <h4>Create key</h4>
+        <h4>Key Share</h4>
         {session ? <KeygenSession /> : <CreateOrJoinSession />}
       </>
     );
