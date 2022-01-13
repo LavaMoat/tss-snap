@@ -7,6 +7,7 @@ import { WebSocketContext } from "../websocket";
 import { AppDispatch, RootState } from "../store";
 
 import { WorkerContext } from "../worker-provider";
+import { saveKeyShare, loadKeys } from "../key-storage";
 
 import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
 import {
@@ -59,8 +60,14 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     });
 
     websocket.on("notifyAddress", (address: string) => {
-      console.log("Got public address notification", address);
-
+      const { partySignup } = this.state.session;
+      saveKeyShare(address, partySignup.number, this.props.keyShare);
+      console.log(
+        "Saved key share for public address",
+        address,
+        " and party number",
+        partySignup.number
+      );
       this.props.navigate(`/sign/${address}`);
     });
 
