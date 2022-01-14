@@ -110,6 +110,29 @@ impl Session {
         self.party_signups.push((num, conn));
         num
     }
+
+    pub fn load(
+        &mut self,
+        parameters: &Parameters,
+        conn: usize,
+        party_number: u16,
+    ) -> Result<()> {
+        if party_number == 0 {
+            bail!("party number may not be zero");
+        }
+        if party_number > parameters.parties {
+            bail!("party number is out of range");
+        }
+        if let Some(_) = self
+            .party_signups
+            .iter()
+            .find(|(num, _)| num == &party_number)
+        {
+            bail!("party number already exists for this session");
+        }
+        self.party_signups.push((party_number, conn));
+        Ok(())
+    }
 }
 
 #[derive(Debug)]

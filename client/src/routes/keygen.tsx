@@ -228,7 +228,37 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     const useSelectedKeyShare = async (
       e: React.MouseEvent<HTMLButtonElement>
-    ) => {};
+    ) => {
+      e.preventDefault();
+
+      console.log("useSelectedKeyShare", this.state.loadedKeyShare);
+      const [_publicAddress, partyNumber, _parties] = this.state.loadedKeyShare;
+
+      console.log("Load into session", [
+        this.props.group.uuid,
+        this.state.session.uuid,
+        Phase.KEYGEN,
+        partyNumber,
+      ]);
+
+      await websocket.rpc({
+        method: "Session.load",
+        params: [
+          this.props.group.uuid,
+          this.state.session.uuid,
+          Phase.KEYGEN,
+          partyNumber,
+        ],
+      });
+
+      const { session } = this.state;
+      const newSession = {
+        ...session,
+        partySignup: { number: partyNumber, uuid: session.uuid },
+      };
+      this.props.dispatch(setKeygenSession(newSession));
+      this.setState({ ...this.state, session: newSession });
+    };
 
     const CreateOrJoinSession = () => {
       return (
