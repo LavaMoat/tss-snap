@@ -7,7 +7,12 @@ import { WebSocketContext } from "../websocket";
 import { AppDispatch, RootState } from "../store";
 
 import { WorkerContext } from "../worker-provider";
-import { saveKeyShare, loadKeysForParties } from "../key-storage";
+import {
+  saveKeyShare,
+  loadKeysForParties,
+  findKeyValue,
+  KeyStorage,
+} from "../key-storage";
 
 import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
 import {
@@ -43,6 +48,7 @@ interface KeygenProps {
 interface KeygenStateProps {
   session?: Session;
   targetSession: string;
+  savedKeys: KeyStorage;
   loadedKeyShare?: [string, number, number];
 }
 
@@ -51,7 +57,13 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
   constructor(props: KeygenProps) {
     super(props);
-    this.state = { session: null, targetSession: "", loadedKeyShare: null };
+    const savedKeys = loadKeysForParties(props.group.params.parties);
+    this.state = {
+      session: null,
+      targetSession: "",
+      loadedKeyShare: null,
+      savedKeys,
+    };
   }
 
   componentDidMount() {
@@ -117,6 +129,30 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       }
     });
 
+    websocket.on("sessionLoad", async (sessionId: string) => {
+      if (sessionId === this.state.session.uuid) {
+        const [publicAddress, partyNumber, _parties] =
+          this.state.loadedKeyShare;
+        const keyShare = findKeyValue(
+          this.state.savedKeys,
+          this.state.loadedKeyShare
+        );
+
+        console.log("Got session load event!!!", this.state.loadedKeyShare);
+        console.log("Got session load event!!!", this.state.savedKeys);
+        console.log("Got session load event!!!", partyNumber, keyShare);
+
+        this.props.dispatch(setKeyShare(keyShare));
+        this.props.navigate(`/sign/${publicAddress}`);
+      } else {
+        console.warn(
+          "Keygen got sessionLoad event for wrong session",
+          sessionId,
+          this.state.session.uuid
+        );
+      }
+    });
+
     websocket.on("sessionFinish", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
         const { group, worker, keyShare } = this.props;
@@ -164,15 +200,14 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const websocket = this.context;
     websocket.removeAllListeners("sessionCreate");
     websocket.removeAllListeners("sessionSignup");
+    websocket.removeAllListeners("sessionLoad");
     websocket.removeAllListeners("sessionFinish");
     websocket.removeAllListeners("notifyAddress");
   }
 
   render() {
     const websocket = this.context;
-    const { session, targetSession } = this.state;
-
-    const savedKeys = loadKeysForParties(this.props.group.params.parties);
+    const { session, targetSession, savedKeys } = this.state;
 
     const onTargetSessionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       e.preventDefault();
@@ -230,17 +265,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e: React.MouseEvent<HTMLButtonElement>
     ) => {
       e.preventDefault();
-
-      console.log("useSelectedKeyShare", this.state.loadedKeyShare);
       const [_publicAddress, partyNumber, _parties] = this.state.loadedKeyShare;
-
-      console.log("Load into session", [
-        this.props.group.uuid,
-        this.state.session.uuid,
-        Phase.KEYGEN,
-        partyNumber,
-      ]);
-
       await websocket.rpc({
         method: "Session.load",
         params: [

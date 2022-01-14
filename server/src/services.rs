@@ -26,6 +26,7 @@ pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 // Notification event names
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
+pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
 pub const SESSION_FINISH_EVENT: &str = "sessionFinish";
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
@@ -289,6 +290,34 @@ impl Service for NotifyHandler {
                         phase,
                         notification,
                         SESSION_SIGNUP_EVENT,
+                    )
+                    .await
+                } else {
+                    None
+                }
+            }
+            SESSION_LOAD => {
+                let (conn_id, state, notification) = ctx;
+                let params: SessionLoadParams = req.deserialize()?;
+                let (group_id, session_id, phase, _party_number) = params;
+
+                let reader = state.read().await;
+
+                if let Some((group, session)) = get_group_session(
+                    &conn_id,
+                    &group_id,
+                    &session_id,
+                    &reader.groups,
+                ) {
+                    handle_threshold_notify(
+                        session.party_signups.len(),
+                        group_id,
+                        session_id,
+                        group,
+                        session,
+                        phase,
+                        notification,
+                        SESSION_LOAD_EVENT,
                     )
                     .await
                 } else {

@@ -2,7 +2,7 @@ import { Parameters, PartyKey } from "./state-machine";
 
 const KEY = "keys";
 
-type KeyStorage = Map<[string, number, number], PartyKey>;
+export type KeyStorage = Map<[string, number, number], PartyKey>;
 
 export function saveKeyShare(
   publicAddress: string,
@@ -26,6 +26,22 @@ export function loadKeys(): KeyStorage {
     }
   }
   return new Map();
+}
+
+// The way Javascript handles array equality means that using a tuple
+// for a key fails if the two arrays are not the exact same instance.
+//
+// So we cannot use `Map.get()` but must search for the entry (or use string keys).
+export function findKeyValue(
+  keyData: KeyStorage,
+  target: [string, number, number]
+): PartyKey | null {
+  for (const [key, value] of keyData) {
+    if (key[0] === target[0] && key[1] === target[1] && key[2] === target[2]) {
+      return value;
+    }
+  }
+  return null;
 }
 
 export function loadKeysForParties(parties: number): KeyStorage {
