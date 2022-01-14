@@ -7,7 +7,7 @@ import { WebSocketContext } from "../websocket";
 import { AppDispatch, RootState } from "../store";
 
 import { WorkerContext } from "../worker-provider";
-import { saveKeyShare, loadKeys } from "../key-storage";
+import { saveKeyShare, loadKeysForParties } from "../key-storage";
 
 import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
 import {
@@ -172,7 +172,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const websocket = this.context;
     const { session, targetSession } = this.state;
 
-    const savedKeys = loadKeys();
+    const savedKeys = loadKeysForParties(this.props.group.params.parties);
 
     const onTargetSessionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       e.preventDefault();

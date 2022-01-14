@@ -28,6 +28,18 @@ export function loadKeys(): KeyStorage {
   return new Map();
 }
 
+export function loadKeysForParties(parties: number): KeyStorage {
+  const keyData = loadKeys() as Map<[string, number, number], PartyKey>;
+  const keyDataForParties = new Map();
+  for (const [key, value] of keyData.entries()) {
+    const [_publicAddress, _partyNumber, keyParties] = key;
+    if (keyParties === parties) {
+      keyDataForParties.set(key, value);
+    }
+  }
+  return keyDataForParties;
+}
+
 export function removeKeys() {
   localStorage.removeItem(KEY);
 }
