@@ -281,6 +281,7 @@ impl Service for NotifyHandler {
                     &reader.groups,
                 ) {
                     handle_threshold_notify(
+                        session.party_signups.len(),
                         group_id,
                         session_id,
                         group,
@@ -365,48 +366,20 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 ) {
-                    let parties = group.params.parties as usize;
-                    let threshold = group.params.threshold as usize;
-                    let num_entries = session.finished as usize;
-                    let required_num_entries = match phase {
-                        Phase::Keygen => parties,
-                        Phase::Sign => threshold + 1,
-                    };
-
-                    // Enough parties are signed up to the session
-                    if num_entries == required_num_entries {
-                        let res = serde_json::to_value((
-                            SESSION_FINISH_EVENT,
-                            &session_id,
-                        ))
-                        .unwrap();
-
-                        // FIXME: remove the session once finished
-                        // FIXME: but cannot do it here because writing
-                        // FIXME: to state may cause a deadlock
-
-                        // Notify everyone in the session that enough
-                        // parties have signed up to the session
-                        {
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
-                                filter: None,
-                                messages: None,
-                            };
-                            let mut writer = notification.lock().await;
-                            *writer = ctx;
-                        }
-
-                        Some(res.into())
-                    } else {
-                        {
-                            let mut writer = notification.lock().await;
-                            *writer = Default::default();
-                        }
-                        None
-                    }
+                    // FIXME: remove the session once finished
+                    // FIXME: but cannot do it here because writing
+                    // FIXME: to state may cause a deadlock
+                    handle_threshold_notify(
+                        session.finished as usize,
+                        group_id,
+                        session_id,
+                        group,
+                        session,
+                        phase,
+                        notification,
+                        SESSION_FINISH_EVENT,
+                    )
+                    .await
                 } else {
                     None
                 }
@@ -530,17 +503,17 @@ fn get_group_session<'a>(
 }
 
 async fn handle_threshold_notify(
+    num_entries: usize,
     group_id: String,
     session_id: String,
     group: &Group,
-    session: &Session,
+    _session: &Session,
     phase: Phase,
     notification: &Mutex<NotificationContext>,
     event: &str,
 ) -> Option<Response> {
     let parties = group.params.parties as usize;
     let threshold = group.params.threshold as usize;
-    let num_entries = session.party_signups.len();
     let required_num_entries = match phase {
         Phase::Keygen => parties,
         Phase::Sign => threshold + 1,
