@@ -12,8 +12,11 @@ build:
 release:
 	@cd server && cargo build --release
 
-server:
+server: client-release
 	@cd server && cargo run
+
+client-release:
+	@cd client && yarn build
 
 client:
 	@cd client && yarn start
