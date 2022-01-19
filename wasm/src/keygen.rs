@@ -90,14 +90,14 @@ struct Round5Entry {
 
 fn aes_encrypt(key: &[u8], plaintext: &[u8]) -> AeadPack {
     // 96 bit (12 byte) unique nonce per message
-    let nonce: Vec<u8> = (1..=12)
-        .into_iter()
-        .map(|_| rand::thread_rng().gen::<u8>())
-        .collect();
+    let nonce: [u8; 12] = rand::thread_rng().gen();
     let cipher_nonce = Nonce::from_slice(&nonce);
     let cipher = Aes256Gcm::new(aes_gcm::Key::from_slice(key));
     let ciphertext = cipher.encrypt(cipher_nonce, plaintext).unwrap();
-    AeadPack { ciphertext, nonce }
+    AeadPack {
+        ciphertext,
+        nonce: nonce.to_vec(),
+    }
 }
 
 fn aes_decrypt(key: &[u8], aead_pack: AeadPack) -> Vec<u8> {

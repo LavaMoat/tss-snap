@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use json_rpc2::{futures::*, Request, Response, Result};
+use json_rpc2::{futures::*, Error, Request, Response, Result};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -17,6 +17,7 @@ pub const GROUP_JOIN: &str = "Group.join";
 pub const SESSION_CREATE: &str = "Session.create";
 pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
+pub const SESSION_LOAD: &str = "Session.load";
 pub const PEER_RELAY: &str = "Peer.relay";
 pub const SESSION_FINISH: &str = "Session.finish";
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
@@ -25,6 +26,7 @@ pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 // Notification event names
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
+pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
 pub const SESSION_FINISH_EVENT: &str = "sessionFinish";
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
@@ -35,6 +37,7 @@ type GroupCreateParams = (String, Parameters);
 type SessionCreateParams = (Uuid, Phase);
 type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
+type SessionLoadParams = (Uuid, Uuid, Phase, u16);
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
 type SessionFinishParams = (Uuid, Uuid, Phase);
 type NotifyAddressParams = (Uuid, String);
@@ -145,6 +148,43 @@ impl Service for ServiceHandler {
                     None
                 }
             }
+            SESSION_LOAD => {
+                let (conn_id, state) = ctx;
+                let params: SessionLoadParams = req.deserialize()?;
+                let (group_id, session_id, phase, party_number) = params;
+
+                if let Phase::Keygen = phase {
+                    let mut writer = state.write().await;
+                    if let Some(group) =
+                        get_group_mut(&conn_id, &group_id, &mut writer.groups)
+                    {
+                        if let Some(session) =
+                            group.sessions.get_mut(&session_id)
+                        {
+                            let res =
+                                serde_json::to_value(&party_number).unwrap();
+                            match session.load(
+                                &group.params,
+                                *conn_id,
+                                party_number,
+                            ) {
+                                Ok(_) => Some((req, res).into()),
+                                Err(err) => {
+                                    return Err(Error::from(Box::from(err)))
+                                }
+                            }
+                        } else {
+                            warn!("session does not exist: {}", session_id);
+                            // TODO: send error response
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
             PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
@@ -241,44 +281,45 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 ) {
-                    let parties = group.params.parties as usize;
-                    let threshold = group.params.threshold as usize;
-                    let num_entries = session.party_signups.len();
-                    let required_num_entries = match phase {
-                        Phase::Keygen => parties,
-                        Phase::Sign => threshold + 1,
-                    };
+                    handle_threshold_notify(
+                        session.party_signups.len(),
+                        group_id,
+                        session_id,
+                        group,
+                        session,
+                        phase,
+                        notification,
+                        SESSION_SIGNUP_EVENT,
+                    )
+                    .await
+                } else {
+                    None
+                }
+            }
+            SESSION_LOAD => {
+                let (conn_id, state, notification) = ctx;
+                let params: SessionLoadParams = req.deserialize()?;
+                let (group_id, session_id, phase, _party_number) = params;
 
-                    // Enough parties are signed up to the session
-                    if num_entries == required_num_entries {
-                        let res = serde_json::to_value((
-                            SESSION_SIGNUP_EVENT,
-                            &session_id,
-                        ))
-                        .unwrap();
+                let reader = state.read().await;
 
-                        // Notify everyone in the session that enough
-                        // parties have signed up to the session
-                        {
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
-                                filter: None,
-                                messages: None,
-                            };
-                            let mut writer = notification.lock().await;
-                            *writer = ctx;
-                        }
-
-                        Some(res.into())
-                    } else {
-                        {
-                            let mut writer = notification.lock().await;
-                            *writer = Default::default();
-                        }
-                        None
-                    }
+                if let Some((group, session)) = get_group_session(
+                    &conn_id,
+                    &group_id,
+                    &session_id,
+                    &reader.groups,
+                ) {
+                    handle_threshold_notify(
+                        session.party_signups.len(),
+                        group_id,
+                        session_id,
+                        group,
+                        session,
+                        phase,
+                        notification,
+                        SESSION_LOAD_EVENT,
+                    )
+                    .await
                 } else {
                     None
                 }
@@ -354,48 +395,20 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 ) {
-                    let parties = group.params.parties as usize;
-                    let threshold = group.params.threshold as usize;
-                    let num_entries = session.finished as usize;
-                    let required_num_entries = match phase {
-                        Phase::Keygen => parties,
-                        Phase::Sign => threshold + 1,
-                    };
-
-                    // Enough parties are signed up to the session
-                    if num_entries == required_num_entries {
-                        let res = serde_json::to_value((
-                            SESSION_FINISH_EVENT,
-                            &session_id,
-                        ))
-                        .unwrap();
-
-                        // FIXME: remove the session once finished
-                        // FIXME: but cannot do it here because writing
-                        // FIXME: to state may cause a deadlock
-
-                        // Notify everyone in the session that enough
-                        // parties have signed up to the session
-                        {
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
-                                filter: None,
-                                messages: None,
-                            };
-                            let mut writer = notification.lock().await;
-                            *writer = ctx;
-                        }
-
-                        Some(res.into())
-                    } else {
-                        {
-                            let mut writer = notification.lock().await;
-                            *writer = Default::default();
-                        }
-                        None
-                    }
+                    // FIXME: remove the session once finished
+                    // FIXME: but cannot do it here because writing
+                    // FIXME: to state may cause a deadlock
+                    handle_threshold_notify(
+                        session.finished as usize,
+                        group_id,
+                        session_id,
+                        group,
+                        session,
+                        phase,
+                        notification,
+                        SESSION_FINISH_EVENT,
+                    )
+                    .await
                 } else {
                     None
                 }
@@ -514,6 +527,51 @@ fn get_group_session<'a>(
             None
         }
     } else {
+        None
+    }
+}
+
+async fn handle_threshold_notify(
+    num_entries: usize,
+    group_id: String,
+    session_id: String,
+    group: &Group,
+    _session: &Session,
+    phase: Phase,
+    notification: &Mutex<NotificationContext>,
+    event: &str,
+) -> Option<Response> {
+    let parties = group.params.parties as usize;
+    let threshold = group.params.threshold as usize;
+    let required_num_entries = match phase {
+        Phase::Keygen => parties,
+        Phase::Sign => threshold + 1,
+    };
+
+    // Enough parties are signed up to the session
+    if num_entries == required_num_entries {
+        let res = serde_json::to_value((event, &session_id)).unwrap();
+
+        // Notify everyone in the session that enough
+        // parties have signed up to the session
+        {
+            let ctx = NotificationContext {
+                noop: false,
+                group_id: Some(group_id),
+                session_id: Some(session_id),
+                filter: None,
+                messages: None,
+            };
+            let mut writer = notification.lock().await;
+            *writer = ctx;
+        }
+
+        Some(res.into())
+    } else {
+        {
+            let mut writer = notification.lock().await;
+            *writer = Default::default();
+        }
         None
     }
 }

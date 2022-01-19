@@ -110,6 +110,29 @@ impl Session {
         self.party_signups.push((num, conn));
         num
     }
+
+    pub fn load(
+        &mut self,
+        parameters: &Parameters,
+        conn: usize,
+        party_number: u16,
+    ) -> Result<()> {
+        if party_number == 0 {
+            bail!("party number may not be zero");
+        }
+        if party_number > parameters.parties {
+            bail!("party number is out of range");
+        }
+        if let Some(_) = self
+            .party_signups
+            .iter()
+            .find(|(num, _)| num == &party_number)
+        {
+            bail!("party number already exists for this session");
+        }
+        self.party_signups.push((party_number, conn));
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -285,8 +308,8 @@ async fn rpc_request(
 
     // Requests that require post-processing notifications
     match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP | PEER_RELAY | SESSION_FINISH
-        | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+        SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | PEER_RELAY
+        | SESSION_FINISH | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}
