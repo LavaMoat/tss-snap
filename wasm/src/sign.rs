@@ -24,6 +24,13 @@ use wasm_bindgen::prelude::*;
 
 use super::utils::{Params, PartyKey};
 
+#[derive(Serialize)]
+pub struct SignedMessage {
+    result: SignResult,
+    public_key: Vec<u8>,
+    address: String,
+}
+
 //use super::{console_log, log};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -976,16 +983,23 @@ pub fn signMessage(
     console_log!("recid: {:?} \n", sig.recid.clone());
     */
 
-    let sign_result = SignResult {
+    // check sig against secp256k1
+    let public_key = check_sig(&sig.r, &sig.s, &message_bn, &y_sum).to_vec();
+    let address = crate::utils::address(&public_key);
+
+    let result = SignResult {
         r: BigInt::from_bytes(sig.r.to_bytes().as_ref()).to_str_radix(16),
         s: BigInt::from_bytes(sig.s.to_bytes().as_ref()).to_str_radix(16),
         recid: sig.recid,
     };
 
-    // check sig against secp256k1
-    check_sig(&sig.r, &sig.s, &message_bn, &y_sum);
+    let output = SignedMessage {
+        result,
+        public_key,
+        address,
+    };
 
-    JsValue::from_serde(&sign_result).unwrap()
+    JsValue::from_serde(&output).unwrap()
 }
 
 fn check_sig(
@@ -993,7 +1007,7 @@ fn check_sig(
     s: &Scalar<Secp256k1>,
     msg: &BigInt,
     pk: &Point<Secp256k1>,
-) {
+) -> [u8; 65] {
     use secp256k1::{verify, Message, PublicKey, PublicKeyFormat, Signature};
 
     let raw_msg = BigInt::to_bytes(msg);
@@ -1022,4 +1036,5 @@ fn check_sig(
 
     let is_correct = verify(&msg, &secp_sig, &pk);
     assert!(is_correct);
+    return pk.serialize();
 }

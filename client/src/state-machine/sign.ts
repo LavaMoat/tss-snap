@@ -1,5 +1,5 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import { PartyKey, RoundEntry, SessionInfo, SignResult } from ".";
+import { PartyKey, RoundEntry, SessionInfo, SignMessage } from ".";
 import { PeerEntryCache, PeerEntry } from "./peer-state";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
@@ -14,7 +14,7 @@ export function signMessage(
   info: SessionInfo,
   keyShare: PartyKey,
   message: string
-): Promise<SignResult> {
+): Promise<SignMessage> {
   const peerCache = new PeerEntryCache(info.parameters.threshold);
   const wait = waitFor<SignState, SignTransition>();
 

@@ -65,6 +65,12 @@ export interface SignResult {
   recid: number;
 }
 
+export interface SignMessage {
+  result: SignResult;
+  public_key: number[];
+  address: string;
+}
+
 export function makeOnTransition<T, U>() {
   return (
     index: number,

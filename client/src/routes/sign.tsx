@@ -85,7 +85,7 @@ const Proposal = ({
       if (sessionId === session.uuid) {
         const hash = await worker.sha256(proposal.message);
 
-        const { signResult, publicAddress } = await sign(
+        const { result: signResult, address: publicAddress } = await sign(
           hash,
           keyShare,
           group,
