@@ -44,6 +44,7 @@ module.exports = {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin",
     },
+    liveReload: false,
   },
   experiments: {
     //syncWebAssembly: true,
