@@ -12,6 +12,7 @@ import { Phase, Session, PartyKey } from "../state-machine";
 import { sign } from "../signer";
 
 interface Proposal {
+  key: number;
   message: string;
   creator: boolean;
   session?: Session;
@@ -93,8 +94,6 @@ const Proposal = ({
           worker,
           partySignup
         );
-
-        console.log("Got sign public address", publicAddress);
 
         if (address !== publicAddress) {
           throw new Error(
@@ -240,7 +239,12 @@ const Sign = () => {
           method: "Session.join",
           params: [group.uuid, sessionId, Phase.SIGN],
         });
-        const proposal = { message, creator: false, session };
+        const proposal = {
+          message,
+          creator: false,
+          session,
+          key: Math.random(),
+        };
         const newProposals = [proposal, ...proposals];
         setProposals(newProposals);
       }
@@ -358,7 +362,10 @@ const Sign = () => {
   */
 
   const onSignFormSubmit = (message: string) => {
-    const newProposals = [{ message, creator: true }, ...proposals];
+    const newProposals = [
+      { message, creator: true, key: Math.random() },
+      ...proposals,
+    ];
     setProposals(newProposals);
   };
 
@@ -379,7 +386,7 @@ const Sign = () => {
                 {proposals.map((proposal: Proposal, index: number) => {
                   return (
                     <Proposal
-                      key={index}
+                      key={proposal.key}
                       address={address}
                       group={group}
                       proposal={proposal}
