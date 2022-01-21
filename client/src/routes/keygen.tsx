@@ -114,11 +114,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
         this.props.dispatch(setKeyShare(keyShare));
 
-        // Finish the session, we will be notified
-        // when all clients have finished
         websocket.notify({
-          method: "Session.finish",
-          params: [group.uuid, sessionId, Phase.KEYGEN],
+          method: "Notify.address",
+          params: [group.uuid, keyShare.address],
         });
       } else {
         console.warn(
@@ -138,57 +136,17 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           this.state.loadedKeyShare
         );
 
+        /*
         console.log("Got session load event!!!", this.state.loadedKeyShare);
         console.log("Got session load event!!!", this.state.savedKeys);
         console.log("Got session load event!!!", partyNumber, keyShare);
+        */
 
         this.props.dispatch(setKeyShare(keyShare));
         this.props.navigate(`/sign/${publicAddress}`);
       } else {
         console.warn(
           "Keygen got sessionLoad event for wrong session",
-          sessionId,
-          this.state.session.uuid
-        );
-      }
-    });
-
-    websocket.on("sessionFinish", async (sessionId: string) => {
-      if (sessionId === this.state.session.uuid) {
-        const { group, worker, keyShare } = this.props;
-        const { partySignup, uuid: sessionId } = this.state.session;
-        const isAutomaticSigner =
-          partySignup.number <= group.params.threshold + 1;
-
-        if (isAutomaticSigner) {
-          // Automatically sign message and extract public key / address
-          //
-          // Sha256 of "hello world"
-          const message =
-            "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-
-          const { result: signResult, address: publicAddress } = await sign(
-            message,
-            keyShare,
-            group,
-            websocket,
-            worker,
-            partySignup
-          );
-
-          console.log("Got sign public address", publicAddress);
-
-          // Announce public address to all parties in the group
-          if (partySignup.number === 1) {
-            websocket.notify({
-              method: "Notify.address",
-              params: [group.uuid, publicAddress],
-            });
-          }
-        }
-      } else {
-        console.warn(
-          "Keygen got sessionFinish event for wrong session",
           sessionId,
           this.state.session.uuid
         );
@@ -201,7 +159,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     websocket.removeAllListeners("sessionCreate");
     websocket.removeAllListeners("sessionSignup");
     websocket.removeAllListeners("sessionLoad");
-    websocket.removeAllListeners("sessionFinish");
     websocket.removeAllListeners("notifyAddress");
   }
 

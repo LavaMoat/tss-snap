@@ -119,9 +119,6 @@ export function generateKeyShare(
             answer
           );
 
-          console.log("party key share", keyShare.publicKey);
-          console.log("party key share", keyShare.address);
-
           websocket.removeAllListeners("peerRelay");
           machine.removeAllListeners("transitionEnter");
           resolve(keyShare);
