@@ -19,7 +19,6 @@ pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const SESSION_LOAD: &str = "Session.load";
 pub const PEER_RELAY: &str = "Peer.relay";
-pub const SESSION_FINISH: &str = "Session.finish";
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 
@@ -28,7 +27,6 @@ pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
-pub const SESSION_FINISH_EVENT: &str = "sessionFinish";
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 
@@ -39,7 +37,6 @@ type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type SessionLoadParams = (Uuid, Uuid, Phase, u16);
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
-type SessionFinishParams = (Uuid, Uuid, Phase);
 type NotifyAddressParams = (Uuid, String);
 type NotifyProposalParams = (Uuid, Uuid, String);
 
@@ -189,28 +186,6 @@ impl Service for ServiceHandler {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
-            }
-            SESSION_FINISH => {
-                let (conn_id, state) = ctx;
-                let params: SessionFinishParams = req.deserialize()?;
-                let (group_id, session_id, _phase) = params;
-
-                let mut writer = state.write().await;
-                if let Some(group) =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
-                {
-                    if let Some(session) = group.sessions.get_mut(&session_id) {
-                        session.finished += 1;
-                        // Must ACK so we indicate the service method exists
-                        Some(req.into())
-                    } else {
-                        warn!("session does not exist: {}", session_id);
-                        // TODO: send error response
-                        None
-                    }
-                } else {
-                    None
-                }
             }
             _ => None,
         };
@@ -378,37 +353,6 @@ impl Service for NotifyHandler {
                     // our notifications even though our actual responses
                     // are in the messages assigned to the notification context
                     Some((serde_json::Value::Null).into())
-                } else {
-                    None
-                }
-            }
-            SESSION_FINISH => {
-                let (conn_id, state, notification) = ctx;
-                let params: SessionFinishParams = req.deserialize()?;
-                let (group_id, session_id, phase) = params;
-
-                let reader = state.read().await;
-
-                if let Some((group, session)) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                ) {
-                    // FIXME: remove the session once finished
-                    // FIXME: but cannot do it here because writing
-                    // FIXME: to state may cause a deadlock
-                    handle_threshold_notify(
-                        session.finished as usize,
-                        group_id,
-                        session_id,
-                        group,
-                        session,
-                        phase,
-                        notification,
-                        SESSION_FINISH_EVENT,
-                    )
-                    .await
                 } else {
                     None
                 }

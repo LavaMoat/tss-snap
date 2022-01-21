@@ -70,10 +70,6 @@ pub struct Session {
     /// Map party number to connection identifier
     #[serde(skip)]
     pub party_signups: Vec<(u16, usize)>,
-
-    /// Number of clients that have marked the session as finished
-    #[serde(skip)]
-    pub finished: u16,
 }
 
 impl Default for Session {
@@ -82,7 +78,6 @@ impl Default for Session {
             uuid: Uuid::new_v4().to_string(),
             phase: Default::default(),
             party_signups: Default::default(),
-            finished: Default::default(),
         }
     }
 }
@@ -93,7 +88,6 @@ impl From<Phase> for Session {
             uuid: Uuid::new_v4().to_string(),
             phase,
             party_signups: Default::default(),
-            finished: Default::default(),
         }
     }
 }
@@ -309,7 +303,7 @@ async fn rpc_request(
     // Requests that require post-processing notifications
     match request.method() {
         SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | PEER_RELAY
-        | SESSION_FINISH | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+        | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}
