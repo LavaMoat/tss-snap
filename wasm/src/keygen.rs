@@ -512,6 +512,12 @@ pub fn createKey(
         .map(|i| bc1_vec[i as usize].e.clone())
         .collect::<Vec<EncryptionKey>>();
 
+    // Get a 65 byte decompressed public key
+    let decompressed_y_sum =
+        Point::<Secp256k1>::from_bytes(&y_sum.to_bytes(true)).unwrap();
+    let public_key: Vec<u8> = decompressed_y_sum.to_bytes(false).to_vec();
+    let address = crate::utils::address(&public_key);
+
     let party_key = PartyKey {
         party_keys,
         shared_keys,
@@ -519,6 +525,8 @@ pub fn createKey(
         vss_scheme_vec,
         paillier_key_vec,
         y_sum,
+        public_key,
+        address,
     };
 
     JsValue::from_serde(&party_key).unwrap()

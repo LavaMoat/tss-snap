@@ -30,7 +30,6 @@ mod keygen;
 mod sign;
 mod utils;
 
-#[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn sha256(message: JsValue) -> JsValue {
     let message: String = message.into_serde::<String>().unwrap();

@@ -18,6 +18,7 @@ console_error_panic_hook = "0.1.6"
 serde_json = "1"
 aes-gcm = "0.9"
 sha2 = "0.9"
+sha3 = "0.10"
 serde = {version = "1", features = ["derive"]}
 libsecp256k1 = "0.3.2"
 hex = "0.4"
