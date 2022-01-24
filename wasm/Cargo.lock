@@ -478,8 +478,8 @@ dependencies = [
  "kzen-paillier",
  "libsecp256k1",
  "multi-party-ecdsa",
- "once_cell",
  "rand 0.6.5",
+ "round-based",
  "serde",
  "serde_json",
  "sha2 0.9.8",
@@ -935,12 +935,6 @@ dependencies = [
  "hermit-abi",
  "libc",
 ]
-
-[[package]]
-name = "once_cell"
-version = "1.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
 
 [[package]]
 name = "opaque-debug"
