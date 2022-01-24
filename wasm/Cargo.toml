@@ -6,7 +6,7 @@ edition = "2018"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+[dependencies]
 common = {path = "../common"}
 getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
@@ -22,8 +22,9 @@ sha3 = "0.10"
 serde = {version = "1", features = ["derive"]}
 libsecp256k1 = "0.3.2"
 hex = "0.4"
+once_cell = { version = "1.9", optional = true }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.paillier]
+[dependencies.paillier]
 version = "0.4.2"
 package = "kzen-paillier"
 default-features = false
@@ -33,15 +34,15 @@ default-features = false
 #branch = "0.1"
 #features = ["wasm-bindgen"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.multi-party-ecdsa]
+[dependencies.multi-party-ecdsa]
 git = "https://github.com/ZenGo-X/multi-party-ecdsa"
 branch = "master"
 default-features = false
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+[dev-dependencies]
 wasm-bindgen-test = "0.3"
 
 [features]
 default = ["gg2018"]
 gg2018 = []
-gg2020 = []
+gg2020 = ["once_cell"]

@@ -18,5 +18,6 @@ pub fn keygenRound1(parameters: JsValue, party_signup: JsValue) -> JsValue {
 }
 
 thread_local! {
-    static KEYGEN: Keygen = Keygen::new(1, 1, 3).unwrap();
+    static KEYGEN: Option<Keygen> = None;
+    //Keygen::new(1, 1, 3).unwrap();
 }
