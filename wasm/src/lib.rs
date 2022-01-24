@@ -26,8 +26,12 @@ pub fn start() {
 // Required for rayon thread support
 pub use wasm_bindgen_rayon::init_thread_pool;
 
-mod keygen;
-mod sign;
+#[cfg(feature = "gg2018")]
+mod gg2018;
+
+#[cfg(feature = "gg2020")]
+mod gg2020;
+
 mod utils;
 
 #[wasm_bindgen]

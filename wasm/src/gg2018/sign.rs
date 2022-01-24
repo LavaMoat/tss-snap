@@ -22,7 +22,7 @@ use common::{
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-use super::utils::{Params, PartyKey};
+use crate::utils::{Params, PartyKey};
 
 #[derive(Serialize)]
 pub struct SignedMessage {

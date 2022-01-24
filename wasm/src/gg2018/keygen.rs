@@ -25,9 +25,9 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use wasm_bindgen::prelude::*;
 
-use super::utils::{Params, PartyKey};
+use crate::utils::{Params, PartyKey};
 
-//use super::{console_log, log};
+//use crate::{console_log, log};
 
 const AES_KEY_BYTES_LEN: usize = 32;
 
