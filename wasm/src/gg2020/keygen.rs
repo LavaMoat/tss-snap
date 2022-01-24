@@ -37,7 +37,7 @@ pub fn keygenRound0(parameters: JsValue, party_signup: JsValue) -> JsValue {
             state.proceed().unwrap();
         }
 
-        messages = state.message_queue().clone();
+        messages = state.message_queue().drain(..).collect::<Vec<_>>();
     });
 
     JsValue::from_serde(&messages).unwrap()
