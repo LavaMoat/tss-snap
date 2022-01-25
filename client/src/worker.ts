@@ -1,7 +1,10 @@
 import init, {
   initThreadPool,
   initKeygen,
-  keygenRound1,
+  startKeygen,
+  handleKeygenIncoming,
+  keygenProceed,
+  keygenCurrentRound,
 
   /*
   keygenRound1,
@@ -48,7 +51,10 @@ void (async function () {
 
 Comlink.expose({
   initKeygen,
-  keygenRound1,
+  startKeygen,
+  handleKeygenIncoming,
+  keygenProceed,
+  keygenCurrentRound,
 
   /*
   keygenRound1,

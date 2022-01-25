@@ -8,7 +8,7 @@ use std::sync::{
 
 use anyhow::{bail, Result};
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
-use log::{error, info, trace, warn};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -397,10 +397,10 @@ async fn rpc_response(
     response: &json_rpc2::Response,
     state: &Arc<RwLock<State>>,
 ) {
-    trace!("send_message (uid={})", conn_id);
+    debug!("send_message (uid={})", conn_id);
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(response).unwrap();
-        trace!("sending message {:#?}", msg);
+        debug!("sending message {:#?}", msg);
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
             // The tx is disconnected, our `client_disconnected` code
             // should be happening in another task, nothing more to

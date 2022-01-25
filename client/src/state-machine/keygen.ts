@@ -1,5 +1,5 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import { PartyKey, RoundEntry, SessionInfo } from ".";
+import { PartyKey, RoundEntry, SessionInfo, Phase } from ".";
 import { PeerEntryCache, PeerEntry } from "./peer-state";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
@@ -7,6 +7,62 @@ import { WebSocketClient } from "../websocket";
 export type KeygenTransition = string[];
 export type KeygenState = RoundEntry;
 
+interface Message {
+  sender: number;
+  receiver?: number;
+}
+
+export async function generateKeyShare2020(
+  websocket: WebSocketClient,
+  worker: any,
+  info: SessionInfo
+) {
+  let messageBuffer: Message[] = [];
+
+  async function sendMessages(messages: any[]) {
+    // Send each message to the server
+    for (const message of messages) {
+      await websocket.rpc({
+        method: "Session.message",
+        params: [info.groupId, info.sessionId, Phase.KEYGEN, message],
+      });
+    }
+  }
+
+  async function onSessionMessage(message: any) {
+    console.log("Got message from server", message);
+    messageBuffer.push(message);
+
+    if (messageBuffer.length === info.parameters.parties - 1) {
+      messageBuffer = [];
+      for (const message of messageBuffer) {
+        await worker.handleKeygenIncoming(message);
+      }
+      const messages = await worker.keygenProceed();
+
+      console.log("Got messages for next round", messages);
+
+      const currentRound = await worker.keygenCurrentRound();
+
+      console.log("current round", currentRound);
+
+      if (currentRound === 4) {
+        console.log("all done, pick the output");
+      } else {
+        sendMessages(messages);
+      }
+    }
+  }
+
+  websocket.on("sessionMessage", onSessionMessage);
+
+  await worker.initKeygen(info.parameters, info.partySignup);
+  const messages = await worker.startKeygen();
+  console.log("First round got entry: ", messages);
+  sendMessages(messages);
+}
+
+/*
 export function generateKeyShare(
   websocket: WebSocketClient,
   worker: any,
@@ -18,23 +74,6 @@ export function generateKeyShare(
 
   return new Promise(async (resolve) => {
     const machine = new StateMachine<KeygenState, KeygenTransition>([
-      {
-        name: "KEYGEN_ROUND_1",
-        transition: async (
-          previousState: KeygenState,
-          transitionData: KeygenTransition
-        ): Promise<KeygenState | null> => {
-          await worker.initKeygen(info.parameters, info.partySignup);
-          const roundEntry = await worker.keygenRound1();
-
-          console.log("First round got entry: ", roundEntry);
-
-          //wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
-          return roundEntry;
-        },
-      },
-
-      /*
       {
         name: "KEYGEN_ROUND_1",
         transition: async (
@@ -142,7 +181,6 @@ export function generateKeyShare(
           return null;
         },
       },
-      */
     ]);
 
     websocket.on("peerRelay", async (peerEntry: PeerEntry) => {
@@ -155,3 +193,4 @@ export function generateKeyShare(
     await machine.next();
   });
 }
+*/

@@ -325,16 +325,17 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 ) {
+                    // TODO: send direct to peer
                     if let Some(_receiver) = &msg.receiver {
-                        // TODO: send direct to peer
                         None
+                    // Handle broadcast round
                     } else {
                         {
                             let ctx = NotificationContext {
                                 noop: false,
                                 group_id: Some(group_id),
                                 session_id: Some(session_id),
-                                filter: None,
+                                filter: Some(vec![*conn_id]),
                                 messages: None,
                             };
 

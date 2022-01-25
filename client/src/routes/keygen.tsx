@@ -16,7 +16,8 @@ import {
 
 import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
 import {
-  generateKeyShare,
+  //generateKeyShare,
+  generateKeyShare2020,
   KeygenState,
   KeygenTransition,
 } from "../state-machine/keygen";
@@ -105,19 +106,21 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           partySignup,
         };
 
-        const keyShare = await generateKeyShare(
+        const keyShare = await generateKeyShare2020(
           websocket,
           worker,
-          onTransition,
+          //onTransition,
           sessionInfo
         );
 
+        /*
         this.props.dispatch(setKeyShare(keyShare));
 
         websocket.notify({
           method: "Notify.address",
           params: [group.uuid, keyShare.address],
         });
+        */
       } else {
         console.warn(
           "Keygen got sessionSignup event for wrong session",
