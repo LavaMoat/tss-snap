@@ -7,12 +7,11 @@ use common::PartySignup;
 use crate::utils::Params;
 use round_based::{Msg, StateMachine};
 
-use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
+use std::sync::{Arc, Mutex};
 
-static KEYGEN: Lazy<Arc<Mutex<Option<Keygen>>>> = Lazy::new(|| {
-    Arc::new(Mutex::new(None))
-});
+static KEYGEN: Lazy<Arc<Mutex<Option<Keygen>>>> =
+    Lazy::new(|| Arc::new(Mutex::new(None)));
 
 #[wasm_bindgen(js_name = "initKeygen")]
 pub fn init_keygen(parameters: JsValue, party_signup: JsValue) {
@@ -22,12 +21,11 @@ pub fn init_keygen(parameters: JsValue, party_signup: JsValue) {
     let (party_num_int, _uuid) = (number, uuid);
 
     //let mut messages: Vec<Msg<<Keygen as StateMachine>::MessageBody>> =
-        //Vec::new();
+    //Vec::new();
 
     let mut writer = KEYGEN.lock().unwrap();
     *writer = Some(
-        Keygen::new(party_num_int, params.threshold, params.parties)
-            .unwrap(),
+        Keygen::new(party_num_int, params.threshold, params.parties).unwrap(),
     );
 
     /*
@@ -60,7 +58,8 @@ pub fn keygen_round_1() -> JsValue {
         state.proceed().unwrap();
     }
 
-    let messages: Vec<Msg<<Keygen as StateMachine>::MessageBody>> = state.message_queue().drain(..).collect();
+    let messages: Vec<Msg<<Keygen as StateMachine>::MessageBody>> =
+        state.message_queue().drain(..).collect();
 
     JsValue::from_serde(&messages).unwrap()
 }

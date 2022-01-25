@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -18,6 +18,7 @@ pub const SESSION_CREATE: &str = "Session.create";
 pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const SESSION_LOAD: &str = "Session.load";
+pub const SESSION_MESSAGE: &str = "Session.message";
 pub const PEER_RELAY: &str = "Peer.relay";
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
@@ -26,6 +27,7 @@ pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
+pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
@@ -36,9 +38,20 @@ type SessionCreateParams = (Uuid, Phase);
 type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type SessionLoadParams = (Uuid, Uuid, Phase, u16);
+type SessionMessageParams = (Uuid, Uuid, Phase, Message);
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
 type NotifyAddressParams = (Uuid, String);
 type NotifyProposalParams = (Uuid, Uuid, String);
+
+// Mimics the `Msg` struct
+// from `round-based` but doesn't care
+// about the `body` data.
+#[derive(Serialize, Deserialize)]
+struct Message {
+    sender: u16,
+    receiver: Option<u16>,
+    body: serde_json::Value,
+}
 
 #[derive(Debug, Serialize)]
 struct Proposal {
@@ -182,7 +195,7 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+            SESSION_MESSAGE | PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -295,6 +308,46 @@ impl Service for NotifyHandler {
                         SESSION_LOAD_EVENT,
                     )
                     .await
+                } else {
+                    None
+                }
+            }
+            SESSION_MESSAGE => {
+                let (conn_id, state, notification) = ctx;
+                let params: SessionMessageParams = req.deserialize()?;
+                let (group_id, session_id, _phase, msg) = params;
+
+                let reader = state.read().await;
+                // Check we have valid group / session
+                if let Some((_group, _session)) = get_group_session(
+                    &conn_id,
+                    &group_id,
+                    &session_id,
+                    &reader.groups,
+                ) {
+                    if let Some(_receiver) = &msg.receiver {
+                        // TODO: send direct to peer
+                        None
+                    } else {
+                        {
+                            let ctx = NotificationContext {
+                                noop: false,
+                                group_id: Some(group_id),
+                                session_id: Some(session_id),
+                                filter: None,
+                                messages: None,
+                            };
+
+                            let mut writer = notification.lock().await;
+                            *writer = ctx;
+                        }
+
+                        let result =
+                            serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
+                                .unwrap();
+
+                        Some(result.into())
+                    }
                 } else {
                     None
                 }

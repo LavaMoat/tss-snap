@@ -20,7 +20,6 @@ export function signMessage(
 
   return new Promise(async (resolve) => {
     const machine = new StateMachine<SignState, SignTransition>([
-
       /*
       {
         name: "SIGN_ROUND_0",

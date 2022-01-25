@@ -1,6 +1,5 @@
 import init, {
   initThreadPool,
-
   initKeygen,
   keygenRound1,
 
@@ -23,7 +22,6 @@ import init, {
   signRound9,
   signMessage,
   */
-
   sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
