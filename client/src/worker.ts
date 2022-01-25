@@ -3,6 +3,7 @@ import init, {
   initKeygen,
   startKeygen,
   handleKeygenIncoming,
+  keygenWantsToProceed,
   keygenProceed,
   keygenCurrentRound,
 
@@ -46,13 +47,15 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 void (async function () {
   console.log("Worker is initializing...");
   await init();
-  await initThreadPool(navigator.hardwareConcurrency);
+  //await initThreadPool(navigator.hardwareConcurrency);
+  await initThreadPool(1);
 })();
 
 Comlink.expose({
   initKeygen,
   startKeygen,
   handleKeygenIncoming,
+  keygenWantsToProceed,
   keygenProceed,
   keygenCurrentRound,
 

@@ -869,7 +869,6 @@ dependencies = [
 [[package]]
 name = "multi-party-ecdsa"
 version = "0.8.0"
-source = "git+https://github.com/ZenGo-X/multi-party-ecdsa?branch=master#c80c87d130f4b742c346cbd3095f24d602834b2c"
 dependencies = [
  "centipede",
  "curv-kzen",

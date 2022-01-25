@@ -34,10 +34,17 @@ export async function generateKeyShare2020(
     messageBuffer.push(message);
 
     if (messageBuffer.length === info.parameters.parties - 1) {
-      messageBuffer = [];
       for (const message of messageBuffer) {
+        console.log("Handling message", message.sender);
         await worker.handleKeygenIncoming(message);
       }
+      messageBuffer = [];
+
+      const wantsToProceed = await worker.keygenWantsToProceed();
+
+      console.log("Wants to proceed", wantsToProceed);
+
+      /*
       const messages = await worker.keygenProceed();
 
       console.log("Got messages for next round", messages);
@@ -51,6 +58,7 @@ export async function generateKeyShare2020(
       } else {
         sendMessages(messages);
       }
+      */
     }
   }
 

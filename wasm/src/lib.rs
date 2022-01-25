@@ -20,7 +20,7 @@ macro_rules! console_log {
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
-    console_log!("WASM: module started.");
+    console_log!("WASM: module started {:?}", std::thread::current().id());
 }
 
 // Required for rayon thread support

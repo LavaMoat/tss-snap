@@ -10,6 +10,8 @@ use round_based::{Msg, StateMachine};
 use once_cell::sync::Lazy;
 use std::sync::{Arc, Mutex};
 
+use crate::{console_log, log};
+
 static KEYGEN: Lazy<Arc<Mutex<Option<Keygen>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
@@ -24,6 +26,9 @@ pub fn init_keygen(parameters: JsValue, party_signup: JsValue) {
     *writer = Some(
         Keygen::new(party_num_int, params.threshold, params.parties).unwrap(),
     );
+
+    //let state = writer.as_mut().unwrap();
+    //console_log!("Messages received {:#?}", state.msgs1.as_ref().unwrap().messages_received());
 }
 
 #[wasm_bindgen(js_name = "startKeygen")]
@@ -46,6 +51,18 @@ pub fn handle_keygen_incoming(message: JsValue) {
     let mut writer = KEYGEN.lock().unwrap();
     let state = writer.as_mut().unwrap();
     state.handle_incoming(message).unwrap();
+
+    console_log!("Handle incoming {:?}", state.wants_to_proceed());
+    //console_log!("Messages received {:#?}", state.msgs1.as_ref().unwrap().messages_received());
+}
+
+#[wasm_bindgen(js_name = "keygenWantsToProceed")]
+pub fn keygen_wants_to_proceed() -> JsValue {
+    let mut writer = KEYGEN.lock().unwrap();
+    let state = writer.as_mut().unwrap();
+    let wants = state.wants_to_proceed();
+
+    JsValue::from_serde(&wants).unwrap()
 }
 
 #[wasm_bindgen(js_name = "keygenCurrentRound")]
