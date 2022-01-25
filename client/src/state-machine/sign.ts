@@ -20,6 +20,8 @@ export function signMessage(
 
   return new Promise(async (resolve) => {
     const machine = new StateMachine<SignState, SignTransition>([
+
+      /*
       {
         name: "SIGN_ROUND_0",
         transition: async (
@@ -220,6 +222,7 @@ export function signMessage(
           return null;
         },
       },
+      */
     ]);
 
     websocket.on("peerRelay", async (peerEntry: PeerEntry) => {

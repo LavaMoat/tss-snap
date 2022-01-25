@@ -18,6 +18,27 @@ export function generateKeyShare(
 
   return new Promise(async (resolve) => {
     const machine = new StateMachine<KeygenState, KeygenTransition>([
+
+      {
+        name: "KEYGEN_ROUND_1",
+        transition: async (
+          previousState: KeygenState,
+          transitionData: KeygenTransition
+        ): Promise<KeygenState | null> => {
+          await worker.initKeygen(
+            info.parameters,
+            info.partySignup
+          );
+          const roundEntry = await worker.keygenRound1();
+
+          console.log("First round got entry: ", roundEntry);
+
+          //wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          return roundEntry;
+        },
+      },
+
+      /*
       {
         name: "KEYGEN_ROUND_1",
         transition: async (
@@ -125,6 +146,7 @@ export function generateKeyShare(
           return null;
         },
       },
+      */
     ]);
 
     websocket.on("peerRelay", async (peerEntry: PeerEntry) => {

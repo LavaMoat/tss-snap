@@ -1,5 +1,10 @@
 import init, {
   initThreadPool,
+
+  initKeygen,
+  keygenRound1,
+
+  /*
   keygenRound1,
   keygenRound2,
   keygenRound3,
@@ -17,6 +22,8 @@ import init, {
   signRound8,
   signRound9,
   signMessage,
+  */
+
   sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
@@ -42,6 +49,10 @@ void (async function () {
 })();
 
 Comlink.expose({
+  initKeygen,
+  keygenRound1,
+
+  /*
   keygenRound1,
   keygenRound2,
   keygenRound3,
@@ -59,5 +70,6 @@ Comlink.expose({
   signRound8,
   signRound9,
   signMessage,
+  */
   sha256,
 });
