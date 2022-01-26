@@ -46,7 +46,13 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 // we avoid top-level await for now
 void (async function () {
   console.log("Worker is initializing...");
-  await init();
+
+  // If we set `shared` to false we get: \
+  //
+  // LinkError: imported unshared memory but shared required
+  const memory = new WebAssembly.Memory(
+    {initial:18,maximum:16384,shared:true})
+  await init(undefined, memory);
   //await initThreadPool(navigator.hardwareConcurrency);
   await initThreadPool(1);
 })();
