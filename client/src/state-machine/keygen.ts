@@ -19,7 +19,7 @@ export async function generateKeyShare2020(
 ) {
   let messageBuffer: Message[] = [];
 
-  async function sendMessages(messages: any[]) {
+  async function sendBroadcast(messages: any[]) {
     // Send each message to the server
     for (const message of messages) {
       await websocket.rpc({
@@ -41,8 +41,19 @@ export async function generateKeyShare2020(
       messageBuffer = [];
 
       const wantsToProceed = await worker.keygenWantsToProceed();
-
       console.log("Wants to proceed", wantsToProceed);
+
+      const messages = await worker.keygenProceed();
+      console.log("Got messages for next round", messages);
+
+      const currentRound = await worker.keygenCurrentRound();
+      console.log("current round", currentRound);
+
+      if (currentRound === 3) {
+        console.log("Send round 3 p2p");
+      } else {
+        sendBroadcast(messages);
+      }
 
       /*
       const messages = await worker.keygenProceed();
@@ -67,7 +78,7 @@ export async function generateKeyShare2020(
   await worker.initKeygen(info.parameters, info.partySignup);
   const messages = await worker.startKeygen();
   console.log("First round got entry: ", messages);
-  sendMessages(messages);
+  sendBroadcast(messages);
 }
 
 /*

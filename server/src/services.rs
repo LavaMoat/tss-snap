@@ -325,6 +325,11 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 ) {
+                    println!(
+                        "gg2020 msg (sender={}, receiver={:#?})",
+                        msg.sender, msg.receiver
+                    );
+
                     // TODO: send direct to peer
                     if let Some(_receiver) = &msg.receiver {
                         None
