@@ -1,21 +1,21 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import { PartyKey, RoundEntry, SessionInfo, SignMessage } from ".";
-import { PeerEntryCache, PeerEntry } from "./peer-state";
+import { KeyShare, SessionInfo, SignMessage } from ".";
+import { MessageCache, Message } from "./message-cache";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
 
-export type SignTransition = string[];
-export type SignState = RoundEntry;
+export type SignTransition = Message[];
+export type SignState = boolean;
 
 export function signMessage(
   websocket: WebSocketClient,
   worker: any,
   onTransition: TransitionHandler<SignState, SignTransition>,
   info: SessionInfo,
-  keyShare: PartyKey,
+  keyShare: KeyShare,
   message: string
 ): Promise<SignMessage> {
-  const peerCache = new PeerEntryCache(info.parameters.threshold);
+  const peerCache = new MessageCache(info.parameters.threshold);
   const wait = waitFor<SignState, SignTransition>();
 
   return new Promise(async (resolve) => {
@@ -215,7 +215,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          websocket.removeAllListeners("peerRelay");
+          websocket.removeAllListeners("sessionMessage");
           machine.removeAllListeners("transitionEnter");
           resolve(signResult);
           return null;
@@ -224,7 +224,7 @@ export function signMessage(
       */
     ]);
 
-    websocket.on("peerRelay", async (peerEntry: PeerEntry) => {
+    websocket.on("sessionMessage", async (peerEntry: Message) => {
       peerCache.add(peerEntry);
     });
 

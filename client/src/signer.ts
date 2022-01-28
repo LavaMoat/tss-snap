@@ -1,7 +1,7 @@
 import { WebSocketClient } from "./websocket";
 import { GroupInfo } from "./store/group";
 import {
-  PartyKey,
+  KeyShare,
   PartySignup,
   SignResult,
   makeOnTransition,
@@ -11,7 +11,7 @@ import { signMessage, SignState, SignTransition } from "./state-machine/sign";
 
 export async function sign(
   message: string,
-  keyShare: PartyKey,
+  keyShare: KeyShare,
   group: GroupInfo,
   websocket: WebSocketClient,
   worker: any,

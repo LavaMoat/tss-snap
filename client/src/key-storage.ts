@@ -1,14 +1,14 @@
-import { Parameters, PartyKey } from "./state-machine";
+import { Parameters, KeyShare } from "./state-machine";
 
 const KEY = "keys";
 
-export type KeyStorage = Map<[string, number, number], PartyKey>;
+export type KeyStorage = Map<[string, number, number], KeyShare>;
 
 export function saveKeyShare(
   publicAddress: string,
   partyNumber: number,
   parties: number,
-  keyShare: PartyKey
+  keyShare: KeyShare
 ) {
   const keyData = loadKeys();
   keyData.set([publicAddress, partyNumber, parties], keyShare);
@@ -35,7 +35,7 @@ export function loadKeys(): KeyStorage {
 export function findKeyValue(
   keyData: KeyStorage,
   target: [string, number, number]
-): PartyKey | null {
+): KeyShare | null {
   for (const [key, value] of keyData) {
     if (key[0] === target[0] && key[1] === target[1] && key[2] === target[2]) {
       return value;
@@ -45,7 +45,7 @@ export function findKeyValue(
 }
 
 export function loadKeysForParties(parties: number): KeyStorage {
-  const keyData = loadKeys() as Map<[string, number, number], PartyKey>;
+  const keyData = loadKeys() as Map<[string, number, number], KeyShare>;
   const keyDataForParties = new Map();
   for (const [key, value] of keyData.entries()) {
     const [_publicAddress, _partyNumber, keyParties] = key;

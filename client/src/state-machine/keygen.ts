@@ -1,5 +1,5 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import { PartyKey, RoundEntry, SessionInfo, Phase } from ".";
+import { KeyShare, SessionInfo, Phase } from ".";
 import { MessageCache, Message } from "./message-cache";
 import { waitFor } from "./wait-for-gg2020";
 import { WebSocketClient } from "../websocket";
@@ -7,22 +7,12 @@ import { WebSocketClient } from "../websocket";
 export type KeygenTransition = Message[];
 export type KeygenState = boolean;
 
-// Private key share for GG2020.
-interface KeyShare {
-  localKey: LocalKey;
-  publicKey: number[];
-  address: string;
-}
-
-// Opaque type for the private key share.
-interface LocalKey {}
-
 export async function generateKeyShare(
   websocket: WebSocketClient,
   worker: any,
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
   info: SessionInfo
-): Promise<PartyKey> {
+): Promise<KeyShare> {
   const peerCache = new MessageCache(info.parameters.parties - 1);
   const wait = waitFor<KeygenState, KeygenTransition>();
 

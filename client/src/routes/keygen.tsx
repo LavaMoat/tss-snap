@@ -14,7 +14,7 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
+import { KeyShare, Session, Phase, makeOnTransition } from "../state-machine";
 import {
   generateKeyShare,
   KeygenState,
@@ -41,7 +41,7 @@ interface KeygenProps {
   group: GroupInfo;
   dispatch: AppDispatch;
   worker: any;
-  keyShare?: PartyKey;
+  keyShare?: KeyShare;
   navigate: NavigateFunction;
 }
 

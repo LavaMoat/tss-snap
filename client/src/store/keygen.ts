@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { PartySignup, PartyKey, Session } from "../state-machine";
+import { PartySignup, KeyShare, Session } from "../state-machine";
 
 export interface KeygenState {
   session?: Session;
-  keyShare?: PartyKey;
+  keyShare?: KeyShare;
 }
 
 const initialState: KeygenState = {
@@ -18,7 +18,7 @@ const keygenSlice = createSlice({
     setKeygenSession: (state, { payload }: PayloadAction<Session>) => {
       state.session = payload;
     },
-    setKeyShare: (state, { payload }: PayloadAction<PartyKey>) => {
+    setKeyShare: (state, { payload }: PayloadAction<KeyShare>) => {
       state.keyShare = payload;
     },
   },
