@@ -27,7 +27,7 @@ impl From<Params> for Parameters {
     }
 }
 
-/// Compute the address of an uncompressed public key.
+/// Compute the address of an uncompressed public key (65 bytes).
 pub fn address(public_key: &Vec<u8>) -> String {
     // Remove the leading 0x04
     let bytes = &public_key[1..];
@@ -37,6 +37,7 @@ pub fn address(public_key: &Vec<u8>) -> String {
 }
 
 /// The generated key data (gg2018).
+#[deprecated(note = "use gg2020 KeyShare instead")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PartyKey {
     pub party_keys: Keys,

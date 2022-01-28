@@ -5,20 +5,10 @@ import init, {
   keygenProceed,
   keygenCreate,
   signInit,
-
-  /*
-  signRound0,
-  signRound1,
-  signRound2,
-  signRound3,
-  signRound4,
-  signRound5,
-  signRound6,
-  signRound7,
-  signRound8,
-  signRound9,
-  signMessage,
-  */
+  signHandleIncoming,
+  signProceed,
+  signPartial,
+  signCreate,
   sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
@@ -39,7 +29,6 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 // we avoid top-level await for now
 void (async function () {
   console.log("Worker is initializing...");
-
   await init();
   //await initThreadPool(navigator.hardwareConcurrency);
   await initThreadPool(1);
@@ -50,21 +39,10 @@ Comlink.expose({
   keygenHandleIncoming,
   keygenProceed,
   keygenCreate,
-
   signInit,
-
-  /*
-  signRound0,
-  signRound1,
-  signRound2,
-  signRound3,
-  signRound4,
-  signRound5,
-  signRound6,
-  signRound7,
-  signRound8,
-  signRound9,
-  signMessage,
-  */
+  signHandleIncoming,
+  signProceed,
+  signPartial,
+  signCreate,
   sha256,
 });

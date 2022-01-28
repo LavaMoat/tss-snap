@@ -58,5 +58,6 @@ pub fn keygen_create() -> JsValue {
         address: crate::utils::address(&public_key),
         public_key,
     };
+    *writer = None;
     JsValue::from_serde(&key_share).unwrap()
 }
