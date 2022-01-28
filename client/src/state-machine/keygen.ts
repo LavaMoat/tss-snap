@@ -95,10 +95,9 @@ export async function generateKeyShare(
           }
           await worker.keygenProceed();
           const keyShare: KeyShare = await worker.keygenCreate();
-          console.log("Got keygen key share", keyShare);
           websocket.removeAllListeners("sessionMessage");
           machine.removeAllListeners("transitionEnter");
-          //resolve(keyShare);
+          resolve(keyShare);
           return null;
         },
       },

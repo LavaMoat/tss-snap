@@ -112,14 +112,14 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           sessionInfo
         );
 
-        /*
+        console.log("Got keygen key share", keyShare);
+
         this.props.dispatch(setKeyShare(keyShare));
 
         websocket.notify({
           method: "Notify.address",
           params: [group.uuid, keyShare.address],
         });
-        */
       } else {
         console.warn(
           "Keygen got sessionSignup event for wrong session",
