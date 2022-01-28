@@ -19,7 +19,10 @@ pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const SESSION_LOAD: &str = "Session.load";
 pub const SESSION_MESSAGE: &str = "Session.message";
+
+#[deprecated(note = "Use session message instead ffor gg2020")]
 pub const PEER_RELAY: &str = "Peer.relay";
+
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 
@@ -28,7 +31,10 @@ pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
+
+#[deprecated(note = "Use session message instead ffor gg2020")]
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
+
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 

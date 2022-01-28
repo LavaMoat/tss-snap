@@ -7,7 +7,7 @@ import { WebSocketClient } from "../websocket";
 export type SignTransition = Message[];
 export type SignState = boolean;
 
-export function signMessage(
+export async function signMessage(
   websocket: WebSocketClient,
   worker: any,
   onTransition: TransitionHandler<SignState, SignTransition>,
@@ -15,8 +15,17 @@ export function signMessage(
   keyShare: KeyShare,
   message: string
 ): Promise<SignMessage> {
-  const peerCache = new MessageCache(info.parameters.threshold);
+  const incomingMessageCache = new MessageCache(info.parameters.threshold);
   const wait = waitFor<SignState, SignTransition>();
+
+  // FIXME: compute signing participants
+  const participants = [1, 2];
+
+  await worker.signInit(
+    info.partySignup.number,
+    participants,
+    keyShare.localKey
+  );
 
   return new Promise(async (resolve) => {
     const machine = new StateMachine<SignState, SignTransition>([
@@ -32,7 +41,7 @@ export function signMessage(
             info.partySignup,
             keyShare
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -49,7 +58,7 @@ export function signMessage(
             keyShare,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -68,7 +77,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -87,7 +96,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -105,7 +114,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -125,7 +134,7 @@ export function signMessage(
             answer,
             message
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -143,7 +152,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -161,7 +170,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -179,7 +188,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -197,7 +206,7 @@ export function signMessage(
             previousRoundEntry,
             answer
           );
-          wait(websocket, info, machine, peerCache, roundEntry.peer_entries);
+          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
           return roundEntry;
         },
       },
@@ -224,8 +233,8 @@ export function signMessage(
       */
     ]);
 
-    websocket.on("sessionMessage", async (peerEntry: Message) => {
-      peerCache.add(peerEntry);
+    websocket.on("sessionMessage", (incoming: Message) => {
+      incomingMessageCache.add(incoming);
     });
 
     machine.on("transitionEnter", onTransition);

@@ -1,15 +1,15 @@
-import { PeerEntryCache, PeerEntry } from "./peer-state";
+import { MessageCache, Message } from "./message-cache";
 import { StateMachine } from "./machine";
-import { SessionInfo } from "./index";
+import { SessionInfo, Phase } from "./index";
 import { WebSocketClient } from "../websocket";
 
 export function waitFor<T, U>() {
-  return function waitForTransitionExitAndPeerAnswers(
+  return async function waitForTransitionExitAndPeerAnswers(
     websocket: WebSocketClient,
     info: SessionInfo,
     machine: StateMachine<T, U>,
-    handler: PeerEntryCache,
-    peerEntries: PeerEntry[]
+    handler: MessageCache,
+    peerEntries: Message[]
   ) {
     let exitedTransition = false;
     let answer: U = null;
@@ -38,9 +38,12 @@ export function waitFor<T, U>() {
       });
     }
 
-    websocket.notify({
-      method: "Peer.relay",
-      params: [info.groupId, info.sessionId, peerEntries],
-    });
+    for (const message of peerEntries) {
+      // FIXME: use correct phase
+      await websocket.rpc({
+        method: "Session.message",
+        params: [info.groupId, info.sessionId, Phase.KEYGEN, message],
+      });
+    }
   };
 }

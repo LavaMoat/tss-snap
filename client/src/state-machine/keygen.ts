@@ -1,7 +1,7 @@
 import { StateMachine, TransitionHandler } from "./machine";
 import { KeyShare, SessionInfo, Phase } from ".";
 import { MessageCache, Message } from "./message-cache";
-import { waitFor } from "./wait-for-gg2020";
+import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
 
 export type KeygenTransition = Message[];
@@ -13,7 +13,7 @@ export async function generateKeyShare(
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
   info: SessionInfo
 ): Promise<KeyShare> {
-  const peerCache = new MessageCache(info.parameters.parties - 1);
+  const incomingMessageCache = new MessageCache(info.parameters.parties - 1);
   const wait = waitFor<KeygenState, KeygenTransition>();
 
   // Initialize the WASM state machine
@@ -27,8 +27,8 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const messages = await worker.keygenStart();
-          wait(websocket, info, machine, peerCache, messages);
+          const messages = await worker.keygenProceed();
+          wait(websocket, info, machine, incomingMessageCache, messages);
           return true;
         },
       },
@@ -45,7 +45,7 @@ export async function generateKeyShare(
           }
 
           const messages = await worker.keygenProceed();
-          wait(websocket, info, machine, peerCache, messages);
+          wait(websocket, info, machine, incomingMessageCache, messages);
           return true;
         },
       },
@@ -62,7 +62,7 @@ export async function generateKeyShare(
           }
 
           const messages = await worker.keygenProceed();
-          wait(websocket, info, machine, peerCache, messages);
+          wait(websocket, info, machine, incomingMessageCache, messages);
           return true;
         },
       },
@@ -78,7 +78,7 @@ export async function generateKeyShare(
             await worker.keygenHandleIncoming(message);
           }
           const messages = await worker.keygenProceed();
-          wait(websocket, info, machine, peerCache, messages);
+          wait(websocket, info, machine, incomingMessageCache, messages);
           return true;
         },
       },
@@ -103,8 +103,8 @@ export async function generateKeyShare(
       },
     ]);
 
-    websocket.on("sessionMessage", async (peerEntry: Message) => {
-      peerCache.add(peerEntry);
+    websocket.on("sessionMessage", (incoming: Message) => {
+      incomingMessageCache.add(incoming);
     });
 
     machine.on("transitionEnter", onTransition);

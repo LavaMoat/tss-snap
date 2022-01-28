@@ -112,8 +112,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           sessionInfo
         );
 
-        console.log("Got keygen key share", keyShare);
-
         this.props.dispatch(setKeyShare(keyShare));
 
         websocket.notify({
