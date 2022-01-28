@@ -1,4 +1,4 @@
-import { PeerEntryCache, PeerEntry } from "./peer-state-gg2020";
+import { MessageCache, Message } from "./message-cache";
 import { StateMachine } from "./machine";
 import { SessionInfo, Phase } from "./index";
 import { WebSocketClient } from "../websocket";
@@ -8,8 +8,8 @@ export function waitFor<T, U>() {
     websocket: WebSocketClient,
     info: SessionInfo,
     machine: StateMachine<T, U>,
-    handler: PeerEntryCache,
-    peerEntries: PeerEntry[]
+    handler: MessageCache,
+    peerEntries: Message[]
   ) {
     let exitedTransition = false;
     let answer: U = null;

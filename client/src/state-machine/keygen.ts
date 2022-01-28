@@ -1,18 +1,11 @@
 import { StateMachine, TransitionHandler } from "./machine";
 import { PartyKey, RoundEntry, SessionInfo, Phase } from ".";
-import { PeerEntryCache, PeerEntry } from "./peer-state-gg2020";
+import { MessageCache, Message } from "./message-cache";
 import { waitFor } from "./wait-for-gg2020";
 import { WebSocketClient } from "../websocket";
 
-export type KeygenTransition = PeerEntry[];
+export type KeygenTransition = Message[];
 export type KeygenState = boolean;
-
-/*
-interface Message {
-  sender: number;
-  receiver?: number;
-}
-*/
 
 // Private key share for GG2020.
 interface KeyShare {
@@ -30,7 +23,7 @@ export async function generateKeyShare(
   onTransition: TransitionHandler<KeygenState, KeygenTransition>,
   info: SessionInfo
 ): Promise<PartyKey> {
-  const peerCache = new PeerEntryCache(info.parameters.parties - 1);
+  const peerCache = new MessageCache(info.parameters.parties - 1);
   const wait = waitFor<KeygenState, KeygenTransition>();
 
   // Initialize the WASM state machine
@@ -56,7 +49,7 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const incoming = transitionData as PeerEntry[];
+          const incoming = transitionData as Message[];
           for (const message of incoming) {
             await worker.keygenHandleIncoming(message);
           }
@@ -73,7 +66,7 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const incoming = transitionData as PeerEntry[];
+          const incoming = transitionData as Message[];
           for (const message of incoming) {
             await worker.keygenHandleIncoming(message);
           }
@@ -90,10 +83,7 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const incoming = transitionData as PeerEntry[];
-
-          console.log("Keygen round 4 got incoming", incoming);
-
+          const incoming = transitionData as Message[];
           for (const message of incoming) {
             await worker.keygenHandleIncoming(message);
           }
@@ -109,13 +99,11 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const incoming = transitionData as PeerEntry[];
+          const incoming = transitionData as Message[];
           for (const message of incoming) {
             await worker.keygenHandleIncoming(message);
           }
           await worker.keygenProceed();
-          console.log("KEYGEN ROUND 5 PROCEEDED");
-
           const keyShare: KeyShare = await worker.keygenCreate();
           console.log("Got keygen key share", keyShare);
           websocket.removeAllListeners("sessionMessage");
@@ -126,7 +114,7 @@ export async function generateKeyShare(
       },
     ]);
 
-    websocket.on("sessionMessage", async (peerEntry: PeerEntry) => {
+    websocket.on("sessionMessage", async (peerEntry: Message) => {
       peerCache.add(peerEntry);
     });
 
