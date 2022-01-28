@@ -319,20 +319,50 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
                 // Check we have valid group / session
-                if let Some((_group, _session)) = get_group_session(
+                if let Some((_group, session)) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
                 ) {
-                    println!(
-                        "gg2020 msg (sender={}, receiver={:#?})",
-                        msg.sender, msg.receiver
-                    );
+                    // Send direct to peer
+                    if let Some(receiver) = &msg.receiver {
+                        if let Some(s) = session
+                            .party_signups
+                            .iter()
+                            .find(|s| s.0 == *receiver)
+                        {
+                            let result = serde_json::to_value((
+                                SESSION_MESSAGE_EVENT,
+                                msg,
+                            ))
+                            .unwrap();
 
-                    // TODO: send direct to peer
-                    if let Some(_receiver) = &msg.receiver {
-                        None
+                            let response: Response = result.into();
+                            let message = (s.1, response);
+
+                            {
+                                let ctx = NotificationContext {
+                                    noop: false,
+                                    group_id: Some(group_id),
+                                    session_id: Some(session_id),
+                                    filter: None,
+                                    messages: Some(vec![message]),
+                                };
+
+                                let mut writer = notification.lock().await;
+                                *writer = ctx;
+                            }
+
+                            // Must return a response so the server processes
+                            // our notifications even though our actual responses
+                            // are in the messages assigned to the notification context
+                            Some((serde_json::Value::Null).into())
+                        } else {
+                            warn!("could not find receiver {} in session party signups", receiver);
+                            None
+                        }
+
                     // Handle broadcast round
                     } else {
                         {

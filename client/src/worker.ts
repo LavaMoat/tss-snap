@@ -1,11 +1,10 @@
 import init, {
   initThreadPool,
-  initKeygen,
-  startKeygen,
-  handleKeygenIncoming,
-  keygenWantsToProceed,
+  keygenInit,
+  keygenStart,
+  keygenHandleIncoming,
   keygenProceed,
-  keygenCurrentRound,
+  keygenCreate,
 
   /*
   keygenRound1,
@@ -47,26 +46,17 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 void (async function () {
   console.log("Worker is initializing...");
 
-  // If we set `shared` to false we get: \
-  //
-  // LinkError: imported unshared memory but shared required
-  const memory = new WebAssembly.Memory({
-    initial: 18,
-    maximum: 16384,
-    shared: true,
-  });
-  await init(undefined, memory);
+  await init();
   //await initThreadPool(navigator.hardwareConcurrency);
   await initThreadPool(1);
 })();
 
 Comlink.expose({
-  initKeygen,
-  startKeygen,
-  handleKeygenIncoming,
-  keygenWantsToProceed,
+  keygenInit,
+  keygenStart,
+  keygenHandleIncoming,
   keygenProceed,
-  keygenCurrentRound,
+  keygenCreate,
 
   /*
   keygenRound1,

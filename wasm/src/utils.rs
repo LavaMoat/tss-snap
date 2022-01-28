@@ -5,6 +5,9 @@ use curv::{
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2018::party_i::{
     Keys, Parameters, SharedKeys,
 };
+
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::LocalKey;
+
 use paillier::EncryptionKey;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
@@ -33,7 +36,7 @@ pub fn address(public_key: &Vec<u8>) -> String {
     format!("0x{}", hex::encode(&final_bytes))
 }
 
-/// The generated key data.
+/// The generated key data (gg2018).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PartyKey {
     pub party_keys: Keys,
@@ -42,6 +45,16 @@ pub struct PartyKey {
     pub vss_scheme_vec: Vec<VerifiableSS<Secp256k1>>,
     pub paillier_key_vec: Vec<EncryptionKey>,
     pub y_sum: Point<Secp256k1>,
+    #[serde(rename = "publicKey")]
+    pub public_key: Vec<u8>,
+    pub address: String,
+}
+
+/// The generated key data (gg2020).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KeyShare {
+    #[serde(rename = "localKey")]
+    pub local_key: LocalKey<Secp256k1>,
     #[serde(rename = "publicKey")]
     pub public_key: Vec<u8>,
     pub address: String,

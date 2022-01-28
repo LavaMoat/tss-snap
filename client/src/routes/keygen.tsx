@@ -16,8 +16,7 @@ import {
 
 import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
 import {
-  //generateKeyShare,
-  generateKeyShare2020,
+  generateKeyShare,
   KeygenState,
   KeygenTransition,
 } from "../state-machine/keygen";
@@ -106,10 +105,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           partySignup,
         };
 
-        const keyShare = await generateKeyShare2020(
+        const keyShare = await generateKeyShare(
           websocket,
           worker,
-          //onTransition,
+          onTransition,
           sessionInfo
         );
 
