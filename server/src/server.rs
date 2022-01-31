@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{
@@ -310,7 +310,7 @@ async fn rpc_request(
     // Requests that require post-processing notifications
     match request.method() {
         SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | SESSION_MESSAGE
-        | SESSION_FINISH | PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+        | SESSION_FINISH | PEER_RELAY | NOTIFY_PROPOSAL => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}

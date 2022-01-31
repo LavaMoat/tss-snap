@@ -24,7 +24,6 @@ pub const SESSION_FINISH: &str = "Session.finish";
 #[deprecated(note = "Use session message instead for gg2020")]
 pub const PEER_RELAY: &str = "Peer.relay";
 
-pub const NOTIFY_ADDRESS: &str = "Notify.address";
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 
 // Notification event names
@@ -37,7 +36,6 @@ pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
 #[deprecated(note = "Use session message instead for gg2020")]
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
 
-pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 
 type Uuid = String;
@@ -51,7 +49,6 @@ type SessionFinishParams = (Uuid, Uuid, u16);
 
 #[deprecated(note = "Use session message instead for gg2020")]
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
-type NotifyAddressParams = (Uuid, String);
 type NotifyProposalParams = (Uuid, Uuid, String);
 
 // Mimics the `Msg` struct
@@ -215,9 +212,7 @@ impl Service for ServiceHandler {
                 if let Some(group) =
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)
                 {
-                    if let Some(session) =
-                        group.sessions.get_mut(&session_id)
-                    {
+                    if let Some(session) = group.sessions.get_mut(&session_id) {
                         session.finished.insert(party_number);
                         Some(req.into())
                     } else {
@@ -229,7 +224,7 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            SESSION_MESSAGE | PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+            SESSION_MESSAGE | PEER_RELAY | NOTIFY_PROPOSAL => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -425,29 +420,50 @@ impl Service for NotifyHandler {
             SESSION_FINISH => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionFinishParams = req.deserialize()?;
-                let (group_id, session_id, party_number) = params;
+                let (group_id, session_id, _party_number) = params;
 
                 let reader = state.read().await;
 
-                if let Some((group, session)) = get_group_session(
+                if let Some((_group, session)) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
                 ) {
-                    let mut signups = session.party_signups
-                        .iter().map(|(n, _)| n.clone()).collect::<Vec<u16>>();
-                    let mut completed = session.finished
-                        .iter().cloned().collect::<Vec<u16>>();
+                    let mut signups = session
+                        .party_signups
+                        .iter()
+                        .map(|(n, _)| n.clone())
+                        .collect::<Vec<u16>>();
+                    let mut completed =
+                        session.finished.iter().cloned().collect::<Vec<u16>>();
 
                     signups.sort();
                     completed.sort();
 
                     if signups == completed {
-                        println!("Broadcast session closed event to all parties...");
-                    }
+                        let result = serde_json::to_value((
+                            SESSION_CLOSED_EVENT,
+                            completed,
+                        ))
+                        .unwrap();
 
-                    None
+                        {
+                            let ctx = NotificationContext {
+                                noop: false,
+                                group_id: Some(group_id),
+                                session_id: Some(session_id),
+                                filter: None,
+                                messages: None,
+                            };
+                            let mut writer = notification.lock().await;
+                            *writer = ctx;
+                        }
+
+                        Some(result.into())
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
@@ -509,30 +525,6 @@ impl Service for NotifyHandler {
                 } else {
                     None
                 }
-            }
-            NOTIFY_ADDRESS => {
-                let (_conn_id, _state, notification) = ctx;
-                let params: NotifyAddressParams = req.deserialize()?;
-                let (group_id, public_address) = params;
-                let res = serde_json::to_value((
-                    NOTIFY_ADDRESS_EVENT,
-                    &public_address,
-                ))
-                .unwrap();
-
-                {
-                    let ctx = NotificationContext {
-                        noop: false,
-                        group_id: Some(group_id),
-                        session_id: None,
-                        filter: None,
-                        messages: None,
-                    };
-                    let mut writer = notification.lock().await;
-                    *writer = ctx;
-                }
-
-                Some(res.into())
             }
             NOTIFY_PROPOSAL => {
                 let (conn_id, _state, notification) = ctx;

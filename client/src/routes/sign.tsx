@@ -230,14 +230,6 @@ const Sign = () => {
   const { address } = params;
   const [proposals, setProposals] = useState([]);
 
-  console.log("Sign got keyShare", keyShare);
-
-  // Debugging keyShare bug, should
-  // blow up here instead when keyShare
-  // is not set
-  const {publicKey} = keyShare;
-  const publicKeyString = Buffer.from(publicKey).toString("hex");
-
   useEffect(() => {
     websocket.on(
       "notifyProposal",

@@ -72,8 +72,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session });
     });
 
-    websocket.on("notifyAddress", (address: string) => {
+    websocket.on("sessionClosed", () => {
       const { partySignup } = this.state.session;
+      const { address } = this.props.keyShare;
+
       saveKeyShare(
         address,
         partySignup.number,
@@ -114,21 +116,12 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           sessionInfo
         );
 
-        console.log("Setting store keyShare", keyShare);
-
         this.props.dispatch(setKeyShare(keyShare));
 
         websocket.notify({
           method: "Session.finish",
           params: [group.uuid, sessionId, partySignup.number],
         });
-
-        /*
-        websocket.notify({
-          method: "Notify.address",
-          params: [group.uuid, keyShare.address],
-        });
-        */
       } else {
         console.warn(
           "Keygen got sessionSignup event for wrong session",
@@ -170,7 +163,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     websocket.removeAllListeners("sessionCreate");
     websocket.removeAllListeners("sessionSignup");
     websocket.removeAllListeners("sessionLoad");
-    websocket.removeAllListeners("notifyAddress");
+    websocket.removeAllListeners("sessionClosed");
   }
 
   render() {

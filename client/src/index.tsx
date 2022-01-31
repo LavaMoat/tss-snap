@@ -23,7 +23,7 @@ const App = () => {
         <h1>
           <a href="/">ECDSA WASM Demo</a>
         </h1>
-        <p>Using the gg18 protocol, signing initiated on (threshold + 1)</p>
+        <p>Using the gg2020 protocol, signing initiated on (threshold + 1)</p>
         <hr />
         <WorkerProvider>
           <Routes>
