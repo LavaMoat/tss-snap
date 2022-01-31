@@ -36,9 +36,8 @@ default-features = false
 #features = ["wasm-bindgen"]
 
 [dependencies.multi-party-ecdsa]
-path = "../../multi-party-ecdsa"
-#git = "https://github.com/ZenGo-X/multi-party-ecdsa"
-#branch = "master"
+git = "https://github.com/ZenGo-X/multi-party-ecdsa"
+branch = "master"
 default-features = false
 
 [dev-dependencies]
