@@ -1,6 +1,6 @@
 # ECDSA WASM
 
-Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) (gg18) in WASM.
+Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) (GG2020) in WASM.
 
 ## Prerequisites
 
