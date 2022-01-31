@@ -89,7 +89,7 @@ export async function signMessage(
         transition: makeStandardTransition(machine),
       },
       {
-        name: "SIGN_PARTIAL",
+        name: "SIGN_ROUND_8",
         transition: async (
           previousState: SignState,
           transitionData: SignTransition
