@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use common::{Parameters, PeerEntry};
+use common::Parameters;
 
 use super::server::{Group, NotificationContext, Phase, Session, State};
 
@@ -20,10 +20,6 @@ pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const SESSION_LOAD: &str = "Session.load";
 pub const SESSION_MESSAGE: &str = "Session.message";
 pub const SESSION_FINISH: &str = "Session.finish";
-
-#[deprecated(note = "Use session message instead for gg2020")]
-pub const PEER_RELAY: &str = "Peer.relay";
-
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 
 // Notification event names
@@ -32,10 +28,6 @@ pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
 pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
-
-#[deprecated(note = "Use session message instead for gg2020")]
-pub const PEER_RELAY_EVENT: &str = "peerRelay";
-
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 
 type Uuid = String;
@@ -46,9 +38,6 @@ type SessionSignupParams = (Uuid, Uuid, Phase);
 type SessionLoadParams = (Uuid, Uuid, Phase, u16);
 type SessionMessageParams = (Uuid, Uuid, Phase, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
-
-#[deprecated(note = "Use session message instead for gg2020")]
-type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
 type NotifyProposalParams = (Uuid, Uuid, String);
 
 // Mimics the `Msg` struct
@@ -166,6 +155,8 @@ impl Service for ServiceHandler {
                     None
                 }
             }
+            // Load an existing party signup into the session
+            // this is used to support loading existing key shares.
             SESSION_LOAD => {
                 let (conn_id, state) = ctx;
                 let params: SessionLoadParams = req.deserialize()?;
@@ -203,6 +194,7 @@ impl Service for ServiceHandler {
                     None
                 }
             }
+            // Mark the session as finished for a party.
             SESSION_FINISH => {
                 let (conn_id, state) = ctx;
                 let params: SessionFinishParams = req.deserialize()?;
@@ -224,7 +216,7 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            SESSION_MESSAGE | PEER_RELAY | NOTIFY_PROPOSAL => {
+            SESSION_MESSAGE | NOTIFY_PROPOSAL => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -464,64 +456,6 @@ impl Service for NotifyHandler {
                     } else {
                         None
                     }
-                } else {
-                    None
-                }
-            }
-            PEER_RELAY => {
-                let (conn_id, state, notification) = ctx;
-                let params: PeerRelayParams = req.deserialize()?;
-                let (group_id, session_id, peer_entries) = params;
-
-                let reader = state.read().await;
-
-                if let Some((_group, session)) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                ) {
-                    let messages: Vec<(usize, Response)> = peer_entries
-                        .into_iter()
-                        .filter_map(|entry| {
-                            if let Some(s) = session
-                                .party_signups
-                                .iter()
-                                .find(|s| s.0 == entry.party_to)
-                            {
-                                let result = serde_json::to_value((
-                                    PEER_RELAY_EVENT,
-                                    entry,
-                                ))
-                                .unwrap();
-
-                                let response: Response = result.into();
-                                Some((s.1, response))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect();
-
-                    //println!("Setting peer relay messages {}", messages.len());
-
-                    {
-                        let ctx = NotificationContext {
-                            noop: false,
-                            group_id: Some(group_id),
-                            session_id: Some(session_id),
-                            filter: None,
-                            messages: Some(messages),
-                        };
-
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
-                    }
-
-                    // Must return a response so the server processes
-                    // our notifications even though our actual responses
-                    // are in the messages assigned to the notification context
-                    Some((serde_json::Value::Null).into())
                 } else {
                     None
                 }

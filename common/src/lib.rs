@@ -12,19 +12,6 @@ pub const ROUND_7: u16 = 7;
 pub const ROUND_8: u16 = 8;
 pub const ROUND_9: u16 = 9;
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct PeerEntry {
-    #[serde(rename = "from")]
-    pub party_from: u16,
-    #[serde(rename = "to")]
-    pub party_to: u16,
-    pub value: String,
-    pub round: u16,
-
-    #[serde(skip)]
-    pub session: String,
-}
-
 /// Parameters for key generation and signing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parameters {

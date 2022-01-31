@@ -2,9 +2,9 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::key
 
 use wasm_bindgen::prelude::*;
 
-use common::PartySignup;
+use common::{Parameters, PartySignup};
 
-use crate::utils::{KeyShare, Params};
+use crate::utils::KeyShare;
 use round_based::{Msg, StateMachine};
 
 use once_cell::sync::Lazy;
@@ -17,7 +17,7 @@ static KEYGEN: Lazy<Arc<Mutex<Option<Keygen>>>> =
 
 #[wasm_bindgen(js_name = "keygenInit")]
 pub fn keygen_init(parameters: JsValue, party_signup: JsValue) {
-    let params: Params = parameters.into_serde().unwrap();
+    let params: Parameters = parameters.into_serde().unwrap();
     let PartySignup { number, uuid } =
         party_signup.into_serde::<PartySignup>().unwrap();
     let (party_num_int, _uuid) = (number, uuid);
