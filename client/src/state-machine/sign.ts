@@ -39,7 +39,13 @@ export async function signMessage(
         await worker.signHandleIncoming(message);
       }
       const messages = await worker.signProceed();
-      wait(websocket, info, machine, incomingMessageCache, messages);
+      if (messages.length > 0) {
+        wait(websocket, info, machine, incomingMessageCache, messages);
+      } else {
+        // Prepare to sign partial but must allow the
+        // transition function to return first!
+        setTimeout(() => machine.next(), 0);
+      }
       return true;
     };
   }
@@ -83,41 +89,40 @@ export async function signMessage(
         transition: makeStandardTransition(machine),
       },
       {
-        name: "SIGN_ROUND_8",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "SIGN_ROUND_9",
+        name: "SIGN_PARTIAL",
         transition: async (
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
-          console.log("Handle sign round 9");
-          return null;
+          const partial = await worker.signPartial(message);
+          // Broadcast the partial signature
+          // to other clients
+          const partialMessage: Message = {
+            sender: info.partySignup.number,
+            receiver: null,
+            body: partial,
+          };
+          wait(websocket, info, machine, incomingMessageCache, [
+            partialMessage,
+          ]);
+          return true;
         },
       },
-      /*
       {
         name: "SIGN_FINALIZE",
         transition: async (
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
-          const previousRoundEntry = previousState as RoundEntry;
-          const answer = transitionData as string[];
-          const signResult = await worker.signMessage(
-            info.partySignup,
-            keyShare,
-            previousRoundEntry,
-            answer
-          );
+          const incoming = transitionData as Message[];
+          const partials = incoming.map((msg) => msg.body);
+          const signResult = await worker.signCreate(partials);
           websocket.removeAllListeners("sessionMessage");
           machine.removeAllListeners("transitionEnter");
           resolve(signResult);
           return null;
         },
       },
-      */
     ];
 
     websocket.on("sessionMessage", (incoming: Message) => {

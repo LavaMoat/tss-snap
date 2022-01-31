@@ -5,6 +5,7 @@ import { EventEmitter } from "events";
 export interface Message {
   sender: number;
   receiver?: number;
+  body: any;
 }
 
 export class MessageCache extends EventEmitter {

@@ -70,7 +70,7 @@ export interface SignResult {
 }
 
 export interface SignMessage {
-  result: SignResult;
+  signature: SignResult;
   public_key: number[];
   address: string;
 }
