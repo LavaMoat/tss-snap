@@ -27,8 +27,26 @@ export async function signMessage(
     keyShare.localKey
   );
 
+  function makeStandardTransition(
+    machine: StateMachine<SignState, SignTransition>
+  ) {
+    return async function standardTransition(
+      previousState: SignState,
+      transitionData: SignTransition
+    ): Promise<SignState | null> {
+      const incoming = transitionData as Message[];
+      for (const message of incoming) {
+        await worker.signHandleIncoming(message);
+      }
+      const messages = await worker.signProceed();
+      wait(websocket, info, machine, incomingMessageCache, messages);
+      return true;
+    };
+  }
+
   return new Promise(async (resolve) => {
-    const machine = new StateMachine<SignState, SignTransition>([
+    const machine = new StateMachine<SignState, SignTransition>([]);
+    machine.states = [
       {
         name: "SIGN_ROUND_1",
         transition: async (
@@ -42,108 +60,31 @@ export async function signMessage(
       },
       {
         name: "SIGN_ROUND_2",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.signHandleIncoming(message);
-          }
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
-          return true;
-        },
+        transition: makeStandardTransition(machine),
       },
       {
         name: "SIGN_ROUND_3",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.signHandleIncoming(message);
-          }
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
-          return true;
-        },
+        transition: makeStandardTransition(machine),
       },
       {
         name: "SIGN_ROUND_4",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.signHandleIncoming(message);
-          }
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
-          return true;
-        },
+        transition: makeStandardTransition(machine),
       },
       {
         name: "SIGN_ROUND_5",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.signHandleIncoming(message);
-          }
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
-          return true;
-        },
+        transition: makeStandardTransition(machine),
       },
       {
         name: "SIGN_ROUND_6",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.signHandleIncoming(message);
-          }
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
-          return true;
-        },
+        transition: makeStandardTransition(machine),
       },
       {
         name: "SIGN_ROUND_7",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          console.log("Handle sign round 7");
-          return null;
-        },
+        transition: makeStandardTransition(machine),
       },
-
-      /*
       {
         name: "SIGN_ROUND_8",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const previousRoundEntry = previousState as RoundEntry;
-          const answer = transitionData as string[];
-          const roundEntry = await worker.signRound8(
-            info.parameters,
-            info.partySignup,
-            previousRoundEntry,
-            answer
-          );
-          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
-          return roundEntry;
-        },
+        transition: makeStandardTransition(machine),
       },
       {
         name: "SIGN_ROUND_9",
@@ -151,18 +92,11 @@ export async function signMessage(
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
-          const previousRoundEntry = previousState as RoundEntry;
-          const answer = transitionData as string[];
-          const roundEntry = await worker.signRound9(
-            info.parameters,
-            info.partySignup,
-            previousRoundEntry,
-            answer
-          );
-          wait(websocket, info, machine, incomingMessageCache, roundEntry.peer_entries);
-          return roundEntry;
+          console.log("Handle sign round 9");
+          return null;
         },
       },
+      /*
       {
         name: "SIGN_FINALIZE",
         transition: async (
@@ -184,7 +118,7 @@ export async function signMessage(
         },
       },
       */
-    ]);
+    ];
 
     websocket.on("sessionMessage", (incoming: Message) => {
       incomingMessageCache.add(incoming);
