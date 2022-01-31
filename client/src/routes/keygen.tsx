@@ -84,7 +84,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         "Saved key share for public address",
         address,
         " and party number",
-        partySignup.number
+        partySignup.number,
+        " keyShare is ",
+        this.props.keyShare
       );
       this.props.navigate(`/sign/${address}`);
     });
@@ -112,12 +114,16 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           sessionInfo
         );
 
+        console.log("Setting store keyShare", keyShare);
+
         this.props.dispatch(setKeyShare(keyShare));
 
+        /*
         websocket.notify({
           method: "Notify.address",
           params: [group.uuid, keyShare.address],
         });
+        */
       } else {
         console.warn(
           "Keygen got sessionSignup event for wrong session",
