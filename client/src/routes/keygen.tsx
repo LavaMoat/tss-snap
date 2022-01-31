@@ -118,6 +118,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
         this.props.dispatch(setKeyShare(keyShare));
 
+        websocket.notify({
+          method: "Session.finish",
+          params: [group.uuid, sessionId, partySignup.number],
+        });
+
         /*
         websocket.notify({
           method: "Notify.address",

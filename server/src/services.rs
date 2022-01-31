@@ -19,8 +19,9 @@ pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const SESSION_LOAD: &str = "Session.load";
 pub const SESSION_MESSAGE: &str = "Session.message";
+pub const SESSION_FINISH: &str = "Session.finish";
 
-#[deprecated(note = "Use session message instead ffor gg2020")]
+#[deprecated(note = "Use session message instead for gg2020")]
 pub const PEER_RELAY: &str = "Peer.relay";
 
 pub const NOTIFY_ADDRESS: &str = "Notify.address";
@@ -31,8 +32,9 @@ pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
+pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
 
-#[deprecated(note = "Use session message instead ffor gg2020")]
+#[deprecated(note = "Use session message instead for gg2020")]
 pub const PEER_RELAY_EVENT: &str = "peerRelay";
 
 pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
@@ -45,6 +47,9 @@ type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type SessionLoadParams = (Uuid, Uuid, Phase, u16);
 type SessionMessageParams = (Uuid, Uuid, Phase, Message);
+type SessionFinishParams = (Uuid, Uuid, u16);
+
+#[deprecated(note = "Use session message instead for gg2020")]
 type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
 type NotifyAddressParams = (Uuid, String);
 type NotifyProposalParams = (Uuid, Uuid, String);
@@ -195,6 +200,29 @@ impl Service for ServiceHandler {
                             None
                         }
                     } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            SESSION_FINISH => {
+                let (conn_id, state) = ctx;
+                let params: SessionFinishParams = req.deserialize()?;
+                let (group_id, session_id, party_number) = params;
+
+                let mut writer = state.write().await;
+                if let Some(group) =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
+                {
+                    if let Some(session) =
+                        group.sessions.get_mut(&session_id)
+                    {
+                        session.finished.insert(party_number);
+                        Some(req.into())
+                    } else {
+                        warn!("session does not exist: {}", session_id);
+                        // TODO: send error response
                         None
                     }
                 } else {
@@ -390,6 +418,36 @@ impl Service for NotifyHandler {
 
                         Some(result.into())
                     }
+                } else {
+                    None
+                }
+            }
+            SESSION_FINISH => {
+                let (conn_id, state, notification) = ctx;
+                let params: SessionFinishParams = req.deserialize()?;
+                let (group_id, session_id, party_number) = params;
+
+                let reader = state.read().await;
+
+                if let Some((group, session)) = get_group_session(
+                    &conn_id,
+                    &group_id,
+                    &session_id,
+                    &reader.groups,
+                ) {
+                    let mut signups = session.party_signups
+                        .iter().map(|(n, _)| n.clone()).collect::<Vec<u16>>();
+                    let mut completed = session.finished
+                        .iter().cloned().collect::<Vec<u16>>();
+
+                    signups.sort();
+                    completed.sort();
+
+                    if signups == completed {
+                        println!("Broadcast session closed event to all parties...");
+                    }
+
+                    None
                 } else {
                     None
                 }

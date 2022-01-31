@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{
@@ -70,6 +70,11 @@ pub struct Session {
     /// Map party number to connection identifier
     #[serde(skip)]
     pub party_signups: Vec<(u16, usize)>,
+
+    /// Party numbers for those that have
+    /// marked the session as finished.
+    #[serde(skip)]
+    pub finished: HashSet<u16>,
 }
 
 impl Default for Session {
@@ -78,6 +83,7 @@ impl Default for Session {
             uuid: Uuid::new_v4().to_string(),
             phase: Default::default(),
             party_signups: Default::default(),
+            finished: Default::default(),
         }
     }
 }
@@ -88,6 +94,7 @@ impl From<Phase> for Session {
             uuid: Uuid::new_v4().to_string(),
             phase,
             party_signups: Default::default(),
+            finished: Default::default(),
         }
     }
 }
@@ -303,7 +310,7 @@ async fn rpc_request(
     // Requests that require post-processing notifications
     match request.method() {
         SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | SESSION_MESSAGE
-        | PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+        | SESSION_FINISH | PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}
