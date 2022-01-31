@@ -18,6 +18,7 @@ pub struct Params {
     pub threshold: u16,
 }
 
+// TODO: remove this after gg2020 migration
 impl From<Params> for Parameters {
     fn from(params: Params) -> Self {
         Self {

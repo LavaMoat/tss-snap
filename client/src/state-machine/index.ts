@@ -1,4 +1,3 @@
-import { PeerEntry } from "./peer-state";
 import { State } from "./machine";
 
 export enum Phase {
