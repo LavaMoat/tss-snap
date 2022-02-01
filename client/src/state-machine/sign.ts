@@ -50,11 +50,13 @@ export async function signMessage(
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
+          const index = keyShare.localKey.i;
+
           // Must share our party signup index
           // in order to initialize the state
           // machine with list of signing participants
           const indexMessage: Message = {
-            sender: info.partySignup.number,
+            sender: index,
             receiver: null,
             body: null,
           };
@@ -70,10 +72,8 @@ export async function signMessage(
         ): Promise<SignState | null> => {
           const incoming = transitionData as Message[];
           let participants = incoming.map((msg) => msg.sender);
-          participants.push(info.partySignup.number);
+          participants.push(keyShare.localKey.i);
           participants.sort();
-
-          console.log("sign participants", participants);
 
           // Initialize the WASM state machine
           await worker.signInit(
