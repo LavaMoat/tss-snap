@@ -18,15 +18,6 @@ export async function signMessage(
   const incomingMessageCache = new MessageCache(info.parameters.threshold);
   const wait = waitFor<SignState, SignTransition>();
 
-  // FIXME: compute signing participants
-  const participants = [1, 2];
-
-  await worker.signInit(
-    info.partySignup.number,
-    participants,
-    keyShare.localKey
-  );
-
   function makeStandardTransition(
     machine: StateMachine<SignState, SignTransition>
   ) {
@@ -54,11 +45,43 @@ export async function signMessage(
     const machine = new StateMachine<SignState, SignTransition>([]);
     machine.states = [
       {
+        name: "SIGN_ROUND_0",
+        transition: async (
+          previousState: SignState,
+          transitionData: SignTransition
+        ): Promise<SignState | null> => {
+          // Must share our party signup index
+          // in order to initialize the state
+          // machine with list of signing participants
+          const indexMessage: Message = {
+            sender: info.partySignup.number,
+            receiver: null,
+            body: null,
+          };
+          wait(websocket, info, machine, incomingMessageCache, [indexMessage]);
+          return true;
+        },
+      },
+      {
         name: "SIGN_ROUND_1",
         transition: async (
           previousState: SignState,
           transitionData: SignTransition
         ): Promise<SignState | null> => {
+          const incoming = transitionData as Message[];
+          let participants = incoming.map((msg) => msg.sender);
+          participants.push(info.partySignup.number);
+          participants.sort();
+
+          console.log("sign participants", participants);
+
+          // Initialize the WASM state machine
+          await worker.signInit(
+            info.partySignup.number,
+            participants,
+            keyShare.localKey
+          );
+
           const messages = await worker.signProceed();
           wait(websocket, info, machine, incomingMessageCache, messages);
           return true;
