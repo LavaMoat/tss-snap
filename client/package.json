@@ -1,6 +1,6 @@
 {
   "name": "ecdsa-wasm-demo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Experimental demo of multi-party threshold ECDSA in WASM",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tmpfs/ecdsa-wasm.git"
+    "url": "git+https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "keywords": [
     "webassembly",
@@ -19,12 +19,12 @@
     "rust",
     "webpack"
   ],
-  "author": "Muji <muji@tmpfs.org>",
+  "author": "Muji <muji@LavaMoat.org>",
   "license": "(MIT OR Apache-2.0)",
   "bugs": {
-    "url": "https://github.com/tmpfs/ecdsa-wasm/issues"
+    "url": "https://github.com/LavaMoat/ecdsa-wasm/issues"
   },
-  "homepage": "https://github.com/tmpfs/ecdsa-wasm",
+  "homepage": "https://github.com/LavaMoat/ecdsa-wasm",
   "dependencies": {
     "@ethereumjs/tx": "^3.4.0",
     "@reduxjs/toolkit": "^1.7.1",
