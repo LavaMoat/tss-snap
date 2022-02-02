@@ -1,22 +1,14 @@
 import init, {
   initThreadPool,
-  keygenRound1,
-  keygenRound2,
-  keygenRound3,
-  keygenRound4,
-  keygenRound5,
-  createKey,
-  signRound0,
-  signRound1,
-  signRound2,
-  signRound3,
-  signRound4,
-  signRound5,
-  signRound6,
-  signRound7,
-  signRound8,
-  signRound9,
-  signMessage,
+  keygenInit,
+  keygenHandleIncoming,
+  keygenProceed,
+  keygenCreate,
+  signInit,
+  signHandleIncoming,
+  signProceed,
+  signPartial,
+  signCreate,
   sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
@@ -38,26 +30,19 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 void (async function () {
   console.log("Worker is initializing...");
   await init();
-  await initThreadPool(navigator.hardwareConcurrency);
+  //await initThreadPool(navigator.hardwareConcurrency);
+  await initThreadPool(1);
 })();
 
 Comlink.expose({
-  keygenRound1,
-  keygenRound2,
-  keygenRound3,
-  keygenRound4,
-  keygenRound5,
-  createKey,
-  signRound0,
-  signRound1,
-  signRound2,
-  signRound3,
-  signRound4,
-  signRound5,
-  signRound6,
-  signRound7,
-  signRound8,
-  signRound9,
-  signMessage,
+  keygenInit,
+  keygenHandleIncoming,
+  keygenProceed,
+  keygenCreate,
+  signInit,
+  signHandleIncoming,
+  signProceed,
+  signPartial,
+  signCreate,
   sha256,
 });

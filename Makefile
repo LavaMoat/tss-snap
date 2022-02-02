@@ -3,6 +3,9 @@ all: build release
 wasm:
 	@cd wasm && wasm-pack build --target web
 
+wasm-gg2020:
+	@cd wasm && wasm-pack build --target web -- --no-default-features --features gg2020
+
 setup: wasm
 	@cd client && yarn install
 
@@ -30,4 +33,4 @@ fmt:
 	@cd common && cargo fmt
 	@cd wasm && cargo fmt
 
-.PHONY: all wasm setup build release server client fmt
+.PHONY: all wasm wasm-gg2020 setup build release server client fmt

@@ -64,6 +64,7 @@ export class WebSocketClient extends EventEmitter {
     };
     this.websocket.onmessage = async (e) => {
       const msg = JSON.parse(e.data);
+
       // Got a promise to resolve
       if (msg.id > 0 && this.messageRequests.has(msg.id)) {
         const { resolve } = this.messageRequests.get(msg.id);

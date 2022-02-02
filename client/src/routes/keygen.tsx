@@ -14,7 +14,7 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { PartyKey, Session, Phase, makeOnTransition } from "../state-machine";
+import { KeyShare, Session, Phase, makeOnTransition } from "../state-machine";
 import {
   generateKeyShare,
   KeygenState,
@@ -41,7 +41,7 @@ interface KeygenProps {
   group: GroupInfo;
   dispatch: AppDispatch;
   worker: any;
-  keyShare?: PartyKey;
+  keyShare?: KeyShare;
   navigate: NavigateFunction;
 }
 
@@ -72,8 +72,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session });
     });
 
-    websocket.on("notifyAddress", (address: string) => {
+    websocket.on("sessionClosed", () => {
       const { partySignup } = this.state.session;
+      const { address } = this.props.keyShare;
+
       saveKeyShare(
         address,
         partySignup.number,
@@ -84,7 +86,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         "Saved key share for public address",
         address,
         " and party number",
-        partySignup.number
+        partySignup.number,
+        " keyShare is ",
+        this.props.keyShare
       );
       this.props.navigate(`/sign/${address}`);
     });
@@ -115,8 +119,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         this.props.dispatch(setKeyShare(keyShare));
 
         websocket.notify({
-          method: "Notify.address",
-          params: [group.uuid, keyShare.address],
+          method: "Session.finish",
+          params: [group.uuid, sessionId, partySignup.number],
         });
       } else {
         console.warn(
@@ -159,7 +163,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     websocket.removeAllListeners("sessionCreate");
     websocket.removeAllListeners("sessionSignup");
     websocket.removeAllListeners("sessionLoad");
-    websocket.removeAllListeners("notifyAddress");
+    websocket.removeAllListeners("sessionClosed");
   }
 
   render() {

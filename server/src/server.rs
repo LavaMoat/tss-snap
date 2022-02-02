@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{
@@ -8,7 +8,7 @@ use std::sync::{
 
 use anyhow::{bail, Result};
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
-use log::{error, info, trace, warn};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -70,6 +70,11 @@ pub struct Session {
     /// Map party number to connection identifier
     #[serde(skip)]
     pub party_signups: Vec<(u16, usize)>,
+
+    /// Party numbers for those that have
+    /// marked the session as finished.
+    #[serde(skip)]
+    pub finished: HashSet<u16>,
 }
 
 impl Default for Session {
@@ -78,6 +83,7 @@ impl Default for Session {
             uuid: Uuid::new_v4().to_string(),
             phase: Default::default(),
             party_signups: Default::default(),
+            finished: Default::default(),
         }
     }
 }
@@ -88,6 +94,7 @@ impl From<Phase> for Session {
             uuid: Uuid::new_v4().to_string(),
             phase,
             party_signups: Default::default(),
+            finished: Default::default(),
         }
     }
 }
@@ -302,8 +309,8 @@ async fn rpc_request(
 
     // Requests that require post-processing notifications
     match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | PEER_RELAY
-        | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+        SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | SESSION_MESSAGE
+        | SESSION_FINISH | NOTIFY_PROPOSAL => {
             rpc_notify(conn_id, &request, state).await;
         }
         _ => {}
@@ -397,10 +404,10 @@ async fn rpc_response(
     response: &json_rpc2::Response,
     state: &Arc<RwLock<State>>,
 ) {
-    trace!("send_message (uid={})", conn_id);
+    debug!("send_message (uid={})", conn_id);
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(response).unwrap();
-        trace!("sending message {:#?}", msg);
+        debug!("sending message {:#?}", msg);
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
             // The tx is disconnected, our `client_disconnected` code
             // should be happening in another task, nothing more to

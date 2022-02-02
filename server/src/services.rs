@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use common::{Parameters, PeerEntry};
+use common::Parameters;
 
 use super::server::{Group, NotificationContext, Phase, Session, State};
 
@@ -18,16 +18,16 @@ pub const SESSION_CREATE: &str = "Session.create";
 pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
 pub const SESSION_LOAD: &str = "Session.load";
-pub const PEER_RELAY: &str = "Peer.relay";
-pub const NOTIFY_ADDRESS: &str = "Notify.address";
+pub const SESSION_MESSAGE: &str = "Session.message";
+pub const SESSION_FINISH: &str = "Session.finish";
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
 
 // Notification event names
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
-pub const PEER_RELAY_EVENT: &str = "peerRelay";
-pub const NOTIFY_ADDRESS_EVENT: &str = "notifyAddress";
+pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
+pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 
 type Uuid = String;
@@ -36,9 +36,19 @@ type SessionCreateParams = (Uuid, Phase);
 type SessionJoinParams = (Uuid, Uuid, Phase);
 type SessionSignupParams = (Uuid, Uuid, Phase);
 type SessionLoadParams = (Uuid, Uuid, Phase, u16);
-type PeerRelayParams = (Uuid, Uuid, Vec<PeerEntry>);
-type NotifyAddressParams = (Uuid, String);
+type SessionMessageParams = (Uuid, Uuid, Phase, Message);
+type SessionFinishParams = (Uuid, Uuid, u16);
 type NotifyProposalParams = (Uuid, Uuid, String);
+
+// Mimics the `Msg` struct
+// from `round-based` but doesn't care
+// about the `body` data.
+#[derive(Serialize, Deserialize)]
+struct Message {
+    sender: u16,
+    receiver: Option<u16>,
+    body: serde_json::Value,
+}
 
 #[derive(Debug, Serialize)]
 struct Proposal {
@@ -145,6 +155,8 @@ impl Service for ServiceHandler {
                     None
                 }
             }
+            // Load an existing party signup into the session
+            // this is used to support loading existing key shares.
             SESSION_LOAD => {
                 let (conn_id, state) = ctx;
                 let params: SessionLoadParams = req.deserialize()?;
@@ -182,7 +194,29 @@ impl Service for ServiceHandler {
                     None
                 }
             }
-            PEER_RELAY | NOTIFY_ADDRESS | NOTIFY_PROPOSAL => {
+            // Mark the session as finished for a party.
+            SESSION_FINISH => {
+                let (conn_id, state) = ctx;
+                let params: SessionFinishParams = req.deserialize()?;
+                let (group_id, session_id, party_number) = params;
+
+                let mut writer = state.write().await;
+                if let Some(group) =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
+                {
+                    if let Some(session) = group.sessions.get_mut(&session_id) {
+                        session.finished.insert(party_number);
+                        Some(req.into())
+                    } else {
+                        warn!("session does not exist: {}", session_id);
+                        // TODO: send error response
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            SESSION_MESSAGE | NOTIFY_PROPOSAL => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -299,10 +333,86 @@ impl Service for NotifyHandler {
                     None
                 }
             }
-            PEER_RELAY => {
+            SESSION_MESSAGE => {
                 let (conn_id, state, notification) = ctx;
-                let params: PeerRelayParams = req.deserialize()?;
-                let (group_id, session_id, peer_entries) = params;
+                let params: SessionMessageParams = req.deserialize()?;
+                let (group_id, session_id, _phase, msg) = params;
+
+                let reader = state.read().await;
+                // Check we have valid group / session
+                if let Some((_group, session)) = get_group_session(
+                    &conn_id,
+                    &group_id,
+                    &session_id,
+                    &reader.groups,
+                ) {
+                    // Send direct to peer
+                    if let Some(receiver) = &msg.receiver {
+                        if let Some(s) = session
+                            .party_signups
+                            .iter()
+                            .find(|s| s.0 == *receiver)
+                        {
+                            let result = serde_json::to_value((
+                                SESSION_MESSAGE_EVENT,
+                                msg,
+                            ))
+                            .unwrap();
+
+                            let response: Response = result.into();
+                            let message = (s.1, response);
+
+                            {
+                                let ctx = NotificationContext {
+                                    noop: false,
+                                    group_id: Some(group_id),
+                                    session_id: Some(session_id),
+                                    filter: None,
+                                    messages: Some(vec![message]),
+                                };
+
+                                let mut writer = notification.lock().await;
+                                *writer = ctx;
+                            }
+
+                            // Must return a response so the server processes
+                            // our notifications even though our actual responses
+                            // are in the messages assigned to the notification context
+                            Some((serde_json::Value::Null).into())
+                        } else {
+                            warn!("could not find receiver {} in session party signups", receiver);
+                            None
+                        }
+
+                    // Handle broadcast round
+                    } else {
+                        {
+                            let ctx = NotificationContext {
+                                noop: false,
+                                group_id: Some(group_id),
+                                session_id: Some(session_id),
+                                filter: Some(vec![*conn_id]),
+                                messages: None,
+                            };
+
+                            let mut writer = notification.lock().await;
+                            *writer = ctx;
+                        }
+
+                        let result =
+                            serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
+                                .unwrap();
+
+                        Some(result.into())
+                    }
+                } else {
+                    None
+                }
+            }
+            SESSION_FINISH => {
+                let (conn_id, state, notification) = ctx;
+                let params: SessionFinishParams = req.deserialize()?;
+                let (group_id, session_id, _party_number) = params;
 
                 let reader = state.read().await;
 
@@ -312,74 +422,43 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 ) {
-                    let messages: Vec<(usize, Response)> = peer_entries
-                        .into_iter()
-                        .filter_map(|entry| {
-                            if let Some(s) = session
-                                .party_signups
-                                .iter()
-                                .find(|s| s.0 == entry.party_to)
-                            {
-                                let result = serde_json::to_value((
-                                    PEER_RELAY_EVENT,
-                                    entry,
-                                ))
-                                .unwrap();
+                    let mut signups = session
+                        .party_signups
+                        .iter()
+                        .map(|(n, _)| n.clone())
+                        .collect::<Vec<u16>>();
+                    let mut completed =
+                        session.finished.iter().cloned().collect::<Vec<u16>>();
 
-                                let response: Response = result.into();
-                                Some((s.1, response))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect();
+                    signups.sort();
+                    completed.sort();
 
-                    //println!("Setting peer relay messages {}", messages.len());
+                    if signups == completed {
+                        let result = serde_json::to_value((
+                            SESSION_CLOSED_EVENT,
+                            completed,
+                        ))
+                        .unwrap();
 
-                    {
-                        let ctx = NotificationContext {
-                            noop: false,
-                            group_id: Some(group_id),
-                            session_id: Some(session_id),
-                            filter: None,
-                            messages: Some(messages),
-                        };
+                        {
+                            let ctx = NotificationContext {
+                                noop: false,
+                                group_id: Some(group_id),
+                                session_id: Some(session_id),
+                                filter: None,
+                                messages: None,
+                            };
+                            let mut writer = notification.lock().await;
+                            *writer = ctx;
+                        }
 
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
+                        Some(result.into())
+                    } else {
+                        None
                     }
-
-                    // Must return a response so the server processes
-                    // our notifications even though our actual responses
-                    // are in the messages assigned to the notification context
-                    Some((serde_json::Value::Null).into())
                 } else {
                     None
                 }
-            }
-            NOTIFY_ADDRESS => {
-                let (_conn_id, _state, notification) = ctx;
-                let params: NotifyAddressParams = req.deserialize()?;
-                let (group_id, public_address) = params;
-                let res = serde_json::to_value((
-                    NOTIFY_ADDRESS_EVENT,
-                    &public_address,
-                ))
-                .unwrap();
-
-                {
-                    let ctx = NotificationContext {
-                        noop: false,
-                        group_id: Some(group_id),
-                        session_id: None,
-                        filter: None,
-                        messages: None,
-                    };
-                    let mut writer = notification.lock().await;
-                    *writer = ctx;
-                }
-
-                Some(res.into())
             }
             NOTIFY_PROPOSAL => {
                 let (conn_id, _state, notification) = ctx;

@@ -1,12 +1,12 @@
 [package]
 name = "ecdsa-wasm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+[dependencies]
 common = {path = "../common"}
 getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
@@ -15,28 +15,23 @@ wasm-bindgen-rayon = "1.0"
 rand = { version="0.6.5", features = ["wasm-bindgen"] }
 #rand = { version="0.7.3", features = ["getrandom"] }
 console_error_panic_hook = "0.1.6"
-serde_json = "1"
-aes-gcm = "0.9"
 sha2 = "0.9"
 sha3 = "0.10"
 serde = {version = "1", features = ["derive"]}
 libsecp256k1 = "0.3.2"
 hex = "0.4"
+round-based = "0.1"
+once_cell = "1.9"
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.paillier]
+[dependencies.paillier]
 version = "0.4.2"
 package = "kzen-paillier"
 default-features = false
 
-#[target.'cfg(target_arch = "wasm32")'.dependencies.getrandom]
-#git = "https://github.com/rust-random/getrandom"
-#branch = "0.1"
-#features = ["wasm-bindgen"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies.multi-party-ecdsa]
+[dependencies.multi-party-ecdsa]
 git = "https://github.com/ZenGo-X/multi-party-ecdsa"
 branch = "master"
 default-features = false
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+[dev-dependencies]
 wasm-bindgen-test = "0.3"
