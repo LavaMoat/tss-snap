@@ -7,7 +7,9 @@
     "build": "webpack --config webpack.config.js --node-env production",
     "build:dev": "webpack --config webpack.config.js --node-env development",
     "start": "webpack-dev-server --no-client-overlay",
-    "prettier": "prettier --write . --no-color"
+    "prettier": "prettier --write . --no-color",
+    "test-headed": "FORCE_COLOR=0 playwright test --headed",
+    "test": "FORCE_COLOR=0 playwright test"
   },
   "repository": {
     "type": "git",

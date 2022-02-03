@@ -249,16 +249,19 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     const CreateOrJoinSession = () => {
       return (
         <>
-          <button onClick={createKeygenSession}>
+          <button id="create-keygen-session" onClick={createKeygenSession}>
             Create a key generation session
           </button>
           <p>Or join an existing key generation session:</p>
           <input
+            id="keygen-session-id"
             type="text"
             value={targetSession}
             onChange={onTargetSessionChange}
           />
-          <button onClick={joinSession}>Join Session</button>
+          <button
+            className="join-keygen-session"
+            onClick={joinSession}>Join Session</button>
         </>
       );
     };
@@ -323,7 +326,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       return (
         <>
           <p>
-            Session ID: {session.uuid} (
+            Session ID: <span className="session-id">{session.uuid}</span> (
             <a href="#" onClick={(e) => copyToClipboard(e, session.uuid)}>
               copy to clipboard
             </a>
@@ -385,7 +388,7 @@ export default () => {
       <hr />
       <p>
         To create more connected parties open{" "}
-        <a href={location.href}>this link</a> in another window/tab or &nbsp;
+        <a href={location.href} target="_blank">this link</a> in another window/tab or &nbsp;
         <a href="#" onClick={(e) => copyToClipboard(e, location.href)}>
           copy it to your clipboard
         </a>

@@ -1,5 +1,5 @@
 import "./polyfills";
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { HashRouter, Routes, Route, Link } from "react-router-dom";
 import { Provider } from "react-redux";
@@ -11,19 +11,35 @@ import Sign from "./routes/sign";
 import store from "./store";
 import { setGroup } from "./store/group";
 
-import WebSocketProvider from "./websocket";
+import WebSocketProvider, { WebSocketContext } from "./websocket";
 import WorkerProvider from "./worker-provider";
 
 const NotFound = () => <h3>Page not found</h3>;
 
 const App = () => {
   if (window.Worker) {
+
+    // Keep connected state for automated tests
+    // to determine when new tabs are connected
+    let [connected, setConnected] = useState(false);
+    const websocket = useContext(WebSocketContext);
+
+    useEffect(() => {
+      websocket.on("open", () => {
+        setConnected(true);
+      });
+
+      websocket.on("close", () => {
+        setConnected(false);
+      });
+    });
+
     return (
-      <>
+      <div className={connected ? "connected" : ""}>
         <h1>
           <a href="/">ECDSA WASM Demo</a>
         </h1>
-        <p>Using the gg2020 protocol, signing initiated on (threshold + 1)</p>
+        <p>Using the GG2020 protocol, signing initiated on (threshold + 1)</p>
         <hr />
         <WorkerProvider>
           <Routes>
@@ -33,7 +49,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </WorkerProvider>
-      </>
+      </div>
     );
   } else {
     return <p>Your browser does not support web workers.</p>;
