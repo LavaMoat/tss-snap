@@ -3,35 +3,6 @@ import { test, expect } from '@playwright/test';
 const TEST_URL = process.env.TEST_URL || "http://localhost:8080";
 
 test('create key shares', async ({ context, page }) => {
-  /*
-  context.on('page', async newPage => {
-    clients.push(newPage);
-    if (clients.length == 3) {
-
-      console.log("Got enough clients...");
-
-      await Promise.all(clients.map((page) => {
-        page.waitForLoadState();
-      }));
-
-      await Promise.all(clients.map((page) => {
-        page.waitForSelector("div.connected");
-      }));
-
-      await page.pause();
-
-      // FIXME: remove this
-      //await page.waitForTimeout(1000);
-
-      // Initiate the keygen session, this event is broadcast
-      // to all connected clients to each tab will update their state
-      const startSession = page.locator('#create-keygen-session');
-      await startSession.click();
-
-    }
-  })
-  */
-
   await page.goto(TEST_URL);
   const button = page.locator('form.group input[type="submit"]');
   await button.click();
@@ -39,7 +10,6 @@ test('create key shares', async ({ context, page }) => {
   const url = page.url();
 
   const link = page.locator(`a[href="${url}"]`);
-
 
   // Initiate the keygen session, this event is broadcast
   // to all connected clients to each tab will update their state

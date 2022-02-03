@@ -7,7 +7,7 @@ dist: wasm
 	@cd client && yarn build
 
 setup: wasm
-	@cd client && yarn install
+	@cd client && yarn install && npx playwright install
 
 build:
 	@cd server && cargo build
@@ -17,9 +17,6 @@ release:
 
 server: client-release
 	@cd server && cargo run
-
-client-release:
-	@cd client && yarn build
 
 client:
 	@cd client && yarn start
