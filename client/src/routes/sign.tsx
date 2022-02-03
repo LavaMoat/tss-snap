@@ -372,7 +372,7 @@ const Sign = () => {
   return (
     <>
       <h2>Sign in {group.label}</h2>
-      <h3>{address}</h3>
+      <h3 className="address">{address}</h3>
       <hr />
       <h4>Create proposal</h4>
       <SignForm onSubmit={onSignFormSubmit} />

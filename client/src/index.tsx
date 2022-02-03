@@ -18,7 +18,6 @@ const NotFound = () => <h3>Page not found</h3>;
 
 const App = () => {
   if (window.Worker) {
-
     // Keep connected state for automated tests
     // to determine when new tabs are connected
     let [connected, setConnected] = useState(false);
