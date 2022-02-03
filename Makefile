@@ -1,5 +1,3 @@
-all: build release
-
 wasm:
 	@cd wasm && wasm-pack build --target web
 
@@ -12,7 +10,7 @@ setup: wasm
 build:
 	@cd server && cargo build
 
-release:
+release: dist
 	@cd server && cargo build --release
 
 server: client-release
@@ -21,8 +19,8 @@ server: client-release
 client:
 	@cd client && yarn start
 
-message:
-	@cd common && cargo run --example message
+test:
+	@cd client && yarn test
 
 fmt:
 	@cd client && yarn prettier
@@ -30,4 +28,4 @@ fmt:
 	@cd common && cargo fmt
 	@cd wasm && cargo fmt
 
-.PHONY: all wasm dist setup build release server client fmt
+.PHONY: wasm dist setup build release server client test fmt

@@ -42,6 +42,16 @@ During development you should link the WASM module:
 (cd client && yarn link ecdsa-wasm)
 ```
 
+## Test
+
+To run the test suite using [playwright][] open three terminal sessions:
+
+```
+make server     # start the backend server
+make client     # start the development server
+make test       # run the tests
+```
+
 ## Docker
 
 For deployment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
@@ -85,3 +95,5 @@ crypto.getRandomValues = function (buffer) {
   return buffer;
 };
 ```
+
+[playwright]: https://playwright.dev/
