@@ -70,5 +70,31 @@ test("create key shares and sign message", async ({ context, page }) => {
 
   expect(addresses).toStrictEqual(expected);
 
-  //await page.pause();
+  // Generate a proposal for the message to sign
+  const message = page.locator('form > textarea[name="message"]');
+  const submit = page.locator('form > input[type="submit"]');
+  await message.fill("Test message");
+  await submit.click();
+
+  // Wait for the message proposal notification
+  // to be received by all clients
+  await Promise.all(
+    clients.map((page) => {
+      return page.waitForSelector(".proposal");
+    })
+  );
+
+  // Signers for the proposal
+  const signers = [client1, client3];
+  await Promise.all(
+    signers.map((page) => {
+      return async () => {
+        const signProposal = page.locator("button.sign-proposal");
+        console.log("signProposal", signProposal);
+        await signProposal.click();
+      };
+    })
+  );
+
+  await page.pause();
 });

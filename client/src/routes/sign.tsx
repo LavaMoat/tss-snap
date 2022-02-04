@@ -120,12 +120,14 @@ const Proposal = ({
 
   const Result = () => {
     return (
-      <>
-        <p>Address: {result.publicAddress}</p>
+      <div className="proposal">
+        <p>
+          Address: <span className="address">{result.publicAddress}</span>
+        </p>
         <pre>
           <code>{JSON.stringify(result.signResult, undefined, 2)}</code>
         </pre>
-      </>
+      </div>
     );
   };
 
@@ -134,7 +136,11 @@ const Proposal = ({
       <>
         <p>Session ID: {session.uuid}</p>
         <p>Party #: {partyNumber > 0 ? partyNumber : "-"}</p>
-        <button disabled={partyNumber > 0} onClick={onSignMessage}>
+        <button
+          className="sign-proposal"
+          disabled={partyNumber > 0}
+          onClick={onSignMessage}
+        >
           Sign
         </button>
       </>
