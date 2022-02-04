@@ -88,7 +88,7 @@ test("create key shares and sign message", async ({ context, page }) => {
   async function signMessage(page) {
     const signProposal = page.locator(".proposal .sign-proposal");
     await signProposal.click();
-  };
+  }
   await signMessage(client1);
   await signMessage(client2);
 
@@ -97,7 +97,7 @@ test("create key shares and sign message", async ({ context, page }) => {
   const expectedSignedAddresses = [address, address];
   const signedAddresses = await Promise.all(
     [client1, client2].map((page) => {
-      return page.locator('.proposal .address').innerText();
+      return page.locator(".proposal .address").innerText();
     })
   );
 

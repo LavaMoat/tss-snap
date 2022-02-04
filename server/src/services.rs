@@ -1,15 +1,14 @@
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result};
+use log::warn;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use common::Parameters;
-
 use super::server::{Group, NotificationContext, Phase, Session, State};
-
-use log::warn;
+use common::Parameters;
 
 // RPC method calls
 pub const GROUP_CREATE: &str = "Group.create";
@@ -21,6 +20,7 @@ pub const SESSION_LOAD: &str = "Session.load";
 pub const SESSION_MESSAGE: &str = "Session.message";
 pub const SESSION_FINISH: &str = "Session.finish";
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
+pub const NOTIFY_SIGNED: &str = "Notify.signed";
 
 // Notification event names
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
@@ -29,6 +29,7 @@ pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
 pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
 pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
+pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 
 type Uuid = String;
 type GroupCreateParams = (String, Parameters);
@@ -39,6 +40,7 @@ type SessionLoadParams = (Uuid, Uuid, Phase, u16);
 type SessionMessageParams = (Uuid, Uuid, Phase, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
 type NotifyProposalParams = (Uuid, Uuid, String);
+type NotifySignedParams = (Uuid, Uuid, Value);
 
 // Mimics the `Msg` struct
 // from `round-based` but doesn't care
@@ -487,6 +489,45 @@ impl Service for NotifyHandler {
                 }
 
                 Some(res.into())
+            }
+            NOTIFY_SIGNED => {
+                let (conn_id, state, notification) = ctx;
+                let params: NotifySignedParams = req.deserialize()?;
+                let (group_id, session_id, value) = params;
+
+                let reader = state.read().await;
+
+                if let Some((_group, session)) = get_group_session(
+                    &conn_id,
+                    &group_id,
+                    &session_id,
+                    &reader.groups,
+                ) {
+                    let participants = session
+                        .party_signups
+                        .iter()
+                        .map(|(_, c)| c.clone())
+                        .collect::<Vec<usize>>();
+
+                    let result =
+                        serde_json::to_value((NOTIFY_SIGNED_EVENT, value))
+                            .unwrap();
+
+                    {
+                        let ctx = NotificationContext {
+                            noop: false,
+                            group_id: Some(group_id),
+                            session_id: None,
+                            filter: Some(participants),
+                            messages: None,
+                        };
+                        let mut writer = notification.lock().await;
+                        *writer = ctx;
+                    }
+                    Some(result.into())
+                } else {
+                    None
+                }
             }
             _ => None,
         };
