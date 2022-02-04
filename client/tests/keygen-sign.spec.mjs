@@ -84,17 +84,24 @@ test("create key shares and sign message", async ({ context, page }) => {
     })
   );
 
-  // Signers for the proposal
-  const signers = [client1, client3];
-  await Promise.all(
-    signers.map((page) => {
-      return async () => {
-        const signProposal = page.locator("button.sign-proposal");
-        console.log("signProposal", signProposal);
-        await signProposal.click();
-      };
+  // Two clients sign the proposal
+  async function signMessage(page) {
+    const signProposal = page.locator(".proposal .sign-proposal");
+    await signProposal.click();
+  };
+  await signMessage(client1);
+  await signMessage(client2);
+
+  // TODO: ensure non-participant sees the signed message
+
+  const expectedSignedAddresses = [address, address];
+  const signedAddresses = await Promise.all(
+    [client1, client2].map((page) => {
+      return page.locator('.proposal .address').innerText();
     })
   );
+
+  expect(signedAddresses).toStrictEqual(expectedSignedAddresses);
 
   await page.pause();
 });

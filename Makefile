@@ -22,6 +22,9 @@ client:
 test:
 	@cd client && yarn test
 
+test-headed:
+	@cd client && yarn test-headed
+
 fmt:
 	@cd client && yarn prettier
 	@cd server && cargo fmt

@@ -52,6 +52,8 @@ make client     # start the development server
 make test       # run the tests
 ```
 
+If you want to see the tests execute in a browser run `make test-headed`.
+
 ## Docker
 
 For deployment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
