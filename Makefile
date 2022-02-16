@@ -1,31 +1,29 @@
-all: build release
-
 wasm:
 	@cd wasm && wasm-pack build --target web
 
-wasm-gg2020:
-	@cd wasm && wasm-pack build --target web -- --no-default-features --features gg2020
+dist: wasm
+	@cd client && yarn build
 
 setup: wasm
-	@cd client && yarn install
+	@cd client && yarn install && npx playwright install
 
 build:
 	@cd server && cargo build
 
-release:
+release: dist
 	@cd server && cargo build --release
 
 server: client-release
 	@cd server && cargo run
 
-client-release:
-	@cd client && yarn build
-
 client:
 	@cd client && yarn start
 
-message:
-	@cd common && cargo run --example message
+test:
+	@cd client && yarn test
+
+test-headed:
+	@cd client && yarn test-headed
 
 fmt:
 	@cd client && yarn prettier
@@ -33,4 +31,4 @@ fmt:
 	@cd common && cargo fmt
 	@cd wasm && cargo fmt
 
-.PHONY: all wasm wasm-gg2020 setup build release server client fmt
+.PHONY: wasm dist setup build release server client test fmt

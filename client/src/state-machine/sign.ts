@@ -52,9 +52,9 @@ export async function signMessage(
         ): Promise<SignState | null> => {
           const index = keyShare.localKey.i;
 
-          // Must share our party signup index
+          // Must share our key share index
           // in order to initialize the state
-          // machine with list of signing participants
+          // machine with list of participants.
           const indexMessage: Message = {
             sender: index,
             receiver: null,
@@ -71,7 +71,7 @@ export async function signMessage(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           const incoming = transitionData as Message[];
-          let participants = incoming.map((msg) => msg.sender);
+          const participants = incoming.map((msg) => msg.sender);
           participants.push(keyShare.localKey.i);
           participants.sort();
 
