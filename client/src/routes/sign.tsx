@@ -44,6 +44,9 @@ const Proposal = ({
   const [partyNumber, setPartyNumber] = useState(0);
   const [result, setResult] = useState(null);
 
+  // Track if a signing session is in progress
+  const [runningSession, setRunningSession] = useState(false);
+
   useEffect(() => {
     if (proposal.creator) {
       const createProposalSession = async () => {
@@ -84,26 +87,34 @@ const Proposal = ({
 
     websocket.once("sessionSignup", async (sessionId: string) => {
       if (sessionId === session.uuid) {
-        const hash = await worker.sha256(proposal.message);
+        if (!runningSession) {
+          setRunningSession(true);
 
-        const { signature: signResult, address: publicAddress } = await sign(
-          hash,
-          keyShare,
-          group,
-          websocket,
-          worker,
-          partySignup
-        );
+          const hash = await worker.sha256(proposal.message);
 
-        if (address !== publicAddress) {
-          throw new Error(
-            `signed message has different public address, expected ${address} got ${publicAddress} using ${JSON.stringify(
-              signResult
-            )}`
+          const { signature: signResult, address: publicAddress } = await sign(
+            hash,
+            keyShare,
+            group,
+            websocket,
+            worker,
+            partySignup
           );
-        }
 
-        setResult({ signResult, publicAddress });
+          if (address !== publicAddress) {
+            throw new Error(
+              `signed message has different public address, expected ${address} got ${publicAddress} using ${JSON.stringify(
+                signResult
+              )}`
+            );
+          }
+
+          setResult({ signResult, publicAddress });
+
+          setRunningSession(false);
+        } else {
+          console.warn("Signing in progress, cannot start a new session");
+        }
       } else {
         console.warn(
           "Sign got sessionSignup event for wrong session",
