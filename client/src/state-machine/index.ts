@@ -83,6 +83,6 @@ export function makeOnTransition<T, U>() {
     } else {
       message = `transition ${index} to ${nextState.name}`;
     }
-    console.log(message);
+    console.info(message);
   };
 }

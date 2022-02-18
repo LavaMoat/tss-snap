@@ -27,6 +27,7 @@ export async function generateKeyShare(
       transitionData: KeygenTransition
     ): Promise<KeygenState | null> {
       const incoming = transitionData as Message[];
+
       for (const message of incoming) {
         await worker.keygenHandleIncoming(message);
       }

@@ -40,6 +40,10 @@ export class MessageCache extends EventEmitter {
       this.rounds.set(round, []);
     }
 
+    if (this.isReady(round)) {
+      throw new Error("Received too many messages for round: " + round);
+    }
+
     const answers = this.rounds.get(round);
     answers.push(entry);
     if (this.isReady(round)) {
