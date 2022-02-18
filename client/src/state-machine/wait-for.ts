@@ -29,12 +29,12 @@ export function waitFor<T, U>(phase: Phase) {
     // It is possible for all the p2p answers to have
     // been received before this function is called so
     // we need to check that first.
-    if (handler.isReady()) {
-      answer = handler.take() as unknown as U;
+    if (handler.isReady(round)) {
+      answer = handler.take(round) as unknown as U;
       waitEmit();
     } else {
-      handler.once("ready", () => {
-        answer = handler.take() as unknown as U;
+      handler.once("ready", (round) => {
+        answer = handler.take(round) as unknown as U;
         waitEmit();
       });
     }
