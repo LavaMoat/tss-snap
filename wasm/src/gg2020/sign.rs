@@ -85,10 +85,11 @@ pub fn sign_handle_incoming(message: JsValue) {
 pub fn sign_proceed() -> JsValue {
     let mut writer = SIGN.lock().unwrap();
     let (state, _) = writer.as_mut().unwrap();
-    let round = state.current_round();
     state.proceed().unwrap();
+    let messages = state.message_queue().drain(..).collect();
+    let round = state.current_round();
     let messages =
-        RoundMsg::from_round(round, state.message_queue().drain(..).collect());
+        RoundMsg::from_round(round, messages);
     JsValue::from_serde(&messages).unwrap()
 }
 

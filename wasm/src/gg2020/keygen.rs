@@ -11,7 +11,7 @@ use round_based::{Msg, StateMachine};
 use once_cell::sync::Lazy;
 use std::sync::{Arc, Mutex};
 
-use crate::{console_log, log};
+//use crate::{console_log, log};
 
 static KEYGEN: Lazy<Arc<Mutex<Option<Keygen>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
@@ -69,13 +69,11 @@ pub fn keygen_handle_incoming(message: JsValue) {
 pub fn keygen_proceed() -> JsValue {
     let mut writer = KEYGEN.lock().unwrap();
     let state = writer.as_mut().unwrap();
-    let round = state.current_round();
-
-    console_log!("Round proceed {}", round);
-
     state.proceed().unwrap();
+    let messages = state.message_queue().drain(..).collect();
+    let round = state.current_round();
     let messages =
-        RoundMsg::from_round(round, state.message_queue().drain(..).collect());
+        RoundMsg::from_round(round, messages);
 
     JsValue::from_serde(&messages).unwrap()
 }
