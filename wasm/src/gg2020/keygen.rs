@@ -72,10 +72,8 @@ pub fn keygen_proceed() -> JsValue {
     state.proceed().unwrap();
     let messages = state.message_queue().drain(..).collect();
     let round = state.current_round();
-    let messages =
-        RoundMsg::from_round(round, messages);
-
-    JsValue::from_serde(&messages).unwrap()
+    let messages = RoundMsg::from_round(round, messages);
+    JsValue::from_serde(&(round, &messages)).unwrap()
 }
 
 #[wasm_bindgen(js_name = "keygenCreate")]

@@ -9,6 +9,7 @@ export function waitFor<T, U>(phase: Phase) {
     info: SessionInfo,
     machine: StateMachine<T, U>,
     handler: MessageCache,
+    round: number,
     messages: Message[]
   ) {
     let exitedTransition = false;

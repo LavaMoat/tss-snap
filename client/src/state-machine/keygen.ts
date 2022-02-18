@@ -30,8 +30,8 @@ export async function generateKeyShare(
       for (const message of incoming) {
         await worker.keygenHandleIncoming(message);
       }
-      const messages = await worker.keygenProceed();
-      wait(websocket, info, machine, incomingMessageCache, messages);
+      const [round, messages] = await worker.keygenProceed();
+      wait(websocket, info, machine, incomingMessageCache, round, messages);
       return true;
     };
   }
@@ -45,8 +45,8 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const messages = await worker.keygenProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
+          const [round, messages] = await worker.keygenProceed();
+          wait(websocket, info, machine, incomingMessageCache, round, messages);
           return true;
         },
       },

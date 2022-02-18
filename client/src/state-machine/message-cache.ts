@@ -30,7 +30,6 @@ export class MessageCache extends EventEmitter {
   }
 
   add(entry: Message): void {
-
     console.log("Message cache round", entry.round);
 
     this.answers.push(entry);

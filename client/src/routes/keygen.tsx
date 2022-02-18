@@ -52,6 +52,8 @@ interface KeygenStateProps {
   loadedKeyShare?: [string, number, number];
 }
 
+// This needs to be a class-based component as we need to
+// remove listeners when the component is un-mounted.
 class Keygen extends Component<KeygenProps, KeygenStateProps> {
   static contextType = WebSocketContext;
 

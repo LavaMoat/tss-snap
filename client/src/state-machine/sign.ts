@@ -29,9 +29,9 @@ export async function signMessage(
       for (const message of incoming) {
         await worker.signHandleIncoming(message);
       }
-      const messages = await worker.signProceed();
+      const [round, messages] = await worker.signProceed();
       if (messages.length > 0) {
-        wait(websocket, info, machine, incomingMessageCache, messages);
+        wait(websocket, info, machine, incomingMessageCache, round, messages);
       } else {
         // Prepare to sign partial but must allow the
         // transition function to return first!
@@ -52,16 +52,20 @@ export async function signMessage(
         ): Promise<SignState | null> => {
           const index = keyShare.localKey.i;
 
+          const round = 0;
+
           // Must share our key share index
           // in order to initialize the state
           // machine with list of participants.
           const indexMessage: Message = {
-            round: 0,
+            round,
             sender: index,
             receiver: null,
             body: null,
           };
-          wait(websocket, info, machine, incomingMessageCache, [indexMessage]);
+          wait(websocket, info, machine, incomingMessageCache, round, [
+            indexMessage,
+          ]);
           return true;
         },
       },
@@ -83,8 +87,8 @@ export async function signMessage(
             keyShare.localKey
           );
 
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
+          const [round, messages] = await worker.signProceed();
+          wait(websocket, info, machine, incomingMessageCache, round, messages);
           return true;
         },
       },
@@ -119,15 +123,16 @@ export async function signMessage(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           const partial = await worker.signPartial(message);
+          const round = 8;
           // Broadcast the partial signature
           // to other clients
           const partialMessage: Message = {
-            round: 8,
+            round,
             sender: info.partySignup.number,
             receiver: null,
             body: partial,
           };
-          wait(websocket, info, machine, incomingMessageCache, [
+          wait(websocket, info, machine, incomingMessageCache, round, [
             partialMessage,
           ]);
           return true;
