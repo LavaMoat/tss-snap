@@ -14,7 +14,7 @@ export async function generateKeyShare(
   info: SessionInfo
 ): Promise<KeyShare> {
   const incomingMessageCache = new MessageCache(info.parameters.parties - 1);
-  const wait = waitFor<KeygenState, KeygenTransition>();
+  const wait = waitFor<KeygenState, KeygenTransition>(Phase.KEYGEN);
 
   // Initialize the WASM state machine
   await worker.keygenInit(info.parameters, info.partySignup);

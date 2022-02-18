@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 // Message is sent by the server when relaying messages
 // peer to peer.
 export interface Message {
+  round: number;
   sender: number;
   receiver?: number;
   body: any;
@@ -29,6 +30,9 @@ export class MessageCache extends EventEmitter {
   }
 
   add(entry: Message): void {
+
+    console.log("Message cache round", entry.round);
+
     this.answers.push(entry);
     if (this.isReady()) {
       this.emit("ready");

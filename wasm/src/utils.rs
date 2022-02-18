@@ -4,14 +4,6 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::key
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 
-/*
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Params {
-    pub parties: u16,
-    pub threshold: u16,
-}
-*/
-
 /// Compute the address of an uncompressed public key (65 bytes).
 pub fn address(public_key: &Vec<u8>) -> String {
     // Remove the leading 0x04

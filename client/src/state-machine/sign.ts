@@ -1,5 +1,5 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import { KeyShare, SessionInfo, SignMessage } from ".";
+import { KeyShare, SessionInfo, SignMessage, Phase } from ".";
 import { MessageCache, Message } from "./message-cache";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
@@ -16,7 +16,7 @@ export async function signMessage(
   message: string
 ): Promise<SignMessage> {
   const incomingMessageCache = new MessageCache(info.parameters.threshold);
-  const wait = waitFor<SignState, SignTransition>();
+  const wait = waitFor<SignState, SignTransition>(Phase.SIGN);
 
   function makeStandardTransition(
     machine: StateMachine<SignState, SignTransition>
@@ -56,6 +56,7 @@ export async function signMessage(
           // in order to initialize the state
           // machine with list of participants.
           const indexMessage: Message = {
+            round: 0,
             sender: index,
             receiver: null,
             body: null,
@@ -121,6 +122,7 @@ export async function signMessage(
           // Broadcast the partial signature
           // to other clients
           const partialMessage: Message = {
+            round: 8,
             sender: info.partySignup.number,
             receiver: null,
             body: partial,
