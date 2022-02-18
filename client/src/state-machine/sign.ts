@@ -1,5 +1,5 @@
 import { StateMachine, TransitionHandler } from "./machine";
-import { KeyShare, SessionInfo, SignMessage } from ".";
+import { KeyShare, SessionInfo, SignMessage, Phase } from ".";
 import { MessageCache, Message } from "./message-cache";
 import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
@@ -16,7 +16,7 @@ export async function signMessage(
   message: string
 ): Promise<SignMessage> {
   const incomingMessageCache = new MessageCache(info.parameters.threshold);
-  const wait = waitFor<SignState, SignTransition>();
+  const wait = waitFor<SignState, SignTransition>(Phase.SIGN);
 
   function makeStandardTransition(
     machine: StateMachine<SignState, SignTransition>
@@ -29,9 +29,9 @@ export async function signMessage(
       for (const message of incoming) {
         await worker.signHandleIncoming(message);
       }
-      const messages = await worker.signProceed();
+      const [round, messages] = await worker.signProceed();
       if (messages.length > 0) {
-        wait(websocket, info, machine, incomingMessageCache, messages);
+        wait(websocket, info, machine, incomingMessageCache, round, messages);
       } else {
         // Prepare to sign partial but must allow the
         // transition function to return first!
@@ -52,15 +52,20 @@ export async function signMessage(
         ): Promise<SignState | null> => {
           const index = keyShare.localKey.i;
 
+          const round = 0;
+
           // Must share our key share index
           // in order to initialize the state
           // machine with list of participants.
           const indexMessage: Message = {
+            round,
             sender: index,
             receiver: null,
             body: null,
           };
-          wait(websocket, info, machine, incomingMessageCache, [indexMessage]);
+          wait(websocket, info, machine, incomingMessageCache, round, [
+            indexMessage,
+          ]);
           return true;
         },
       },
@@ -82,8 +87,8 @@ export async function signMessage(
             keyShare.localKey
           );
 
-          const messages = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
+          const [round, messages] = await worker.signProceed();
+          wait(websocket, info, machine, incomingMessageCache, round, messages);
           return true;
         },
       },
@@ -118,14 +123,16 @@ export async function signMessage(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           const partial = await worker.signPartial(message);
+          const round = 8;
           // Broadcast the partial signature
           // to other clients
           const partialMessage: Message = {
+            round,
             sender: info.partySignup.number,
             receiver: null,
             body: partial,
           };
-          wait(websocket, info, machine, incomingMessageCache, [
+          wait(websocket, info, machine, incomingMessageCache, round, [
             partialMessage,
           ]);
           return true;

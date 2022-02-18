@@ -14,7 +14,7 @@ export async function generateKeyShare(
   info: SessionInfo
 ): Promise<KeyShare> {
   const incomingMessageCache = new MessageCache(info.parameters.parties - 1);
-  const wait = waitFor<KeygenState, KeygenTransition>();
+  const wait = waitFor<KeygenState, KeygenTransition>(Phase.KEYGEN);
 
   // Initialize the WASM state machine
   await worker.keygenInit(info.parameters, info.partySignup);
@@ -27,11 +27,12 @@ export async function generateKeyShare(
       transitionData: KeygenTransition
     ): Promise<KeygenState | null> {
       const incoming = transitionData as Message[];
+
       for (const message of incoming) {
         await worker.keygenHandleIncoming(message);
       }
-      const messages = await worker.keygenProceed();
-      wait(websocket, info, machine, incomingMessageCache, messages);
+      const [round, messages] = await worker.keygenProceed();
+      wait(websocket, info, machine, incomingMessageCache, round, messages);
       return true;
     };
   }
@@ -45,8 +46,8 @@ export async function generateKeyShare(
           previousState: KeygenState,
           transitionData: KeygenTransition
         ): Promise<KeygenState | null> => {
-          const messages = await worker.keygenProceed();
-          wait(websocket, info, machine, incomingMessageCache, messages);
+          const [round, messages] = await worker.keygenProceed();
+          wait(websocket, info, machine, incomingMessageCache, round, messages);
           return true;
         },
       },

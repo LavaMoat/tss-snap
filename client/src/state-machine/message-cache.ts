@@ -3,35 +3,51 @@ import { EventEmitter } from "events";
 // Message is sent by the server when relaying messages
 // peer to peer.
 export interface Message {
+  round: number;
   sender: number;
   receiver?: number;
   body: any;
 }
 
 export class MessageCache extends EventEmitter {
-  answers: Message[];
+  rounds: Map<number, Message[]>;
   expected: number;
 
   constructor(expected: number) {
     super();
-    this.answers = [];
+    this.rounds = new Map();
     this.expected = expected;
   }
 
-  isReady(): boolean {
-    return this.answers.length === this.expected;
+  isReady(round: number): boolean {
+    const messages = this.rounds.get(round);
+    if (messages) {
+      return messages.length === this.expected;
+    }
+    return false;
   }
 
-  take(): Message[] {
-    const values = this.answers.slice(0);
-    this.answers = [];
+  take(round: number): Message[] {
+    const values = this.rounds.get(round).slice(0);
+    this.rounds.delete(round);
     return values;
   }
 
   add(entry: Message): void {
-    this.answers.push(entry);
-    if (this.isReady()) {
-      this.emit("ready");
+    const { round } = entry;
+
+    if (this.rounds.get(round) === undefined) {
+      this.rounds.set(round, []);
+    }
+
+    if (this.isReady(round)) {
+      throw new Error("Received too many messages for round: " + round);
+    }
+
+    const answers = this.rounds.get(round);
+    answers.push(entry);
+    if (this.isReady(round)) {
+      this.emit("ready", round);
     }
   }
 }

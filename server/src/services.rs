@@ -47,6 +47,7 @@ type NotifySignedParams = (Uuid, Uuid, Value);
 // about the `body` data.
 #[derive(Serialize, Deserialize)]
 struct Message {
+    round: u16,
     sender: u16,
     receiver: Option<u16>,
     body: serde_json::Value,

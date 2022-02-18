@@ -3,13 +3,14 @@ import { StateMachine } from "./machine";
 import { SessionInfo, Phase } from "./index";
 import { WebSocketClient } from "../websocket";
 
-export function waitFor<T, U>() {
+export function waitFor<T, U>(phase: Phase) {
   return async function waitForTransitionExitAndPeerAnswers(
     websocket: WebSocketClient,
     info: SessionInfo,
     machine: StateMachine<T, U>,
     handler: MessageCache,
-    peerEntries: Message[]
+    round: number,
+    messages: Message[]
   ) {
     let exitedTransition = false;
     let answer: U = null;
@@ -28,21 +29,20 @@ export function waitFor<T, U>() {
     // It is possible for all the p2p answers to have
     // been received before this function is called so
     // we need to check that first.
-    if (handler.isReady()) {
-      answer = handler.take() as unknown as U;
+    if (handler.isReady(round)) {
+      answer = handler.take(round) as unknown as U;
       waitEmit();
     } else {
-      handler.once("ready", () => {
-        answer = handler.take() as unknown as U;
+      handler.once("ready", (round) => {
+        answer = handler.take(round) as unknown as U;
         waitEmit();
       });
     }
 
-    for (const message of peerEntries) {
-      // FIXME: use correct phase
+    for (const message of messages) {
       await websocket.rpc({
         method: "Session.message",
-        params: [info.groupId, info.sessionId, Phase.KEYGEN, message],
+        params: [info.groupId, info.sessionId, phase, message],
       });
     }
   };

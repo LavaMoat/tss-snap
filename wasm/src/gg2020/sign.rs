@@ -4,7 +4,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
     state_machine::{
         keygen::LocalKey,
         sign::{
-            CompletedOfflineStage, OfflineStage, PartialSignature, SignManual,
+            CompletedOfflineStage, OfflineProtocolMessage, OfflineStage,
+            PartialSignature, SignManual,
         },
     },
 };
@@ -20,6 +21,34 @@ static SIGN: Lazy<Arc<Mutex<Option<(OfflineStage, Vec<u16>)>>>> =
 
 static RESULT: Lazy<Arc<Mutex<Option<(CompletedOfflineStage, BigInt)>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
+
+/// Wrapper for a round `Msg` that includes the round
+/// number so that we can ensure round messages are grouped
+/// together and out of order messages can thus be handled correctly.
+#[derive(Serialize)]
+struct RoundMsg {
+    round: u16,
+    sender: u16,
+    receiver: Option<u16>,
+    body: OfflineProtocolMessage,
+}
+
+impl RoundMsg {
+    fn from_round(
+        round: u16,
+        messages: Vec<Msg<<OfflineStage as StateMachine>::MessageBody>>,
+    ) -> Vec<Self> {
+        messages
+            .into_iter()
+            .map(|m| RoundMsg {
+                round,
+                sender: m.sender,
+                receiver: m.receiver,
+                body: m.body,
+            })
+            .collect::<Vec<_>>()
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignResult {
@@ -57,9 +86,10 @@ pub fn sign_proceed() -> JsValue {
     let mut writer = SIGN.lock().unwrap();
     let (state, _) = writer.as_mut().unwrap();
     state.proceed().unwrap();
-    let messages: Vec<Msg<<OfflineStage as StateMachine>::MessageBody>> =
-        state.message_queue().drain(..).collect();
-    JsValue::from_serde(&messages).unwrap()
+    let messages = state.message_queue().drain(..).collect();
+    let round = state.current_round();
+    let messages = RoundMsg::from_round(round, messages);
+    JsValue::from_serde(&(round, &messages)).unwrap()
 }
 
 #[wasm_bindgen(js_name = "signPartial")]

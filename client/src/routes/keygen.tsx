@@ -47,11 +47,14 @@ interface KeygenProps {
 
 interface KeygenStateProps {
   session?: Session;
+  runningSession?: string;
   targetSession: string;
   savedKeys: KeyStorage;
   loadedKeyShare?: [string, number, number];
 }
 
+// This needs to be a class-based component as we need to
+// remove listeners when the component is un-mounted.
 class Keygen extends Component<KeygenProps, KeygenStateProps> {
   static contextType = WebSocketContext;
 
@@ -96,32 +99,48 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     // All parties signed up to key generation
     websocket.on("sessionSignup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
-        const onTransition = makeOnTransition<KeygenState, KeygenTransition>();
+        const { runningSession } = this.state;
+        // Guard against running multiple key generation sessions
+        if (!runningSession) {
+          this.setState({
+            ...this.state,
+            runningSession: this.state.session.uuid,
+          });
 
-        // Generate a key share
-        const { group, worker } = this.props;
-        const { partySignup, uuid: sessionId } = this.state.session;
+          const onTransition = makeOnTransition<
+            KeygenState,
+            KeygenTransition
+          >();
 
-        const sessionInfo = {
-          groupId: group.uuid,
-          sessionId,
-          parameters: group.params,
-          partySignup,
-        };
+          // Generate a key share
+          const { group, worker } = this.props;
+          const { partySignup, uuid: sessionId } = this.state.session;
 
-        const keyShare = await generateKeyShare(
-          websocket,
-          worker,
-          onTransition,
-          sessionInfo
-        );
+          const sessionInfo = {
+            groupId: group.uuid,
+            sessionId,
+            parameters: group.params,
+            partySignup,
+          };
 
-        this.props.dispatch(setKeyShare(keyShare));
+          const keyShare = await generateKeyShare(
+            websocket,
+            worker,
+            onTransition,
+            sessionInfo
+          );
 
-        websocket.notify({
-          method: "Session.finish",
-          params: [group.uuid, sessionId, partySignup.number],
-        });
+          this.props.dispatch(setKeyShare(keyShare));
+
+          websocket.notify({
+            method: "Session.finish",
+            params: [group.uuid, sessionId, partySignup.number],
+          });
+        } else {
+          console.warn(
+            "Key generation in progress, refusing to start a new session"
+          );
+        }
       } else {
         console.warn(
           "Keygen got sessionSignup event for wrong session",

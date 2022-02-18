@@ -2,8 +2,25 @@ import { test, expect } from "@playwright/test";
 
 const TEST_URL = process.env.TEST_URL || "http://localhost:8080";
 
+function proxyConsoleError(id, page) {
+  // Proxy browser console.error()
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      console.error("console.error: ", id, message.text());
+    } else if (message.type() === "info") {
+      console.error("console.info: ", id, message.text());
+    }
+  });
+
+  // Unhandled error
+  page.on("pageerror", (err) => {
+    console.error("unhandled error:", id, err.message);
+  });
+}
+
 test("create key shares and sign message", async ({ context, page }) => {
   await page.goto(TEST_URL);
+
   const button = page.locator('form.group input[type="submit"]');
   await button.click();
   await page.waitForURL(/keygen\/.*$/);
@@ -22,6 +39,10 @@ test("create key shares and sign message", async ({ context, page }) => {
   const client1 = page;
   const client2 = clients[1];
   const client3 = clients[2];
+
+  proxyConsoleError("client1", client1);
+  proxyConsoleError("client2", client2);
+  proxyConsoleError("client3", client3);
 
   await Promise.all(
     clients.map((page) => {
