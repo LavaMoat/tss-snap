@@ -7,8 +7,10 @@ function proxyConsoleError(id, page) {
   page.on("console", (message) => {
     if (message.type() === "error") {
       console.error("console.error: ", id, message.text());
+    } else if (message.type() === "warn") {
+      console.warn("console.warn: ", id, message.text());
     } else if (message.type() === "info") {
-      console.error("console.info: ", id, message.text());
+      console.info("console.info: ", id, message.text());
     }
   });
 

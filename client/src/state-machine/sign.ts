@@ -61,8 +61,9 @@ export async function signMessage(
             round,
             sender: index,
             receiver: null,
-            body: null,
+            body: info.partySignup.number,
           };
+
           wait(websocket, info, machine, incomingMessageCache, round, [
             indexMessage,
           ]);
@@ -76,14 +77,27 @@ export async function signMessage(
           transitionData: SignTransition
         ): Promise<SignState | null> => {
           const incoming = transitionData as Message[];
-          const participants = incoming.map((msg) => msg.sender);
-          participants.push(keyShare.localKey.i);
-          participants.sort();
+          const participants = incoming.map((msg) => [msg.sender, msg.body]);
+          participants.push([keyShare.localKey.i, info.partySignup.number]);
+          // NOTE: Must be sorted by party signup number to ensure
+          // NOTE: the party signup indices correspond to the correct
+          // NOTE: index for the local key. See `OfflineStage::new()` in
+          // NOTE: `multi-party-ecdsa` for more information.
+          participants.sort((a, b) => {
+            if (a[1] < b[1]) {
+              return -1;
+            }
+            if (a[1] > b[1]) {
+              return 1;
+            }
+            return 0;
+          });
 
+          const keyShareParticipants = participants.map((item) => item[0]);
           // Initialize the WASM state machine
           await worker.signInit(
             info.partySignup.number,
-            participants,
+            keyShareParticipants,
             keyShare.localKey
           );
 

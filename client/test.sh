@@ -2,7 +2,11 @@
 
 set -e;
 
-for i in $(seq 100); do
+NUM=100
+
+for i in $(seq $NUM); do
 	npm test || exit 1;
   sleep 1;
 done
+
+echo "$NUM test runs completed!"
