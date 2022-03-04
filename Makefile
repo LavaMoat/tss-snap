@@ -4,6 +4,9 @@ wasm:
 dist: wasm
 	@cd client && yarn build
 
+dist-dev: wasm
+	@cd client && yarn build:dev
+
 setup: wasm
 	@cd client && yarn install && npx playwright install
 
@@ -13,11 +16,14 @@ build:
 release: dist
 	@cd server && cargo build --release
 
-server: client-release
+server: dist
 	@cd server && cargo run
 
 client:
 	@cd client && yarn start
+
+test-server: dist-dev
+	@cd server && cargo run
 
 test:
 	@cd client && yarn test
@@ -31,4 +37,4 @@ fmt:
 	@cd common && cargo fmt
 	@cd wasm && cargo fmt
 
-.PHONY: wasm dist setup build release server client test fmt
+.PHONY: wasm dist dist-dev setup build release server client test fmt

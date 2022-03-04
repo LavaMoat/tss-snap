@@ -44,12 +44,11 @@ During development you should link the WASM module:
 
 ## Test
 
-To run the test suite using [playwright][] open three terminal sessions:
+To run the test suite using [playwright][] open two terminal sessions:
 
 ```
-make server     # start the backend server
-make client     # start the development server
-make test       # run the tests
+make test-server     # start the backend server
+make test            # run the tests
 ```
 
 If you want to see the tests execute in a browser run `make test-headed`.

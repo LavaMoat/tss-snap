@@ -69,8 +69,25 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     };
   }
 
+  /*
+  async waitForPartySignup() {
+    return new Promise((resolve) => {
+      const interval = setInterval(() => {
+        const {partySignup} = this.state.session;
+        if (partySignup) {
+          clearInterval(interval);
+          resolve(partySignup);
+        }
+      }, 250);
+    });
+  }
+  */
+
   componentDidMount() {
     const websocket = this.context;
+
+    console.info("componentDidMount: adding listeners!");
+
     websocket.on("sessionCreate", (session: Session) => {
       this.setState({ ...this.state, session });
     });
@@ -102,6 +119,12 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         const { runningSession } = this.state;
         // Guard against running multiple key generation sessions
         if (!runningSession) {
+
+          // Crude hack to wait for `partySignup` as there
+          // is a race condition where this event can fire
+          // before the `partySignup` has been assigned.
+          //await this.waitForPartySignup();
+
           this.setState({
             ...this.state,
             runningSession: this.state.session.uuid,
@@ -115,6 +138,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           // Generate a key share
           const { group, worker } = this.props;
           const { partySignup, uuid: sessionId } = this.state.session;
+
+          console.info("GOT SESSION SIGNUP EVENT", sessionId);
 
           const sessionInfo = {
             groupId: group.uuid,
@@ -228,8 +253,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         ...session,
         partySignup: { number: partyNumber, uuid: session.uuid },
       };
-      this.props.dispatch(setKeygenSession(newSession));
+
+      console.info("Got partyNumber from Session.signup", partyNumber);
+
       this.setState({ ...this.state, session: newSession });
+      this.props.dispatch(setKeygenSession(newSession));
     };
 
     const onKeyShareChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -403,6 +431,8 @@ export default () => {
   if (!group) {
     return null;
   }
+
+  console.info("Rendering keygen component!!!");
 
   return (
     <>
