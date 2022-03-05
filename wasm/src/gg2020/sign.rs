@@ -16,6 +16,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use wasm_bindgen::prelude::*;
 
+use crate::{console_log, log};
+
 static SIGN: Lazy<Arc<Mutex<Option<(OfflineStage, Vec<u16>)>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
@@ -79,17 +81,26 @@ pub fn sign_handle_incoming(message: JsValue) {
     let mut writer = SIGN.lock().unwrap();
     let (state, _) = writer.as_mut().unwrap();
     state.handle_incoming(message).unwrap();
+
+    console_log!(
+        "Sign after incoming, wants_to_proceed(): {}",
+        state.wants_to_proceed()
+    );
 }
 
 #[wasm_bindgen(js_name = "signProceed")]
 pub fn sign_proceed() -> JsValue {
     let mut writer = SIGN.lock().unwrap();
     let (state, _) = writer.as_mut().unwrap();
-    state.proceed().unwrap();
-    let messages = state.message_queue().drain(..).collect();
-    let round = state.current_round();
-    let messages = RoundMsg::from_round(round, messages);
-    JsValue::from_serde(&(round, &messages)).unwrap()
+    if state.wants_to_proceed() {
+        state.proceed().unwrap();
+        let messages = state.message_queue().drain(..).collect();
+        let round = state.current_round();
+        let messages = RoundMsg::from_round(round, messages);
+        JsValue::from_serde(&(round, &messages)).unwrap()
+    } else {
+        JsValue::from_serde(&false).unwrap()
+    }
 }
 
 #[wasm_bindgen(js_name = "signPartial")]

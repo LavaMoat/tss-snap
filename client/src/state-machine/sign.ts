@@ -27,16 +27,18 @@ export async function signMessage(
     ): Promise<SignState | null> {
       const incoming = transitionData as Message[];
       for (const message of incoming) {
+        console.info("Sign handle incoming", message);
         await worker.signHandleIncoming(message);
       }
 
       const proceed = async () => {
-        const [round, messages] = await worker.signProceed();
-        if (Array.isArray(messages) && messages.length > 0) {
+        const result = await worker.signProceed();
+        if (result) {
+          const [round, messages] = result;
           wait(websocket, info, machine, incomingMessageCache, round, messages);
         } else {
-          console.info("NO MORE MESSAGES, RETRY CALLING signProceed()");
-          await proceed();
+          // SEE: https://github.com/LavaMoat/ecdsa-wasm/issues/45
+          throw new Error("Sign proceed did not generate any messages");
         }
       };
 
