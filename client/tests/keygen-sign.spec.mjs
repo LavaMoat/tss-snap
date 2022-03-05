@@ -11,16 +11,20 @@ function proxyConsoleError(id, page) {
       console.warn("console.warn: ", id, message.text());
     } else if (message.type() === "info") {
       console.info("console.info: ", id, message.text());
+    } else if (message.type() === "log") {
+      console.log("console.log: ", id, message.text());
     }
   });
 
   // Unhandled error
   page.on("pageerror", (err) => {
-    console.error("unhandled error:", id, err.message);
+    console.error("unhandled error:", id, err.stack);
   });
 }
 
 test("create key shares and sign message", async ({ context, page }) => {
+  proxyConsoleError("client1", page);
+
   await page.goto(TEST_URL);
 
   const button = page.locator('form.group input[type="submit"]');
@@ -42,7 +46,6 @@ test("create key shares and sign message", async ({ context, page }) => {
   const client2 = clients[1];
   const client3 = clients[2];
 
-  proxyConsoleError("client1", client1);
   proxyConsoleError("client2", client2);
   proxyConsoleError("client3", client3);
 

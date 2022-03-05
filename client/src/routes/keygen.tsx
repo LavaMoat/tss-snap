@@ -69,11 +69,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     };
   }
 
-  /*
   async waitForPartySignup() {
     return new Promise((resolve) => {
       const interval = setInterval(() => {
-        const {partySignup} = this.state.session;
+        const { partySignup } = this.state.session;
         if (partySignup) {
           clearInterval(interval);
           resolve(partySignup);
@@ -81,12 +80,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       }, 250);
     });
   }
-  */
 
   componentDidMount() {
     const websocket = this.context;
-
-    console.info("componentDidMount: adding listeners!");
 
     websocket.on("sessionCreate", (session: Session) => {
       this.setState({ ...this.state, session });
@@ -119,16 +115,15 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         const { runningSession } = this.state;
         // Guard against running multiple key generation sessions
         if (!runningSession) {
-
-          // Crude hack to wait for `partySignup` as there
-          // is a race condition where this event can fire
-          // before the `partySignup` has been assigned.
-          //await this.waitForPartySignup();
-
           this.setState({
             ...this.state,
             runningSession: this.state.session.uuid,
           });
+
+          // Crude hack to wait for `partySignup` as there
+          // is a race condition where this event can fire
+          // before the `partySignup` has been assigned.
+          await this.waitForPartySignup();
 
           const onTransition = makeOnTransition<
             KeygenState,
@@ -431,8 +426,6 @@ export default () => {
   if (!group) {
     return null;
   }
-
-  console.info("Rendering keygen component!!!");
 
   return (
     <>

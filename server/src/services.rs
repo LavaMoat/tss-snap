@@ -615,6 +615,8 @@ async fn handle_threshold_notify(
 
     // Enough parties are signed up to the session
     if num_entries == required_num_entries {
+        println!("Sending threshold notify event {} for {:#?}", event, phase);
+
         let res = serde_json::to_value((event, &session_id)).unwrap();
 
         // Notify everyone in the session that enough

@@ -29,14 +29,19 @@ export async function signMessage(
       for (const message of incoming) {
         await worker.signHandleIncoming(message);
       }
-      const [round, messages] = await worker.signProceed();
-      if (messages.length > 0) {
-        wait(websocket, info, machine, incomingMessageCache, round, messages);
-      } else {
-        // Prepare to sign partial but must allow the
-        // transition function to return first!
-        setTimeout(() => machine.next(), 0);
-      }
+
+      const proceed = async () => {
+        const [round, messages] = await worker.signProceed();
+        if (Array.isArray(messages) && messages.length > 0) {
+          wait(websocket, info, machine, incomingMessageCache, round, messages);
+        } else {
+          console.info("NO MORE MESSAGES, RETRY CALLING signProceed()");
+          await proceed();
+        }
+      };
+
+      await proceed();
+
       return true;
     };
   }
@@ -128,7 +133,20 @@ export async function signMessage(
       },
       {
         name: "SIGN_ROUND_7",
-        transition: makeStandardTransition(machine),
+        transition: async (
+          previousState: SignState,
+          transitionData: SignTransition
+        ): Promise<SignState | null> => {
+          const incoming = transitionData as Message[];
+          for (const message of incoming) {
+            await worker.signHandleIncoming(message);
+          }
+          await worker.signProceed();
+          // Prepare to sign partial but must allow the
+          // transition function to return first!
+          setTimeout(() => machine.next(), 0);
+          return true;
+        },
       },
       {
         name: "SIGN_ROUND_8",
