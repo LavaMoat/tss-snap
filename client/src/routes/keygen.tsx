@@ -125,10 +125,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           // before the `partySignup` has been assigned.
           await this.waitForPartySignup();
 
-          const onTransition = makeOnTransition<
-            KeygenState,
-            KeygenTransition
-          >();
+          //const onTransition = makeOnTransition<
+          //KeygenState,
+          //KeygenTransition
+          //>();
 
           // Generate a key share
           const { group, worker } = this.props;
@@ -146,7 +146,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           const keyShare = await generateKeyShare(
             websocket,
             worker,
-            onTransition,
+            //onTransition,
             sessionInfo
           );
 
