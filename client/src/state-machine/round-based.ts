@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import { WebSocketClient } from "../websocket";
 import { Phase } from "./index";
 
@@ -18,13 +17,6 @@ export interface Round {
   transition: (
     transitionData?: Message[]
   ) => Promise<[number, Message[]] | null>;
-}
-
-export interface StateMachine<R> {
-  rounds: Round[];
-  currentRound: number;
-  totalRounds: number;
-  start(): Promise<R>;
 }
 
 export interface StreamTransport {
@@ -50,7 +42,7 @@ export class WebSocketStream {
   }
 
   async sendMessage(message: Message) {
-    console.log("Sending websocket message", message);
+    //console.log("Sending websocket message", message);
     return this.websocket.rpc({
       method: "Session.message",
       params: [this.groupId, this.sessionId, this.phase, message],
@@ -62,21 +54,25 @@ export interface SinkTransport {
   receiveMessage(message: Message): void;
   isReady(round: number): boolean;
   take(round: number): Message[];
+  finish(): void;
 }
 
-export class WebSocketSink extends EventEmitter {
+export class WebSocketSink {
   websocket: WebSocketClient;
   rounds: Map<number, Message[]>;
   expected: number;
 
   constructor(websocket: WebSocketClient, expected: number) {
-    super();
     this.websocket = websocket;
     this.rounds = new Map();
     this.expected = expected;
     this.websocket.on("sessionMessage", (incoming: Message) => {
       this.receiveMessage(incoming);
     });
+  }
+
+  finish() {
+    this.websocket.removeAllListeners("sessionMessage");
   }
 
   isReady(round: number): boolean {
@@ -93,8 +89,10 @@ export class WebSocketSink extends EventEmitter {
     return values;
   }
 
-  receiveMessage(entry: Message): void {
-    const { round } = entry;
+  receiveMessage(message: Message): void {
+    const { round } = message;
+
+    //console.log("Received websocket message", message);
 
     if (this.rounds.get(round) === undefined) {
       this.rounds.set(round, []);
@@ -105,16 +103,14 @@ export class WebSocketSink extends EventEmitter {
     }
 
     const answers = this.rounds.get(round);
-    answers.push(entry);
-    if (this.isReady(round)) {
-      this.emit("ready", round);
-    }
+    answers.push(message);
   }
 }
 
-export class RoundBased<R> extends EventEmitter {
+export class RoundBased<R> {
   rounds: Round[];
   finalize: (messages: Message[]) => Promise<R>;
+  onTransition: (index: number, previousRound: Round, current: Round) => void;
   currentRound: number;
   totalRounds: number;
   stream: StreamTransport;
@@ -123,12 +119,13 @@ export class RoundBased<R> extends EventEmitter {
   constructor(
     rounds: Round[],
     finalize: (messages: Message[]) => Promise<R>,
+    onTransition: (index: number, previousRound: Round, current: Round) => void,
     stream: StreamTransport,
     sink: SinkTransport
   ) {
-    super();
     this.rounds = rounds;
     this.finalize = finalize;
+    this.onTransition = onTransition;
     this.currentRound = 0;
     this.totalRounds = rounds.length;
     this.stream = stream;
@@ -144,7 +141,7 @@ export class RoundBased<R> extends EventEmitter {
           resolve(this.sink.take(round));
         }
       };
-      interval = setInterval(isReady, 250);
+      interval = setInterval(isReady, 25);
     });
   }
 
@@ -152,7 +149,7 @@ export class RoundBased<R> extends EventEmitter {
     const round = this.rounds[this.currentRound];
 
     const previousRound = this.rounds[this.currentRound - 1];
-    this.emit("transitionEnter", this.currentRound, previousRound, round);
+    this.onTransition(this.currentRound, previousRound, round);
 
     if (round) {
       const result = await round.transition(previousMessages);
@@ -171,42 +168,25 @@ export class RoundBased<R> extends EventEmitter {
   }
 
   async start(): Promise<R> {
-    //return new Promise(async (resolve) => {
-
-    console.log("Total rounds", this.totalRounds);
-
-    let nextMessages: Message[] = [];
+    let nextMessages: Message[] = null;
     while (this.currentRound < this.totalRounds) {
       nextMessages = await this.nextRound(nextMessages);
-      console.log("After round", this.currentRound, nextMessages);
     }
-    console.log("All rounds completed, finalize with", nextMessages);
-
+    this.sink.finish();
     return this.finalize(nextMessages);
-
-    //await nextRound();
-
-    /*
-      const round = this.rounds[this.current];
-      if (round) {
-        const result = await round.transition();
-        console.log("Got result for round", result);
-        if (result) {
-          const [round, messages] = result;
-          for (const message of messages) {
-            await this.stream.sendMessage(message);
-          }
-          console.log("Finished sending all messages for the round...");
-
-          const nextMessages = await this.waitForRound(round);
-
-          console.log("Got messages for next round", nextMessages);
-
-        } else {
-          throw new Error("Did not get result from round transition");
-        }
-      }
-      */
-    //})
   }
 }
+
+export const onTransition = (
+  index: number,
+  previousRound: Round,
+  current: Round
+) => {
+  let message = "";
+  if (previousRound) {
+    message = `transition ${index} from ${previousRound.name} to ${current.name}`;
+  } else {
+    message = `transition ${index} to ${current.name}`;
+  }
+  console.info(message);
+};

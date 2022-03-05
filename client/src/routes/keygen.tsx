@@ -15,11 +15,7 @@ import {
 } from "../key-storage";
 
 import { KeyShare, Session, Phase, makeOnTransition } from "../state-machine";
-import {
-  generateKeyShare,
-  KeygenState,
-  KeygenTransition,
-} from "../state-machine/keygen";
+import { generateKeyShare } from "../state-machine/keygen";
 
 import { signMessage, SignState, SignTransition } from "../state-machine/sign";
 
@@ -125,16 +121,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           // before the `partySignup` has been assigned.
           await this.waitForPartySignup();
 
-          //const onTransition = makeOnTransition<
-          //KeygenState,
-          //KeygenTransition
-          //>();
-
           // Generate a key share
           const { group, worker } = this.props;
           const { partySignup, uuid: sessionId } = this.state.session;
-
-          console.info("GOT SESSION SIGNUP EVENT", sessionId);
 
           const sessionInfo = {
             groupId: group.uuid,
@@ -146,7 +135,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           const keyShare = await generateKeyShare(
             websocket,
             worker,
-            //onTransition,
             sessionInfo
           );
 
@@ -248,8 +236,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         ...session,
         partySignup: { number: partyNumber, uuid: session.uuid },
       };
-
-      console.info("Got partyNumber from Session.signup", partyNumber);
 
       this.setState({ ...this.state, session: newSession });
       this.props.dispatch(setKeygenSession(newSession));

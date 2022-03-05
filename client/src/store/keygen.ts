@@ -16,7 +16,6 @@ const keygenSlice = createSlice({
   initialState,
   reducers: {
     setKeygenSession: (state, { payload }: PayloadAction<Session>) => {
-      console.info("Set keygen session", payload);
       state.session = payload;
     },
     setKeyShare: (state, { payload }: PayloadAction<KeyShare>) => {
