@@ -4,10 +4,12 @@ import {
   KeyShare,
   PartySignup,
   SignResult,
-  makeOnTransition,
+  //makeOnTransition,
   SignMessage,
 } from "./state-machine";
-import { signMessage, SignState, SignTransition } from "./state-machine/sign";
+import {
+  signMessage /*SignState, SignTransition*/,
+} from "./state-machine/sign";
 
 export async function sign(
   message: string,
@@ -17,7 +19,7 @@ export async function sign(
   worker: any,
   partySignup: PartySignup
 ): Promise<SignMessage> {
-  const onTransition = makeOnTransition<SignState, SignTransition>();
+  //const onTransition = makeOnTransition<SignState, SignTransition>();
 
   const sessionInfo = {
     groupId: group.uuid,
@@ -29,7 +31,7 @@ export async function sign(
   const signedMessage = await signMessage(
     websocket,
     worker,
-    onTransition,
+    //onTransition,
     sessionInfo,
     keyShare,
     message

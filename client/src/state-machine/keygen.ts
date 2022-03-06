@@ -72,5 +72,7 @@ export async function generateKeyShare(
     stream,
     sink
   );
-  return handler.start();
+  const keyShare = await handler.start();
+  websocket.removeAllListeners("sessionMessage");
+  return keyShare;
 }

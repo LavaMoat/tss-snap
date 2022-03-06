@@ -14,10 +14,10 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { KeyShare, Session, Phase, makeOnTransition } from "../state-machine";
+import { KeyShare, Session, Phase } from "../state-machine";
 import { generateKeyShare } from "../state-machine/keygen";
 
-import { signMessage, SignState, SignTransition } from "../state-machine/sign";
+import { signMessage } from "../state-machine/sign";
 
 import { sign } from "../signer";
 
@@ -65,6 +65,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     };
   }
 
+  // Hack for a race condition whereby party signup is being
+  // set *after* session has been started. Requires further
+  // investigation.
   async waitForPartySignup() {
     return new Promise((resolve) => {
       const interval = setInterval(() => {

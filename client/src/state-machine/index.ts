@@ -1,4 +1,4 @@
-import { State } from "./machine";
+//import { State } from "./machine";
 
 export enum Phase {
   KEYGEN = "keygen",
@@ -71,6 +71,7 @@ export interface SignMessage {
   participants: number[];
 }
 
+/*
 export function makeOnTransition<T, U>() {
   return (
     index: number,
@@ -86,3 +87,4 @@ export function makeOnTransition<T, U>() {
     console.info(message);
   };
 }
+*/
