@@ -34,6 +34,7 @@ async function getParticipants(
         // machine with list of participants.
         const indexMessage: Message = {
           round,
+          uuid: info.sessionId,
           sender: index,
           receiver: null,
           body: info.partySignup.number,
@@ -44,29 +45,32 @@ async function getParticipants(
     },
   ];
 
-  const finalize = async (incoming: Message[]) => {
-    const participants = incoming.map((msg) => [msg.sender, msg.body]);
-    participants.push([keyShare.localKey.i, info.partySignup.number]);
-    // NOTE: Must be sorted by party signup number to ensure
-    // NOTE: the party signup indices correspond to the correct
-    // NOTE: index for the local key. See `OfflineStage::new()` in
-    // NOTE: `multi-party-ecdsa` for more information.
-    participants.sort((a, b) => {
-      if (a[1] < b[1]) {
-        return -1;
-      }
-      if (a[1] > b[1]) {
-        return 1;
-      }
-      return 0;
-    });
+  const finalizer = {
+    name: "SIGN_PARTICIPANTS",
+    finalize: async (incoming: Message[]) => {
+      const participants = incoming.map((msg) => [msg.sender, msg.body]);
+      participants.push([keyShare.localKey.i, info.partySignup.number]);
+      // NOTE: Must be sorted by party signup number to ensure
+      // NOTE: the party signup indices correspond to the correct
+      // NOTE: index for the local key. See `OfflineStage::new()` in
+      // NOTE: `multi-party-ecdsa` for more information.
+      participants.sort((a, b) => {
+        if (a[1] < b[1]) {
+          return -1;
+        }
+        if (a[1] > b[1]) {
+          return 1;
+        }
+        return 0;
+      });
 
-    return participants.map((item) => item[0]);
+      return participants.map((item) => item[0]);
+    },
   };
 
   const handler = new RoundBased<number[]>(
     rounds,
-    finalize,
+    finalizer,
     onTransition,
     stream,
     sink
@@ -120,14 +124,17 @@ async function offlineStage(
     },
   ];
 
-  const finalize = async (incoming: Message[]): Promise<void> => {
-    await standardTransition(incoming);
-    return null;
+  const finalizer = {
+    name: "SIGN_OFFLINE_STAGE",
+    finalize: async (incoming: Message[]): Promise<void> => {
+      await standardTransition(incoming);
+      return null;
+    },
   };
 
   const handler = new RoundBased<void>(
     rounds,
-    finalize,
+    finalizer,
     onTransition,
     stream,
     sink
@@ -155,6 +162,7 @@ async function partialSignature(
         // to other clients
         const partialMessage: Message = {
           round,
+          uuid: info.sessionId,
           sender: info.partySignup.number,
           receiver: null,
           body: partial,
@@ -165,14 +173,17 @@ async function partialSignature(
     },
   ];
 
-  const finalize = async (incoming: Message[]) => {
-    const partials = incoming.map((msg) => msg.body);
-    return await worker.signCreate(partials);
+  const finalizer = {
+    name: "SIGN_PARTIAL",
+    finalize: async (incoming: Message[]) => {
+      const partials = incoming.map((msg) => msg.body);
+      return await worker.signCreate(partials);
+    },
   };
 
   const handler = new RoundBased<SignMessage>(
     rounds,
-    finalize,
+    finalizer,
     onTransition,
     stream,
     sink

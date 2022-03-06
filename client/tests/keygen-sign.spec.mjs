@@ -11,8 +11,8 @@ function proxyConsoleError(id, page) {
       console.warn("console.warn: ", id, message.text());
     } else if (message.type() === "info") {
       console.info("console.info: ", id, message.text());
-    } else if (message.type() === "log") {
-      console.log("console.log: ", id, message.text());
+      //} else if (message.type() === "log") {
+      //console.log("console.log: ", id, message.text());
     }
   });
 

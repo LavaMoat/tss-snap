@@ -52,15 +52,18 @@ export async function generateKeyShare(
     },
   ];
 
-  const finalize = async (incoming: Message[]) => {
-    await standardTransition(incoming);
-    const keyShare: KeyShare = await worker.keygenCreate();
-    return keyShare;
+  const finalizer = {
+    name: "KEYGEN_FINALIZE",
+    finalize: async (incoming: Message[]) => {
+      await standardTransition(incoming);
+      const keyShare: KeyShare = await worker.keygenCreate();
+      return keyShare;
+    },
   };
 
   const handler = new RoundBased<KeyShare>(
     rounds,
-    finalize,
+    finalizer,
     onTransition,
     stream,
     sink

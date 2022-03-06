@@ -8,15 +8,19 @@ import { Phase } from "./index";
 export interface Message {
   round: number;
   sender: number;
+  uuid: string;
   receiver?: number;
   body: any;
 }
 
 export interface Round {
   name: string;
-  transition: (
-    transitionData?: Message[]
-  ) => Promise<[number, Message[]] | null>;
+  transition: (incoming?: Message[]) => Promise<[number, Message[]]>;
+}
+
+export interface Finalizer<R> {
+  name: string;
+  finalize: (incoming?: Message[]) => Promise<R>;
 }
 
 export interface StreamTransport {
@@ -42,6 +46,7 @@ export class WebSocketStream {
   }
 
   async sendMessage(message: Message) {
+    message.uuid = this.sessionId;
     //console.log("Sending websocket message", message.round, message);
     return this.websocket.rpc({
       method: "Session.message",
@@ -54,7 +59,6 @@ export interface SinkTransport {
   receiveMessage(message: Message): void;
   isReady(round: number): boolean;
   take(round: number): Message[];
-  finish(): void;
 }
 
 export class WebSocketSink {
@@ -76,10 +80,6 @@ export class WebSocketSink {
     });
   }
 
-  finish() {
-    this.rounds = new Map();
-  }
-
   isReady(round: number): boolean {
     const messages = this.rounds.get(round);
     if (messages) {
@@ -95,7 +95,15 @@ export class WebSocketSink {
   }
 
   receiveMessage(message: Message): void {
-    const { round } = message;
+    const { round, uuid } = message;
+
+    if (!uuid) {
+      throw new Error("Message is missing session UUID");
+    }
+
+    if (uuid !== this.sessionId) {
+      throw new Error("Message is for the wrong session, UUID mismatch");
+    }
 
     //console.log("Received websocket message", message);
 
@@ -114,8 +122,8 @@ export class WebSocketSink {
 
 export class RoundBased<R> {
   rounds: Round[];
-  finalize: (messages: Message[]) => Promise<R>;
-  onTransition: (previousRound: Round, current: Round) => void;
+  finalizer: Finalizer<R>;
+  onTransition: (previousRound: string, current: string) => void;
   currentRound: number;
   totalRounds: number;
   stream: StreamTransport;
@@ -123,13 +131,13 @@ export class RoundBased<R> {
 
   constructor(
     rounds: Round[],
-    finalize: (messages: Message[]) => Promise<R>,
-    onTransition: (previousRound: Round, current: Round) => void,
+    finalizer: Finalizer<R>,
+    onTransition: (previousRound: string, current: string) => void,
     stream: StreamTransport,
     sink: SinkTransport
   ) {
     this.rounds = rounds;
-    this.finalize = finalize;
+    this.finalizer = finalizer;
     this.onTransition = onTransition;
     this.currentRound = 0;
     this.totalRounds = rounds.length;
@@ -146,7 +154,7 @@ export class RoundBased<R> {
           resolve(this.sink.take(round));
         }
       };
-      interval = setInterval(isReady, 250);
+      interval = setInterval(isReady, 50);
     });
   }
 
@@ -154,7 +162,7 @@ export class RoundBased<R> {
     const round = this.rounds[this.currentRound];
 
     const previousRound = this.rounds[this.currentRound - 1];
-    this.onTransition(previousRound, round);
+    this.onTransition(previousRound ? previousRound.name : null, round.name);
 
     if (round) {
       const result = await round.transition(previousMessages);
@@ -177,17 +185,23 @@ export class RoundBased<R> {
     while (this.currentRound < this.totalRounds) {
       nextMessages = await this.nextRound(nextMessages);
     }
-    this.sink.finish();
-    return this.finalize(nextMessages);
+
+    const previousRound = this.rounds[this.currentRound - 1];
+    this.onTransition(
+      previousRound ? previousRound.name : null,
+      this.finalizer.name
+    );
+
+    return this.finalizer.finalize(nextMessages);
   }
 }
 
-export const onTransition = (previousRound: Round, current: Round) => {
+export const onTransition = (previousRound: string, current: string) => {
   let message = "";
   if (previousRound) {
-    message = `transition from ${previousRound.name} to ${current.name}`;
+    message = `transition from ${previousRound} to ${current}`;
   } else {
-    message = `transition to ${current.name}`;
+    message = `transition to ${current}`;
   }
   console.info(message);
 };
