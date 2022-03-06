@@ -86,6 +86,15 @@ const Proposal = ({
     setPartyNumber(number);
     setSession(newSession);
 
+    // FIXME: handle sessionMessage listener when signing multiple times!
+
+    // Create the sink as early as possible
+    const sink = new WebSocketSink(
+      websocket,
+      group.params.threshold,
+      session.uuid
+    );
+
     websocket.once("sessionSignup", async (sessionId: string) => {
       if (sessionId === session.uuid) {
         if (!runningSession) {
@@ -98,12 +107,6 @@ const Proposal = ({
             group.uuid,
             partySignup.uuid,
             Phase.SIGN
-          );
-
-          const sink = new WebSocketSink(
-            websocket,
-            group.params.threshold,
-            partySignup.uuid
           );
 
           const { signature: signResult, address: publicAddress } = await sign(
