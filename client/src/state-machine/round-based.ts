@@ -42,7 +42,7 @@ export class WebSocketStream {
   }
 
   async sendMessage(message: Message) {
-    console.log("Sending websocket message", message.round, message);
+    //console.log("Sending websocket message", message.round, message);
     return this.websocket.rpc({
       method: "Session.message",
       params: [this.groupId, this.sessionId, this.phase, message],
@@ -137,8 +137,6 @@ export class RoundBased<R> {
     return new Promise((resolve) => {
       let interval: any;
       const isReady = () => {
-        console.log("check IsReady", round, this.sink.isReady(round));
-
         if (this.sink.isReady(round)) {
           clearInterval(interval);
           resolve(this.sink.take(round));
@@ -187,9 +185,9 @@ export const onTransition = (
 ) => {
   let message = "";
   if (previousRound) {
-    message = `transition ${index} from ${previousRound.name} to ${current.name}`;
+    message = `transition from ${previousRound.name} to ${current.name}`;
   } else {
-    message = `transition ${index} to ${current.name}`;
+    message = `transition to ${current.name}`;
   }
   console.info(message);
 };

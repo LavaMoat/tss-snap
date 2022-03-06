@@ -17,10 +17,6 @@ import {
 import { KeyShare, Session, Phase } from "../state-machine";
 import { generateKeyShare } from "../state-machine/keygen";
 
-import { signMessage } from "../state-machine/sign";
-
-import { sign } from "../signer";
-
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
   text: string

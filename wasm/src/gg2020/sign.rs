@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use wasm_bindgen::prelude::*;
 
-use crate::{console_log, log};
+//use crate::{console_log, log};
 
 static SIGN: Lazy<Arc<Mutex<Option<(OfflineStage, Vec<u16>)>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
@@ -81,11 +81,6 @@ pub fn sign_handle_incoming(message: JsValue) {
     let mut writer = SIGN.lock().unwrap();
     let (state, _) = writer.as_mut().unwrap();
     state.handle_incoming(message).unwrap();
-
-    console_log!(
-        "Sign after incoming, wants_to_proceed(): {}",
-        state.wants_to_proceed()
-    );
 }
 
 #[wasm_bindgen(js_name = "signProceed")]
