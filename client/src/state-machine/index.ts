@@ -1,5 +1,3 @@
-//import { State } from "./machine";
-
 export enum Phase {
   KEYGEN = "keygen",
   SIGN = "sign",
@@ -70,21 +68,3 @@ export interface SignMessage {
   // Key share index for each signer.
   participants: number[];
 }
-
-/*
-export function makeOnTransition<T, U>() {
-  return (
-    index: number,
-    previousState: State<T, U>,
-    nextState: State<T, U>
-  ) => {
-    let message = "";
-    if (previousState) {
-      message = `transition ${index} from ${previousState.name} to ${nextState.name}`;
-    } else {
-      message = `transition ${index} to ${nextState.name}`;
-    }
-    console.info(message);
-  };
-}
-*/

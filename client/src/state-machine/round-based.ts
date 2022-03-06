@@ -61,11 +61,13 @@ export class WebSocketSink {
   websocket: WebSocketClient;
   rounds: Map<number, Message[]>;
   expected: number;
+  sessionId: string;
 
-  constructor(websocket: WebSocketClient, expected: number) {
+  constructor(websocket: WebSocketClient, expected: number, sessionId: string) {
     this.websocket = websocket;
-    this.rounds = new Map();
     this.expected = expected;
+    this.sessionId = sessionId;
+    this.rounds = new Map();
 
     // Sink consumers must remove this listener
     // when appropriate.

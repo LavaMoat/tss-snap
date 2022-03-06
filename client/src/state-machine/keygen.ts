@@ -13,9 +13,9 @@ import {
 export async function generateKeyShare(
   websocket: WebSocketClient,
   worker: any,
-  info: SessionInfo,
   stream: StreamTransport,
-  sink: SinkTransport
+  sink: SinkTransport,
+  info: SessionInfo
 ): Promise<KeyShare> {
   // Initialize the WASM state machine
   await worker.keygenInit(info.parameters, info.partySignup);

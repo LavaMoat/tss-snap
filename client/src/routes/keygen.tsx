@@ -144,9 +144,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           const keyShare = await generateKeyShare(
             websocket,
             worker,
-            sessionInfo,
             stream,
-            this.state.sink
+            this.state.sink,
+            sessionInfo
           );
 
           this.props.dispatch(setKeyShare(keyShare));
@@ -235,7 +235,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     // to be received before the state machine for this client
     // has been started.
     const createSink = (id: string): WebSocketSink => {
-      return new WebSocketSink(websocket, this.props.group.params.parties - 1);
+      return new WebSocketSink(
+        websocket,
+        this.props.group.params.parties - 1,
+        id
+      );
     };
 
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {

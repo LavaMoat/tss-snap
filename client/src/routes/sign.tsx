@@ -9,7 +9,8 @@ import { keygenSelector } from "../store/keygen";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketContext, WebSocketClient } from "../websocket";
 import { Phase, Session, KeyShare } from "../state-machine";
-import { sign } from "../signer";
+import { WebSocketStream, WebSocketSink } from "../state-machine/round-based";
+import { sign } from "../state-machine/sign";
 
 interface Proposal {
   key: number;
@@ -92,12 +93,27 @@ const Proposal = ({
 
           const hash = await worker.sha256(proposal.message);
 
+          const stream = new WebSocketStream(
+            websocket,
+            group.uuid,
+            partySignup.uuid,
+            Phase.SIGN
+          );
+
+          const sink = new WebSocketSink(
+            websocket,
+            group.params.threshold,
+            partySignup.uuid
+          );
+
           const { signature: signResult, address: publicAddress } = await sign(
+            websocket,
+            worker,
+            stream,
+            sink,
             hash,
             keyShare,
             group,
-            websocket,
-            worker,
             partySignup
           );
 

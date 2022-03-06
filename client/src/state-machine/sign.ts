@@ -1,5 +1,6 @@
-import { KeyShare, SessionInfo, SignMessage, Phase } from ".";
+import { KeyShare, SessionInfo, SignMessage, PartySignup, Phase } from ".";
 import { WebSocketClient } from "../websocket";
+import { GroupInfo } from "../store/group";
 
 import {
   Message,
@@ -180,22 +181,15 @@ async function partialSignature(
   return handler.start();
 }
 
-export async function signMessage(
+async function signMessage(
   websocket: WebSocketClient,
   worker: any,
+  stream: StreamTransport,
+  sink: SinkTransport,
   info: SessionInfo,
   keyShare: KeyShare,
   message: string
 ): Promise<SignMessage> {
-  const stream = new WebSocketStream(
-    websocket,
-    info.groupId,
-    info.sessionId,
-    Phase.SIGN
-  );
-
-  const sink = new WebSocketSink(websocket, info.parameters.threshold);
-
   const participants = await getParticipants(info, keyShare, stream, sink);
 
   // Initialize the WASM state machine
@@ -210,4 +204,34 @@ export async function signMessage(
   const signed = await partialSignature(worker, info, message, stream, sink);
   websocket.removeAllListeners("sessionMessage");
   return signed;
+}
+
+export async function sign(
+  websocket: WebSocketClient,
+  worker: any,
+  stream: StreamTransport,
+  sink: SinkTransport,
+  message: string,
+  keyShare: KeyShare,
+  group: GroupInfo,
+  partySignup: PartySignup
+): Promise<SignMessage> {
+  const sessionInfo = {
+    groupId: group.uuid,
+    sessionId: partySignup.uuid,
+    parameters: group.params,
+    partySignup,
+  };
+
+  const signedMessage = await signMessage(
+    websocket,
+    worker,
+    stream,
+    sink,
+    sessionInfo,
+    keyShare,
+    message
+  );
+
+  return signedMessage;
 }
