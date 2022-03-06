@@ -1,201 +1,248 @@
-import { StateMachine, TransitionHandler } from "./machine";
-import { KeyShare, SessionInfo, SignMessage, Phase } from ".";
-import { MessageCache, Message } from "./message-cache";
-import { waitFor } from "./wait-for";
+import { KeyShare, SessionInfo, SignMessage, PartySignup, Phase } from ".";
 import { WebSocketClient } from "../websocket";
+import { GroupInfo } from "../store/group";
 
-export type SignTransition = Message[];
-export type SignState = boolean;
+import {
+  Message,
+  Round,
+  RoundBased,
+  WebSocketStream,
+  WebSocketSink,
+  StreamTransport,
+  SinkTransport,
+  onTransition,
+} from "./round-based";
 
-export async function signMessage(
+async function getParticipants(
+  info: SessionInfo,
+  keyShare: KeyShare,
+  stream: StreamTransport,
+  sink: SinkTransport
+): Promise<number[]> {
+  const rounds: Round[] = [
+    {
+      name: "SIGN_ROUND_0",
+      transition: async (
+        incoming: Message[]
+      ): Promise<[number, Message[]] | null> => {
+        const index = keyShare.localKey.i;
+
+        const round = 0;
+
+        // Must share our key share index
+        // in order to initialize the state
+        // machine with list of participants.
+        const indexMessage: Message = {
+          round,
+          uuid: info.sessionId,
+          sender: index,
+          receiver: null,
+          body: info.partySignup.number,
+        };
+
+        return [round, [indexMessage]];
+      },
+    },
+  ];
+
+  const finalizer = {
+    name: "SIGN_PARTICIPANTS",
+    finalize: async (incoming: Message[]) => {
+      const participants = incoming.map((msg) => [msg.sender, msg.body]);
+      participants.push([keyShare.localKey.i, info.partySignup.number]);
+      // NOTE: Must be sorted by party signup number to ensure
+      // NOTE: the party signup indices correspond to the correct
+      // NOTE: index for the local key. See `OfflineStage::new()` in
+      // NOTE: `multi-party-ecdsa` for more information.
+      participants.sort((a, b) => {
+        if (a[1] < b[1]) {
+          return -1;
+        }
+        if (a[1] > b[1]) {
+          return 1;
+        }
+        return 0;
+      });
+
+      return participants.map((item) => item[0]);
+    },
+  };
+
+  const handler = new RoundBased<number[]>(
+    rounds,
+    finalizer,
+    onTransition,
+    stream,
+    sink
+  );
+
+  return handler.start();
+}
+
+async function offlineStage(
+  worker: any,
+  stream: StreamTransport,
+  sink: SinkTransport
+): Promise<void> {
+  const standardTransition = async (
+    incoming: Message[]
+  ): Promise<[number, Message[]] | null> => {
+    for (const message of incoming) {
+      await worker.signHandleIncoming(message);
+    }
+    return await worker.signProceed();
+  };
+
+  const rounds: Round[] = [
+    {
+      name: "SIGN_ROUND_1",
+      transition: async (
+        incoming: Message[]
+      ): Promise<[number, Message[]] | null> => {
+        return await worker.signProceed();
+      },
+    },
+    {
+      name: "SIGN_ROUND_2",
+      transition: standardTransition,
+    },
+    {
+      name: "SIGN_ROUND_3",
+      transition: standardTransition,
+    },
+    {
+      name: "SIGN_ROUND_4",
+      transition: standardTransition,
+    },
+    {
+      name: "SIGN_ROUND_5",
+      transition: standardTransition,
+    },
+    {
+      name: "SIGN_ROUND_6",
+      transition: standardTransition,
+    },
+  ];
+
+  const finalizer = {
+    name: "SIGN_OFFLINE_STAGE",
+    finalize: async (incoming: Message[]): Promise<void> => {
+      await standardTransition(incoming);
+      return null;
+    },
+  };
+
+  const handler = new RoundBased<void>(
+    rounds,
+    finalizer,
+    onTransition,
+    stream,
+    sink
+  );
+
+  return handler.start();
+}
+
+async function partialSignature(
+  worker: any,
+  info: SessionInfo,
+  message: string,
+  stream: StreamTransport,
+  sink: SinkTransport
+): Promise<SignMessage> {
+  const rounds: Round[] = [
+    {
+      name: "SIGN_ROUND_8",
+      transition: async (
+        incoming: Message[]
+      ): Promise<[number, Message[]] | null> => {
+        const partial = await worker.signPartial(message);
+        const round = 8;
+        // Broadcast the partial signature
+        // to other clients
+        const partialMessage: Message = {
+          round,
+          uuid: info.sessionId,
+          sender: info.partySignup.number,
+          receiver: null,
+          body: partial,
+        };
+
+        return [round, [partialMessage]];
+      },
+    },
+  ];
+
+  const finalizer = {
+    name: "SIGN_PARTIAL",
+    finalize: async (incoming: Message[]) => {
+      const partials = incoming.map((msg) => msg.body);
+      return await worker.signCreate(partials);
+    },
+  };
+
+  const handler = new RoundBased<SignMessage>(
+    rounds,
+    finalizer,
+    onTransition,
+    stream,
+    sink
+  );
+
+  return handler.start();
+}
+
+async function signMessage(
   websocket: WebSocketClient,
   worker: any,
-  onTransition: TransitionHandler<SignState, SignTransition>,
+  stream: StreamTransport,
+  sink: SinkTransport,
   info: SessionInfo,
   keyShare: KeyShare,
   message: string
 ): Promise<SignMessage> {
-  const incomingMessageCache = new MessageCache(info.parameters.threshold);
-  const wait = waitFor<SignState, SignTransition>(Phase.SIGN);
+  const participants = await getParticipants(info, keyShare, stream, sink);
 
-  function makeStandardTransition(
-    machine: StateMachine<SignState, SignTransition>
-  ) {
-    return async function standardTransition(
-      previousState: SignState,
-      transitionData: SignTransition
-    ): Promise<SignState | null> {
-      const incoming = transitionData as Message[];
-      for (const message of incoming) {
-        console.info("Sign handle incoming", message);
-        await worker.signHandleIncoming(message);
-      }
+  // Initialize the WASM state machine
+  await worker.signInit(
+    info.partySignup.number,
+    participants,
+    keyShare.localKey
+  );
 
-      const proceed = async () => {
-        const result = await worker.signProceed();
-        if (result) {
-          const [round, messages] = result;
-          wait(websocket, info, machine, incomingMessageCache, round, messages);
-        } else {
-          // SEE: https://github.com/LavaMoat/ecdsa-wasm/issues/45
-          throw new Error("Sign proceed did not generate any messages");
-        }
-      };
+  await offlineStage(worker, stream, sink);
 
-      await proceed();
+  const signed = await partialSignature(worker, info, message, stream, sink);
+  websocket.removeAllListeners("sessionMessage");
+  return signed;
+}
 
-      return true;
-    };
-  }
+export async function sign(
+  websocket: WebSocketClient,
+  worker: any,
+  stream: StreamTransport,
+  sink: SinkTransport,
+  message: string,
+  keyShare: KeyShare,
+  group: GroupInfo,
+  partySignup: PartySignup
+): Promise<SignMessage> {
+  const sessionInfo = {
+    groupId: group.uuid,
+    sessionId: partySignup.uuid,
+    parameters: group.params,
+    partySignup,
+  };
 
-  return new Promise(async (resolve) => {
-    const machine = new StateMachine<SignState, SignTransition>([]);
-    machine.states = [
-      {
-        name: "SIGN_ROUND_0",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const index = keyShare.localKey.i;
+  const signedMessage = await signMessage(
+    websocket,
+    worker,
+    stream,
+    sink,
+    sessionInfo,
+    keyShare,
+    message
+  );
 
-          const round = 0;
-
-          // Must share our key share index
-          // in order to initialize the state
-          // machine with list of participants.
-          const indexMessage: Message = {
-            round,
-            sender: index,
-            receiver: null,
-            body: info.partySignup.number,
-          };
-
-          wait(websocket, info, machine, incomingMessageCache, round, [
-            indexMessage,
-          ]);
-          return true;
-        },
-      },
-      {
-        name: "SIGN_ROUND_1",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          const participants = incoming.map((msg) => [msg.sender, msg.body]);
-          participants.push([keyShare.localKey.i, info.partySignup.number]);
-          // NOTE: Must be sorted by party signup number to ensure
-          // NOTE: the party signup indices correspond to the correct
-          // NOTE: index for the local key. See `OfflineStage::new()` in
-          // NOTE: `multi-party-ecdsa` for more information.
-          participants.sort((a, b) => {
-            if (a[1] < b[1]) {
-              return -1;
-            }
-            if (a[1] > b[1]) {
-              return 1;
-            }
-            return 0;
-          });
-
-          const keyShareParticipants = participants.map((item) => item[0]);
-          // Initialize the WASM state machine
-          await worker.signInit(
-            info.partySignup.number,
-            keyShareParticipants,
-            keyShare.localKey
-          );
-
-          const [round, messages] = await worker.signProceed();
-          wait(websocket, info, machine, incomingMessageCache, round, messages);
-          return true;
-        },
-      },
-      {
-        name: "SIGN_ROUND_2",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "SIGN_ROUND_3",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "SIGN_ROUND_4",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "SIGN_ROUND_5",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "SIGN_ROUND_6",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "SIGN_ROUND_7",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.signHandleIncoming(message);
-          }
-          await worker.signProceed();
-          // Prepare to sign partial but must allow the
-          // transition function to return first!
-          setTimeout(() => machine.next(), 0);
-          return true;
-        },
-      },
-      {
-        name: "SIGN_ROUND_8",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const partial = await worker.signPartial(message);
-          const round = 8;
-          // Broadcast the partial signature
-          // to other clients
-          const partialMessage: Message = {
-            round,
-            sender: info.partySignup.number,
-            receiver: null,
-            body: partial,
-          };
-          wait(websocket, info, machine, incomingMessageCache, round, [
-            partialMessage,
-          ]);
-          return true;
-        },
-      },
-      {
-        name: "SIGN_FINALIZE",
-        transition: async (
-          previousState: SignState,
-          transitionData: SignTransition
-        ): Promise<SignState | null> => {
-          const incoming = transitionData as Message[];
-          const partials = incoming.map((msg) => msg.body);
-          const signResult = await worker.signCreate(partials);
-          websocket.removeAllListeners("sessionMessage");
-          machine.removeAllListeners("transitionEnter");
-          resolve(signResult);
-          return null;
-        },
-      },
-    ];
-
-    websocket.on("sessionMessage", (incoming: Message) => {
-      incomingMessageCache.add(incoming);
-    });
-
-    machine.on("transitionEnter", onTransition);
-
-    // Start the state machine running
-    await machine.next();
-  });
+  return signedMessage;
 }

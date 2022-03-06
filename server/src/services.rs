@@ -50,6 +50,7 @@ struct Message {
     round: u16,
     sender: u16,
     receiver: Option<u16>,
+    uuid: String,
     body: serde_json::Value,
 }
 

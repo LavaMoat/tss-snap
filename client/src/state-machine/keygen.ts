@@ -1,95 +1,72 @@
-import { StateMachine, TransitionHandler } from "./machine";
 import { KeyShare, SessionInfo, Phase } from ".";
-import { MessageCache, Message } from "./message-cache";
-import { waitFor } from "./wait-for";
 import { WebSocketClient } from "../websocket";
 
-export type KeygenTransition = Message[];
-export type KeygenState = boolean;
+import {
+  Message,
+  Round,
+  RoundBased,
+  StreamTransport,
+  SinkTransport,
+  onTransition,
+} from "./round-based";
 
 export async function generateKeyShare(
   websocket: WebSocketClient,
   worker: any,
-  onTransition: TransitionHandler<KeygenState, KeygenTransition>,
+  stream: StreamTransport,
+  sink: SinkTransport,
   info: SessionInfo
 ): Promise<KeyShare> {
-  const incomingMessageCache = new MessageCache(info.parameters.parties - 1);
-  const wait = waitFor<KeygenState, KeygenTransition>(Phase.KEYGEN);
-
   // Initialize the WASM state machine
   await worker.keygenInit(info.parameters, info.partySignup);
 
-  function makeStandardTransition(
-    machine: StateMachine<KeygenState, KeygenTransition>
-  ) {
-    return async function standardTransition(
-      previousState: KeygenState,
-      transitionData: KeygenTransition
-    ): Promise<KeygenState | null> {
-      const incoming = transitionData as Message[];
+  const standardTransition = async (
+    incoming: Message[]
+  ): Promise<[number, Message[]] | null> => {
+    for (const message of incoming) {
+      await worker.keygenHandleIncoming(message);
+    }
+    return await worker.keygenProceed();
+  };
 
-      for (const message of incoming) {
-        await worker.keygenHandleIncoming(message);
-      }
-      const [round, messages] = await worker.keygenProceed();
-      wait(websocket, info, machine, incomingMessageCache, round, messages);
-      return true;
-    };
-  }
+  const rounds: Round[] = [
+    {
+      name: "KEYGEN_ROUND_1",
+      transition: async (
+        incoming: Message[]
+      ): Promise<[number, Message[]] | null> => {
+        return await worker.keygenProceed();
+      },
+    },
+    {
+      name: "KEYGEN_ROUND_2",
+      transition: standardTransition,
+    },
+    {
+      name: "KEYGEN_ROUND_3",
+      transition: standardTransition,
+    },
+    {
+      name: "KEYGEN_ROUND_4",
+      transition: standardTransition,
+    },
+  ];
 
-  return new Promise(async (resolve) => {
-    const machine = new StateMachine<KeygenState, KeygenTransition>([]);
-    machine.states = [
-      {
-        name: "KEYGEN_ROUND_1",
-        transition: async (
-          previousState: KeygenState,
-          transitionData: KeygenTransition
-        ): Promise<KeygenState | null> => {
-          const [round, messages] = await worker.keygenProceed();
-          wait(websocket, info, machine, incomingMessageCache, round, messages);
-          return true;
-        },
-      },
-      {
-        name: "KEYGEN_ROUND_2",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "KEYGEN_ROUND_3",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "KEYGEN_ROUND_4",
-        transition: makeStandardTransition(machine),
-      },
-      {
-        name: "KEYGEN_ROUND_5",
-        transition: async (
-          previousState: KeygenState,
-          transitionData: KeygenTransition
-        ): Promise<KeygenState | null> => {
-          const incoming = transitionData as Message[];
-          for (const message of incoming) {
-            await worker.keygenHandleIncoming(message);
-          }
-          await worker.keygenProceed();
-          const keyShare: KeyShare = await worker.keygenCreate();
-          websocket.removeAllListeners("sessionMessage");
-          machine.removeAllListeners("transitionEnter");
-          resolve(keyShare);
-          return null;
-        },
-      },
-    ];
+  const finalizer = {
+    name: "KEYGEN_FINALIZE",
+    finalize: async (incoming: Message[]) => {
+      await standardTransition(incoming);
+      const keyShare: KeyShare = await worker.keygenCreate();
+      return keyShare;
+    },
+  };
 
-    websocket.on("sessionMessage", (incoming: Message) => {
-      incomingMessageCache.add(incoming);
-    });
-
-    machine.on("transitionEnter", onTransition);
-
-    // Start the state machine running
-    await machine.next();
-  });
+  const handler = new RoundBased<KeyShare>(
+    rounds,
+    finalizer,
+    onTransition,
+    stream,
+    sink
+  );
+  return handler.start();
 }

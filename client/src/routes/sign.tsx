@@ -9,7 +9,8 @@ import { keygenSelector } from "../store/keygen";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketContext, WebSocketClient } from "../websocket";
 import { Phase, Session, KeyShare } from "../state-machine";
-import { sign } from "../signer";
+import { WebSocketStream, WebSocketSink } from "../state-machine/round-based";
+import { sign } from "../state-machine/sign";
 
 interface Proposal {
   key: number;
@@ -85,6 +86,15 @@ const Proposal = ({
     setPartyNumber(number);
     setSession(newSession);
 
+    // FIXME: handle sessionMessage listener when signing multiple times!
+
+    // Create the sink as early as possible
+    const sink = new WebSocketSink(
+      websocket,
+      group.params.threshold,
+      session.uuid
+    );
+
     websocket.once("sessionSignup", async (sessionId: string) => {
       if (sessionId === session.uuid) {
         if (!runningSession) {
@@ -92,12 +102,21 @@ const Proposal = ({
 
           const hash = await worker.sha256(proposal.message);
 
+          const stream = new WebSocketStream(
+            websocket,
+            group.uuid,
+            partySignup.uuid,
+            Phase.SIGN
+          );
+
           const { signature: signResult, address: publicAddress } = await sign(
+            websocket,
+            worker,
+            stream,
+            sink,
             hash,
             keyShare,
             group,
-            websocket,
-            worker,
             partySignup
           );
 

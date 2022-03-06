@@ -53,6 +53,14 @@ make test            # run the tests
 
 If you want to see the tests execute in a browser run `make test-headed`.
 
+To hack on the code whilst running the tests open several terminal sessions:
+
+```
+cd server && cargo run
+cd client && yarn start
+cd client && TEST_URL=http://localhost:8080 yarn test
+```
+
 ## Docker
 
 For deployment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
