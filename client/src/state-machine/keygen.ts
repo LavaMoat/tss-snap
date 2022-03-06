@@ -5,27 +5,20 @@ import {
   Message,
   Round,
   RoundBased,
-  WebSocketStream,
-  WebSocketSink,
+  StreamTransport,
+  SinkTransport,
   onTransition,
 } from "./round-based";
 
 export async function generateKeyShare(
   websocket: WebSocketClient,
   worker: any,
-  info: SessionInfo
+  info: SessionInfo,
+  stream: StreamTransport,
+  sink: SinkTransport
 ): Promise<KeyShare> {
   // Initialize the WASM state machine
   await worker.keygenInit(info.parameters, info.partySignup);
-
-  const stream = new WebSocketStream(
-    websocket,
-    info.groupId,
-    info.sessionId,
-    Phase.KEYGEN
-  );
-
-  const sink = new WebSocketSink(websocket, info.parameters.parties - 1);
 
   const standardTransition = async (
     incoming: Message[]
@@ -72,7 +65,5 @@ export async function generateKeyShare(
     stream,
     sink
   );
-  const keyShare = await handler.start();
-  websocket.removeAllListeners("sessionMessage");
-  return keyShare;
+  return handler.start();
 }

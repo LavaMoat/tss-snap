@@ -17,6 +17,8 @@ import {
 import { KeyShare, Session, Phase } from "../state-machine";
 import { generateKeyShare } from "../state-machine/keygen";
 
+import { WebSocketStream, WebSocketSink } from "../state-machine/round-based";
+
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
   text: string
@@ -39,6 +41,7 @@ interface KeygenProps {
 
 interface KeygenStateProps {
   session?: Session;
+  sink?: WebSocketSink;
   runningSession?: string;
   targetSession: string;
   savedKeys: KeyStorage;
@@ -131,10 +134,19 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             partySignup,
           };
 
+          const stream = new WebSocketStream(
+            websocket,
+            sessionInfo.groupId,
+            sessionInfo.sessionId,
+            Phase.KEYGEN
+          );
+
           const keyShare = await generateKeyShare(
             websocket,
             worker,
-            sessionInfo
+            sessionInfo,
+            stream,
+            this.state.sink
           );
 
           this.props.dispatch(setKeyShare(keyShare));
@@ -190,6 +202,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     websocket.removeAllListeners("sessionSignup");
     websocket.removeAllListeners("sessionLoad");
     websocket.removeAllListeners("sessionClosed");
+
+    // Clean up listeners managed by the sink implementation too.
+    websocket.removeAllListeners("sessionMessage");
   }
 
   render() {
@@ -215,14 +230,24 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       this.setState({ ...this.state, session });
     };
 
+    // We want to create the sink for receiving messages
+    // as early as possible as it is possible for messages
+    // to be received before the state machine for this client
+    // has been started.
+    const createSink = (id: string): WebSocketSink => {
+      return new WebSocketSink(websocket, this.props.group.params.parties - 1);
+    };
+
     const joinSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
       const session = await websocket.rpc({
         method: "Session.join",
         params: [this.props.group.uuid, targetSession, Phase.KEYGEN],
       });
+
+      const sink = createSink(session.uuid);
+      this.setState({ ...this.state, session, sink });
       this.props.dispatch(setKeygenSession(session));
-      this.setState({ ...this.state, session });
     };
 
     const signupToSession = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -236,7 +261,8 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         partySignup: { number: partyNumber, uuid: session.uuid },
       };
 
-      this.setState({ ...this.state, session: newSession });
+      const sink = createSink(session.uuid);
+      this.setState({ ...this.state, session: newSession, sink });
       this.props.dispatch(setKeygenSession(newSession));
     };
 

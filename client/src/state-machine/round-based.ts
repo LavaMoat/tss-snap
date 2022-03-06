@@ -66,6 +66,9 @@ export class WebSocketSink {
     this.websocket = websocket;
     this.rounds = new Map();
     this.expected = expected;
+
+    // Sink consumers must remove this listener
+    // when appropriate.
     this.websocket.on("sessionMessage", (incoming: Message) => {
       this.receiveMessage(incoming);
     });
@@ -73,7 +76,6 @@ export class WebSocketSink {
 
   finish() {
     this.rounds = new Map();
-    //this.websocket.removeAllListeners("sessionMessage");
   }
 
   isReady(round: number): boolean {
@@ -111,7 +113,7 @@ export class WebSocketSink {
 export class RoundBased<R> {
   rounds: Round[];
   finalize: (messages: Message[]) => Promise<R>;
-  onTransition: (index: number, previousRound: Round, current: Round) => void;
+  onTransition: (previousRound: Round, current: Round) => void;
   currentRound: number;
   totalRounds: number;
   stream: StreamTransport;
@@ -120,7 +122,7 @@ export class RoundBased<R> {
   constructor(
     rounds: Round[],
     finalize: (messages: Message[]) => Promise<R>,
-    onTransition: (index: number, previousRound: Round, current: Round) => void,
+    onTransition: (previousRound: Round, current: Round) => void,
     stream: StreamTransport,
     sink: SinkTransport
   ) {
@@ -150,7 +152,7 @@ export class RoundBased<R> {
     const round = this.rounds[this.currentRound];
 
     const previousRound = this.rounds[this.currentRound - 1];
-    this.onTransition(this.currentRound, previousRound, round);
+    this.onTransition(previousRound, round);
 
     if (round) {
       const result = await round.transition(previousMessages);
@@ -178,11 +180,7 @@ export class RoundBased<R> {
   }
 }
 
-export const onTransition = (
-  index: number,
-  previousRound: Round,
-  current: Round
-) => {
+export const onTransition = (previousRound: Round, current: Round) => {
   let message = "";
   if (previousRound) {
     message = `transition from ${previousRound.name} to ${current.name}`;
