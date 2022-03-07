@@ -28,9 +28,7 @@
   },
   "homepage": "https://github.com/LavaMoat/ecdsa-wasm",
   "dependencies": {
-    "@ethereumjs/tx": "^3.4.0",
     "@reduxjs/toolkit": "^1.7.1",
-    "@walletconnect/client": "1.6.5",
     "assert": "^2.0.0",
     "buffer": "^6.0.3",
     "comlink": "^4.3.1",
