@@ -1,7 +1,7 @@
 import "./polyfills";
 import React, { useState, useContext, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 
 import Home from "./routes/home";

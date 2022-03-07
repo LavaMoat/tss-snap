@@ -67,7 +67,8 @@ pub fn sign_init(index: JsValue, participants: JsValue, local_key: JsValue) {
     let local_key: LocalKey<Secp256k1> = local_key.into_serde().unwrap();
     let mut writer = SIGN.lock().unwrap();
     *writer = Some(
-        OfflineStage::new(index, participants.clone(), local_key).unwrap());
+        OfflineStage::new(index, participants.clone(), local_key).unwrap(),
+    );
 }
 
 #[wasm_bindgen(js_name = "signHandleIncoming")]
