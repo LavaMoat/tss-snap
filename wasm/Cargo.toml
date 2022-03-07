@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 common = {path = "../common"}
 getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
-wasm-bindgen = { version = "0.2.76", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
 wasm-bindgen-rayon = "1.0"
 rand = { version="0.6.5", features = ["wasm-bindgen"] }
 #rand = { version="0.7.3", features = ["getrandom"] }
@@ -18,7 +18,6 @@ console_error_panic_hook = "0.1.6"
 sha2 = "0.9"
 sha3 = "0.10"
 serde = {version = "1", features = ["derive"]}
-libsecp256k1 = "0.3.2"
 hex = "0.4"
 round-based = "0.1"
 once_cell = "1.9"

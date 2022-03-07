@@ -45,42 +45,50 @@ impl RoundMsg {
 }
 
 #[wasm_bindgen(js_name = "keygenInit")]
-pub fn keygen_init(parameters: JsValue, party_signup: JsValue) {
-    let params: Parameters = parameters.into_serde().unwrap();
+pub fn keygen_init(
+    parameters: JsValue,
+    party_signup: JsValue,
+) -> Result<(), JsError> {
+    let params: Parameters = parameters.into_serde()?;
     let PartySignup { number, uuid } =
-        party_signup.into_serde::<PartySignup>().unwrap();
+        party_signup.into_serde::<PartySignup>()?;
     let (party_num_int, _uuid) = (number, uuid);
-    let mut writer = KEYGEN.lock().unwrap();
-    *writer = Some(
-        Keygen::new(party_num_int, params.threshold, params.parties).unwrap(),
-    );
+    let mut writer = KEYGEN.lock()?;
+    *writer = Some(Keygen::new(
+        party_num_int,
+        params.threshold,
+        params.parties,
+    )?);
+
+    Ok(())
 }
 
 #[wasm_bindgen(js_name = "keygenHandleIncoming")]
-pub fn keygen_handle_incoming(message: JsValue) {
+pub fn keygen_handle_incoming(message: JsValue) -> Result<(), JsError> {
     let message: Msg<<Keygen as StateMachine>::MessageBody> =
-        message.into_serde().unwrap();
-    let mut writer = KEYGEN.lock().unwrap();
+        message.into_serde()?;
+    let mut writer = KEYGEN.lock()?;
     let state = writer.as_mut().unwrap();
-    state.handle_incoming(message).unwrap();
+    state.handle_incoming(message)?;
+    Ok(())
 }
 
 #[wasm_bindgen(js_name = "keygenProceed")]
-pub fn keygen_proceed() -> JsValue {
-    let mut writer = KEYGEN.lock().unwrap();
+pub fn keygen_proceed() -> Result<JsValue, JsError> {
+    let mut writer = KEYGEN.lock()?;
     let state = writer.as_mut().unwrap();
-    state.proceed().unwrap();
+    state.proceed()?;
     let messages = state.message_queue().drain(..).collect();
     let round = state.current_round();
     let messages = RoundMsg::from_round(round, messages);
-    JsValue::from_serde(&(round, &messages)).unwrap()
+    Ok(JsValue::from_serde(&(round, &messages))?)
 }
 
 #[wasm_bindgen(js_name = "keygenCreate")]
-pub fn keygen_create() -> JsValue {
-    let mut writer = KEYGEN.lock().unwrap();
+pub fn keygen_create() -> Result<JsValue, JsError> {
+    let mut writer = KEYGEN.lock()?;
     let state = writer.as_mut().unwrap();
-    let local_key = state.pick_output().unwrap().unwrap();
+    let local_key = state.pick_output().unwrap()?;
     let public_key = local_key.public_key().to_bytes(false).to_vec();
     let key_share = KeyShare {
         local_key,
@@ -88,5 +96,5 @@ pub fn keygen_create() -> JsValue {
         public_key,
     };
     *writer = None;
-    JsValue::from_serde(&key_share).unwrap()
+    Ok(JsValue::from_serde(&key_share)?)
 }
