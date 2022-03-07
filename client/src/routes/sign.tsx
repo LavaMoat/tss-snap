@@ -8,8 +8,12 @@ import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketContext, WebSocketClient } from "../websocket";
 import { Phase, Session, KeyShare } from "../state-machine";
-import { WebSocketStream, WebSocketSink } from "../state-machine/round-based";
 import { sign } from "../state-machine/sign";
+
+import {
+  WebSocketStream,
+  WebSocketSink,
+} from "../state-machine/transports/websocket";
 
 interface Proposal {
   key: number;

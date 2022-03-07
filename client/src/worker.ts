@@ -1,4 +1,5 @@
 import {
+  Message,
   KeyShare,
   LocalKey,
   Parameters,
@@ -6,7 +7,6 @@ import {
   PartialSignature,
   SignMessage,
 } from "./state-machine";
-import { Message } from "./state-machine/round-based";
 
 import init, {
   initThreadPool,

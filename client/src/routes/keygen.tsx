@@ -18,7 +18,10 @@ import {
 import { KeyShare, Session, Phase } from "../state-machine";
 import { generateKeyShare } from "../state-machine/keygen";
 
-import { WebSocketStream, WebSocketSink } from "../state-machine/round-based";
+import {
+  WebSocketStream,
+  WebSocketSink,
+} from "../state-machine/transports/websocket";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,

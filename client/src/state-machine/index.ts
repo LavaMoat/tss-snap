@@ -3,6 +3,19 @@ export enum Phase {
   SIGN = "sign",
 }
 
+// Message is sent by a client.
+//
+// When receiver is null then the message is a broadcast round
+// otherwise communication should be handled peer to peer.
+export interface Message {
+  round: number;
+  sender: number;
+  uuid: string;
+  receiver?: number;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  body: any;
+}
+
 // Configuration parameters retrieved from the server
 // during the handshake.
 export interface Parameters {

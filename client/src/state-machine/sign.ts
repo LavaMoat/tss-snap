@@ -1,10 +1,9 @@
-import { KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
+import { Message, KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
 import { WebSocketClient } from "../websocket";
 import { GroupInfo } from "../store/group";
 import { EcdsaWorker } from "../worker";
 
 import {
-  Message,
   Round,
   RoundBased,
   StreamTransport,
