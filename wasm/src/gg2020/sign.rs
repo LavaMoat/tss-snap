@@ -18,7 +18,7 @@ use wasm_bindgen::prelude::*;
 
 //use crate::{console_log, log};
 
-static SIGN: Lazy<Arc<Mutex<Option<(OfflineStage, Vec<u16>)>>>> =
+static SIGN: Lazy<Arc<Mutex<Option<OfflineStage>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
 static RESULT: Lazy<Arc<Mutex<Option<(CompletedOfflineStage, BigInt)>>>> =
@@ -58,8 +58,6 @@ pub struct SignResult {
     #[serde(rename = "publicKey")]
     public_key: Vec<u8>,
     address: String,
-    /// Key share index for each signer.
-    participants: Vec<u16>,
 }
 
 #[wasm_bindgen(js_name = "signInit")]
@@ -68,10 +66,8 @@ pub fn sign_init(index: JsValue, participants: JsValue, local_key: JsValue) {
     let participants: Vec<u16> = participants.into_serde().unwrap();
     let local_key: LocalKey<Secp256k1> = local_key.into_serde().unwrap();
     let mut writer = SIGN.lock().unwrap();
-    *writer = Some((
-        OfflineStage::new(index, participants.clone(), local_key).unwrap(),
-        participants,
-    ));
+    *writer = Some(
+        OfflineStage::new(index, participants.clone(), local_key).unwrap());
 }
 
 #[wasm_bindgen(js_name = "signHandleIncoming")]
@@ -79,14 +75,14 @@ pub fn sign_handle_incoming(message: JsValue) {
     let message: Msg<<OfflineStage as StateMachine>::MessageBody> =
         message.into_serde().unwrap();
     let mut writer = SIGN.lock().unwrap();
-    let (state, _) = writer.as_mut().unwrap();
+    let state = writer.as_mut().unwrap();
     state.handle_incoming(message).unwrap();
 }
 
 #[wasm_bindgen(js_name = "signProceed")]
 pub fn sign_proceed() -> JsValue {
     let mut writer = SIGN.lock().unwrap();
-    let (state, _) = writer.as_mut().unwrap();
+    let state = writer.as_mut().unwrap();
     if state.wants_to_proceed() {
         state.proceed().unwrap();
         let messages = state.message_queue().drain(..).collect();
@@ -103,7 +99,7 @@ pub fn sign_partial(message: JsValue) -> JsValue {
     let message: String = message.into_serde().unwrap();
 
     let mut writer = SIGN.lock().unwrap();
-    let (state, _) = writer.as_mut().unwrap();
+    let state = writer.as_mut().unwrap();
     let completed_offline_stage = state.pick_output().unwrap().unwrap();
     let data = BigInt::from_bytes(message.as_bytes());
     let (_sign, partial) =
@@ -118,12 +114,6 @@ pub fn sign_partial(message: JsValue) -> JsValue {
 #[wasm_bindgen(js_name = "signCreate")]
 pub fn sign_create(partials: JsValue) -> JsValue {
     let partials: Vec<PartialSignature> = partials.into_serde().unwrap();
-
-    let participants = {
-        let reader = SIGN.lock().unwrap();
-        let (_, participants) = reader.as_ref().unwrap();
-        participants.clone()
-    };
 
     let mut writer = RESULT.lock().unwrap();
     let state = writer.as_mut().unwrap();
@@ -141,7 +131,6 @@ pub fn sign_create(partials: JsValue) -> JsValue {
         signature,
         address: crate::utils::address(&public_key),
         public_key,
-        participants,
     };
 
     *writer = None;

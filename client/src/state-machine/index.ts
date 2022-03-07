@@ -65,6 +65,4 @@ export interface SignMessage {
   signature: SignResult;
   public_key: number[];
   address: string;
-  // Key share index for each signer.
-  participants: number[];
 }
