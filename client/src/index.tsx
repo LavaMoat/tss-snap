@@ -1,4 +1,3 @@
-import "./polyfills";
 import React, { useState, useContext, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { HashRouter, Routes, Route } from "react-router-dom";
@@ -9,7 +8,6 @@ import Keygen from "./routes/keygen";
 import Sign from "./routes/sign";
 
 import store from "./store";
-import { setGroup } from "./store/group";
 
 import WebSocketProvider, { WebSocketContext } from "./websocket";
 import WorkerProvider from "./worker-provider";
@@ -20,7 +18,7 @@ const App = () => {
   if (window.Worker) {
     // Keep connected state for automated tests
     // to determine when new tabs are connected
-    let [connected, setConnected] = useState(false);
+    const [connected, setConnected] = useState(false);
     const websocket = useContext(WebSocketContext);
 
     useEffect(() => {
