@@ -272,7 +272,7 @@ const Sign = () => {
           if (proposals.length > 0) {
             return (
               <div>
-                {proposals.map((proposal: Proposal, index: number) => {
+                {proposals.map((proposal: Proposal) => {
                   return (
                     <Proposal
                       key={proposal.key}

@@ -20,7 +20,7 @@ export interface Round {
 
 export interface Finalizer<R> {
   name: string;
-  finalize: (incoming?: Message[]) => Promise<R>;
+  finalize: (incoming: Message[]) => Promise<R>;
 }
 
 export interface StreamTransport {
@@ -147,14 +147,12 @@ export class RoundBased<R> {
 
   waitForRound(round: number): Promise<Message[]> {
     return new Promise((resolve) => {
-      let interval: any;
-      const isReady = () => {
+      const interval = setInterval(() => {
         if (this.sink.isReady(round)) {
           clearInterval(interval);
           resolve(this.sink.take(round));
         }
-      };
-      interval = setInterval(isReady, 50);
+      }, 50);
     });
   }
 

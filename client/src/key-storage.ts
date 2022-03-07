@@ -48,7 +48,7 @@ export function loadKeysForParties(parties: number): KeyStorage {
   const keyData = loadKeys() as Map<[string, number, number], KeyShare>;
   const keyDataForParties = new Map();
   for (const [key, value] of keyData.entries()) {
-    const [,, keyParties] = key;
+    const [, , keyParties] = key;
     if (keyParties === parties) {
       keyDataForParties.set(key, value);
     }

@@ -91,7 +91,7 @@ const CreateGroup = (props: CreateGroupProps) => {
   );
 };
 
-export default () => {
+export default function Home() {
   const navigate = useNavigate();
   const { group } = useSelector(groupSelector);
   const dispatch = useDispatch();
@@ -117,4 +117,4 @@ export default () => {
   }
 
   return <CreateGroup onSubmit={onCreateGroupSubmit} />;
-};
+}

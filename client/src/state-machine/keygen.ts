@@ -1,4 +1,4 @@
-import { KeyShare, SessionInfo, Phase } from ".";
+import { KeyShare, SessionInfo } from ".";
 import { WebSocketClient } from "../websocket";
 
 import {
@@ -22,7 +22,7 @@ export async function generateKeyShare(
 
   const standardTransition = async (
     incoming: Message[]
-  ): Promise<[number, Message[]] | null> => {
+  ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
       await worker.keygenHandleIncoming(message);
     }
@@ -32,9 +32,7 @@ export async function generateKeyShare(
   const rounds: Round[] = [
     {
       name: "KEYGEN_ROUND_1",
-      transition: async (
-        incoming: Message[]
-      ): Promise<[number, Message[]] | null> => {
+      transition: async (): Promise<[number, Message[]]> => {
         return await worker.keygenProceed();
       },
     },

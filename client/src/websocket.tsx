@@ -46,7 +46,7 @@ export class WebSocketClient extends EventEmitter {
       this.websocket.close();
     }
     this.websocket = new WebSocket(url);
-    this.websocket.onopen = (e) => {
+    this.websocket.onopen = (/* event */) => {
       this.connected = true;
 
       // Some routes make requests before the connection
@@ -58,7 +58,7 @@ export class WebSocketClient extends EventEmitter {
 
       this.emit("open");
     };
-    this.websocket.onclose = (e) => {
+    this.websocket.onclose = (/* event */) => {
       this.connected = false;
       this.emit("close");
     };
@@ -114,7 +114,7 @@ export class WebSocketClient extends EventEmitter {
 const WebSocketContext = createContext(null);
 export { WebSocketContext };
 
-type WebSocketProviderProps = PropsWithChildren<{}>;
+type WebSocketProviderProps = PropsWithChildren<Record<string, unknown>>;
 
 // WARN: Must create the client outside of the WebSocketProvider
 // WARN: component render function otherwise multiple websockets

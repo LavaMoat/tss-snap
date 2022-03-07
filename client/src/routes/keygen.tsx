@@ -1,7 +1,7 @@
-import React, { Component, useState, useEffect, useContext } from "react";
+import React, { Component, useEffect, useContext } from "react";
 import { useSelector, useDispatch, connect } from "react-redux";
 import { groupSelector, GroupInfo, setGroup } from "../store/group";
-import { keygenSelector, setKeygenSession, setKeyShare } from "../store/keygen";
+import { setKeygenSession, setKeyShare } from "../store/keygen";
 import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
 import { AppDispatch, RootState } from "../store";
@@ -171,18 +171,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
     websocket.on("sessionLoad", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
-        const [publicAddress, partyNumber, _parties] =
-          this.state.loadedKeyShare;
+        const [publicAddress, ,] = this.state.loadedKeyShare;
         const keyShare = findKeyValue(
           this.state.savedKeys,
           this.state.loadedKeyShare
         );
-
-        /*
-        console.log("Got session load event!!!", this.state.loadedKeyShare);
-        console.log("Got session load event!!!", this.state.savedKeys);
-        console.log("Got session load event!!!", partyNumber, keyShare);
-        */
 
         this.props.dispatch(setKeyShare(keyShare));
         this.props.navigate(`/sign/${publicAddress}`);
@@ -283,7 +276,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e: React.MouseEvent<HTMLButtonElement>
     ) => {
       e.preventDefault();
-      const [_publicAddress, partyNumber, _parties] = this.state.loadedKeyShare;
+      const [, partyNumber] = this.state.loadedKeyShare;
       await websocket.rpc({
         method: "Session.load",
         params: [
@@ -416,7 +409,7 @@ const ConnectedKeygen = connect((state: RootState) => {
   return { keyShare: state.keygen.keyShare };
 })(Keygen);
 
-export default () => {
+export default function KeyGenerator() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { group } = useSelector(groupSelector);
@@ -450,7 +443,7 @@ export default () => {
       <hr />
       <p>
         To create more connected parties open{" "}
-        <a href={location.href} target="_blank">
+        <a href={location.href} target="_blank" rel="noreferrer">
           this link
         </a>{" "}
         in another window/tab or &nbsp;
@@ -473,4 +466,4 @@ export default () => {
       </WorkerContext.Consumer>
     </>
   );
-};
+}

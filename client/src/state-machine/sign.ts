@@ -1,4 +1,4 @@
-import { KeyShare, SessionInfo, SignMessage, PartySignup, Phase } from ".";
+import { KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
 import { WebSocketClient } from "../websocket";
 import { GroupInfo } from "../store/group";
 
@@ -6,8 +6,6 @@ import {
   Message,
   Round,
   RoundBased,
-  WebSocketStream,
-  WebSocketSink,
   StreamTransport,
   SinkTransport,
   onTransition,
@@ -22,9 +20,7 @@ async function getParticipants(
   const rounds: Round[] = [
     {
       name: "SIGN_ROUND_0",
-      transition: async (
-        incoming: Message[]
-      ): Promise<[number, Message[]] | null> => {
+      transition: async (): Promise<[number, Message[]]> => {
         const index = keyShare.localKey.i;
 
         const round = 0;
@@ -86,7 +82,7 @@ async function offlineStage(
 ): Promise<void> {
   const standardTransition = async (
     incoming: Message[]
-  ): Promise<[number, Message[]] | null> => {
+  ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
       await worker.signHandleIncoming(message);
     }
@@ -96,9 +92,7 @@ async function offlineStage(
   const rounds: Round[] = [
     {
       name: "SIGN_ROUND_1",
-      transition: async (
-        incoming: Message[]
-      ): Promise<[number, Message[]] | null> => {
+      transition: async (): Promise<[number, Message[]]> => {
         return await worker.signProceed();
       },
     },
@@ -153,9 +147,7 @@ async function partialSignature(
   const rounds: Round[] = [
     {
       name: "SIGN_ROUND_8",
-      transition: async (
-        incoming: Message[]
-      ): Promise<[number, Message[]] | null> => {
+      transition: async (): Promise<[number, Message[]]> => {
         const partial = await worker.signPartial(message);
         const round = 8;
         // Broadcast the partial signature
