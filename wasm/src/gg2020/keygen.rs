@@ -13,6 +13,9 @@ use std::sync::{Arc, Mutex};
 
 //use crate::{console_log, log};
 
+const ERR_NO_STATE_MACHINE: &str =
+    "keygen is not prepared, perhaps you forgot to call keygenInit()";
+
 static KEYGEN: Lazy<Arc<Mutex<Option<Keygen>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
@@ -68,7 +71,9 @@ pub fn keygen_handle_incoming(message: JsValue) -> Result<(), JsError> {
     let message: Msg<<Keygen as StateMachine>::MessageBody> =
         message.into_serde()?;
     let mut writer = KEYGEN.lock()?;
-    let state = writer.as_mut().unwrap();
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
     state.handle_incoming(message)?;
     Ok(())
 }
@@ -76,7 +81,9 @@ pub fn keygen_handle_incoming(message: JsValue) -> Result<(), JsError> {
 #[wasm_bindgen(js_name = "keygenProceed")]
 pub fn keygen_proceed() -> Result<JsValue, JsError> {
     let mut writer = KEYGEN.lock()?;
-    let state = writer.as_mut().unwrap();
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
     state.proceed()?;
     let messages = state.message_queue().drain(..).collect();
     let round = state.current_round();
@@ -87,7 +94,9 @@ pub fn keygen_proceed() -> Result<JsValue, JsError> {
 #[wasm_bindgen(js_name = "keygenCreate")]
 pub fn keygen_create() -> Result<JsValue, JsError> {
     let mut writer = KEYGEN.lock()?;
-    let state = writer.as_mut().unwrap();
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
     let local_key = state.pick_output().unwrap()?;
     let public_key = local_key.public_key().to_bytes(false).to_vec();
     let key_share = KeyShare {
