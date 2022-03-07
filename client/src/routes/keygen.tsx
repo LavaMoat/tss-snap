@@ -6,6 +6,7 @@ import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { WebSocketContext } from "../websocket";
 import { AppDispatch, RootState } from "../store";
 
+import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import {
   saveKeyShare,
@@ -34,7 +35,7 @@ const copyToClipboard = async (
 interface KeygenProps {
   group: GroupInfo;
   dispatch: AppDispatch;
-  worker: any;
+  worker: EcdsaWorker;
   keyShare?: KeyShare;
   navigate: NavigateFunction;
 }

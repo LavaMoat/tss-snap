@@ -5,12 +5,14 @@ export interface RpcRequest {
   jsonrpc?: string;
   id?: number;
   method: string;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   params?: any[];
 }
 
 export interface RpcResponse {
   jsonrpc: string;
   id?: number;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   result?: any;
   error?: RpcError;
 }
@@ -18,6 +20,7 @@ export interface RpcResponse {
 export interface RpcError {
   code: number;
   message: string;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   data?: any;
 }
 

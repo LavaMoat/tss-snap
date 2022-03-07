@@ -1,5 +1,6 @@
 import { KeyShare, SessionInfo } from ".";
 import { WebSocketClient } from "../websocket";
+import { EcdsaWorker } from "../worker";
 
 import {
   Message,
@@ -12,7 +13,7 @@ import {
 
 export async function generateKeyShare(
   websocket: WebSocketClient,
-  worker: any,
+  worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,
   info: SessionInfo

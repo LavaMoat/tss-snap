@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 
 import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector } from "../store/keygen";
+import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketContext, WebSocketClient } from "../websocket";
 import { Phase, Session, KeyShare } from "../state-machine";
@@ -27,7 +28,7 @@ interface ProposalProps {
   group: GroupInfo;
   proposal: Proposal;
   websocket: WebSocketClient;
-  worker: any;
+  worker: EcdsaWorker;
   keyShare: KeyShare;
 }
 

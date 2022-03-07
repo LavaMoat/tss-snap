@@ -1,3 +1,13 @@
+import {
+  KeyShare,
+  LocalKey,
+  Parameters,
+  PartySignup,
+  PartialSignature,
+  SignMessage,
+} from "./state-machine";
+import { Message } from "./state-machine/round-based";
+
 import init, {
   initThreadPool,
   keygenInit,
@@ -12,6 +22,25 @@ import init, {
   sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
+
+export interface EcdsaWorker {
+  keygenInit(parameters: Parameters, partySignup: PartySignup): Promise<void>;
+  keygenHandleIncoming(message: Message): Promise<void>;
+  keygenProceed(): Promise<[number, Message[]]>;
+  keygenCreate(): Promise<KeyShare>;
+
+  signInit(
+    index: number,
+    participants: number[],
+    localKey: LocalKey
+  ): Promise<void>;
+  signHandleIncoming(message: Message): Promise<void>;
+  signProceed(): Promise<[number, Message[]]>;
+  signPartial(message: string): Promise<PartialSignature>;
+  signCreate(partials: PartialSignature[]): Promise<SignMessage>;
+
+  sha256(value: string): Promise<string>;
+}
 
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;

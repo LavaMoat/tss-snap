@@ -10,6 +10,7 @@ export interface Message {
   sender: number;
   uuid: string;
   receiver?: number;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   body: any;
 }
 

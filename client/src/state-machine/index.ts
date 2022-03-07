@@ -55,12 +55,20 @@ export interface SessionInfo {
   partySignup: PartySignup;
 }
 
+// Opaque type for partial signatures returned from the WASM module.
+export interface PartialSignature {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  [key: string]: any;
+}
+
+// Result of signing a message.
 export interface SignResult {
   r: string;
   s: string;
   recid: number;
 }
 
+// A signed message with public key and address pre-computed.
 export interface SignMessage {
   signature: SignResult;
   public_key: number[];

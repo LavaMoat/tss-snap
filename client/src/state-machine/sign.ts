@@ -1,6 +1,7 @@
 import { KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
 import { WebSocketClient } from "../websocket";
 import { GroupInfo } from "../store/group";
+import { EcdsaWorker } from "../worker";
 
 import {
   Message,
@@ -76,7 +77,7 @@ async function getParticipants(
 }
 
 async function offlineStage(
-  worker: any,
+  worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport
 ): Promise<void> {
@@ -138,7 +139,7 @@ async function offlineStage(
 }
 
 async function partialSignature(
-  worker: any,
+  worker: EcdsaWorker,
   info: SessionInfo,
   message: string,
   stream: StreamTransport,
@@ -186,7 +187,7 @@ async function partialSignature(
 
 async function signMessage(
   websocket: WebSocketClient,
-  worker: any,
+  worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,
   info: SessionInfo,
@@ -211,7 +212,7 @@ async function signMessage(
 
 export async function sign(
   websocket: WebSocketClient,
-  worker: any,
+  worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,
   message: string,
