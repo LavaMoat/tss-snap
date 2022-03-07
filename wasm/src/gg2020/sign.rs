@@ -18,6 +18,9 @@ use wasm_bindgen::prelude::*;
 
 //use crate::{console_log, log};
 
+const ERR_NO_STATE_MACHINE: &str =
+    "sign is not prepared, perhaps you forgot to call signInit()";
+
 static SIGN: Lazy<Arc<Mutex<Option<OfflineStage>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
@@ -61,71 +64,85 @@ pub struct SignResult {
 }
 
 #[wasm_bindgen(js_name = "signInit")]
-pub fn sign_init(index: JsValue, participants: JsValue, local_key: JsValue) {
-    let index: u16 = index.into_serde().unwrap();
-    let participants: Vec<u16> = participants.into_serde().unwrap();
-    let local_key: LocalKey<Secp256k1> = local_key.into_serde().unwrap();
-    let mut writer = SIGN.lock().unwrap();
-    *writer = Some(
-        OfflineStage::new(index, participants.clone(), local_key).unwrap(),
-    );
+pub fn sign_init(
+    index: JsValue,
+    participants: JsValue,
+    local_key: JsValue,
+) -> Result<(), JsError> {
+    let index: u16 = index.into_serde()?;
+    let participants: Vec<u16> = participants.into_serde()?;
+    let local_key: LocalKey<Secp256k1> = local_key.into_serde()?;
+    let mut writer = SIGN.lock()?;
+    *writer = Some(OfflineStage::new(index, participants.clone(), local_key)?);
+    Ok(())
 }
 
 #[wasm_bindgen(js_name = "signHandleIncoming")]
-pub fn sign_handle_incoming(message: JsValue) {
+pub fn sign_handle_incoming(message: JsValue) -> Result<(), JsError> {
     let message: Msg<<OfflineStage as StateMachine>::MessageBody> =
-        message.into_serde().unwrap();
-    let mut writer = SIGN.lock().unwrap();
-    let state = writer.as_mut().unwrap();
-    state.handle_incoming(message).unwrap();
+        message.into_serde()?;
+    let mut writer = SIGN.lock()?;
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
+    state.handle_incoming(message)?;
+    Ok(())
 }
 
 #[wasm_bindgen(js_name = "signProceed")]
-pub fn sign_proceed() -> JsValue {
-    let mut writer = SIGN.lock().unwrap();
-    let state = writer.as_mut().unwrap();
+pub fn sign_proceed() -> Result<JsValue, JsError> {
+    let mut writer = SIGN.lock()?;
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
     if state.wants_to_proceed() {
-        state.proceed().unwrap();
+        state.proceed()?;
         let messages = state.message_queue().drain(..).collect();
         let round = state.current_round();
         let messages = RoundMsg::from_round(round, messages);
-        JsValue::from_serde(&(round, &messages)).unwrap()
+        Ok(JsValue::from_serde(&(round, &messages))?)
     } else {
-        JsValue::from_serde(&false).unwrap()
+        Ok(JsValue::from_serde(&false)?)
     }
 }
 
 #[wasm_bindgen(js_name = "signPartial")]
-pub fn sign_partial(message: JsValue) -> JsValue {
-    let message: String = message.into_serde().unwrap();
+pub fn sign_partial(message: JsValue) -> Result<JsValue, JsError> {
+    let message: String = message.into_serde()?;
 
-    let mut writer = SIGN.lock().unwrap();
-    let state = writer.as_mut().unwrap();
-    let completed_offline_stage = state.pick_output().unwrap().unwrap();
+    let mut writer = SIGN.lock()?;
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
+    let completed_offline_stage = state.pick_output().unwrap()?;
     let data = BigInt::from_bytes(message.as_bytes());
     let (_sign, partial) =
-        SignManual::new(data.clone(), completed_offline_stage.clone()).unwrap();
+        SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
-    let mut writer = RESULT.lock().unwrap();
+    let mut writer = RESULT.lock()?;
     *writer = Some((completed_offline_stage, data));
 
-    JsValue::from_serde(&partial).unwrap()
+    Ok(JsValue::from_serde(&partial)?)
 }
 
 #[wasm_bindgen(js_name = "signCreate")]
-pub fn sign_create(partials: JsValue) -> JsValue {
-    let partials: Vec<PartialSignature> = partials.into_serde().unwrap();
+pub fn sign_create(partials: JsValue) -> Result<JsValue, JsError> {
+    let partials: Vec<PartialSignature> = partials.into_serde()?;
 
-    let mut writer = RESULT.lock().unwrap();
-    let state = writer.as_mut().unwrap();
+    let mut writer = RESULT.lock()?;
+    let state = writer
+        .as_mut()
+        .ok_or_else(|| JsError::new(ERR_NO_STATE_MACHINE))?;
     let (completed_offline_stage, data) = state;
     let pk = completed_offline_stage.public_key().clone();
 
     let (sign, _partial) =
-        SignManual::new(data.clone(), completed_offline_stage.clone()).unwrap();
+        SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
-    let signature = sign.complete(&partials).unwrap();
-    verify(&signature, &pk, &data).unwrap();
+    let signature = sign.complete(&partials)?;
+    verify(&signature, &pk, &data).map_err(|e| {
+        JsError::new(&format!("failed to verify signature: {:?}", e))
+    })?;
 
     let public_key = pk.to_bytes(false).to_vec();
     let result = SignResult {
@@ -136,9 +153,9 @@ pub fn sign_create(partials: JsValue) -> JsValue {
 
     *writer = None;
     {
-        let mut writer = SIGN.lock().unwrap();
+        let mut writer = SIGN.lock()?;
         *writer = None;
     }
 
-    JsValue::from_serde(&result).unwrap()
+    Ok(JsValue::from_serde(&result)?)
 }

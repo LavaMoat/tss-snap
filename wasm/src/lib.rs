@@ -30,10 +30,9 @@ mod gg2020;
 mod utils;
 
 #[wasm_bindgen]
-pub fn sha256(message: JsValue) -> JsValue {
-    let message: String = message.into_serde::<String>().unwrap();
+pub fn sha256(message: JsValue) -> Result<JsValue, JsError> {
+    let message: String = message.into_serde()?;
     let mut hasher = Sha256::new();
     hasher.update(&message);
-    let result = hex::encode(hasher.finalize());
-    JsValue::from_serde(&result).unwrap()
+    Ok(JsValue::from_serde(&hex::encode(hasher.finalize()))?)
 }
