@@ -86,7 +86,8 @@ const Proposal = ({
     setPartyNumber(number);
     setSession(newSession);
 
-    // FIXME: handle sessionMessage listener when signing multiple times!
+    // Ensure we don't leak listeners when signing multiple times
+    websocket.removeAllListeners("sessionMessage");
 
     // Create the sink as early as possible
     const sink = new WebSocketSink(
