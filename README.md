@@ -70,6 +70,14 @@ docker build . -t ecdsa-wasm
 docker run -p 3030:8080 -it ecdsa-wasm
 ```
 
+## API Documentation
+
+To view the API documentation for the webassembly bindings run:
+
+```
+(cd wasm && cargo doc --open --no-deps)
+```
+
 ## Notes
 
 ### Thread Support (Rayon)

@@ -1,2 +1,2 @@
-mod keygen;
-mod sign;
+pub mod keygen;
+pub mod sign;

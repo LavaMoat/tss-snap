@@ -1,3 +1,4 @@
+//! Key generation.
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{Keygen, ProtocolMessage};
 
 use wasm_bindgen::prelude::*;
@@ -38,6 +39,7 @@ impl RoundMsg {
     }
 }
 
+/// Round-based key share generator.
 #[wasm_bindgen]
 pub struct KeyGenerator {
     inner: Keygen,
@@ -45,6 +47,7 @@ pub struct KeyGenerator {
 
 #[wasm_bindgen]
 impl KeyGenerator {
+    /// Create a key generator.
     #[wasm_bindgen(constructor)]
     pub fn new(
         parameters: JsValue,
@@ -63,6 +66,7 @@ impl KeyGenerator {
         })
     }
 
+    /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
     pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
         let message: Msg<<Keygen as StateMachine>::MessageBody> =
@@ -71,6 +75,7 @@ impl KeyGenerator {
         Ok(())
     }
 
+    /// Proceed to the next round.
     pub fn proceed(&mut self) -> Result<JsValue, JsError> {
         self.inner.proceed()?;
         let messages = self.inner.message_queue().drain(..).collect();
@@ -79,6 +84,7 @@ impl KeyGenerator {
         Ok(JsValue::from_serde(&(round, &messages))?)
     }
 
+    /// Create the key share.
     pub fn create(&mut self) -> Result<JsValue, JsError> {
         let local_key = self.inner.pick_output().unwrap()?;
         let public_key = local_key.public_key().to_bytes(false).to_vec();
