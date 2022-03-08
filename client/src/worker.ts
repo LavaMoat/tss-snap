@@ -1,6 +1,5 @@
 import {
   Message,
-  KeyShare,
   LocalKey,
   Parameters,
   PartySignup,
@@ -10,10 +9,7 @@ import {
 
 import init, {
   initThreadPool,
-  keygenInit,
-  keygenHandleIncoming,
-  keygenProceed,
-  keygenCreate,
+  KeyGenerator,
   signInit,
   signHandleIncoming,
   signProceed,
@@ -24,11 +20,7 @@ import init, {
 import * as Comlink from "comlink";
 
 export interface EcdsaWorker {
-  keygenInit(parameters: Parameters, partySignup: PartySignup): Promise<void>;
-  keygenHandleIncoming(message: Message): Promise<void>;
-  keygenProceed(): Promise<[number, Message[]]>;
-  keygenCreate(): Promise<KeyShare>;
-
+  KeyGenerator(parameters: Parameters, partySignup: PartySignup): Promise<void>;
   signInit(
     index: number,
     participants: number[],
@@ -64,10 +56,7 @@ void (async function () {
 })();
 
 Comlink.expose({
-  keygenInit,
-  keygenHandleIncoming,
-  keygenProceed,
-  keygenCreate,
+  KeyGenerator,
   signInit,
   signHandleIncoming,
   signProceed,
