@@ -16,7 +16,7 @@ module.exports = {
         exclude: /node_modules/,
       },
       {
-        test: /(worker|websocket)\.tsx?$/,
+        test: /websocket-provider\.tsx?$/,
         loader: "string-replace-loader",
         options: {
           search: "__URL__",
@@ -27,10 +27,6 @@ module.exports = {
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
-    fallback: {
-      stream: require.resolve("stream-browserify"),
-      assert: require.resolve("assert/"),
-    },
   },
   output: {
     path: path.resolve(__dirname, "dist"),

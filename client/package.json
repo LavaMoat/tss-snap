@@ -30,8 +30,6 @@
   "homepage": "https://github.com/LavaMoat/ecdsa-wasm",
   "dependencies": {
     "@reduxjs/toolkit": "^1.7.1",
-    "assert": "^2.0.0",
-    "buffer": "^6.0.3",
     "comlink": "^4.3.1",
     "ecdsa-wasm": "file:../wasm/pkg",
     "history": "^5.2.0",

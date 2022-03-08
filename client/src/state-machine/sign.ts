@@ -194,7 +194,6 @@ async function signMessage(
 ): Promise<SignMessage> {
   const participants = await getParticipants(info, keyShare, stream, sink);
 
-  // Initialize the WASM state machine
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const signer: Signer = await new (worker.Signer as any)(
     info.partySignup.number,

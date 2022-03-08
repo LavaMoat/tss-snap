@@ -3,7 +3,7 @@ import { useSelector, useDispatch, connect } from "react-redux";
 import { groupSelector, GroupInfo, setGroup } from "../store/group";
 import { setKeygenSession, setKeyShare } from "../store/keygen";
 import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
-import { WebSocketContext } from "../websocket";
+import { WebSocketContext } from "../websocket-provider";
 import { AppDispatch, RootState } from "../store";
 
 import { EcdsaWorker } from "../worker";

@@ -9,7 +9,7 @@ import Sign from "./routes/sign";
 
 import store from "./store";
 
-import WebSocketProvider, { WebSocketContext } from "./websocket";
+import WebSocketProvider, { WebSocketContext } from "./websocket-provider";
 import WorkerProvider from "./worker-provider";
 
 const NotFound = () => <h3>Page not found</h3>;

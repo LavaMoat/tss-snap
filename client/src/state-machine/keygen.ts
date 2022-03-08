@@ -17,7 +17,7 @@ export async function generateKeyShare(
   sink: SinkTransport,
   info: SessionInfo
 ): Promise<KeyShare> {
-  // Initialize the WASM state machine
+
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const keygen: KeyGenerator = await new (worker.KeyGenerator as any)(
     info.parameters,
@@ -58,8 +58,7 @@ export async function generateKeyShare(
     name: "KEYGEN_FINALIZE",
     finalize: async (incoming: Message[]) => {
       await standardTransition(incoming);
-      const keyShare: KeyShare = await keygen.create();
-      return keyShare;
+      return keygen.create();
     },
   };
 

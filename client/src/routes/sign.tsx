@@ -6,7 +6,8 @@ import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector } from "../store/keygen";
 import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
-import { WebSocketContext, WebSocketClient } from "../websocket";
+import { WebSocketClient } from "../websocket";
+import { WebSocketContext } from "../websocket-provider";
 import { Phase, Session, KeyShare } from "../state-machine";
 import { sign } from "../state-machine/sign";
 
