@@ -1,40 +1,21 @@
-import {
-  Message,
-  LocalKey,
-  Parameters,
-  PartySignup,
-  PartialSignature,
-  SignMessage,
-} from "./state-machine";
+import { LocalKey, Parameters, PartySignup } from "./state-machine";
 
-import init, {
-  initThreadPool,
-  KeyGenerator,
-  Signer,
-  //signInit,
-  //signHandleIncoming,
-  //signProceed,
-  //signPartial,
-  //signCreate,
-  sha256,
-} from "ecdsa-wasm";
+import init, { initThreadPool, KeyGenerator, Signer, sha256 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
 
-export interface EcdsaSigner {
-  handleIncoming(message: Message): Promise<void>;
-  proceed(): Promise<[number, Message[]]>;
-  partial(message: string): Promise<PartialSignature>;
-  create(partials: PartialSignature[]): Promise<SignMessage>;
-}
+export { KeyGenerator, Signer } from "ecdsa-wasm";
 
 export interface EcdsaWorker {
-  KeyGenerator(parameters: Parameters, partySignup: PartySignup): Promise<void>;
+  KeyGenerator(
+    parameters: Parameters,
+    partySignup: PartySignup
+  ): Promise<KeyGenerator>;
 
   Signer(
     index: number,
     participants: number[],
     localKey: LocalKey
-  ): Promise<EcdsaSigner>;
+  ): Promise<Signer>;
 
   sha256(value: string): Promise<string>;
 }
@@ -63,10 +44,5 @@ void (async function () {
 Comlink.expose({
   KeyGenerator,
   Signer,
-  //signInit,
-  //signHandleIncoming,
-  //signProceed,
-  //signPartial,
-  //signCreate,
   sha256,
 });

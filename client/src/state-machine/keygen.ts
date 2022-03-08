@@ -1,6 +1,6 @@
 import { Message, KeyShare, SessionInfo } from ".";
 import { WebSocketClient } from "../websocket";
-import { EcdsaWorker } from "../worker";
+import { EcdsaWorker, KeyGenerator } from "../worker";
 
 import {
   Round,
@@ -18,17 +18,11 @@ export async function generateKeyShare(
   info: SessionInfo
 ): Promise<KeyShare> {
   // Initialize the WASM state machine
-  const keygen = await new (worker.KeyGenerator as any)(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const keygen: KeyGenerator = await new (worker.KeyGenerator as any)(
     info.parameters,
     info.partySignup
   );
-
-  //console.log("Got key generator", keygen);
-
-  /*
-  // Initialize the WASM state machine
-  await worker.keygenInit(info.parameters, info.partySignup);
-  */
 
   const standardTransition = async (
     incoming: Message[]

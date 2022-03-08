@@ -1,7 +1,7 @@
 import { Message, KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
 import { WebSocketClient } from "../websocket";
 import { GroupInfo } from "../store/group";
-import { EcdsaWorker, EcdsaSigner } from "../worker";
+import { EcdsaWorker, Signer } from "../worker";
 
 import {
   Round,
@@ -75,7 +75,7 @@ async function getParticipants(
 }
 
 async function offlineStage(
-  signer: EcdsaSigner,
+  signer: Signer,
   stream: StreamTransport,
   sink: SinkTransport
 ): Promise<void> {
@@ -137,7 +137,7 @@ async function offlineStage(
 }
 
 async function partialSignature(
-  signer: EcdsaSigner,
+  signer: Signer,
   info: SessionInfo,
   message: string,
   stream: StreamTransport,
@@ -195,7 +195,8 @@ async function signMessage(
   const participants = await getParticipants(info, keyShare, stream, sink);
 
   // Initialize the WASM state machine
-  const signer: EcdsaSigner = await new (worker.Signer as any)(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const signer: Signer = await new (worker.Signer as any)(
     info.partySignup.number,
     participants,
     keyShare.localKey
