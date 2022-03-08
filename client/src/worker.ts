@@ -1,43 +1,21 @@
-import {
-  Message,
-  KeyShare,
-  LocalKey,
-  Parameters,
-  PartySignup,
-  PartialSignature,
-  SignMessage,
-} from "./state-machine";
+import { LocalKey, Parameters, PartySignup } from "./state-machine";
 
-import init, {
-  initThreadPool,
-  keygenInit,
-  keygenHandleIncoming,
-  keygenProceed,
-  keygenCreate,
-  signInit,
-  signHandleIncoming,
-  signProceed,
-  signPartial,
-  signCreate,
-  sha256,
-} from "ecdsa-wasm";
+import init, { initThreadPool, KeyGenerator, Signer, sha256 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
 
-export interface EcdsaWorker {
-  keygenInit(parameters: Parameters, partySignup: PartySignup): Promise<void>;
-  keygenHandleIncoming(message: Message): Promise<void>;
-  keygenProceed(): Promise<[number, Message[]]>;
-  keygenCreate(): Promise<KeyShare>;
+export { KeyGenerator, Signer } from "ecdsa-wasm";
 
-  signInit(
+export interface EcdsaWorker {
+  KeyGenerator(
+    parameters: Parameters,
+    partySignup: PartySignup
+  ): Promise<KeyGenerator>;
+
+  Signer(
     index: number,
     participants: number[],
     localKey: LocalKey
-  ): Promise<void>;
-  signHandleIncoming(message: Message): Promise<void>;
-  signProceed(): Promise<[number, Message[]]>;
-  signPartial(message: string): Promise<PartialSignature>;
-  signCreate(partials: PartialSignature[]): Promise<SignMessage>;
+  ): Promise<Signer>;
 
   sha256(value: string): Promise<string>;
 }
@@ -64,14 +42,7 @@ void (async function () {
 })();
 
 Comlink.expose({
-  keygenInit,
-  keygenHandleIncoming,
-  keygenProceed,
-  keygenCreate,
-  signInit,
-  signHandleIncoming,
-  signProceed,
-  signPartial,
-  signCreate,
+  KeyGenerator,
+  Signer,
   sha256,
 });

@@ -1,7 +1,7 @@
 import { Message, KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
 import { WebSocketClient } from "../websocket";
 import { GroupInfo } from "../store/group";
-import { EcdsaWorker } from "../worker";
+import { EcdsaWorker, Signer } from "../worker";
 
 import {
   Round,
@@ -22,7 +22,6 @@ async function getParticipants(
       name: "SIGN_ROUND_0",
       transition: async (): Promise<[number, Message[]]> => {
         const index = keyShare.localKey.i;
-
         const round = 0;
 
         // Must share our key share index
@@ -76,7 +75,7 @@ async function getParticipants(
 }
 
 async function offlineStage(
-  worker: EcdsaWorker,
+  signer: Signer,
   stream: StreamTransport,
   sink: SinkTransport
 ): Promise<void> {
@@ -84,16 +83,16 @@ async function offlineStage(
     incoming: Message[]
   ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
-      await worker.signHandleIncoming(message);
+      await signer.handleIncoming(message);
     }
-    return await worker.signProceed();
+    return await signer.proceed();
   };
 
   const rounds: Round[] = [
     {
       name: "SIGN_ROUND_1",
       transition: async (): Promise<[number, Message[]]> => {
-        return await worker.signProceed();
+        return await signer.proceed();
       },
     },
     {
@@ -138,7 +137,7 @@ async function offlineStage(
 }
 
 async function partialSignature(
-  worker: EcdsaWorker,
+  signer: Signer,
   info: SessionInfo,
   message: string,
   stream: StreamTransport,
@@ -148,7 +147,7 @@ async function partialSignature(
     {
       name: "SIGN_ROUND_8",
       transition: async (): Promise<[number, Message[]]> => {
-        const partial = await worker.signPartial(message);
+        const partial = await signer.partial(message);
         const round = 8;
         // Broadcast the partial signature
         // to other clients
@@ -169,7 +168,7 @@ async function partialSignature(
     name: "SIGN_PARTIAL",
     finalize: async (incoming: Message[]) => {
       const partials = incoming.map((msg) => msg.body);
-      return await worker.signCreate(partials);
+      return await signer.create(partials);
     },
   };
 
@@ -196,15 +195,16 @@ async function signMessage(
   const participants = await getParticipants(info, keyShare, stream, sink);
 
   // Initialize the WASM state machine
-  await worker.signInit(
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const signer: Signer = await new (worker.Signer as any)(
     info.partySignup.number,
     participants,
     keyShare.localKey
   );
 
-  await offlineStage(worker, stream, sink);
+  await offlineStage(signer, stream, sink);
 
-  const signed = await partialSignature(worker, info, message, stream, sink);
+  const signed = await partialSignature(signer, info, message, stream, sink);
   websocket.removeAllListeners("sessionMessage");
   return signed;
 }
