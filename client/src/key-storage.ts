@@ -1,4 +1,4 @@
-import { KeyShare } from "./state-machine";
+import { KeyShare } from "./mpc";
 
 const KEY = "keys";
 

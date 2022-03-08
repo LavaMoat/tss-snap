@@ -1,5 +1,5 @@
 import { Message, KeyShare, SessionInfo } from ".";
-import { WebSocketClient } from "../websocket";
+import { WebSocketClient } from "./clients/websocket";
 import { EcdsaWorker, KeyGenerator } from "../worker";
 
 import {
@@ -17,7 +17,6 @@ export async function generateKeyShare(
   sink: SinkTransport,
   info: SessionInfo
 ): Promise<KeyShare> {
-
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const keygen: KeyGenerator = await new (worker.KeyGenerator as any)(
     info.parameters,

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Parameters } from "../state-machine";
+import { Parameters } from "../mpc";
 
 export interface GroupInfo {
   uuid: string;

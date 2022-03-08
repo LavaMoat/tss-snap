@@ -15,13 +15,10 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { KeyShare, Session, Phase } from "../state-machine";
-import { generateKeyShare } from "../state-machine/keygen";
+import { KeyShare, Session, Phase } from "../mpc";
+import { generateKeyShare } from "../mpc/keygen";
 
-import {
-  WebSocketStream,
-  WebSocketSink,
-} from "../state-machine/transports/websocket";
+import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,
