@@ -33,8 +33,8 @@ pub use wasm_bindgen_rayon::init_thread_pool;
 mod gg2020;
 mod utils;
 
-pub use gg2020::keygen::KeyGenerator;
-pub use gg2020::sign::Signer;
+pub use gg2020::keygen::{KeyGenerator, KeyShare};
+pub use gg2020::sign::{Signer, Signature};
 
 #[doc(hidden)]
 #[wasm_bindgen]

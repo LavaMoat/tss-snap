@@ -1,12 +1,12 @@
 //! Key generation.
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{Keygen, ProtocolMessage};
+use curv::elliptic::curves::secp256_k1::Secp256k1;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{Keygen, ProtocolMessage, LocalKey};
 
 use wasm_bindgen::prelude::*;
 
 use common::{Parameters, PartySignup};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::utils::KeyShare;
 use round_based::{Msg, StateMachine};
 
 //use crate::{console_log, log};
@@ -37,6 +37,19 @@ impl RoundMsg {
             })
             .collect::<Vec<_>>()
     }
+}
+
+/// Generated key share.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KeyShare {
+    /// The secret private key.
+    #[serde(rename = "localKey")]
+    pub local_key: LocalKey<Secp256k1>,
+    /// The public key.
+    #[serde(rename = "publicKey")]
+    pub public_key: Vec<u8>,
+    /// Address generated from the public key.
+    pub address: String,
 }
 
 /// Round-based key share generator.
