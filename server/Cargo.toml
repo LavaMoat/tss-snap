@@ -5,6 +5,7 @@ edition = "2018"
 default-run = "ecdsa-wasm"
 
 [dependencies]
+common = {path = "../common"}
 anyhow = "1"
 warp = "0.3"
 log = "0.4"
@@ -18,8 +19,6 @@ structopt = "0.3"
 uuid = { version = "0.8", features = ["v4"] }
 json-rpc2 = { version = "0.11", features = ["async"] }
 async-trait = "0.1"
-
-common = {path = "../common"}
 
 [[bin]]
 name = "ecdsa-wasm"
