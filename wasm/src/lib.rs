@@ -1,4 +1,4 @@
-//! Webassembly bindings for the GG2020 protocol in [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) for MPC key generation and signing.
+//! Webassembly bindings to the GG2020 protocol in [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) for MPC key generation and signing.
 #![deny(missing_docs)]
 use sha2::{Digest, Sha256};
 use wasm_bindgen::prelude::*;
@@ -33,8 +33,9 @@ pub use wasm_bindgen_rayon::init_thread_pool;
 mod gg2020;
 mod utils;
 
-pub use gg2020::keygen::{KeyGenerator, KeyShare};
-pub use gg2020::sign::{Signer, Signature};
+// Expose these types for API documentation.
+pub use gg2020::keygen::{KeyGenerator, KeyShare, PartySignup};
+pub use gg2020::sign::{Signature, Signer};
 
 #[doc(hidden)]
 #[wasm_bindgen]

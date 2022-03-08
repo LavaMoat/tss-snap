@@ -4,7 +4,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::key
 
 use wasm_bindgen::prelude::*;
 
-use common::{Parameters, PartySignup};
+use common::Parameters;
 use serde::{Deserialize, Serialize};
 
 use round_based::{Msg, StateMachine};
@@ -37,6 +37,15 @@ impl RoundMsg {
             })
             .collect::<Vec<_>>()
     }
+}
+
+/// Session information for a single party.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct PartySignup {
+    /// Unique index for the party.
+    pub number: u16,
+    /// Session identifier.
+    pub uuid: String,
 }
 
 /// Generated key share.
