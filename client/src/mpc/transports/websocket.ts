@@ -1,4 +1,4 @@
-import { WebSocketClient } from "../../websocket";
+import { WebSocketClient } from "../clients/websocket";
 import { Message, Phase } from "../";
 
 // Stream for outgoing messages that send JSON-RPC

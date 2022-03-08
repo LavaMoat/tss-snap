@@ -6,15 +6,12 @@ import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector } from "../store/keygen";
 import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
-import { WebSocketClient } from "../websocket";
+import { WebSocketClient } from "../mpc/clients/websocket";
 import { WebSocketContext } from "../websocket-provider";
-import { Phase, Session, KeyShare } from "../state-machine";
-import { sign } from "../state-machine/sign";
+import { Phase, Session, KeyShare } from "../mpc";
+import { sign } from "../mpc/sign";
 
-import {
-  WebSocketStream,
-  WebSocketSink,
-} from "../state-machine/transports/websocket";
+import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
 
 interface Proposal {
   key: number;

@@ -1,4 +1,4 @@
-import { LocalKey, Parameters, PartySignup } from "./state-machine";
+import { LocalKey, Parameters, PartySignup } from "./mpc";
 
 import init, { initThreadPool, KeyGenerator, Signer, sha256 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
