@@ -10,26 +10,31 @@ import {
 import init, {
   initThreadPool,
   KeyGenerator,
-  signInit,
-  signHandleIncoming,
-  signProceed,
-  signPartial,
-  signCreate,
+  Signer,
+  //signInit,
+  //signHandleIncoming,
+  //signProceed,
+  //signPartial,
+  //signCreate,
   sha256,
 } from "ecdsa-wasm";
 import * as Comlink from "comlink";
 
+export interface EcdsaSigner {
+  handleIncoming(message: Message): Promise<void>;
+  proceed(): Promise<[number, Message[]]>;
+  partial(message: string): Promise<PartialSignature>;
+  create(partials: PartialSignature[]): Promise<SignMessage>;
+}
+
 export interface EcdsaWorker {
   KeyGenerator(parameters: Parameters, partySignup: PartySignup): Promise<void>;
-  signInit(
+
+  Signer(
     index: number,
     participants: number[],
     localKey: LocalKey
-  ): Promise<void>;
-  signHandleIncoming(message: Message): Promise<void>;
-  signProceed(): Promise<[number, Message[]]>;
-  signPartial(message: string): Promise<PartialSignature>;
-  signCreate(partials: PartialSignature[]): Promise<SignMessage>;
+  ): Promise<EcdsaSigner>;
 
   sha256(value: string): Promise<string>;
 }
@@ -57,10 +62,11 @@ void (async function () {
 
 Comlink.expose({
   KeyGenerator,
-  signInit,
-  signHandleIncoming,
-  signProceed,
-  signPartial,
-  signCreate,
+  Signer,
+  //signInit,
+  //signHandleIncoming,
+  //signProceed,
+  //signPartial,
+  //signCreate,
   sha256,
 });
