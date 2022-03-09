@@ -25,6 +25,7 @@ use common::Parameters;
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
+/// Represents the kinds of supported session types.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Phase {
     #[serde(rename = "keygen")]
@@ -39,15 +40,21 @@ impl Default for Phase {
     }
 }
 
+/// Group is a collection of connected websocket clients.
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct Group {
+    /// Unique identifier for the group.
     pub uuid: String,
+    /// Parameters for key generation.
     pub params: Parameters,
+    /// Human-redable label for the group.
     pub label: String,
+    /// Collection of client identifiers.
     #[serde(skip)]
-    pub clients: Vec<usize>,
+    pub(crate) clients: Vec<usize>,
+    /// Sessions belonging to this group.
     #[serde(skip)]
-    pub sessions: HashMap<String, Session>,
+    pub(crate) sessions: HashMap<String, Session>,
 }
 
 impl Group {
@@ -62,19 +69,22 @@ impl Group {
     }
 }
 
+/// Session used for key generation or signing communication.
 #[derive(Debug, Clone, Serialize)]
 pub struct Session {
+    /// Unique identifier for the session.
     pub uuid: String,
+    /// Kind of the session.
     pub phase: Phase,
 
     /// Map party number to connection identifier
     #[serde(skip)]
-    pub party_signups: Vec<(u16, usize)>,
+    pub(crate) party_signups: Vec<(u16, usize)>,
 
     /// Party numbers for those that have
     /// marked the session as finished.
     #[serde(skip)]
-    pub finished: HashSet<u16>,
+    pub(crate) finished: HashSet<u16>,
 }
 
 impl Default for Session {
@@ -100,6 +110,11 @@ impl From<Phase> for Session {
 }
 
 impl Session {
+
+    /// Signup to a session.
+    ///
+    /// This marks a connected client as actively participating in
+    /// this session and issues them a unique party signup number.
     pub fn signup(&mut self, conn: usize) -> u16 {
         let last = self.party_signups.last();
         let num = if last.is_none() {
@@ -112,6 +127,10 @@ impl Session {
         num
     }
 
+    /// Load an existing party signup number into this session.
+    ///
+    /// This is used when loading key shares that have been persisted
+    /// to perform signing using the saved key shares.
     pub fn load(
         &mut self,
         parameters: &Parameters,
@@ -136,6 +155,7 @@ impl Session {
     }
 }
 
+/// Collection of clients and groups the server is managing.
 #[derive(Debug)]
 pub struct State {
     /// Connected clients.
@@ -165,9 +185,14 @@ impl Default for NotificationContext {
     }
 }
 
+/// MPC websocket server handling JSON-RPC requests.
 pub struct Server;
 
 impl Server {
+
+    /// Start the server.
+    ///
+    /// The websocket endpoint is mounted at `path`, the server will bind to `addr` and static assets are served from `static_files`.
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
