@@ -20,37 +20,68 @@ use warp::Filter;
 use crate::services::*;
 use json_rpc2::{Request, Response};
 
-use common::Parameters;
-
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
+/// Parameters used during key generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Parameters {
+    /// Number of parties `n`.
+    pub parties: u16,
+    /// Threshold for signing `t`.
+    ///
+    /// The threshold must be crossed (`t + 1`) for signing
+    /// to commence.
+    pub threshold: u16,
+}
+
+impl Default for Parameters {
+    fn default() -> Self {
+        return Self {
+            parties: 3,
+            threshold: 1,
+        };
+    }
+}
+
+/// Represents the type of session.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Phase {
+pub enum SessionKind {
+    /// Key generation session.
     #[serde(rename = "keygen")]
     Keygen,
+    /// Signing session.
     #[serde(rename = "sign")]
     Sign,
 }
 
-impl Default for Phase {
+impl Default for SessionKind {
     fn default() -> Self {
-        Phase::Keygen
+        SessionKind::Keygen
     }
 }
 
+/// Group is a collection of connected websocket clients.
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct Group {
+    /// Unique identifier for the group.
     pub uuid: String,
+    /// Parameters for key generation.
     pub params: Parameters,
+    /// Human-redable label for the group.
     pub label: String,
+    /// Collection of client identifiers.
     #[serde(skip)]
-    pub clients: Vec<usize>,
+    pub(crate) clients: Vec<usize>,
+    /// Sessions belonging to this group.
     #[serde(skip)]
-    pub sessions: HashMap<String, Session>,
+    pub(crate) sessions: HashMap<String, Session>,
 }
 
 impl Group {
+    /// Create a new group.
+    ///
+    /// The connection identifier `conn` becomes the initial client for the group.
     pub fn new(conn: usize, params: Parameters, label: String) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
@@ -62,37 +93,40 @@ impl Group {
     }
 }
 
+/// Session used for key generation or signing communication.
 #[derive(Debug, Clone, Serialize)]
 pub struct Session {
+    /// Unique identifier for the session.
     pub uuid: String,
-    pub phase: Phase,
+    /// Kind of the session.
+    pub kind: SessionKind,
 
     /// Map party number to connection identifier
     #[serde(skip)]
-    pub party_signups: Vec<(u16, usize)>,
+    pub(crate) party_signups: Vec<(u16, usize)>,
 
     /// Party numbers for those that have
     /// marked the session as finished.
     #[serde(skip)]
-    pub finished: HashSet<u16>,
+    pub(crate) finished: HashSet<u16>,
 }
 
 impl Default for Session {
     fn default() -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
-            phase: Default::default(),
+            kind: Default::default(),
             party_signups: Default::default(),
             finished: Default::default(),
         }
     }
 }
 
-impl From<Phase> for Session {
-    fn from(phase: Phase) -> Session {
+impl From<SessionKind> for Session {
+    fn from(kind: SessionKind) -> Session {
         Self {
             uuid: Uuid::new_v4().to_string(),
-            phase,
+            kind,
             party_signups: Default::default(),
             finished: Default::default(),
         }
@@ -100,6 +134,10 @@ impl From<Phase> for Session {
 }
 
 impl Session {
+    /// Signup to a session.
+    ///
+    /// This marks a connected client as actively participating in
+    /// this session and issues them a unique party signup number.
     pub fn signup(&mut self, conn: usize) -> u16 {
         let last = self.party_signups.last();
         let num = if last.is_none() {
@@ -112,6 +150,10 @@ impl Session {
         num
     }
 
+    /// Load an existing party signup number into this session.
+    ///
+    /// This is used when loading key shares that have been persisted
+    /// to perform signing using the saved key shares.
     pub fn load(
         &mut self,
         parameters: &Parameters,
@@ -136,6 +178,7 @@ impl Session {
     }
 }
 
+/// Collection of clients and groups managed by the server.
 #[derive(Debug)]
 pub struct State {
     /// Connected clients.
@@ -144,30 +187,58 @@ pub struct State {
     pub groups: HashMap<String, Group>,
 }
 
+/// Notification sent by the server to multiple connected clients.
 #[derive(Debug)]
-pub struct NotificationContext {
-    pub noop: bool,
-    pub group_id: Option<String>,
-    pub session_id: Option<String>,
-    pub filter: Option<Vec<usize>>,
-    pub messages: Option<Vec<(usize, Response)>>,
+pub enum Notification {
+    /// Indicates that the response should be ignored
+    /// and no notification messages should be sent.
+    ///
+    /// This is used when testing a threshold for sending
+    /// notifications; before a threshold has been reached
+    /// we want to return a response but not actually send
+    /// any notifications.
+    Noop,
+
+    /// Sends the response to all clients in the group.
+    Group {
+        /// The group identifier.
+        group_id: String,
+        /// Ignore these clients.
+        filter: Option<Vec<usize>>,
+    },
+
+    /// Sends the response to all clients in the session.
+    Session {
+        /// The group identifier.
+        group_id: String,
+        /// The session identifier.
+        session_id: String,
+        /// Ignore these clients.
+        filter: Option<Vec<usize>>,
+    },
+
+    /// Relay messages to specific clients.
+    ///
+    /// Used for relaying peer to peer messages.
+    Relay {
+        /// Mapping of client connection identifiers to messages.
+        messages: Vec<(usize, Response)>,
+    },
 }
 
-impl Default for NotificationContext {
+impl Default for Notification {
     fn default() -> Self {
-        Self {
-            noop: true,
-            group_id: None,
-            session_id: None,
-            filter: None,
-            messages: None,
-        }
+        Self::Noop
     }
 }
 
+/// MPC websocket server handling JSON-RPC requests.
 pub struct Server;
 
 impl Server {
+    /// Start the server.
+    ///
+    /// The websocket endpoint is mounted at `path`, the server will bind to `addr` and static assets are served from `static_files`.
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
@@ -326,7 +397,7 @@ async fn rpc_notify(
     use json_rpc2::futures::*;
     let service: Box<
         dyn Service<
-            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>),
+            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Notification>>),
         >,
     > = Box::new(NotifyHandler {});
     let server = Server::new(vec![&service]);
@@ -344,57 +415,69 @@ async fn rpc_notify(
     }
 }
 
+fn filter_clients(
+    clients: Vec<usize>,
+    filter: Option<Vec<usize>>,
+) -> Vec<usize> {
+    if let Some(filter) = filter {
+        clients
+            .into_iter()
+            .filter(|conn| filter.iter().any(|c| c != conn))
+            .collect::<Vec<_>>()
+    } else {
+        clients
+    }
+}
+
 async fn rpc_broadcast(
     response: &Response,
     state: &Arc<RwLock<State>>,
-    notification: Arc<Mutex<NotificationContext>>,
+    notification: Arc<Mutex<Notification>>,
 ) {
     let reader = state.read().await;
     let mut notification = notification.lock().await;
-    if !notification.noop {
-        // Explicit list of messages for target clients
-        if let Some(messages) = notification.messages.take() {
+    let notification = std::mem::take(&mut *notification);
+
+    match notification {
+        Notification::Group { group_id, filter } => {
+            let clients = if let Some(group) = reader.groups.get(&group_id) {
+                group.clients.clone()
+            } else {
+                vec![0usize]
+            };
+
+            let clients = filter_clients(clients, filter);
+            for conn_id in clients {
+                rpc_response(conn_id, response, state).await;
+            }
+        }
+        Notification::Session {
+            group_id,
+            session_id,
+            filter,
+        } => {
+            let clients = if let Some(group) = reader.groups.get(&group_id) {
+                if let Some(session) = group.sessions.get(&session_id) {
+                    session.party_signups.iter().map(|i| i.1.clone()).collect()
+                } else {
+                    warn!("notification session {} does not exist", session_id);
+                    vec![0usize]
+                }
+            } else {
+                vec![0usize]
+            };
+
+            let clients = filter_clients(clients, filter);
+            for conn_id in clients {
+                rpc_response(conn_id, response, state).await;
+            }
+        }
+        Notification::Relay { messages } => {
             for (conn_id, response) in messages {
                 rpc_response(conn_id, &response, state).await;
             }
-        } else {
-            if let Some(group_id) = &notification.group_id {
-                let clients = if let Some(group) = reader.groups.get(group_id) {
-                    if let Some(session_id) = &notification.session_id {
-                        if let Some(session) = group.sessions.get(session_id) {
-                            session
-                                .party_signups
-                                .iter()
-                                .map(|i| i.1.clone())
-                                .collect()
-                        } else {
-                            warn!(
-                                "notification session {} does not exist",
-                                session_id
-                            );
-                            vec![0usize]
-                        }
-                    } else {
-                        group.clients.clone()
-                    }
-                } else {
-                    vec![0usize]
-                };
-
-                for conn_id in clients {
-                    if let Some(filter) = &notification.filter {
-                        if let Some(_) =
-                            filter.iter().find(|conn| **conn == conn_id)
-                        {
-                            continue;
-                        }
-                    }
-                    rpc_response(conn_id, response, state).await;
-                }
-            } else {
-                warn!("notification context is missing group_id");
-            }
         }
+        Notification::Noop => {}
     }
 }
 

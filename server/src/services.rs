@@ -1,3 +1,17 @@
+//! Services for handling JSON-RPC requests.
+//!
+//! Requests handled by the server are first routed via the
+//! primary `ServiceHandler` and any response is sent back to the
+//! client making the request; these requests may mutate the server state.
+//!
+//! Afterwards the same request is sent to the `NotifyHandler` which
+//! must **never mutate the server state** but may send notifications
+//! to connected clients based on the updated server state.
+//!
+//! Notifications sent to connected clients are sent as a tuple
+//! of `String` event name followed by an arbitrary JSON `Value`
+//! payload for the event.
+//!
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result};
 use log::warn;
@@ -7,37 +21,59 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use super::server::{Group, NotificationContext, Phase, Session, State};
-use common::Parameters;
+use super::server::{
+    Group, Notification, Parameters, Session, SessionKind, State,
+};
 
-// RPC method calls
+/// Method to create a group.
 pub const GROUP_CREATE: &str = "Group.create";
+/// Method to join a group.
 pub const GROUP_JOIN: &str = "Group.join";
+/// Method to create a session.
 pub const SESSION_CREATE: &str = "Session.create";
+/// Method to join a session.
 pub const SESSION_JOIN: &str = "Session.join";
+/// Method to signup a session.
 pub const SESSION_SIGNUP: &str = "Session.signup";
+/// Method to load a party number into a session.
 pub const SESSION_LOAD: &str = "Session.load";
+/// Method to broadcast or relay a message peer to peer.
 pub const SESSION_MESSAGE: &str = "Session.message";
+/// Method to indicate a session is finished.
 pub const SESSION_FINISH: &str = "Session.finish";
+/// Method to notify of a proposal for signing.
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
+/// Method to notify a proposal has been signed.
 pub const NOTIFY_SIGNED: &str = "Notify.signed";
 
-// Notification event names
+/// Notification sent when a session has been created.
+///
+/// Used primarily during key generation so other connected
+/// clients can automatically join the session.
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
+/// Notification sent when all expected parties have signed
+/// up to a session.
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
+/// Notification sent when all parties have loaded a party signup
+/// number into a session.
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
+/// Notification sent to clients with broadcast or peer to peer messages.
 pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
+/// Notification sent when a session has been marked as finished
+/// by all participating clients.
 pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
+/// Notification sent when a proposal has been received.
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
+/// Notification sent when a proposal has been signed.
 pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 
 type Uuid = String;
 type GroupCreateParams = (String, Parameters);
-type SessionCreateParams = (Uuid, Phase);
-type SessionJoinParams = (Uuid, Uuid, Phase);
-type SessionSignupParams = (Uuid, Uuid, Phase);
-type SessionLoadParams = (Uuid, Uuid, Phase, u16);
-type SessionMessageParams = (Uuid, Uuid, Phase, Message);
+type SessionCreateParams = (Uuid, SessionKind);
+type SessionJoinParams = (Uuid, Uuid, SessionKind);
+type SessionSignupParams = (Uuid, Uuid, SessionKind);
+type SessionLoadParams = (Uuid, Uuid, SessionKind, u16);
+type SessionMessageParams = (Uuid, Uuid, SessionKind, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
 type NotifyProposalParams = (Uuid, Uuid, String);
 type NotifySignedParams = (Uuid, Uuid, Value);
@@ -61,7 +97,8 @@ struct Proposal {
     message: String,
 }
 
-pub(crate) struct ServiceHandler;
+/// Service for replying to client requests.
+pub struct ServiceHandler;
 
 #[async_trait]
 impl Service for ServiceHandler {
@@ -102,12 +139,12 @@ impl Service for ServiceHandler {
             SESSION_CREATE => {
                 let (conn_id, state) = ctx;
                 let params: SessionCreateParams = req.deserialize()?;
-                let (group_id, phase) = params;
+                let (group_id, kind) = params;
                 let mut writer = state.write().await;
                 if let Some(group) =
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)
                 {
-                    let session = Session::from(phase.clone());
+                    let session = Session::from(kind.clone());
                     let key = session.uuid.clone();
                     group.sessions.insert(key, session.clone());
                     let res = serde_json::to_value(&session).unwrap();
@@ -119,7 +156,7 @@ impl Service for ServiceHandler {
             SESSION_JOIN => {
                 let (conn_id, state) = ctx;
                 let params: SessionJoinParams = req.deserialize()?;
-                let (group_id, session_id, _phase) = params;
+                let (group_id, session_id, _kind) = params;
 
                 let mut writer = state.write().await;
                 if let Some(group) =
@@ -140,7 +177,7 @@ impl Service for ServiceHandler {
             SESSION_SIGNUP => {
                 let (conn_id, state) = ctx;
                 let params: SessionSignupParams = req.deserialize()?;
-                let (group_id, session_id, _phase) = params;
+                let (group_id, session_id, _kind) = params;
 
                 let mut writer = state.write().await;
                 if let Some(group) =
@@ -164,9 +201,9 @@ impl Service for ServiceHandler {
             SESSION_LOAD => {
                 let (conn_id, state) = ctx;
                 let params: SessionLoadParams = req.deserialize()?;
-                let (group_id, session_id, phase, party_number) = params;
+                let (group_id, session_id, kind, party_number) = params;
 
-                if let Phase::Keygen = phase {
+                if let SessionKind::Keygen = kind {
                     let mut writer = state.write().await;
                     if let Some(group) =
                         get_group_mut(&conn_id, &group_id, &mut writer.groups)
@@ -231,11 +268,12 @@ impl Service for ServiceHandler {
     }
 }
 
-pub(crate) struct NotifyHandler;
+/// Service for broadcasting notifications to connected clients.
+pub struct NotifyHandler;
 
 #[async_trait]
 impl Service for NotifyHandler {
-    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>);
+    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Notification>>);
     async fn handle(
         &self,
         req: &Request,
@@ -245,9 +283,9 @@ impl Service for NotifyHandler {
             SESSION_CREATE => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionCreateParams = req.deserialize()?;
-                let (group_id, phase) = params;
+                let (group_id, kind) = params;
 
-                if let Phase::Keygen = phase {
+                if let SessionKind::Keygen = kind {
                     let reader = state.read().await;
                     if let Some(group) =
                         get_group(&conn_id, &group_id, &reader.groups)
@@ -262,12 +300,9 @@ impl Service for NotifyHandler {
 
                         // Notify everyone else in the group a session was created
                         {
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: None,
+                            let ctx = Notification::Group {
+                                group_id,
                                 filter: Some(vec![*conn_id]),
-                                messages: None,
                             };
                             let mut writer = notification.lock().await;
                             *writer = ctx;
@@ -284,7 +319,7 @@ impl Service for NotifyHandler {
             SESSION_SIGNUP => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionSignupParams = req.deserialize()?;
-                let (group_id, session_id, phase) = params;
+                let (group_id, session_id, kind) = params;
 
                 let reader = state.read().await;
 
@@ -300,7 +335,7 @@ impl Service for NotifyHandler {
                         session_id,
                         group,
                         session,
-                        phase,
+                        kind,
                         notification,
                         SESSION_SIGNUP_EVENT,
                     )
@@ -312,7 +347,7 @@ impl Service for NotifyHandler {
             SESSION_LOAD => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionLoadParams = req.deserialize()?;
-                let (group_id, session_id, phase, _party_number) = params;
+                let (group_id, session_id, kind, _party_number) = params;
 
                 let reader = state.read().await;
 
@@ -328,7 +363,7 @@ impl Service for NotifyHandler {
                         session_id,
                         group,
                         session,
-                        phase,
+                        kind,
                         notification,
                         SESSION_LOAD_EVENT,
                     )
@@ -340,7 +375,7 @@ impl Service for NotifyHandler {
             SESSION_MESSAGE => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionMessageParams = req.deserialize()?;
-                let (group_id, session_id, _phase, msg) = params;
+                let (group_id, session_id, _kind, msg) = params;
 
                 let reader = state.read().await;
                 // Check we have valid group / session
@@ -367,12 +402,8 @@ impl Service for NotifyHandler {
                             let message = (s.1, response);
 
                             {
-                                let ctx = NotificationContext {
-                                    noop: false,
-                                    group_id: Some(group_id),
-                                    session_id: Some(session_id),
-                                    filter: None,
-                                    messages: Some(vec![message]),
+                                let ctx = Notification::Relay {
+                                    messages: vec![message],
                                 };
 
                                 let mut writer = notification.lock().await;
@@ -391,12 +422,10 @@ impl Service for NotifyHandler {
                     // Handle broadcast round
                     } else {
                         {
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
+                            let ctx = Notification::Session {
+                                group_id,
+                                session_id,
                                 filter: Some(vec![*conn_id]),
-                                messages: None,
                             };
 
                             let mut writer = notification.lock().await;
@@ -445,13 +474,12 @@ impl Service for NotifyHandler {
                         .unwrap();
 
                         {
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
+                            let ctx = Notification::Session {
+                                group_id,
+                                session_id,
                                 filter: None,
-                                messages: None,
                             };
+
                             let mut writer = notification.lock().await;
                             *writer = ctx;
                         }
@@ -479,13 +507,11 @@ impl Service for NotifyHandler {
                         .unwrap();
 
                 {
-                    let ctx = NotificationContext {
-                        noop: false,
-                        group_id: Some(group_id),
-                        session_id: None,
+                    let ctx = Notification::Group {
+                        group_id,
                         filter: Some(vec![*conn_id]),
-                        messages: None,
                     };
+
                     let mut writer = notification.lock().await;
                     *writer = ctx;
                 }
@@ -516,13 +542,11 @@ impl Service for NotifyHandler {
                             .unwrap();
 
                     {
-                        let ctx = NotificationContext {
-                            noop: false,
-                            group_id: Some(group_id),
-                            session_id: None,
+                        let ctx = Notification::Group {
+                            group_id,
                             filter: Some(participants),
-                            messages: None,
                         };
+
                         let mut writer = notification.lock().await;
                         *writer = ctx;
                     }
@@ -603,33 +627,32 @@ async fn handle_threshold_notify(
     session_id: String,
     group: &Group,
     _session: &Session,
-    phase: Phase,
-    notification: &Mutex<NotificationContext>,
+    kind: SessionKind,
+    notification: &Mutex<Notification>,
     event: &str,
 ) -> Option<Response> {
     let parties = group.params.parties as usize;
     let threshold = group.params.threshold as usize;
-    let required_num_entries = match phase {
-        Phase::Keygen => parties,
-        Phase::Sign => threshold + 1,
+    let required_num_entries = match kind {
+        SessionKind::Keygen => parties,
+        SessionKind::Sign => threshold + 1,
     };
 
     // Enough parties are signed up to the session
     if num_entries == required_num_entries {
-        println!("Sending threshold notify event {} for {:#?}", event, phase);
+        println!("Sending threshold notify event {} for {:#?}", event, kind);
 
         let res = serde_json::to_value((event, &session_id)).unwrap();
 
         // Notify everyone in the session that enough
         // parties have signed up to the session
         {
-            let ctx = NotificationContext {
-                noop: false,
-                group_id: Some(group_id),
-                session_id: Some(session_id),
+            let ctx = Notification::Session {
+                group_id,
+                session_id,
                 filter: None,
-                messages: None,
             };
+
             let mut writer = notification.lock().await;
             *writer = ctx;
         }
