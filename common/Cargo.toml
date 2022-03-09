@@ -8,7 +8,6 @@ serde = {version = "1", features = ["derive"]}
 # NOTE: we don't use these crates but if we don't declare them here
 # NOTE: then the wasm modules will fail to compile
 getrandom = {version = "0.2", features = ["js"]}
-curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
 
 [dev-dependencies]
 rand = "0.8"

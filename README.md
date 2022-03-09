@@ -80,6 +80,26 @@ To view the API documentation for the webassembly bindings run:
 
 ## Notes
 
+### Common
+
+The common library contains a little code shared between the webassembly and server modules which we could easily duplicate however it serves another important purpose. It includes a hack for the dependency tree including multiple versions of `getrandom`:
+
+```
+getrandom:0.1.16
+getrandom:0.2.5
+```
+
+Versio `0.2` of `getrandom` requires a `js` feature enabled to compile for for wasm32 so we set that in `common`:
+
+```toml
+getrandom = {version = "0.2", features = ["js"]}
+```
+
+But the websassembly modules cannot use this version of `getrandom` yet so it includes the older version:
+
+```
+```
+
 ### Thread Support (Rayon)
 
 Webassembly needs threads enabled, see:
