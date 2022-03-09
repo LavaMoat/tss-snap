@@ -5,7 +5,7 @@ WORKDIR /usr/app
 
 # CLANG
 RUN apt-get update
-RUN apt-get install -y wget build-essential libssl-dev
+RUN apt-get install -y wget build-essential pkg-config libssl-dev binaryen
 
 RUN printf "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye main\ndeb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye main\ndeb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main\ndeb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main" >> /etc/apt/sources.list
 
@@ -23,7 +23,7 @@ COPY common common
 COPY server server
 RUN rustup override set nightly-2021-08-12
 RUN cargo install --path ./server
-RUN cargo install --version 0.10.1 wasm-pack
+RUN cargo install --version 0.10.2 wasm-pack
 RUN mv ~/.cargo/bin/* /usr/bin
 RUN mpc-websocket --version
 RUN wasm-pack --version
