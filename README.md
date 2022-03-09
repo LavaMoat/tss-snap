@@ -89,7 +89,7 @@ getrandom:0.1.16
 getrandom:0.2.5
 ```
 
-Versio `0.2` of `getrandom` requires a `js` feature enabled to compile for for wasm32 so we set that in `common`:
+Version `0.2` of `getrandom` requires a `js` feature enabled to compile for wasm32 so we set that in `common`:
 
 ```toml
 getrandom = {version = "0.2", features = ["js"]}
@@ -97,8 +97,11 @@ getrandom = {version = "0.2", features = ["js"]}
 
 But the websassembly modules cannot use this version of `getrandom` yet so it includes the older version:
 
+```toml
+getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
 ```
-```
+
+Once [this PR](https://github.com/rust-bitcoin/rust-secp256k1/pull/331) is merged and the dependency tree is updated we should be able to update `getrandom` and remove this hack.
 
 ### Thread Support (Rayon)
 
