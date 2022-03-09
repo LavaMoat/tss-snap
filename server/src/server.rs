@@ -168,43 +168,9 @@ pub struct State {
     pub groups: HashMap<String, Group>,
 }
 
-/*
 /// Notification sent by the server to multiple connected clients.
 #[derive(Debug)]
-pub struct NotificationContext {
-
-    /// Indicates that the response should be ignored
-    /// and no notification messages should be sent.
-    ///
-    /// This is used when testing a threshold for sending
-    /// notifications; before a threshold has been reached
-    /// we want to return a response but not actually send
-    /// any notifications.
-    pub noop: bool,
-
-    /// A group identifier.
-    ///
-    /// Sends the response to all clients in the group.
-    pub group_id: Option<String>,
-
-    /// A session identifier.
-    ///
-    /// Sends the response to all clients in the session.
-    pub session_id: Option<String>,
-
-    /// Filters for clients that should be ignored.
-    pub filter: Option<Vec<usize>>,
-
-    /// Specific list of messages that target certain clients.
-    ///
-    /// Used for relaying peer to peer messages.
-    pub messages: Option<Vec<(usize, Response)>>,
-}
-*/
-
-/// Notification sent by the server to multiple connected clients.
-#[derive(Debug)]
-pub enum NotificationContext {
+pub enum Notification {
     /// Indicates that the response should be ignored
     /// and no notification messages should be sent.
     ///
@@ -241,7 +207,7 @@ pub enum NotificationContext {
     },
 }
 
-impl Default for NotificationContext {
+impl Default for Notification {
     fn default() -> Self {
         Self::Noop
     }
@@ -412,7 +378,7 @@ async fn rpc_notify(
     use json_rpc2::futures::*;
     let service: Box<
         dyn Service<
-            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>),
+            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Notification>>),
         >,
     > = Box::new(NotifyHandler {});
     let server = Server::new(vec![&service]);
@@ -430,61 +396,70 @@ async fn rpc_notify(
     }
 }
 
+fn filter_clients(
+    clients: Vec<usize>,
+    filter: Option<Vec<usize>>,
+) -> Vec<usize> {
+    if let Some(filter) = filter {
+        clients
+            .into_iter()
+            .filter(|conn| filter.iter().any(|c| c != conn))
+            .collect::<Vec<_>>()
+    } else {
+        clients
+    }
+}
+
 async fn rpc_broadcast(
     response: &Response,
     state: &Arc<RwLock<State>>,
-    notification: Arc<Mutex<NotificationContext>>,
+    notification: Arc<Mutex<Notification>>,
 ) {
-
-    /*
     let reader = state.read().await;
     let mut notification = notification.lock().await;
-    if !notification.noop {
-        // Explicit list of messages for target clients
-        if let Some(messages) = notification.messages.take() {
+    let notification = std::mem::take(&mut *notification);
+
+    match notification {
+        Notification::Group { group_id, filter } => {
+            let clients = if let Some(group) = reader.groups.get(&group_id) {
+                group.clients.clone()
+            } else {
+                vec![0usize]
+            };
+
+            let clients = filter_clients(clients, filter);
+            for conn_id in clients {
+                rpc_response(conn_id, response, state).await;
+            }
+        }
+        Notification::Session {
+            group_id,
+            session_id,
+            filter,
+        } => {
+            let clients = if let Some(group) = reader.groups.get(&group_id) {
+                if let Some(session) = group.sessions.get(&session_id) {
+                    session.party_signups.iter().map(|i| i.1.clone()).collect()
+                } else {
+                    warn!("notification session {} does not exist", session_id);
+                    vec![0usize]
+                }
+            } else {
+                vec![0usize]
+            };
+
+            let clients = filter_clients(clients, filter);
+            for conn_id in clients {
+                rpc_response(conn_id, response, state).await;
+            }
+        }
+        Notification::Relay { messages } => {
             for (conn_id, response) in messages {
                 rpc_response(conn_id, &response, state).await;
             }
-        } else {
-            if let Some(group_id) = &notification.group_id {
-                let clients = if let Some(group) = reader.groups.get(group_id) {
-                    if let Some(session_id) = &notification.session_id {
-                        if let Some(session) = group.sessions.get(session_id) {
-                            session
-                                .party_signups
-                                .iter()
-                                .map(|i| i.1.clone())
-                                .collect()
-                        } else {
-                            warn!(
-                                "notification session {} does not exist",
-                                session_id
-                            );
-                            vec![0usize]
-                        }
-                    } else {
-                        group.clients.clone()
-                    }
-                } else {
-                    vec![0usize]
-                };
-
-                for conn_id in clients {
-                    if let Some(filter) = &notification.filter {
-                        if let Some(_) =
-                            filter.iter().find(|conn| **conn == conn_id)
-                        {
-                            continue;
-                        }
-                    }
-                    rpc_response(conn_id, response, state).await;
-                }
-            } else {
-                warn!("notification context is missing group_id");
-            }
         }
+        Notification::Noop => {}
     }
-    */
 }
 
 /// Send a message to a single client.

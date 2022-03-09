@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use super::server::{Group, NotificationContext, Session, SessionKind, State};
+use super::server::{Group, Notification, Session, SessionKind, State};
 use common::Parameters;
 
 // RPC method calls
@@ -235,7 +235,7 @@ pub(crate) struct NotifyHandler;
 
 #[async_trait]
 impl Service for NotifyHandler {
-    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<NotificationContext>>);
+    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Notification>>);
     async fn handle(
         &self,
         req: &Request,
@@ -262,7 +262,7 @@ impl Service for NotifyHandler {
 
                         // Notify everyone else in the group a session was created
                         {
-                            let ctx = NotificationContext::Group {
+                            let ctx = Notification::Group {
                                 group_id,
                                 filter: Some(vec![*conn_id]),
                             };
@@ -364,18 +364,7 @@ impl Service for NotifyHandler {
                             let message = (s.1, response);
 
                             {
-
-                                /*
-                                let ctx = NotificationContext {
-                                    noop: false,
-                                    group_id: Some(group_id),
-                                    session_id: Some(session_id),
-                                    filter: None,
-                                    messages: Some(vec![message]),
-                                };
-                                */
-
-                                let ctx = NotificationContext::Relay {
+                                let ctx = Notification::Relay {
                                     messages: vec![message],
                                 };
 
@@ -395,18 +384,7 @@ impl Service for NotifyHandler {
                     // Handle broadcast round
                     } else {
                         {
-
-                            /*
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
-                                filter: Some(vec![*conn_id]),
-                                messages: None,
-                            };
-                            */
-
-                            let ctx = NotificationContext::Session {
+                            let ctx = Notification::Session {
                                 group_id,
                                 session_id,
                                 filter: Some(vec![*conn_id]),
@@ -458,18 +436,7 @@ impl Service for NotifyHandler {
                         .unwrap();
 
                         {
-
-                            /*
-                            let ctx = NotificationContext {
-                                noop: false,
-                                group_id: Some(group_id),
-                                session_id: Some(session_id),
-                                filter: None,
-                                messages: None,
-                            };
-                            */
-
-                            let ctx = NotificationContext::Session {
+                            let ctx = Notification::Session {
                                 group_id,
                                 session_id,
                                 filter: None,
@@ -502,18 +469,7 @@ impl Service for NotifyHandler {
                         .unwrap();
 
                 {
-
-                    /*
-                    let ctx = NotificationContext {
-                        noop: false,
-                        group_id: Some(group_id),
-                        session_id: None,
-                        filter: Some(vec![*conn_id]),
-                        messages: None,
-                    };
-                    */
-
-                    let ctx = NotificationContext::Group {
+                    let ctx = Notification::Group {
                         group_id,
                         filter: Some(vec![*conn_id]),
                     };
@@ -548,18 +504,7 @@ impl Service for NotifyHandler {
                             .unwrap();
 
                     {
-
-                        /*
-                        let ctx = NotificationContext {
-                            noop: false,
-                            group_id: Some(group_id),
-                            session_id: None,
-                            filter: Some(participants),
-                            messages: None,
-                        };
-                        */
-
-                        let ctx = NotificationContext::Group {
+                        let ctx = Notification::Group {
                             group_id,
                             filter: Some(participants),
                         };
@@ -645,7 +590,7 @@ async fn handle_threshold_notify(
     group: &Group,
     _session: &Session,
     kind: SessionKind,
-    notification: &Mutex<NotificationContext>,
+    notification: &Mutex<Notification>,
     event: &str,
 ) -> Option<Response> {
     let parties = group.params.parties as usize;
@@ -664,18 +609,7 @@ async fn handle_threshold_notify(
         // Notify everyone in the session that enough
         // parties have signed up to the session
         {
-
-            /*
-            let ctx = NotificationContext {
-                noop: false,
-                group_id: Some(group_id),
-                session_id: Some(session_id),
-                filter: None,
-                messages: None,
-            };
-            */
-
-            let ctx = NotificationContext::Session {
+            let ctx = Notification::Session {
                 group_id,
                 session_id,
                 filter: None,
