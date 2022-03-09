@@ -25,9 +25,9 @@ use common::Parameters;
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
-/// Represents the kinds of supported session types.
+/// Represents the type of session.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Phase {
+pub enum SessionKind {
     /// Key generation session.
     #[serde(rename = "keygen")]
     Keygen,
@@ -36,9 +36,9 @@ pub enum Phase {
     Sign,
 }
 
-impl Default for Phase {
+impl Default for SessionKind {
     fn default() -> Self {
-        Phase::Keygen
+        SessionKind::Keygen
     }
 }
 
@@ -60,7 +60,6 @@ pub struct Group {
 }
 
 impl Group {
-
     /// Create a new group.
     ///
     /// The connection identifier `conn` becomes the initial client for the group.
@@ -81,7 +80,7 @@ pub struct Session {
     /// Unique identifier for the session.
     pub uuid: String,
     /// Kind of the session.
-    pub phase: Phase,
+    pub kind: SessionKind,
 
     /// Map party number to connection identifier
     #[serde(skip)]
@@ -97,18 +96,18 @@ impl Default for Session {
     fn default() -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
-            phase: Default::default(),
+            kind: Default::default(),
             party_signups: Default::default(),
             finished: Default::default(),
         }
     }
 }
 
-impl From<Phase> for Session {
-    fn from(phase: Phase) -> Session {
+impl From<SessionKind> for Session {
+    fn from(kind: SessionKind) -> Session {
         Self {
             uuid: Uuid::new_v4().to_string(),
-            phase,
+            kind,
             party_signups: Default::default(),
             finished: Default::default(),
         }
@@ -116,7 +115,6 @@ impl From<Phase> for Session {
 }
 
 impl Session {
-
     /// Signup to a session.
     ///
     /// This marks a connected client as actively participating in
@@ -161,7 +159,7 @@ impl Session {
     }
 }
 
-/// Collection of clients and groups the server is managing.
+/// Collection of clients and groups managed by the server.
 #[derive(Debug)]
 pub struct State {
     /// Connected clients.
@@ -170,6 +168,7 @@ pub struct State {
     pub groups: HashMap<String, Group>,
 }
 
+/*
 /// Notification sent by the server to multiple connected clients.
 #[derive(Debug)]
 pub struct NotificationContext {
@@ -201,16 +200,50 @@ pub struct NotificationContext {
     /// Used for relaying peer to peer messages.
     pub messages: Option<Vec<(usize, Response)>>,
 }
+*/
+
+/// Notification sent by the server to multiple connected clients.
+#[derive(Debug)]
+pub enum NotificationContext {
+    /// Indicates that the response should be ignored
+    /// and no notification messages should be sent.
+    ///
+    /// This is used when testing a threshold for sending
+    /// notifications; before a threshold has been reached
+    /// we want to return a response but not actually send
+    /// any notifications.
+    Noop,
+
+    /// Sends the response to all clients in the group.
+    Group {
+        /// The group identifier.
+        group_id: String,
+        /// Ignore these clients.
+        filter: Option<Vec<usize>>,
+    },
+
+    /// Sends the response to all clients in the session.
+    Session {
+        /// The group identifier.
+        group_id: String,
+        /// The session identifier.
+        session_id: String,
+        /// Ignore these clients.
+        filter: Option<Vec<usize>>,
+    },
+
+    /// Relay messages to specific clients.
+    ///
+    /// Used for relaying peer to peer messages.
+    Relay {
+        /// Mapping of client connection identifiers to messages.
+        messages: Vec<(usize, Response)>,
+    },
+}
 
 impl Default for NotificationContext {
     fn default() -> Self {
-        Self {
-            noop: true,
-            group_id: None,
-            session_id: None,
-            filter: None,
-            messages: None,
-        }
+        Self::Noop
     }
 }
 
@@ -218,7 +251,6 @@ impl Default for NotificationContext {
 pub struct Server;
 
 impl Server {
-
     /// Start the server.
     ///
     /// The websocket endpoint is mounted at `path`, the server will bind to `addr` and static assets are served from `static_files`.
@@ -403,6 +435,8 @@ async fn rpc_broadcast(
     state: &Arc<RwLock<State>>,
     notification: Arc<Mutex<NotificationContext>>,
 ) {
+
+    /*
     let reader = state.read().await;
     let mut notification = notification.lock().await;
     if !notification.noop {
@@ -450,6 +484,7 @@ async fn rpc_broadcast(
             }
         }
     }
+    */
 }
 
 /// Send a message to a single client.
