@@ -70,6 +70,18 @@ docker build . -t ecdsa-wasm
 docker run -p 3030:8080 -it ecdsa-wasm
 ```
 
+The docker file is designed for `x86_64`, if you need to build for ARM architectures like the M1, replace this line:
+
+```
+RUN rustup component add rust-src --toolchain nightly-2021-08-12-x86_64-unknown-linux-gnu;
+```
+
+With the `aarch64` architecture:
+
+```
+RUN rustup component add rust-src --toolchain nightly-2021-08-12-aarch64-unknown-linux-gnu;
+```
+
 ## API Documentation
 
 To view the API documentation for the websocket server:
