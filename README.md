@@ -70,6 +70,8 @@ docker build . -t ecdsa-wasm
 docker run -p 3030:8080 -it ecdsa-wasm
 ```
 
+Now you can view the demo at `http://localhost:3030`.
+
 The docker file is designed for `x86_64`, if you need to build for ARM architectures like the M1, replace this line:
 
 ```
