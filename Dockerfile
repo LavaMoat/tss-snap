@@ -5,7 +5,7 @@ WORKDIR /usr/app
 
 # CLANG
 RUN apt-get update
-RUN apt-get install -y wget build-essential
+RUN apt-get install -y wget build-essential libssl-dev
 
 RUN printf "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye main\ndeb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye main\ndeb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main\ndeb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main" >> /etc/apt/sources.list
 
