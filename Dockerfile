@@ -25,7 +25,7 @@ RUN rustup override set nightly-2021-08-12
 RUN cargo install --path ./server
 RUN cargo install --version 0.10.1 wasm-pack
 RUN mv ~/.cargo/bin/* /usr/bin
-RUN ecdsa-wasm --version
+RUN mpc-websocket --version
 RUN wasm-pack --version
 
 # WASM
@@ -42,6 +42,6 @@ RUN cd client && yarn install && yarn build
 
 FROM debian:bullseye AS runner
 WORKDIR /usr/app
-COPY --from=builder /usr/bin/ecdsa-wasm /usr/bin/ecdsa-wasm
+COPY --from=builder /usr/bin/mpc-websocket /usr/bin/mpc-websocket
 COPY --from=client /usr/app/client/dist /usr/app/client/dist
-CMD ecdsa-wasm --bind 0.0.0.0:8080 client/dist
+CMD mpc-websocket --bind 0.0.0.0:8080 client/dist

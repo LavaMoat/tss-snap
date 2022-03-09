@@ -151,26 +151,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecdsa-wasm"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "common",
- "futures-util",
- "json-rpc2",
- "log",
- "pretty_env_logger",
- "serde",
- "serde_json",
- "structopt",
- "tokio",
- "tokio-stream",
- "uuid",
- "warp",
-]
-
-[[package]]
 name = "env_logger"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -535,6 +515,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "mpc-websocket"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "common",
+ "futures-util",
+ "json-rpc2",
+ "log",
+ "pretty_env_logger",
+ "serde",
+ "serde_json",
+ "structopt",
+ "tokio",
+ "tokio-stream",
+ "uuid",
+ "warp",
 ]
 
 [[package]]

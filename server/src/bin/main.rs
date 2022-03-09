@@ -5,11 +5,11 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
 
-use ecdsa_wasm::Server;
+use mpc_websocket::Server;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "mpc-websocket-server",
+    name = "mpc-websocket",
     about = "Websocket server for MPC key generation and signing"
 )]
 struct Options {
