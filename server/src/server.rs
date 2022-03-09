@@ -28,8 +28,10 @@ static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 /// Represents the kinds of supported session types.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Phase {
+    /// Key generation session.
     #[serde(rename = "keygen")]
     Keygen,
+    /// Signing session.
     #[serde(rename = "sign")]
     Sign,
 }
@@ -58,6 +60,10 @@ pub struct Group {
 }
 
 impl Group {
+
+    /// Create a new group.
+    ///
+    /// The connection identifier `conn` becomes the initial client for the group.
     pub fn new(conn: usize, params: Parameters, label: String) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
@@ -164,12 +170,35 @@ pub struct State {
     pub groups: HashMap<String, Group>,
 }
 
+/// Notification sent by the server to multiple connected clients.
 #[derive(Debug)]
 pub struct NotificationContext {
+
+    /// Indicates that the response should be ignored
+    /// and no notification messages should be sent.
+    ///
+    /// This is used when testing a threshold for sending
+    /// notifications; before a threshold has been reached
+    /// we want to return a response but not actually send
+    /// any notifications.
     pub noop: bool,
+
+    /// A group identifier.
+    ///
+    /// Sends the response to all clients in the group.
     pub group_id: Option<String>,
+
+    /// A session identifier.
+    ///
+    /// Sends the response to all clients in the session.
     pub session_id: Option<String>,
+
+    /// Filters for clients that should be ignored.
     pub filter: Option<Vec<usize>>,
+
+    /// Specific list of messages that target certain clients.
+    ///
+    /// Used for relaying peer to peer messages.
     pub messages: Option<Vec<(usize, Response)>>,
 }
 

@@ -9,8 +9,8 @@ use ecdsa_wasm::Server;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "ecdsa-wasm",
-    about = "Websocket server for the ECDSA WASM demo"
+    name = "mpc-websocket-server",
+    about = "Websocket server for MPC key generation and signing"
 )]
 struct Options {
     /// Bind to host:port.
