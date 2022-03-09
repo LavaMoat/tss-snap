@@ -20,10 +20,29 @@ use warp::Filter;
 use crate::services::*;
 use json_rpc2::{Request, Response};
 
-use common::Parameters;
-
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
+
+/// Parameters used during key generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Parameters {
+    /// Number of parties `n`.
+    pub parties: u16,
+    /// Threshold for signing `t`.
+    ///
+    /// The threshold must be crossed (`t + 1`) for signing
+    /// to commence.
+    pub threshold: u16,
+}
+
+impl Default for Parameters {
+    fn default() -> Self {
+        return Self {
+            parties: 3,
+            threshold: 1,
+        };
+    }
+}
 
 /// Represents the type of session.
 #[derive(Debug, Serialize, Deserialize, Clone)]

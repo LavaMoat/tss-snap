@@ -7,8 +7,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use super::server::{Group, Notification, Session, SessionKind, State};
-use common::Parameters;
+use super::server::{
+    Group, Notification, Parameters, Session, SessionKind, State,
+};
 
 // RPC method calls
 pub const GROUP_CREATE: &str = "Group.create";

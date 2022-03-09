@@ -72,6 +72,12 @@ docker run -p 3030:8080 -it ecdsa-wasm
 
 ## API Documentation
 
+To view the API documentation for the websocket server:
+
+```
+(cd server && cargo doc --open --no-deps)
+```
+
 To view the API documentation for the webassembly bindings run:
 
 ```
