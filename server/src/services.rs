@@ -1,3 +1,17 @@
+//! Services for handling JSON-RPC requests.
+//!
+//! Requests handled by the server are first routed via the
+//! primary `ServiceHandler` and any response is sent back to the
+//! client making the request; these requests may mutate the server state.
+//!
+//! Afterwards the same request is sent to the `NotifyHandler` which
+//! must **never mutate the server state** but may send notifications
+//! to connected clients based on the updated server state.
+//!
+//! Notifications sent to connected clients are sent as a tuple
+//! of `String` event name followed by an arbitrary JSON `Value`
+//! payload for the event.
+//!
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result};
 use log::warn;
@@ -11,25 +25,46 @@ use super::server::{
     Group, Notification, Parameters, Session, SessionKind, State,
 };
 
-// RPC method calls
+/// Method to create a group.
 pub const GROUP_CREATE: &str = "Group.create";
+/// Method to join a group.
 pub const GROUP_JOIN: &str = "Group.join";
+/// Method to create a session.
 pub const SESSION_CREATE: &str = "Session.create";
+/// Method to join a session.
 pub const SESSION_JOIN: &str = "Session.join";
+/// Method to signup a session.
 pub const SESSION_SIGNUP: &str = "Session.signup";
+/// Method to load a party number into a session.
 pub const SESSION_LOAD: &str = "Session.load";
+/// Method to broadcast or relay a message peer to peer.
 pub const SESSION_MESSAGE: &str = "Session.message";
+/// Method to indicate a session is finished.
 pub const SESSION_FINISH: &str = "Session.finish";
+/// Method to notify of a proposal for signing.
 pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
+/// Method to notify a proposal has been signed.
 pub const NOTIFY_SIGNED: &str = "Notify.signed";
 
-// Notification event names
+/// Notification sent when a session has been created.
+///
+/// Used primarily during key generation so other connected
+/// clients can automatically join the session.
 pub const SESSION_CREATE_EVENT: &str = "sessionCreate";
+/// Notification sent when all expected parties have signed
+/// up to a session.
 pub const SESSION_SIGNUP_EVENT: &str = "sessionSignup";
+/// Notification sent when all parties have loaded a party signup
+/// number into a session.
 pub const SESSION_LOAD_EVENT: &str = "sessionLoad";
+/// Notification sent to clients with broadcast or peer to peer messages.
 pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
+/// Notification sent when a session has been marked as finished
+/// by all participating clients.
 pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
+/// Notification sent when a proposal has been received.
 pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
+/// Notification sent when a proposal has been signed.
 pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 
 type Uuid = String;
@@ -62,7 +97,8 @@ struct Proposal {
     message: String,
 }
 
-pub(crate) struct ServiceHandler;
+/// Service for replying to client requests.
+pub struct ServiceHandler;
 
 #[async_trait]
 impl Service for ServiceHandler {
@@ -232,7 +268,8 @@ impl Service for ServiceHandler {
     }
 }
 
-pub(crate) struct NotifyHandler;
+/// Service for broadcasting notifications to connected clients.
+pub struct NotifyHandler;
 
 #[async_trait]
 impl Service for NotifyHandler {
