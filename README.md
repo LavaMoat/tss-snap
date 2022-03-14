@@ -96,6 +96,14 @@ To view the API documentation for the webassembly bindings run:
 (cd wasm && cargo doc --open --no-deps)
 ```
 
+## Server
+
+The server exposes a websocket endpoint at `/mpc` that clients can use to create groups and sessions that are used to facilitate communication between co-operating parties.
+
+A group represents a collection of connected clients that are co-operating within the context of the group parameters `t` and `n` where `t` is the threshold and `n` is the total number of parties.
+
+Groups may contain sessions that can be used for key generation and signing. A key generation session expects `n` parties whilst a signing session expects `t + 1` parties to co-operate.
+
 ## Notes
 
 ### Common
