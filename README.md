@@ -104,6 +104,8 @@ A group represents a collection of connected clients that are co-operating withi
 
 Groups may contain sessions that can be used for key generation and signing. A key generation session expects `n` parties whilst a signing session expects `t + 1` parties to co-operate.
 
+Static files are also served by the webserver for a given path and the `Cross-Origin-Embedder-Policy` and `Cross-Origin-Opener-Policy` headers are set to enable the use of `SharedArrayBuffer`, see [Cross-Origin-Embedder-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy) for more information.
+
 ## Notes
 
 ### Common
