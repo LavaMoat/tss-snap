@@ -14,16 +14,39 @@
 //!
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result};
-use log::warn;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
+use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
 
 use super::server::{
     Group, Notification, Parameters, Session, SessionKind, State,
 };
+
+/// Error thrown by the JSON-RPC services.
+#[derive(Debug, Error)]
+pub enum ServiceError {
+    /// Error generated when a group does not exist.
+    #[error("group {0} does not exist")]
+    GroupDoesNotExist(String),
+    /// Error generated when a session does not exist.
+    #[error("group {0} does not exist")]
+    SessionDoesNotExist(String),
+    /// Error generated when a session kind was given, but
+    /// does not match the expected kind.
+    #[error("keygen session kind expected")]
+    KeygenSessionExpected,
+    /// Error generated when the receiver for a peer to peer message
+    /// does not exist.
+    #[error("receiver {0} for peer to peer message does not exist")]
+    BadPeerReceiver(u16),
+    /// Error generated when a client connection does not belong to
+    /// the specified group.
+    #[error("client {0} does not belong to the group {1}")]
+    BadConnection(usize, String),
+}
 
 /// Method to create a group.
 pub const GROUP_CREATE: &str = "Group.create";
@@ -122,18 +145,18 @@ impl Service for ServiceHandler {
             }
             GROUP_JOIN => {
                 let (conn_id, state) = ctx;
-                let uuid: Uuid = req.deserialize()?;
+                let group_id: Uuid = req.deserialize()?;
                 let mut writer = state.write().await;
-                if let Some(group) = writer.groups.get_mut(&uuid) {
+                if let Some(group) = writer.groups.get_mut(&group_id) {
                     if let None = group.clients.iter().find(|c| *c == conn_id) {
                         group.clients.push(*conn_id);
                     }
                     let res = serde_json::to_value(group).unwrap();
                     Some((req, res).into())
                 } else {
-                    warn!("group does not exist: {}", uuid);
-                    // TODO: send error response
-                    None
+                    return Err(Error::from(Box::from(
+                        ServiceError::GroupDoesNotExist(group_id),
+                    )));
                 }
             }
             SESSION_CREATE => {
@@ -141,17 +164,13 @@ impl Service for ServiceHandler {
                 let params: SessionCreateParams = req.deserialize()?;
                 let (group_id, kind) = params;
                 let mut writer = state.write().await;
-                if let Some(group) =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
-                {
-                    let session = Session::from(kind.clone());
-                    let key = session.uuid.clone();
-                    group.sessions.insert(key, session.clone());
-                    let res = serde_json::to_value(&session).unwrap();
-                    Some((req, res).into())
-                } else {
-                    None
-                }
+                let group =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                let session = Session::from(kind.clone());
+                let key = session.uuid.clone();
+                group.sessions.insert(key, session.clone());
+                let res = serde_json::to_value(&session).unwrap();
+                Some((req, res).into())
             }
             SESSION_JOIN => {
                 let (conn_id, state) = ctx;
@@ -159,19 +178,15 @@ impl Service for ServiceHandler {
                 let (group_id, session_id, _kind) = params;
 
                 let mut writer = state.write().await;
-                if let Some(group) =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
-                {
-                    if let Some(session) = group.sessions.get_mut(&session_id) {
-                        let res = serde_json::to_value(&session).unwrap();
-                        Some((req, res).into())
-                    } else {
-                        warn!("session does not exist: {}", session_id);
-                        // TODO: send error response
-                        None
-                    }
+                let group =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                if let Some(session) = group.sessions.get_mut(&session_id) {
+                    let res = serde_json::to_value(&session).unwrap();
+                    Some((req, res).into())
                 } else {
-                    None
+                    return Err(Error::from(Box::from(
+                        ServiceError::SessionDoesNotExist(session_id),
+                    )));
                 }
             }
             SESSION_SIGNUP => {
@@ -180,20 +195,16 @@ impl Service for ServiceHandler {
                 let (group_id, session_id, _kind) = params;
 
                 let mut writer = state.write().await;
-                if let Some(group) =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
-                {
-                    if let Some(session) = group.sessions.get_mut(&session_id) {
-                        let party_number = session.signup(*conn_id);
-                        let res = serde_json::to_value(&party_number).unwrap();
-                        Some((req, res).into())
-                    } else {
-                        warn!("session does not exist: {}", session_id);
-                        // TODO: send error response
-                        None
-                    }
+                let group =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                if let Some(session) = group.sessions.get_mut(&session_id) {
+                    let party_number = session.signup(*conn_id);
+                    let res = serde_json::to_value(&party_number).unwrap();
+                    Some((req, res).into())
                 } else {
-                    None
+                    return Err(Error::from(Box::from(
+                        ServiceError::SessionDoesNotExist(session_id),
+                    )));
                 }
             }
             // Load an existing party signup into the session
@@ -205,34 +216,29 @@ impl Service for ServiceHandler {
 
                 if let SessionKind::Keygen = kind {
                     let mut writer = state.write().await;
-                    if let Some(group) =
-                        get_group_mut(&conn_id, &group_id, &mut writer.groups)
-                    {
-                        if let Some(session) =
-                            group.sessions.get_mut(&session_id)
-                        {
-                            let res =
-                                serde_json::to_value(&party_number).unwrap();
-                            match session.load(
-                                &group.params,
-                                *conn_id,
-                                party_number,
-                            ) {
-                                Ok(_) => Some((req, res).into()),
-                                Err(err) => {
-                                    return Err(Error::from(Box::from(err)))
-                                }
+                    let group =
+                        get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    if let Some(session) = group.sessions.get_mut(&session_id) {
+                        let res = serde_json::to_value(&party_number).unwrap();
+                        match session.load(
+                            &group.params,
+                            *conn_id,
+                            party_number,
+                        ) {
+                            Ok(_) => Some((req, res).into()),
+                            Err(err) => {
+                                return Err(Error::from(Box::from(err)))
                             }
-                        } else {
-                            warn!("session does not exist: {}", session_id);
-                            // TODO: send error response
-                            None
                         }
                     } else {
-                        None
+                        return Err(Error::from(Box::from(
+                            ServiceError::SessionDoesNotExist(session_id),
+                        )));
                     }
                 } else {
-                    None
+                    return Err(Error::from(Box::from(
+                        ServiceError::KeygenSessionExpected,
+                    )));
                 }
             }
             // Mark the session as finished for a party.
@@ -242,19 +248,15 @@ impl Service for ServiceHandler {
                 let (group_id, session_id, party_number) = params;
 
                 let mut writer = state.write().await;
-                if let Some(group) =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)
-                {
-                    if let Some(session) = group.sessions.get_mut(&session_id) {
-                        session.finished.insert(party_number);
-                        Some(req.into())
-                    } else {
-                        warn!("session does not exist: {}", session_id);
-                        // TODO: send error response
-                        None
-                    }
+                let group =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                if let Some(session) = group.sessions.get_mut(&session_id) {
+                    session.finished.insert(party_number);
+                    Some(req.into())
                 } else {
-                    None
+                    return Err(Error::from(Box::from(
+                        ServiceError::SessionDoesNotExist(session_id),
+                    )));
                 }
             }
             SESSION_MESSAGE | NOTIFY_PROPOSAL => {
@@ -287,33 +289,31 @@ impl Service for NotifyHandler {
 
                 if let SessionKind::Keygen = kind {
                     let reader = state.read().await;
-                    if let Some(group) =
-                        get_group(&conn_id, &group_id, &reader.groups)
+                    let group = get_group(&conn_id, &group_id, &reader.groups)?;
+
+                    let last_session =
+                        group.sessions.values().last().unwrap().clone();
+                    let res = serde_json::to_value((
+                        SESSION_CREATE_EVENT,
+                        &last_session,
+                    ))
+                    .unwrap();
+
+                    // Notify everyone else in the group a session was created
                     {
-                        let last_session =
-                            group.sessions.values().last().unwrap().clone();
-                        let res = serde_json::to_value((
-                            SESSION_CREATE_EVENT,
-                            &last_session,
-                        ))
-                        .unwrap();
-
-                        // Notify everyone else in the group a session was created
-                        {
-                            let ctx = Notification::Group {
-                                group_id,
-                                filter: Some(vec![*conn_id]),
-                            };
-                            let mut writer = notification.lock().await;
-                            *writer = ctx;
-                        }
-
-                        Some(res.into())
-                    } else {
-                        None
+                        let ctx = Notification::Group {
+                            group_id,
+                            filter: Some(vec![*conn_id]),
+                        };
+                        let mut writer = notification.lock().await;
+                        *writer = ctx;
                     }
+
+                    Some(res.into())
                 } else {
-                    None
+                    return Err(Error::from(Box::from(
+                        ServiceError::KeygenSessionExpected,
+                    )));
                 }
             }
             SESSION_SIGNUP => {
@@ -323,26 +323,23 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
 
-                if let Some((group, session)) = get_group_session(
+                let (group, session) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
-                ) {
-                    handle_threshold_notify(
-                        session.party_signups.len(),
-                        group_id,
-                        session_id,
-                        group,
-                        session,
-                        kind,
-                        notification,
-                        SESSION_SIGNUP_EVENT,
-                    )
-                    .await
-                } else {
-                    None
-                }
+                )?;
+                handle_threshold_notify(
+                    session.party_signups.len(),
+                    group_id,
+                    session_id,
+                    group,
+                    session,
+                    kind,
+                    notification,
+                    SESSION_SIGNUP_EVENT,
+                )
+                .await
             }
             SESSION_LOAD => {
                 let (conn_id, state, notification) = ctx;
@@ -351,26 +348,23 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
 
-                if let Some((group, session)) = get_group_session(
+                let (group, session) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
-                ) {
-                    handle_threshold_notify(
-                        session.party_signups.len(),
-                        group_id,
-                        session_id,
-                        group,
-                        session,
-                        kind,
-                        notification,
-                        SESSION_LOAD_EVENT,
-                    )
-                    .await
-                } else {
-                    None
-                }
+                )?;
+                handle_threshold_notify(
+                    session.party_signups.len(),
+                    group_id,
+                    session_id,
+                    group,
+                    session,
+                    kind,
+                    notification,
+                    SESSION_LOAD_EVENT,
+                )
+                .await
             }
             SESSION_MESSAGE => {
                 let (conn_id, state, notification) = ctx;
@@ -379,67 +373,62 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
                 // Check we have valid group / session
-                if let Some((_group, session)) = get_group_session(
+                let (_group, session) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
-                ) {
-                    // Send direct to peer
-                    if let Some(receiver) = &msg.receiver {
-                        if let Some(s) = session
-                            .party_signups
-                            .iter()
-                            .find(|s| s.0 == *receiver)
+                )?;
+
+                // Send direct to peer
+                if let Some(receiver) = &msg.receiver {
+                    if let Some(s) =
+                        session.party_signups.iter().find(|s| s.0 == *receiver)
+                    {
+                        let result =
+                            serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
+                                .unwrap();
+
+                        let response: Response = result.into();
+                        let message = (s.1, response);
+
                         {
-                            let result = serde_json::to_value((
-                                SESSION_MESSAGE_EVENT,
-                                msg,
-                            ))
-                            .unwrap();
-
-                            let response: Response = result.into();
-                            let message = (s.1, response);
-
-                            {
-                                let ctx = Notification::Relay {
-                                    messages: vec![message],
-                                };
-
-                                let mut writer = notification.lock().await;
-                                *writer = ctx;
-                            }
-
-                            // Must return a response so the server processes
-                            // our notifications even though our actual responses
-                            // are in the messages assigned to the notification context
-                            Some((serde_json::Value::Null).into())
-                        } else {
-                            warn!("could not find receiver {} in session party signups", receiver);
-                            None
-                        }
-
-                    // Handle broadcast round
-                    } else {
-                        {
-                            let ctx = Notification::Session {
-                                group_id,
-                                session_id,
-                                filter: Some(vec![*conn_id]),
+                            let ctx = Notification::Relay {
+                                messages: vec![message],
                             };
 
                             let mut writer = notification.lock().await;
                             *writer = ctx;
                         }
 
-                        let result =
-                            serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
-                                .unwrap();
-
-                        Some(result.into())
+                        // Must return a response so the server processes
+                        // our notifications even though our actual responses
+                        // are in the messages assigned to the notification context
+                        Some((serde_json::Value::Null).into())
+                    } else {
+                        return Err(Error::from(Box::from(
+                            ServiceError::BadPeerReceiver(*receiver),
+                        )));
                     }
+
+                // Handle broadcast round
                 } else {
-                    None
+                    {
+                        let ctx = Notification::Session {
+                            group_id,
+                            session_id,
+                            filter: Some(vec![*conn_id]),
+                        };
+
+                        let mut writer = notification.lock().await;
+                        *writer = ctx;
+                    }
+
+                    let result =
+                        serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
+                            .unwrap();
+
+                    Some(result.into())
                 }
             }
             SESSION_FINISH => {
@@ -449,45 +438,41 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
 
-                if let Some((_group, session)) = get_group_session(
+                let (_group, session) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
-                ) {
-                    let mut signups = session
-                        .party_signups
-                        .iter()
-                        .map(|(n, _)| n.clone())
-                        .collect::<Vec<u16>>();
-                    let mut completed =
-                        session.finished.iter().cloned().collect::<Vec<u16>>();
+                )?;
 
-                    signups.sort();
-                    completed.sort();
+                let mut signups = session
+                    .party_signups
+                    .iter()
+                    .map(|(n, _)| n.clone())
+                    .collect::<Vec<u16>>();
+                let mut completed =
+                    session.finished.iter().cloned().collect::<Vec<u16>>();
 
-                    if signups == completed {
-                        let result = serde_json::to_value((
-                            SESSION_CLOSED_EVENT,
-                            completed,
-                        ))
-                        .unwrap();
+                signups.sort();
+                completed.sort();
 
-                        {
-                            let ctx = Notification::Session {
-                                group_id,
-                                session_id,
-                                filter: None,
-                            };
+                if signups == completed {
+                    let result =
+                        serde_json::to_value((SESSION_CLOSED_EVENT, completed))
+                            .unwrap();
 
-                            let mut writer = notification.lock().await;
-                            *writer = ctx;
-                        }
+                    {
+                        let ctx = Notification::Session {
+                            group_id,
+                            session_id,
+                            filter: None,
+                        };
 
-                        Some(result.into())
-                    } else {
-                        None
+                        let mut writer = notification.lock().await;
+                        *writer = ctx;
                     }
+
+                    Some(result.into())
                 } else {
                     None
                 }
@@ -525,35 +510,32 @@ impl Service for NotifyHandler {
 
                 let reader = state.read().await;
 
-                if let Some((_group, session)) = get_group_session(
+                let (_group, session) = get_group_session(
                     &conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
-                ) {
-                    let participants = session
-                        .party_signups
-                        .iter()
-                        .map(|(_, c)| c.clone())
-                        .collect::<Vec<usize>>();
+                )?;
 
-                    let result =
-                        serde_json::to_value((NOTIFY_SIGNED_EVENT, value))
-                            .unwrap();
+                let participants = session
+                    .party_signups
+                    .iter()
+                    .map(|(_, c)| c.clone())
+                    .collect::<Vec<usize>>();
 
-                    {
-                        let ctx = Notification::Group {
-                            group_id,
-                            filter: Some(participants),
-                        };
+                let result =
+                    serde_json::to_value((NOTIFY_SIGNED_EVENT, value)).unwrap();
 
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
-                    }
-                    Some(result.into())
-                } else {
-                    None
+                {
+                    let ctx = Notification::Group {
+                        group_id,
+                        filter: Some(participants),
+                    };
+
+                    let mut writer = notification.lock().await;
+                    *writer = ctx;
                 }
+                Some(result.into())
             }
             _ => None,
         };
@@ -566,19 +548,21 @@ fn get_group_mut<'a>(
     conn_id: &usize,
     group_id: &str,
     groups: &'a mut HashMap<String, Group>,
-) -> Option<&'a mut Group> {
+) -> Result<&'a mut Group> {
     if let Some(group) = groups.get_mut(group_id) {
         // Verify connection is part of the group clients
         if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
-            Some(group)
+            Ok(group)
         } else {
-            warn!("connection does not belong to the group");
-            None
+            return Err(Error::from(Box::from(ServiceError::BadConnection(
+                *conn_id,
+                group_id.to_string(),
+            ))));
         }
     } else {
-        warn!("group does not exist: {}", group_id);
-        // TODO: send error response
-        None
+        return Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
+            group_id.to_string(),
+        ))));
     }
 }
 
@@ -586,19 +570,21 @@ fn get_group<'a>(
     conn_id: &usize,
     group_id: &str,
     groups: &'a HashMap<String, Group>,
-) -> Option<&'a Group> {
+) -> Result<&'a Group> {
     if let Some(group) = groups.get(group_id) {
         // Verify connection is part of the group clients
         if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
-            Some(group)
+            Ok(group)
         } else {
-            warn!("connection does not belong to the group");
-            None
+            return Err(Error::from(Box::from(ServiceError::BadConnection(
+                *conn_id,
+                group_id.to_string(),
+            ))));
         }
     } else {
-        warn!("group does not exist: {}", group_id);
-        // TODO: send error response
-        None
+        return Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
+            group_id.to_string(),
+        ))));
     }
 }
 
@@ -607,17 +593,14 @@ fn get_group_session<'a>(
     group_id: &str,
     session_id: &str,
     groups: &'a HashMap<String, Group>,
-) -> Option<(&'a Group, &'a Session)> {
-    if let Some(group) = get_group(conn_id, group_id, groups) {
-        if let Some(session) = group.sessions.get(session_id) {
-            Some((group, session))
-        } else {
-            warn!("session does not exist: {}", session_id);
-            // TODO: send error response
-            None
-        }
+) -> Result<(&'a Group, &'a Session)> {
+    let group = get_group(conn_id, group_id, groups)?;
+    if let Some(session) = group.sessions.get(session_id) {
+        Ok((group, session))
     } else {
-        None
+        return Err(Error::from(Box::from(ServiceError::SessionDoesNotExist(
+            session_id.to_string(),
+        ))));
     }
 }
 

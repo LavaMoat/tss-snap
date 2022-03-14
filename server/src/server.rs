@@ -32,15 +32,15 @@ pub enum ServerError {
 
     /// Error generated if party number is zero.
     #[error("party number may not be zero")]
-    NotZeroPartyNumber,
+    ZeroPartyNumber,
 
     /// Error generated if a party number is out of range.
     #[error("party number is out of range")]
     PartyNumberOutOfRange,
 
     /// Error generated if a party number already exists for a session.
-    #[error("party number already exists for this session")]
-    PartyNumberAlreadyExists,
+    #[error("party number already exists for session {0}")]
+    PartyNumberAlreadyExists(String),
 
     /// Error generated parsing a socket address.
     #[error(transparent)]
@@ -196,7 +196,7 @@ impl Session {
         party_number: u16,
     ) -> Result<()> {
         if party_number == 0 {
-            return Err(ServerError::NotZeroPartyNumber);
+            return Err(ServerError::ZeroPartyNumber);
         }
         if party_number > parameters.parties {
             return Err(ServerError::PartyNumberOutOfRange);
@@ -206,7 +206,9 @@ impl Session {
             .iter()
             .find(|(num, _)| num == &party_number)
         {
-            return Err(ServerError::PartyNumberAlreadyExists);
+            return Err(ServerError::PartyNumberAlreadyExists(
+                self.uuid.clone(),
+            ));
         }
         self.party_signups.push((party_number, conn));
         Ok(())
@@ -344,7 +346,7 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
 
     // Use an unbounded channel to handle buffering and flushing of messages
-    // to the websocket...
+    // to the websocket.
     let (tx, rx) = mpsc::unbounded_channel::<Message>();
     let mut rx = UnboundedReceiverStream::new(rx);
 
