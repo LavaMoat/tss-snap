@@ -5,8 +5,6 @@ const isProduction = process.env.NODE_ENV === "production";
 const url = isProduction
   ? "${document.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/demo"
   : "ws://${location.hostname}:3030/demo";
-;
-
 module.exports = {
   entry: "./src/index.tsx",
   module: {
