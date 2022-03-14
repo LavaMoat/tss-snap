@@ -103,7 +103,7 @@ pub struct Group {
     pub uuid: String,
     /// Parameters for key generation.
     pub params: Parameters,
-    /// Human-redable label for the group.
+    /// Human-readable label for the group.
     pub label: String,
     /// Collection of client identifiers.
     #[serde(skip)]

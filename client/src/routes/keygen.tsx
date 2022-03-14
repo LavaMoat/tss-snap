@@ -15,7 +15,7 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { KeyShare, Session, Phase } from "../mpc";
+import { KeyShare, Session, SessionKind } from "../mpc";
 import { generateKeyShare } from "../mpc/keygen";
 
 import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
@@ -139,7 +139,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
             websocket,
             sessionInfo.groupId,
             sessionInfo.sessionId,
-            Phase.KEYGEN
+            SessionKind.KEYGEN
           );
 
           const keyShare = await generateKeyShare(
@@ -217,7 +217,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
       const session = await websocket.rpc({
         method: "Session.create",
-        params: [this.props.group.uuid, Phase.KEYGEN],
+        params: [this.props.group.uuid, SessionKind.KEYGEN],
       });
 
       this.props.dispatch(setKeygenSession(session));
@@ -240,7 +240,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e.preventDefault();
       const session = await websocket.rpc({
         method: "Session.join",
-        params: [this.props.group.uuid, targetSession, Phase.KEYGEN],
+        params: [this.props.group.uuid, targetSession, SessionKind.KEYGEN],
       });
 
       const sink = createSink(session.uuid);
@@ -252,7 +252,11 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       e.preventDefault();
       const partyNumber = await websocket.rpc({
         method: "Session.signup",
-        params: [this.props.group.uuid, this.state.session.uuid, Phase.KEYGEN],
+        params: [
+          this.props.group.uuid,
+          this.state.session.uuid,
+          SessionKind.KEYGEN,
+        ],
       });
       const newSession = {
         ...session,
@@ -283,7 +287,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         params: [
           this.props.group.uuid,
           this.state.session.uuid,
-          Phase.KEYGEN,
+          SessionKind.KEYGEN,
           partyNumber,
         ],
       });
