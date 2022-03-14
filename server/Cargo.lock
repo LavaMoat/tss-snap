@@ -546,6 +546,7 @@ dependencies = [
  "serde",
  "serde_json",
  "structopt",
+ "thiserror",
  "tokio",
  "tokio-stream",
  "uuid",

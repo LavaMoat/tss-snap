@@ -1,11 +1,9 @@
-use anyhow::Result;
-
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
 
-use mpc_websocket::Server;
+use mpc_websocket::{Result, Server};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
