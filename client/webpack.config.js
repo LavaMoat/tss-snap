@@ -3,8 +3,8 @@ const path = require("path");
 
 const isProduction = process.env.NODE_ENV === "production";
 const url = isProduction
-  ? "${document.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/demo"
-  : "ws://${location.hostname}:3030/demo";
+  ? "${document.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/mpc"
+  : "ws://${location.hostname}:3030/mpc";
 module.exports = {
   entry: "./src/index.tsx",
   module: {

@@ -306,6 +306,7 @@ impl Server {
 
         let static_files = static_files.canonicalize()?;
         info!("Assets: {}", static_files.display());
+        info!("Websocket: /{}", path);
 
         let client = warp::any().and(warp::fs::dir(static_files));
 
