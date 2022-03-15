@@ -28,6 +28,15 @@ use super::server::{
 /// Error thrown by the JSON-RPC services.
 #[derive(Debug, Error)]
 pub enum ServiceError {
+    /// Error generated when a parties parameter is too small.
+    #[error("parties must be greater than one")]
+    PartiesTooSmall,
+    /// Error generated when a parties parameter is too small.
+    #[error("threshold must be greater than zero")]
+    ThresholdTooSmall,
+    /// Error generated when the threshold exceeds the parties.
+    #[error("threshold must be less than parties")]
+    ThresholdRange,
     /// Error generated when a group has enough connections.
     #[error("group {0} is full, cannot accept new connections")]
     GroupFull(String),
@@ -142,6 +151,27 @@ impl Service for ServiceHandler {
                 let (conn_id, state) = ctx;
                 let params: GroupCreateParams = req.deserialize()?;
                 let (label, parameters) = params;
+
+                // If parties is less than two then may as well
+                // use a standard single-party ECDSA private key
+                if parameters.parties <= 1 {
+                    return Err(Error::from(Box::from(
+                        ServiceError::PartiesTooSmall,
+                    )));
+                // If threshold is less than one then it only
+                // takes a single party to sign a request which
+                // defeats the point of MPC
+                } else if parameters.threshold == 0 {
+                    return Err(Error::from(Box::from(
+                        ServiceError::ThresholdTooSmall,
+                    )));
+                // Threshold must be in range `(t + 1) <= n`
+                } else if parameters.threshold >= parameters.parties {
+                    return Err(Error::from(Box::from(
+                        ServiceError::ThresholdRange,
+                    )));
+                }
+
                 let group =
                     Group::new(*conn_id, parameters.clone(), label.clone());
                 let res = serde_json::to_value(&group.uuid).unwrap();
