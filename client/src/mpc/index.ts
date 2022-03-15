@@ -1,4 +1,4 @@
-export enum Phase {
+export enum SessionKind {
   KEYGEN = "keygen",
   SIGN = "sign",
 }

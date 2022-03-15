@@ -1,11 +1,9 @@
-use anyhow::Result;
-
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
 use structopt::StructOpt;
 
-use mpc_websocket::Server;
+use mpc_websocket::{Result, Server};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -34,5 +32,5 @@ async fn main() -> Result<()> {
 
     let bind = opts.bind.unwrap_or_else(|| "127.0.0.1:3030".to_string());
     let addr = SocketAddr::from_str(&bind)?;
-    Server::start("demo", (addr.ip(), addr.port()), opts.files).await
+    Server::start("mpc", (addr.ip(), addr.port()), opts.files).await
 }

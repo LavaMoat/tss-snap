@@ -1,5 +1,5 @@
 import { WebSocketClient } from "../clients/websocket";
-import { Message, Phase } from "../";
+import { Message, SessionKind } from "../";
 
 // Stream for outgoing messages that send JSON-RPC
 // via a websocket client.
@@ -7,18 +7,18 @@ export class WebSocketStream {
   websocket: WebSocketClient;
   groupId: string;
   sessionId: string;
-  phase: Phase;
+  kind: SessionKind;
 
   constructor(
     websocket: WebSocketClient,
     groupId: string,
     sessionId: string,
-    phase: Phase
+    kind: SessionKind
   ) {
     this.websocket = websocket;
     this.groupId = groupId;
     this.sessionId = sessionId;
-    this.phase = phase;
+    this.kind = kind;
   }
 
   async sendMessage(message: Message) {
@@ -26,7 +26,7 @@ export class WebSocketStream {
     //console.log("Sending websocket message", message.round, message);
     return this.websocket.rpc({
       method: "Session.message",
-      params: [this.groupId, this.sessionId, this.phase, message],
+      params: [this.groupId, this.sessionId, this.kind, message],
     });
   }
 }

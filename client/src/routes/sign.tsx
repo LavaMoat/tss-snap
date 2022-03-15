@@ -8,7 +8,7 @@ import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketClient } from "../mpc/clients/websocket";
 import { WebSocketContext } from "../websocket-provider";
-import { Phase, Session, KeyShare } from "../mpc";
+import { SessionKind, Session, KeyShare } from "../mpc";
 import { sign } from "../mpc/sign";
 
 import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
@@ -54,11 +54,11 @@ const Proposal = ({
       const createProposalSession = async () => {
         const targetSession = await websocket.rpc({
           method: "Session.create",
-          params: [group.uuid, Phase.SIGN],
+          params: [group.uuid, SessionKind.SIGN],
         });
         const session = await websocket.rpc({
           method: "Session.join",
-          params: [group.uuid, targetSession.uuid, Phase.SIGN],
+          params: [group.uuid, targetSession.uuid, SessionKind.SIGN],
         });
 
         // Send signing proposal notification
@@ -77,7 +77,7 @@ const Proposal = ({
     event.preventDefault();
     const number = await websocket.rpc({
       method: "Session.signup",
-      params: [group.uuid, session.uuid, Phase.SIGN],
+      params: [group.uuid, session.uuid, SessionKind.SIGN],
     });
     const partySignup = { number, uuid: session.uuid };
     const newSession = {
@@ -108,7 +108,7 @@ const Proposal = ({
             websocket,
             group.uuid,
             partySignup.uuid,
-            Phase.SIGN
+            SessionKind.SIGN
           );
 
           const { signature: signResult, address: publicAddress } = await sign(
@@ -239,7 +239,7 @@ const Sign = () => {
         const { sessionId, message } = notification;
         const session = await websocket.rpc({
           method: "Session.join",
-          params: [group.uuid, sessionId, Phase.SIGN],
+          params: [group.uuid, sessionId, SessionKind.SIGN],
         });
         const proposal = {
           message,

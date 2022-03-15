@@ -96,6 +96,18 @@ To view the API documentation for the webassembly bindings run:
 (cd wasm && cargo doc --open --no-deps)
 ```
 
+## Server
+
+Static files are served from a given filesystem path and the `Cross-Origin-Embedder-Policy` and `Cross-Origin-Opener-Policy` headers are set to enable the use of `SharedArrayBuffer`, see [Cross-Origin-Embedder-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy) for more information. It is a requirement that `SharedArrayBuffer` is available as the webassembly module requires threads so if you wish to serve assets from another web server or CDN then you need to ensure those headers are set correctly.
+
+A websocket endpoint at the path `/mpc` is exposed so that clients can create groups and sessions that are used to facilitate communication between co-operating parties.
+
+A group represents a collection of connected clients that are co-operating within the context of the group parameters `t` and `n` where `t` is the threshold and `n` is the total number of parties.
+
+Groups may contain sessions that can be used for key generation and signing. A key generation session expects `n` parties whilst a signing session expects `t + 1` parties to co-operate.
+
+For ease of deployment groups are stored in memory and removed when there are no more connected clients; whilst this is convenient as it means there is no dependency on a caching layer such as [redis](https://redis.io) it means that it is not possible to provide persistent groups which could be problematic if clients have poor network connections. A more resilient, fault tolerant design would store the groups and sessions in a cache and allow for re-connection to an existing group.
+
 ## Notes
 
 ### Common
