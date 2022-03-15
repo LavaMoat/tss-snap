@@ -13,7 +13,7 @@
 //! payload for the event.
 //!
 use async_trait::async_trait;
-use json_rpc2::{futures::*, Error, Request, Response, Result};
+use json_rpc2::{futures::*, Error, Request, Response, Result, RpcError};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -50,6 +50,9 @@ pub enum ServiceError {
     #[error("client {0} does not belong to the group {1}")]
     BadConnection(usize, String),
 }
+
+/// Error data indicating the connection should be closed.
+pub const CLOSE_CONNECTION: &str = "close-connection";
 
 /// Method to create a group.
 pub const GROUP_CREATE: &str = "Group.create";
@@ -152,16 +155,21 @@ impl Service for ServiceHandler {
                 let mut writer = state.write().await;
                 if let Some(group) = writer.groups.get_mut(&group_id) {
                     if group.clients.len() == group.params.parties as usize {
-                        return Err(Error::from(Box::from(
-                            ServiceError::GroupFull(group_id),
-                        )));
+                        let error = ServiceError::GroupFull(group_id);
+                        let err = RpcError::new(
+                            error.to_string(),
+                            Some(CLOSE_CONNECTION.to_string()),
+                        );
+                        Some((req, err).into())
+                    } else {
+                        if let None =
+                            group.clients.iter().find(|c| *c == conn_id)
+                        {
+                            group.clients.push(*conn_id);
+                        }
+                        let res = serde_json::to_value(group).unwrap();
+                        Some((req, res).into())
                     }
-
-                    if let None = group.clients.iter().find(|c| *c == conn_id) {
-                        group.clients.push(*conn_id);
-                    }
-                    let res = serde_json::to_value(group).unwrap();
-                    Some((req, res).into())
                 } else {
                     return Err(Error::from(Box::from(
                         ServiceError::GroupDoesNotExist(group_id),

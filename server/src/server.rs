@@ -350,6 +350,9 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     let (tx, rx) = mpsc::unbounded_channel::<Message>();
     let mut rx = UnboundedReceiverStream::new(rx);
 
+    let mut close_flag = Arc::new(RwLock::new(false));
+    let should_close = Arc::clone(&close_flag);
+
     tokio::task::spawn(async move {
         while let Some(message) = rx.next().await {
             user_ws_tx
@@ -358,6 +361,15 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
                     eprintln!("websocket send error: {}", e);
                 })
                 .await;
+
+            let reader = should_close.read().await;
+            if *reader {
+                match user_ws_tx.close().await {
+                    Err(_) => warn!("failed to close websocket"),
+                    _ => {}
+                }
+                break;
+            }
         }
     });
 
@@ -373,7 +385,8 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
                 break;
             }
         };
-        client_incoming_message(conn_id, msg, &state).await;
+
+        client_incoming_message(conn_id, &mut close_flag, msg, &state).await;
     }
 
     // user_ws_rx stream will keep processing as long as the user stays
@@ -383,6 +396,7 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
 
 async fn client_incoming_message(
     conn_id: usize,
+    close_flag: &mut Arc<RwLock<bool>>,
     msg: Message,
     state: &Arc<RwLock<State>>,
 ) {
@@ -393,7 +407,7 @@ async fn client_incoming_message(
     };
 
     match json_rpc2::from_str(msg) {
-        Ok(req) => rpc_request(conn_id, req, state).await,
+        Ok(req) => rpc_request(conn_id, close_flag, req, state).await,
         Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
     }
 }
@@ -401,6 +415,7 @@ async fn client_incoming_message(
 /// Process a request message from a client.
 async fn rpc_request(
     conn_id: usize,
+    close_flag: &mut Arc<RwLock<bool>>,
     request: Request,
     state: &Arc<RwLock<State>>,
 ) {
@@ -414,6 +429,19 @@ async fn rpc_request(
         server.serve(&request, &(conn_id, Arc::clone(state))).await
     {
         rpc_response(conn_id, &response, state).await;
+
+        if let Some(error) = response.error() {
+            if let Some(data) = &error.data {
+                if data == CLOSE_CONNECTION {
+                    let mut writer = close_flag.write().await;
+                    *writer = true;
+
+                    //if let Some(rx_stream) = state.read().await.clients.get(&conn_id) {
+                    //rx_stream.close();
+                    //}
+                }
+            }
+        }
     }
 
     // Requests that require post-processing notifications
