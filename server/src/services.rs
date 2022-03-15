@@ -28,6 +28,9 @@ use super::server::{
 /// Error thrown by the JSON-RPC services.
 #[derive(Debug, Error)]
 pub enum ServiceError {
+    /// Error generated when a group has enough connections.
+    #[error("group {0} is full, cannot accept new connections")]
+    GroupFull(String),
     /// Error generated when a group does not exist.
     #[error("group {0} does not exist")]
     GroupDoesNotExist(String),
@@ -148,6 +151,12 @@ impl Service for ServiceHandler {
                 let group_id: Uuid = req.deserialize()?;
                 let mut writer = state.write().await;
                 if let Some(group) = writer.groups.get_mut(&group_id) {
+                    if group.clients.len() == group.params.parties as usize {
+                        return Err(Error::from(Box::from(
+                            ServiceError::GroupFull(group_id),
+                        )));
+                    }
+
                     if let None = group.clients.iter().find(|c| *c == conn_id) {
                         group.clients.push(*conn_id);
                     }
