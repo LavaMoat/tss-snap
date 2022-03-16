@@ -200,6 +200,16 @@ When all the clients in a session have called this method the server will emit a
 
 This method is a notification and does not return anything to the caller.
 
+#### Notify.proposal
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `message`: The message to be signed.
+
+Sends a signing proposal to *all other clients in the group*. The event emitted is `notifyProposal` and the payload is an object with `sessionId` and the `message` that was passed to this method.
+
+This method is a notification and does not return anything to the caller.
+
 ## Notes
 
 ### Common
