@@ -46,6 +46,12 @@ pub enum ServiceError {
     /// Error generated when a session does not exist.
     #[error("group {0} does not exist")]
     SessionDoesNotExist(String),
+    /// Error generated when a party number does not exist.
+    #[error("party {0} does not exist")]
+    PartyDoesNotExist(u16),
+    /// Error generated when a party number does not belong to the caller.
+    #[error("party {0} is not valid in this context")]
+    BadParty(u16),
     /// Error generated when a session kind was given, but
     /// does not match the expected kind.
     #[error("keygen session kind expected")]
@@ -158,7 +164,7 @@ impl Service for ServiceHandler {
                     return Err(Error::from(Box::from(
                         ServiceError::PartiesTooSmall,
                     )));
-                // If threshold is less than one then it only
+                // If threshold is zero then it only
                 // takes a single party to sign a request which
                 // defeats the point of MPC
                 } else if parameters.threshold == 0 {
@@ -298,8 +304,27 @@ impl Service for ServiceHandler {
                 let group =
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
-                    session.finished.insert(party_number);
-                    Some(req.into())
+                    let existing_signup = session
+                        .party_signups
+                        .iter()
+                        .find(|(s, _)| s == &party_number);
+
+                    if let Some((_, conn)) = existing_signup {
+                        // The party number must belong to the caller
+                        // which we check by comparing connection identifiers
+                        if conn != conn_id {
+                            return Err(Error::from(Box::from(
+                                ServiceError::BadParty(party_number),
+                            )));
+                        }
+
+                        session.finished.insert(party_number);
+                        Some(req.into())
+                    } else {
+                        return Err(Error::from(Box::from(
+                            ServiceError::PartyDoesNotExist(party_number),
+                        )));
+                    }
                 } else {
                     return Err(Error::from(Box::from(
                         ServiceError::SessionDoesNotExist(session_id),

@@ -100,13 +100,115 @@ To view the API documentation for the webassembly bindings run:
 
 Static files are served from a given filesystem path and the `Cross-Origin-Embedder-Policy` and `Cross-Origin-Opener-Policy` headers are set to enable the use of `SharedArrayBuffer`, see [Cross-Origin-Embedder-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy) for more information. It is a requirement that `SharedArrayBuffer` is available as the webassembly module requires threads so if you wish to serve assets from another web server or CDN then you need to ensure those headers are set correctly.
 
-A websocket endpoint at the path `/mpc` is exposed so that clients can create groups and sessions that are used to facilitate communication between co-operating parties.
+A websocket endpoint at the path `/mpc` is exposed so that clients can create groups and sessions that are used to facilitate communication between co-operating parties. Uses [JSON-RPC][] for communication.
 
 A group represents a collection of connected clients that are co-operating within the context of the group parameters `t` and `n` where `t` is the threshold and `n` is the total number of parties.
 
 Groups may contain sessions that can be used for key generation and signing. A key generation session expects `n` parties whilst a signing session expects `t + 1` parties to co-operate.
 
 For ease of deployment groups are stored in memory and removed when there are no more connected clients; whilst this is convenient as it means there is no dependency on a caching layer such as [redis](https://redis.io) it means that it is not possible to provide persistent groups which could be problematic if clients have poor network connections. A more resilient, fault tolerant design would store the groups and sessions in a cache and allow for re-connection to an existing group.
+
+### Methods
+
+An overview of the available [JSON-RPC][] methods.
+
+#### Group.create
+
+* `label`: Human-friendly `String` label for the group.
+* `parameters`: Group parameters (`{threshold: u16, parties: u16}`).
+
+Create a new group; the client that sends this method automatically joins the group.
+
+Returns the UUID for the group.
+
+#### Group.join
+
+* `group_id`: The `String` UUID for the group.
+
+Register the calling client as a member of the group.
+
+Returns the group object.
+
+#### Session.create
+
+* `group_id`: The `String` UUID for the group.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+
+Create a new session.
+
+Returns the session object.
+
+#### Session.join
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+
+Join an existing session.
+
+Returns the session object.
+
+#### Session.signup
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+
+Register as a co-operating party for a session.
+
+When the required number of parties have signed up to a session a `sessionSignup` event is emitted to all the clients in the session. For key generation there must be `parties` clients in the session and for signing there must be `threshold + 1` clients registered for the session.
+
+Returns the party signup number.
+
+#### Session.load
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (must be `keygen`).
+* `number`: The `u16` party signup number.
+
+Load a client into a given slot (party signup number). This is used to allow the party signup numbers allocated to saved key shares to be assigned and validated in the context of a session.
+
+The given `number` must be in range and must be an available slot; calling this method with a `kind` other than `keygen` will result in an error.
+
+When the required number of `parties` have been allocated to a session a `sessionLoad` event is emitted to all the clients in the session.
+
+Returns the party signup number.
+
+#### Session.message
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+* `message`: The message to broadcast or send peer to peer.
+
+Relay a message to all the other peers in the session (broadcast) or send directly to another peer.
+
+A `message` is treated as peer to peer when the `receiver` field is present which should be the party signup `number` for the peer.
+
+This method is a notification and does not return anything to the caller.
+
+#### Session.finish
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `number`: The `u16` party signup number.
+
+Indicate the session has been finished for the calling client.
+
+When all the clients in a session have called this method the server will emit a `sessionClosed` event to all the clients in the session.
+
+This method is a notification and does not return anything to the caller.
+
+#### Notify.proposal
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `message`: The message to be signed.
+
+Sends a signing proposal to *all other clients in the group*. The event emitted is `notifyProposal` and the payload is an object with `sessionId` and the `message` that was passed to this method.
+
+This method is a notification and does not return anything to the caller.
 
 ## Notes
 
@@ -167,3 +269,4 @@ crypto.getRandomValues = function (buffer) {
 ```
 
 [playwright]: https://playwright.dev/
+[JSON-RPC]: https://www.jsonrpc.org/specification
