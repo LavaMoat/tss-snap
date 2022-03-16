@@ -129,6 +129,63 @@ Register the calling client as a member of the group.
 
 Returns the group object.
 
+#### Session.create
+
+* `group_id`: The `String` UUID for the group.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+
+Create a new session.
+
+Returns the session object.
+
+#### Session.join
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+
+Join an existing session.
+
+Returns the session object.
+
+#### Session.signup
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+
+Register as a co-operating party for a session.
+
+When the required number of parties have signed up to a session a `sessionSignup` event is emitted to all the clients in the session. For key generation there must be `parties` clients in the session and for signing there must be `threshold + 1` clients registered for the session.
+
+Returns the party signup number.
+
+#### Session.load
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (must be `keygen`).
+* `number`: The `u16` party signup number.
+
+Load a client into a given slot (party signup number). This is used to allow the party signup numbers allocated to saved key shares to be assigned and validated in the context of a session.
+
+The given `number` must be in range and must be an available slot; calling this method with a `kind` other than `keygen` will result in an error.
+
+When the required number of `parties` have been allocated to a session a `sessionLoad` event is emitted to all the clients in the session.
+
+Returns the party signup number.
+
+#### Session.message
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `kind`: The `String` kind of session (either `keygen` or `sign`).
+* `message`: The message to broadcast or send peer to peer.
+
+Relay a message to all the other peers in the session (broadcast) or send directly to another peer.
+
+This method is a notification and does not return anything to the caller.
+
 ## Notes
 
 ### Common
