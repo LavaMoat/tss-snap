@@ -184,6 +184,20 @@ Returns the party signup number.
 
 Relay a message to all the other peers in the session (broadcast) or send directly to another peer.
 
+A `message` is treated as peer to peer when the `receiver` field is present which should be the party signup `number` for the peer.
+
+This method is a notification and does not return anything to the caller.
+
+#### Session.finish
+
+* `group_id`: The `String` UUID for the group.
+* `session_id`: The `String` UUID for the session.
+* `number`: The `u16` party signup number.
+
+Indicate the session has been finished for the calling client.
+
+When all the clients in a session have called this method the server will emit a `sessionClosed` event to all the clients in the session.
+
 This method is a notification and does not return anything to the caller.
 
 ## Notes
