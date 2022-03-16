@@ -119,7 +119,7 @@ type SessionSignupParams = (Uuid, Uuid, SessionKind);
 type SessionLoadParams = (Uuid, Uuid, SessionKind, u16);
 type SessionMessageParams = (Uuid, Uuid, SessionKind, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
-type NotifyProposalParams = (Uuid, Uuid, String);
+type NotifyProposalParams = (Uuid, Uuid, String, String);
 type NotifySignedParams = (Uuid, Uuid, Value);
 
 // Mimics the `Msg` struct
@@ -138,6 +138,8 @@ struct Message {
 struct Proposal {
     #[serde(rename = "sessionId")]
     session_id: String,
+    #[serde(rename = "proposalId")]
+    proposal_id: String,
     message: String,
 }
 
@@ -331,7 +333,7 @@ impl Service for ServiceHandler {
                     )));
                 }
             }
-            SESSION_MESSAGE | NOTIFY_PROPOSAL => {
+            SESSION_MESSAGE | NOTIFY_PROPOSAL | NOTIFY_SIGNED => {
                 // Must ACK so we indicate the service method exists
                 // the actual logic is handled by the notification service
                 Some(req.into())
@@ -552,10 +554,11 @@ impl Service for NotifyHandler {
             NOTIFY_PROPOSAL => {
                 let (conn_id, _state, notification) = ctx;
                 let params: NotifyProposalParams = req.deserialize()?;
-                let (group_id, session_id, message) = params;
+                let (group_id, session_id, proposal_id, message) = params;
 
                 let proposal = Proposal {
                     session_id,
+                    proposal_id,
                     message,
                 };
 

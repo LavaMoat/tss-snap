@@ -489,7 +489,7 @@ fn filter_clients(
     if let Some(filter) = filter {
         clients
             .into_iter()
-            .filter(|conn| filter.iter().any(|c| c != conn))
+            .filter(|conn| filter.iter().find(|c| c == &conn).is_none())
             .collect::<Vec<_>>()
     } else {
         clients
