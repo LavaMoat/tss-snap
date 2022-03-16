@@ -30,6 +30,7 @@
   "homepage": "https://github.com/LavaMoat/ecdsa-wasm",
   "dependencies": {
     "@reduxjs/toolkit": "^1.7.1",
+    "@types/uuid": "^8.3.4",
     "comlink": "^4.3.1",
     "ecdsa-wasm": "file:../wasm/pkg",
     "history": "^5.2.0",
@@ -37,7 +38,7 @@
     "react-dom": "^17.0.2",
     "react-redux": "^7.2.6",
     "react-router-dom": "^6.2.1",
-    "stream-browserify": "^3.0.0"
+    "uuid": "8.3.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.18.1",
