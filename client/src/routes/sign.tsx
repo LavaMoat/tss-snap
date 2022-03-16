@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector } from "../store/keygen";
@@ -8,21 +9,28 @@ import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketClient } from "../mpc/clients/websocket";
 import { WebSocketContext } from "../websocket-provider";
-import { SessionKind, Session, KeyShare } from "../mpc";
+import { SessionKind, KeyShare, SignResult } from "../mpc";
 import { sign } from "../mpc/sign";
 
 import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
 
-interface Proposal {
-  key: number;
-  message: string;
-  creator: boolean;
-  session?: Session;
-}
+import {
+  addProposal,
+  updateProposal,
+  Proposal,
+  proposalsSelector,
+} from "../store/proposals";
 
 interface ProposalNotification {
   sessionId: string;
+  proposalId: string;
   message: string;
+}
+
+interface SignedNotification {
+  proposal: Proposal;
+  signResult: SignResult;
+  publicAddress: string;
 }
 
 interface ProposalProps {
@@ -32,6 +40,11 @@ interface ProposalProps {
   websocket: WebSocketClient;
   worker: EcdsaWorker;
   keyShare: KeyShare;
+  onSignComplete: (
+    proposal: Proposal,
+    signResult: SignResult,
+    address: string
+  ) => void;
 }
 
 const Proposal = ({
@@ -41,10 +54,14 @@ const Proposal = ({
   websocket,
   worker,
   keyShare,
+  onSignComplete,
 }: ProposalProps) => {
   const [session, setSession] = useState(proposal.session);
   const [partyNumber, setPartyNumber] = useState(0);
-  const [result, setResult] = useState(null);
+
+  const { result } = proposal;
+
+  //const [result, setResult] = useState(null);
 
   // Track if a signing session is in progress
   const [runningSession, setRunningSession] = useState(false);
@@ -62,9 +79,9 @@ const Proposal = ({
         });
 
         // Send signing proposal notification
-        websocket.notify({
+        await websocket.notify({
           method: "Notify.proposal",
-          params: [group.uuid, session.uuid, proposal.message],
+          params: [group.uuid, session.uuid, proposal.key, proposal.message],
         });
 
         setSession(session);
@@ -130,7 +147,20 @@ const Proposal = ({
             );
           }
 
-          setResult({ signResult, publicAddress });
+          //setResult({ signResult, publicAddress });
+
+          onSignComplete(proposal, signResult, publicAddress);
+
+          if (partySignup.number === 1) {
+            await websocket.rpc({
+              method: "Notify.signed",
+              params: [
+                group.uuid,
+                session.uuid,
+                { proposal, signResult, publicAddress },
+              ],
+            });
+          }
 
           setRunningSession(false);
         } else {
@@ -230,35 +260,53 @@ const Sign = () => {
   const { keyShare } = useSelector(keygenSelector);
   const params = useParams();
   const { address } = params;
-  const [proposals, setProposals] = useState([]);
+  const dispatch = useDispatch();
+  const { proposals } = useSelector(proposalsSelector);
 
   useEffect(() => {
     websocket.on(
       "notifyProposal",
       async (notification: ProposalNotification) => {
-        const { sessionId, message } = notification;
+        const { sessionId, proposalId, message } = notification;
         const session = await websocket.rpc({
           method: "Session.join",
           params: [group.uuid, sessionId, SessionKind.SIGN],
         });
         const proposal = {
+          key: proposalId,
           message,
           creator: false,
           session,
-          key: Math.random(),
         };
-        const newProposals = [proposal, ...proposals];
-        setProposals(newProposals);
+        dispatch(addProposal(proposal));
       }
     );
+
+    websocket.on("notifySigned", (result: SignedNotification) => {
+      const { proposal, signResult, publicAddress } = result;
+      const signedProposal = {
+        ...proposal,
+        result: { signResult, publicAddress },
+      };
+      dispatch(updateProposal(signedProposal));
+    });
   }, []);
 
   const onSignFormSubmit = (message: string) => {
-    const newProposals = [
-      { message, creator: true, key: Math.random() },
-      ...proposals,
-    ];
-    setProposals(newProposals);
+    const proposal = { message, creator: true, key: uuidv4() };
+    dispatch(addProposal(proposal));
+  };
+
+  const onSignComplete = (
+    proposal: Proposal,
+    signResult: SignResult,
+    publicAddress: string
+  ) => {
+    const signedProposal = {
+      ...proposal,
+      result: { signResult, publicAddress },
+    };
+    dispatch(updateProposal(signedProposal));
   };
 
   return (
@@ -285,6 +333,7 @@ const Sign = () => {
                       websocket={websocket}
                       worker={worker}
                       keyShare={keyShare}
+                      onSignComplete={onSignComplete}
                     />
                   );
                 })}
