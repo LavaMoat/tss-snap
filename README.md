@@ -1,6 +1,6 @@
 # ECDSA WASM
 
-Demo for using [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) (GG2020) in WASM.
+Demo for using [multi-party-ecdsa][] (GG2020) in WASM.
 
 ## Prerequisites
 
@@ -13,6 +13,14 @@ To install a particular version of `wasm-pack`:
 ```
 cargo install --version 0.10.2 wasm-pack
 ```
+
+## Structure
+
+* `client`: Browser web application.
+* `common`: Hack for webassembly compilation (see [common notes](#common)).
+* `library`: Websocket server library.
+* `server`: Command line interface for the server.
+* `wasm`: Webassembly bindings to [multi-party-ecdsa][].
 
 ## Setup
 
@@ -87,7 +95,7 @@ RUN rustup component add rust-src --toolchain nightly-2021-08-12-aarch64-unknown
 To view the API documentation for the websocket server:
 
 ```
-(cd server && cargo doc --open --no-deps)
+(cd library && cargo doc --open --no-deps)
 ```
 
 To view the API documentation for the webassembly bindings run:
@@ -268,6 +276,6 @@ crypto.getRandomValues = function (buffer) {
   return buffer;
 };
 ```
-
+[multi-party-ecdsa]: https://github.com/ZenGo-X/multi-party-ecdsa
 [playwright]: https://playwright.dev/
 [JSON-RPC]: https://www.jsonrpc.org/specification
