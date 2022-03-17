@@ -3,6 +3,8 @@ name = "mpc-websocket"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
+description = "Websocket server library for MPC sessions"
+keywords = ["websocket", "server", "MPC", "DKG"]
 
 [dependencies]
 thiserror = "1"
