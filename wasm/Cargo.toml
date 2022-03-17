@@ -1,7 +1,9 @@
 [package]
-name = "ecdsa-wasm"
+name = "mpc-ecdsa-wasm"
 version = "0.2.0"
 edition = "2018"
+license = "GPL-3.0"
+description = "Webassembly bindings to multi-party-ecdsa"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

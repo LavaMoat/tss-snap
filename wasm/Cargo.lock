@@ -409,27 +409,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecdsa-wasm"
-version = "0.2.0"
-dependencies = [
- "common",
- "console_error_panic_hook",
- "curv-kzen",
- "getrandom 0.1.16",
- "hex",
- "kzen-paillier",
- "multi-party-ecdsa",
- "rand 0.6.5",
- "round-based",
- "serde",
- "sha2 0.9.9",
- "sha3 0.10.1",
- "wasm-bindgen",
- "wasm-bindgen-rayon",
- "wasm-bindgen-test",
-]
-
-[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -793,6 +772,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "171d2f700835121c3b04ccf0880882987a050fd5c7ae88148abf537d33dd3a56"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "mpc-ecdsa-wasm"
+version = "0.2.0"
+dependencies = [
+ "common",
+ "console_error_panic_hook",
+ "curv-kzen",
+ "getrandom 0.1.16",
+ "hex",
+ "kzen-paillier",
+ "multi-party-ecdsa",
+ "rand 0.6.5",
+ "round-based",
+ "serde",
+ "sha2 0.9.9",
+ "sha3 0.10.1",
+ "wasm-bindgen",
+ "wasm-bindgen-rayon",
+ "wasm-bindgen-test",
 ]
 
 [[package]]
