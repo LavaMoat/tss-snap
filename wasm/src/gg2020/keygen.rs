@@ -4,7 +4,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::key
 
 use wasm_bindgen::prelude::*;
 
-use common::Parameters;
+use crate::Parameters;
 use serde::{Deserialize, Serialize};
 
 use round_based::{Msg, StateMachine};

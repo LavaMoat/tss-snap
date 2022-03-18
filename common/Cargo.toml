@@ -1,12 +1,13 @@
 [package]
-name = "common"
+name = "mpc-ecdsa-getrandom-hack"
 version = "0.2.0"
 edition = "2018"
 
 [dependencies]
-serde = {version = "1", features = ["derive"]}
-# NOTE: we don't use these crates but if we don't declare them here
-# NOTE: then the wasm modules will fail to compile
+# HACK: this is a hack to ensure we can compile `multi-party-ecdsa`
+# HACK: with multiple versions of `getrandom` in the dependency tree
+#
+# SEE: https://github.com/LavaMoat/ecdsa-wasm#common
 getrandom = {version = "0.2", features = ["js"]}
 
 [dev-dependencies]

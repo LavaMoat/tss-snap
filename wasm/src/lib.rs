@@ -2,6 +2,7 @@
 #![deny(missing_docs)]
 use sha2::{Digest, Sha256};
 use wasm_bindgen::prelude::*;
+use serde::{Deserialize, Serialize};
 
 extern crate wasm_bindgen;
 
@@ -30,12 +31,34 @@ pub fn start() {
 // Required for rayon thread support
 pub use wasm_bindgen_rayon::init_thread_pool;
 
+
 mod gg2020;
 mod utils;
 
 // Expose these types for API documentation.
 pub use gg2020::keygen::{KeyGenerator, KeyShare, PartySignup};
 pub use gg2020::sign::{Signature, Signer};
+
+/// Parameters used during key generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Parameters {
+    /// Number of parties `n`.
+    pub parties: u16,
+    /// Threshold for signing `t`.
+    ///
+    /// The threshold must be crossed (`t + 1`) for signing
+    /// to commence.
+    pub threshold: u16,
+}
+
+impl Default for Parameters {
+    fn default() -> Self {
+        return Self {
+            parties: 3,
+            threshold: 1,
+        };
+    }
+}
 
 #[doc(hidden)]
 #[wasm_bindgen]

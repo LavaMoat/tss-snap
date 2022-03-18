@@ -171,14 +171,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "common"
-version = "0.2.0"
-dependencies = [
- "getrandom 0.2.5",
- "serde",
-]
-
-[[package]]
 name = "console_error_panic_hook"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -775,15 +767,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "mpc-ecdsa-getrandom-hack"
+version = "0.2.0"
+dependencies = [
+ "getrandom 0.2.5",
+]
+
+[[package]]
 name = "mpc-ecdsa-wasm"
 version = "0.2.0"
 dependencies = [
- "common",
  "console_error_panic_hook",
  "curv-kzen",
  "getrandom 0.1.16",
  "hex",
  "kzen-paillier",
+ "mpc-ecdsa-getrandom-hack",
  "multi-party-ecdsa",
  "rand 0.6.5",
  "round-based",

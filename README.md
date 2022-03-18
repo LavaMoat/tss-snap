@@ -122,7 +122,7 @@ See the [API Documentation](https://docs.rs/mpc-websocket/latest/mpc_websocket/)
 
 ### Common
 
-The common library contains a little code shared between the webassembly and server modules which we could easily duplicate however it serves another important purpose. It includes a hack for the dependency tree including multiple versions of `getrandom`:
+The common library contains a hack for the dependency tree including multiple versions of `getrandom`:
 
 ```
 getrandom:0.1.16
