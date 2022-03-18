@@ -114,6 +114,18 @@
 //!
 //! This method is a notification and does not return anything to the caller.
 //!
+//! ### Notify.signed
+//!
+//! * `group_id`: The `String` UUID for the group.
+//! * `session_id`: The `String` UUID for the session.
+//! * `value`: Opaque value for the signing result sent to non-participants.
+//!
+//! Sends a signing result to clients in the session that *did not participate* in the signing; the event name emitted is `notifySigned` and the payload is the `value` passed to this method.
+//!
+//! Client implementations should ensure this method is only called once when signing is complete.
+//!
+//! This method is a notification and does not return anything to the caller.
+//!
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result, RpcError};
 use serde::{Deserialize, Serialize};
