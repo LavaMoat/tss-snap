@@ -33,6 +33,7 @@ git = "https://github.com/ZenGo-X/multi-party-ecdsa"
 #branch = "master"
 default-features = false
 rev = "c94065fbf37132dccc7955cf2627866e87c162bf"
+version = "*"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
