@@ -17,7 +17,7 @@ cargo install --version 0.10.2 wasm-pack
 ## Structure
 
 * `client`: Browser web application.
-* `common`: Hack for webassembly compilation (see [common notes](#common)).
+* `getrandom`: Hack for webassembly compilation (see [getrandom notes](#getrandom)).
 * `library`: Websocket server library.
 * `server`: Command line interface for the server.
 * `wasm`: Webassembly bindings to [multi-party-ecdsa][].
@@ -120,7 +120,7 @@ See the [API Documentation](https://docs.rs/mpc-websocket/latest/mpc_websocket/)
 
 ## Notes
 
-### Common
+### Getrandom
 
 The common library contains a hack for the dependency tree including multiple versions of `getrandom`:
 
@@ -129,7 +129,7 @@ getrandom:0.1.16
 getrandom:0.2.5
 ```
 
-Version `0.2` of `getrandom` requires a `js` feature enabled to compile for wasm32 so we set that in `common`:
+Version `0.2` of `getrandom` requires a `js` feature enabled to compile for wasm32 so we set that in `mpc-ecdsa-getrandom-hack`:
 
 ```toml
 getrandom = {version = "0.2", features = ["js"]}

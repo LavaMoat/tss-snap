@@ -1,15 +1,11 @@
 [package]
 name = "mpc-ecdsa-getrandom-hack"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2018"
 
 [dependencies]
 # HACK: this is a hack to ensure we can compile `multi-party-ecdsa`
 # HACK: with multiple versions of `getrandom` in the dependency tree
 #
-# SEE: https://github.com/LavaMoat/ecdsa-wasm#common
+# SEE: https://github.com/LavaMoat/ecdsa-wasm#getrandom
 getrandom = {version = "0.2", features = ["js"]}
-
-[dev-dependencies]
-rand = "0.8"
-hex = "0.4"
