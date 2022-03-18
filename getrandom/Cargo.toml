@@ -2,6 +2,8 @@
 name = "mpc-ecdsa-getrandom-hack"
 version = "1.0.0"
 edition = "2018"
+license = "MIT"
+description = "Hack for multiple versions of getrandom in the multi-party-ecdsa dependency tree"
 
 [dependencies]
 # HACK: this is a hack to ensure we can compile `multi-party-ecdsa`
