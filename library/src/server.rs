@@ -435,10 +435,6 @@ async fn rpc_request(
                 if data == CLOSE_CONNECTION {
                     let mut writer = close_flag.write().await;
                     *writer = true;
-
-                    //if let Some(rx_stream) = state.read().await.clients.get(&conn_id) {
-                    //rx_stream.close();
-                    //}
                 }
             }
         }
