@@ -58,7 +58,7 @@ pub enum ServerError {
 /// Result type for server errors.
 pub type Result<T> = std::result::Result<T, ServerError>;
 
-/// Parameters used during key generation.
+/// Parameters used during key generation and signing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parameters {
     /// Number of parties `n`.
