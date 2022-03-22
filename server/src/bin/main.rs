@@ -1,7 +1,7 @@
+use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
-use clap::Parser;
 
 use mpc_websocket::{Result, Server};
 

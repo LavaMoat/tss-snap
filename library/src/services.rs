@@ -812,6 +812,7 @@ async fn handle_threshold_notify(
 
     // Enough parties are signed up to the session
     if num_entries == required_num_entries {
+        // FIXME: see https://github.com/LavaMoat/ecdsa-wasm/issues/49
         println!("Sending threshold notify event {} for {:#?}", event, kind);
 
         let res = serde_json::to_value((event, &session_id)).unwrap();
