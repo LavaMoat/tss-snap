@@ -276,21 +276,35 @@ pub struct Server;
 impl Server {
     /// Start the server.
     ///
-    /// The websocket endpoint is mounted at `path`, the server will bind to `addr` and static assets are served from `static_files`.
+    /// The websocket endpoint is mounted at `path`,
+    /// the server will bind to `addr` and static assets
+    /// are served from `static_files`.
+    ///
+    /// Logs are emitted using the [tracing](https://docs.rs/tracing)
+    /// library, in release mode the logs are formatted as JSON.
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
         static_files: Option<PathBuf>,
     ) -> Result<()> {
+
         // Filter traces based on the RUST_LOG env var.
         let filter = std::env::var("RUST_LOG").unwrap_or_else(|_| {
             "tracing=info,warp=debug,mpc_websocket=info".to_owned()
         });
 
-        tracing_subscriber::fmt()
-            .with_env_filter(filter)
-            .with_span_events(FmtSpan::CLOSE)
-            .init();
+        if cfg!(debug_assertions) {
+            tracing_subscriber::fmt()
+                .with_env_filter(filter)
+                .with_span_events(FmtSpan::CLOSE)
+                .init();
+        } else {
+            tracing_subscriber::fmt()
+                .with_env_filter(filter)
+                .with_span_events(FmtSpan::CLOSE)
+                .json()
+                .init();
+        }
 
         let state = Arc::new(RwLock::new(State {
             clients: HashMap::new(),
