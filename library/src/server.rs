@@ -7,7 +7,6 @@ use std::sync::{
 };
 
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
-use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::{mpsc, Mutex, RwLock};
@@ -19,6 +18,8 @@ use warp::Filter;
 
 use crate::services::*;
 use json_rpc2::{Request, Response};
+
+use tracing_subscriber::fmt::format::FmtSpan;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
@@ -281,6 +282,16 @@ impl Server {
         addr: impl Into<SocketAddr>,
         static_files: Option<PathBuf>,
     ) -> Result<()> {
+        // Filter traces based on the RUST_LOG env var.
+        let filter = std::env::var("RUST_LOG").unwrap_or_else(|_| {
+            "tracing=info,warp=debug,mpc_websocket=info".to_owned()
+        });
+
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .with_span_events(FmtSpan::CLOSE)
+            .init();
+
         let state = Arc::new(RwLock::new(State {
             clients: HashMap::new(),
             groups: Default::default(),
@@ -307,8 +318,8 @@ impl Server {
         }
 
         let static_files = static_files.canonicalize()?;
-        info!("Assets: {}", static_files.display());
-        info!("Websocket: /{}", path);
+        tracing::info!("Assets: {}", static_files.display());
+        tracing::info!("Websocket: /{}", path);
 
         let client = warp::any().and(warp::fs::dir(static_files));
 
@@ -330,7 +341,8 @@ impl Server {
 
         let routes = websocket
             .or(client)
-            .with(warp::reply::with::headers(headers));
+            .with(warp::reply::with::headers(headers))
+            .with(warp::trace::request());
 
         warp::serve(routes).run(addr).await;
         Ok(())
@@ -340,7 +352,7 @@ impl Server {
 async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     let conn_id = CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
 
-    info!("connected (uid={})", conn_id);
+    tracing::info!("connected (uid={})", conn_id);
 
     // Split the socket into a sender and receive of messages.
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
@@ -358,14 +370,14 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
             user_ws_tx
                 .send(message)
                 .unwrap_or_else(|e| {
-                    eprintln!("websocket send error: {}", e);
+                    tracing::error!("websocket send error: {}", e);
                 })
                 .await;
 
             let reader = should_close.read().await;
             if *reader {
                 match user_ws_tx.close().await {
-                    Err(_) => warn!("failed to close websocket"),
+                    Err(_) => tracing::warn!("failed to close websocket"),
                     _ => {}
                 }
                 break;
@@ -381,7 +393,7 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
         let msg = match result {
             Ok(msg) => msg,
             Err(e) => {
-                error!("websocket rx error (uid={}): {}", conn_id, e);
+                tracing::error!("websocket rx error (uid={}): {}", conn_id, e);
                 break;
             }
         };
@@ -408,7 +420,7 @@ async fn client_incoming_message(
 
     match json_rpc2::from_str(msg) {
         Ok(req) => rpc_request(conn_id, close_flag, req, state).await,
-        Err(e) => warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
+        Err(e) => tracing::warn!("websocket rx JSON error (uid={}): {}", conn_id, e),
     }
 }
 
@@ -524,7 +536,7 @@ async fn rpc_broadcast(
                 if let Some(session) = group.sessions.get(&session_id) {
                     session.party_signups.iter().map(|i| i.1.clone()).collect()
                 } else {
-                    warn!("notification session {} does not exist", session_id);
+                    tracing::warn!("notification session {} does not exist", session_id);
                     vec![0usize]
                 }
             } else {
@@ -551,22 +563,22 @@ async fn rpc_response(
     response: &json_rpc2::Response,
     state: &Arc<RwLock<State>>,
 ) {
-    debug!("send_message (uid={})", conn_id);
+    tracing::debug!("send_message (uid={})", conn_id);
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
         let msg = serde_json::to_string(response).unwrap();
-        debug!("sending message {:#?}", msg);
+        tracing::debug!("sending message {:#?}", msg);
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
             // The tx is disconnected, our `client_disconnected` code
             // should be happening in another task, nothing more to
             // do here.
         }
     } else {
-        warn!("could not find tx for (uid={})", conn_id);
+        tracing::warn!("could not find tx for (uid={})", conn_id);
     }
 }
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
-    info!("disconnected (uid={})", conn_id);
+    tracing::info!("disconnected (uid={})", conn_id);
 
     // FIXME: prune session party signups for disconnected clients?
 
@@ -594,6 +606,6 @@ async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
     let mut writer = state.write().await;
     for key in empty_groups {
         writer.groups.remove(&key);
-        info!("removed group {}", &key);
+        tracing::info!("removed group {}", &key);
     }
 }
