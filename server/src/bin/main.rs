@@ -1,12 +1,12 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
-use structopt::StructOpt;
+use clap::Parser;
 
 use mpc_websocket::{Result, Server};
 
-#[derive(Debug, StructOpt)]
-#[structopt(
+#[derive(Debug, Parser)]
+#[clap(
     name = "mpc-websocket",
     about = "Websocket server for MPC key generation and signing"
 )]
@@ -21,7 +21,7 @@ struct Options {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let opts = Options::from_args();
+    let opts: Options = Parser::parse();
 
     let level = std::env::var("RUST_LOG")
         .ok()
