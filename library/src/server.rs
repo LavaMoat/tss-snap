@@ -318,8 +318,9 @@ impl Server {
         }
 
         let static_files = static_files.canonicalize()?;
-        tracing::info!("Assets: {}", static_files.display());
-        tracing::info!("Websocket: /{}", path);
+        let static_path = static_files.to_string_lossy().into_owned();
+        tracing::info!("static={}", &static_path);
+        tracing::info!(path);
 
         let client = warp::any().and(warp::fs::dir(static_files));
 
@@ -352,7 +353,7 @@ impl Server {
 async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
     let conn_id = CONNECTION_ID.fetch_add(1, Ordering::Relaxed);
 
-    tracing::info!("connected (uid={})", conn_id);
+    tracing::info!(conn_id, "connected");
 
     // Split the socket into a sender and receive of messages.
     let (mut user_ws_tx, mut user_ws_rx) = ws.split();
@@ -563,22 +564,22 @@ async fn rpc_response(
     response: &json_rpc2::Response,
     state: &Arc<RwLock<State>>,
 ) {
-    tracing::debug!("send_message (uid={})", conn_id);
+    tracing::debug!(conn_id, "send message");
     if let Some(tx) = state.read().await.clients.get(&conn_id) {
+        tracing::debug!("{:#?}", response);
         let msg = serde_json::to_string(response).unwrap();
-        tracing::debug!("sending message {:#?}", msg);
         if let Err(_disconnected) = tx.send(Message::text(msg)) {
             // The tx is disconnected, our `client_disconnected` code
             // should be happening in another task, nothing more to
             // do here.
         }
     } else {
-        tracing::warn!("could not find tx for (uid={})", conn_id);
+        tracing::warn!(conn_id, "could not find tx");
     }
 }
 
 async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
-    tracing::info!("disconnected (uid={})", conn_id);
+    tracing::info!(conn_id, "disconnected");
 
     // FIXME: prune session party signups for disconnected clients?
 
