@@ -134,8 +134,6 @@ use super::server::{
     Group, Notification, Parameters, Session, SessionKind, State,
 };
 
-use super::server::NotificationTwo;
-
 /// Error thrown by the JSON-RPC services.
 #[derive(Debug, Error)]
 pub enum ServiceError {
@@ -259,7 +257,7 @@ pub struct ServiceHandler;
 
 #[async_trait]
 impl Service for ServiceHandler {
-    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Option<NotificationTwo>>>);
+    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Option<Notification>>>);
 
     async fn handle(
         &self,
@@ -338,15 +336,13 @@ impl Service for ServiceHandler {
                 group.sessions.insert(key, session.clone());
 
                 if let SessionKind::Keygen = kind {
-                    let value = serde_json::to_value((
-                        SESSION_CREATE_EVENT,
-                        &session,
-                    ))
-                    .unwrap();
+                    let value =
+                        serde_json::to_value((SESSION_CREATE_EVENT, &session))
+                            .unwrap();
                     let response: Response = value.into();
 
                     // Notify everyone else in the group a session was created
-                    let ctx = NotificationTwo::Group {
+                    let ctx = Notification::Group {
                         group_id,
                         filter: Some(vec![*conn_id]),
                         response,
@@ -389,11 +385,18 @@ impl Service for ServiceHandler {
                     tracing::info!(party_number, "session signup {}", conn_id);
 
                     // Enough parties are signed up to the session
-                    if threshold(&kind, &group.params, session.party_signups.len()) {
-                        let value = serde_json::to_value(
-                            (SESSION_SIGNUP_EVENT, &session_id)).unwrap();
+                    if threshold(
+                        &kind,
+                        &group.params,
+                        session.party_signups.len(),
+                    ) {
+                        let value = serde_json::to_value((
+                            SESSION_SIGNUP_EVENT,
+                            &session_id,
+                        ))
+                        .unwrap();
                         let response: Response = value.into();
-                        let ctx = NotificationTwo::Session {
+                        let ctx = Notification::Session {
                             group_id,
                             session_id,
                             filter: None,
@@ -424,19 +427,24 @@ impl Service for ServiceHandler {
                     let group =
                         get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
                     if let Some(session) = group.sessions.get_mut(&session_id) {
-
                         // Enough parties are loaded into the session
-                        if threshold(&kind, &group.params, session.party_signups.len()) {
-                            let value = serde_json::to_value(
-                                (SESSION_LOAD_EVENT, &session_id)).unwrap();
+                        if threshold(
+                            &kind,
+                            &group.params,
+                            session.party_signups.len(),
+                        ) {
+                            let value = serde_json::to_value((
+                                SESSION_LOAD_EVENT,
+                                &session_id,
+                            ))
+                            .unwrap();
                             let response: Response = value.into();
-                            let ctx = NotificationTwo::Session {
+                            let ctx = Notification::Session {
                                 group_id,
                                 session_id,
                                 filter: None,
                                 response,
                             };
-
                             let mut writer = notification.lock().await;
                             *writer = Some(ctx);
                         }
@@ -494,19 +502,24 @@ impl Service for ServiceHandler {
                             .iter()
                             .map(|(n, _)| n.clone())
                             .collect::<Vec<u16>>();
-                        let mut completed =
-                            session.finished.iter().cloned().collect::<Vec<u16>>();
+                        let mut completed = session
+                            .finished
+                            .iter()
+                            .cloned()
+                            .collect::<Vec<u16>>();
 
                         signups.sort();
                         completed.sort();
 
                         if signups == completed {
-                            let value =
-                                serde_json::to_value((SESSION_CLOSED_EVENT, completed))
-                                    .unwrap();
+                            let value = serde_json::to_value((
+                                SESSION_CLOSED_EVENT,
+                                completed,
+                            ))
+                            .unwrap();
                             let response: Response = value.into();
 
-                            let ctx = NotificationTwo::Session {
+                            let ctx = Notification::Session {
                                 group_id,
                                 session_id,
                                 filter: None,
@@ -530,8 +543,6 @@ impl Service for ServiceHandler {
                 }
             }
             SESSION_MESSAGE => {
-
-                /*
                 let (conn_id, state, notification) = ctx;
                 let params: SessionMessageParams = req.deserialize()?;
                 let (group_id, session_id, _kind, msg) = params;
@@ -558,32 +569,25 @@ impl Service for ServiceHandler {
                         let response: Response = value.into();
                         let message = (s.1, response);
 
-                        let ctx = NotificationTwo::Relay {
+                        let ctx = Notification::Relay {
                             messages: vec![message],
                         };
 
                         let mut writer = notification.lock().await;
                         *writer = Some(ctx);
-
-                        // Must return a response so the server processes
-                        // our notifications even though our actual responses
-                        // are in the messages assigned to the notification context
-                        Some((serde_json::Value::Null).into())
                     } else {
                         return Err(Error::from(Box::from(
                             ServiceError::BadPeerReceiver(*receiver),
                         )));
                     }
-
                 // Handle broadcast round
                 } else {
-
                     let value =
                         serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
                             .unwrap();
                     let response: Response = value.clone().into();
 
-                    let ctx = NotificationTwo::Session {
+                    let ctx = Notification::Session {
                         group_id,
                         session_id,
                         filter: Some(vec![*conn_id]),
@@ -592,12 +596,7 @@ impl Service for ServiceHandler {
 
                     let mut writer = notification.lock().await;
                     *writer = Some(ctx);
-
-                    Some(value.into())
-
-                    //Some(req.into())
                 }
-                */
 
                 // Must ACK so we indicate the service method exists
                 Some(req.into())
@@ -618,7 +617,7 @@ impl Service for ServiceHandler {
                         .unwrap();
                 let response: Response = value.into();
 
-                let ctx = NotificationTwo::Group {
+                let ctx = Notification::Group {
                     group_id,
                     filter: Some(vec![*conn_id]),
                     response,
@@ -655,7 +654,7 @@ impl Service for ServiceHandler {
                     serde_json::to_value((NOTIFY_SIGNED_EVENT, value)).unwrap();
                 let response: Response = value.into();
 
-                let ctx = NotificationTwo::Group {
+                let ctx = Notification::Group {
                     group_id,
                     filter: Some(participants),
                     response,
@@ -669,310 +668,6 @@ impl Service for ServiceHandler {
             }
             _ => None,
         };
-        Ok(response)
-    }
-}
-
-/// Service for broadcasting notifications to connected clients.
-pub struct NotifyHandler;
-
-#[async_trait]
-impl Service for NotifyHandler {
-    type Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Notification>>);
-    async fn handle(
-        &self,
-        req: &Request,
-        ctx: &Self::Data,
-    ) -> Result<Option<Response>> {
-        let response = match req.method() {
-            SESSION_CREATE => {
-                None
-
-                /*
-                let (conn_id, state, notification) = ctx;
-                let params: SessionCreateParams = req.deserialize()?;
-                let (group_id, kind) = params;
-
-                if let SessionKind::Keygen = kind {
-                    let reader = state.read().await;
-                    let group = get_group(&conn_id, &group_id, &reader.groups)?;
-
-                    let last_session =
-                        group.sessions.values().last().unwrap().clone();
-                    let res = serde_json::to_value((
-                        SESSION_CREATE_EVENT,
-                        &last_session,
-                    ))
-                    .unwrap();
-
-                    // Notify everyone else in the group a session was created
-                    {
-                        let ctx = Notification::Group {
-                            group_id,
-                            filter: Some(vec![*conn_id]),
-                        };
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
-                    }
-
-                    Some(res.into())
-                } else {
-                    return Err(Error::from(Box::from(
-                        ServiceError::KeygenSessionExpected,
-                    )));
-                }
-
-                */
-            }
-            SESSION_SIGNUP => {
-
-                None
-
-                /*
-                let (conn_id, state, notification) = ctx;
-                let params: SessionSignupParams = req.deserialize()?;
-                let (group_id, session_id, kind) = params;
-
-                let reader = state.read().await;
-
-                let (group, session) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                )?;
-
-                tracing::info!(conn_id, "session signup {:?} {}", req.id(), session.party_signups.len());
-
-                handle_threshold_notify(
-                    session.party_signups.len(),
-                    group_id,
-                    session_id,
-                    group,
-                    session,
-                    kind,
-                    notification,
-                    SESSION_SIGNUP_EVENT,
-                )
-                .await
-                */
-            }
-            SESSION_LOAD => {
-                None
-
-                /*
-                let (conn_id, state, notification) = ctx;
-                let params: SessionLoadParams = req.deserialize()?;
-                let (group_id, session_id, kind, _party_number) = params;
-
-                let reader = state.read().await;
-
-                let (group, session) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                )?;
-                handle_threshold_notify(
-                    session.party_signups.len(),
-                    group_id,
-                    session_id,
-                    group,
-                    session,
-                    kind,
-                    notification,
-                    SESSION_LOAD_EVENT,
-                )
-                .await
-                */
-            }
-            SESSION_MESSAGE => {
-                let (conn_id, state, notification) = ctx;
-                let params: SessionMessageParams = req.deserialize()?;
-                let (group_id, session_id, _kind, msg) = params;
-
-                let reader = state.read().await;
-                // Check we have valid group / session
-                let (_group, session) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                )?;
-
-                // Send direct to peer
-                if let Some(receiver) = &msg.receiver {
-                    if let Some(s) =
-                        session.party_signups.iter().find(|s| s.0 == *receiver)
-                    {
-                        let result =
-                            serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
-                                .unwrap();
-
-                        let response: Response = result.into();
-                        let message = (s.1, response);
-
-                        {
-                            let ctx = Notification::Relay {
-                                messages: vec![message],
-                            };
-
-                            let mut writer = notification.lock().await;
-                            *writer = ctx;
-                        }
-
-                        // Must return a response so the server processes
-                        // our notifications even though our actual responses
-                        // are in the messages assigned to the notification context
-                        Some((serde_json::Value::Null).into())
-                    } else {
-                        return Err(Error::from(Box::from(
-                            ServiceError::BadPeerReceiver(*receiver),
-                        )));
-                    }
-
-                // Handle broadcast round
-                } else {
-                    {
-                        let ctx = Notification::Session {
-                            group_id,
-                            session_id,
-                            filter: Some(vec![*conn_id]),
-                        };
-
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
-                    }
-
-                    let result =
-                        serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
-                            .unwrap();
-
-                    Some(result.into())
-                }
-            }
-            SESSION_FINISH => {
-                None
-
-                /*
-                let (conn_id, state, notification) = ctx;
-                let params: SessionFinishParams = req.deserialize()?;
-                let (group_id, session_id, _party_number) = params;
-
-                let reader = state.read().await;
-
-                let (_group, session) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                )?;
-
-                let mut signups = session
-                    .party_signups
-                    .iter()
-                    .map(|(n, _)| n.clone())
-                    .collect::<Vec<u16>>();
-                let mut completed =
-                    session.finished.iter().cloned().collect::<Vec<u16>>();
-
-                signups.sort();
-                completed.sort();
-
-                if signups == completed {
-                    let result =
-                        serde_json::to_value((SESSION_CLOSED_EVENT, completed))
-                            .unwrap();
-
-                    {
-                        let ctx = Notification::Session {
-                            group_id,
-                            session_id,
-                            filter: None,
-                        };
-
-                        let mut writer = notification.lock().await;
-                        *writer = ctx;
-                    }
-
-                    Some(result.into())
-                } else {
-                    None
-                }
-                */
-            }
-            NOTIFY_PROPOSAL => {
-                None
-
-                /*
-                let (conn_id, _state, notification) = ctx;
-                let params: NotifyProposalParams = req.deserialize()?;
-                let (group_id, session_id, proposal_id, message) = params;
-
-                let proposal = Proposal {
-                    session_id,
-                    proposal_id,
-                    message,
-                };
-
-                let res =
-                    serde_json::to_value((NOTIFY_PROPOSAL_EVENT, &proposal))
-                        .unwrap();
-
-                {
-                    let ctx = Notification::Group {
-                        group_id,
-                        filter: Some(vec![*conn_id]),
-                    };
-
-                    let mut writer = notification.lock().await;
-                    *writer = ctx;
-                }
-
-                Some(res.into())
-                */
-            }
-            NOTIFY_SIGNED => {
-                None
-
-                /*
-                let (conn_id, state, notification) = ctx;
-                let params: NotifySignedParams = req.deserialize()?;
-                let (group_id, session_id, value) = params;
-
-                let reader = state.read().await;
-
-                let (_group, session) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                )?;
-
-                let participants = session
-                    .party_signups
-                    .iter()
-                    .map(|(_, c)| c.clone())
-                    .collect::<Vec<usize>>();
-
-                let result =
-                    serde_json::to_value((NOTIFY_SIGNED_EVENT, value)).unwrap();
-
-                {
-                    let ctx = Notification::Group {
-                        group_id,
-                        filter: Some(participants),
-                    };
-
-                    let mut writer = notification.lock().await;
-                    *writer = ctx;
-                }
-                Some(result.into())
-                */
-            }
-            _ => None,
-        };
-
         Ok(response)
     }
 }
@@ -1037,56 +732,12 @@ fn get_group_session<'a>(
     }
 }
 
-/*
-async fn handle_threshold_notify(
+/// Helper to determine if we met a session party threshold.
+fn threshold(
+    kind: &SessionKind,
+    params: &Parameters,
     num_entries: usize,
-    group_id: String,
-    session_id: String,
-    group: &Group,
-    _session: &Session,
-    kind: SessionKind,
-    notification: &Mutex<Notification>,
-    event: &str,
-) -> Option<Response> {
-    let parties = group.params.parties as usize;
-    let threshold = group.params.threshold as usize;
-    let required_num_entries = match kind {
-        SessionKind::Keygen => parties,
-        SessionKind::Sign => threshold + 1,
-    };
-
-    // Enough parties are signed up to the session
-    if num_entries == required_num_entries {
-        // FIXME: see https://github.com/LavaMoat/ecdsa-wasm/issues/49
-        println!("Sending threshold notify event {} for {:#?}", event, kind);
-
-        let res = serde_json::to_value((event, &session_id)).unwrap();
-
-        // Notify everyone in the session that enough
-        // parties have signed up to the session
-        {
-            let ctx = Notification::Session {
-                group_id,
-                session_id,
-                filter: None,
-            };
-
-            let mut writer = notification.lock().await;
-            *writer = ctx;
-        }
-
-        Some(res.into())
-    } else {
-        {
-            let mut writer = notification.lock().await;
-            *writer = Default::default();
-        }
-        None
-    }
-}
-*/
-
-fn threshold(kind: &SessionKind, params: &Parameters, num_entries: usize) -> bool {
+) -> bool {
     let parties = params.parties as usize;
     let threshold = params.threshold as usize;
     let required_num_entries = match kind {

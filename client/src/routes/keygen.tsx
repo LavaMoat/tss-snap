@@ -114,7 +114,9 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
         const { runningSession } = this.state;
 
         if (runningSession) {
-          throw new Error('SESSION IS ALREADY RUNNING, GOT DUPLICATE SESSION SIGNUP');
+          throw new Error(
+            "SESSION IS ALREADY RUNNING, GOT DUPLICATE SESSION SIGNUP"
+          );
         }
 
         // Guard against running multiple key generation sessions
