@@ -1,7 +1,7 @@
 //! Services for handling JSON-RPC requests.
 //!
 //! Some methods send notifications to connected clients, see the
-//! methods documentation for more details.
+//! method's documentation for more details.
 //!
 //! Notifications sent to connected clients are sent as a tuple
 //! of `String` event name followed by an arbitrary JSON `Value`

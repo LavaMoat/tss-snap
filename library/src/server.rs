@@ -223,8 +223,6 @@ pub struct State {
     pub clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
     /// Groups keyed by unique identifier (UUID)
     pub groups: HashMap<Uuid, Group>,
-    /// Notification to dispatch after sending response to client.
-    pub notification: Option<Notification>,
 }
 
 /// Notification sent by the server to multiple connected clients.
@@ -314,7 +312,6 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             clients: HashMap::new(),
             groups: Default::default(),
-            notification: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
