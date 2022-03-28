@@ -5,11 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import { groupSelector, GroupInfo } from "../store/group";
 import { keygenSelector } from "../store/keygen";
-import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import { WebSocketClient } from "../mpc/clients/websocket";
 import { WebSocketContext } from "../websocket-provider";
-import { SessionKind, KeyShare, SignResult } from "../mpc";
+import { SessionKind, KeyShare, SignResult, EcdsaWorker } from "../mpc";
 import { sign } from "../mpc/sign";
 
 import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
@@ -116,12 +115,9 @@ const Proposal = ({
 
     websocket.once("sessionSignup", async (sessionId: string) => {
       if (sessionId === session.uuid) {
-
         // Keep this to check we don't regress on #49
         if (runningSession) {
-          throw new Error(
-            `sign session ${sessionId} is already running`
-          );
+          throw new Error(`sign session ${sessionId} is already running`);
         }
 
         if (!runningSession) {

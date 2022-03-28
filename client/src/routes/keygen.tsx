@@ -6,7 +6,6 @@ import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { WebSocketContext } from "../websocket-provider";
 import { AppDispatch, RootState } from "../store";
 
-import { EcdsaWorker } from "../worker";
 import { WorkerContext } from "../worker-provider";
 import {
   saveKeyShare,
@@ -15,7 +14,7 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { KeyShare, Session, SessionKind } from "../mpc";
+import { KeyShare, Session, SessionKind, EcdsaWorker } from "../mpc";
 import { generateKeyShare } from "../mpc/keygen";
 
 import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
@@ -26,7 +25,7 @@ const copyToClipboard = async (
 ) => {
   e.preventDefault();
   try {
-    await navigator.clipboard.writeText(text);
+    await window.navigator.clipboard.writeText(text);
   } catch (e) {
     console.error("Permission to write to clipboard was denied");
   }
@@ -115,9 +114,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
         // Keep this to check we don't regress on #49
         if (runningSession) {
-          throw new Error(
-            `keygen session ${sessionId} is already running`
-          );
+          throw new Error(`keygen session ${sessionId} is already running`);
         }
 
         // Guard against running multiple key generation sessions

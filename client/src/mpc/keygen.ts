@@ -1,6 +1,5 @@
-import { Message, KeyShare, SessionInfo } from ".";
+import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from ".";
 import { WebSocketClient } from "./clients/websocket";
-import { EcdsaWorker, KeyGenerator } from "../worker";
 
 import {
   Round,
