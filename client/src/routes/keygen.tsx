@@ -112,6 +112,13 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
     websocket.on("sessionSignup", async (sessionId: string) => {
       if (sessionId === this.state.session.uuid) {
         const { runningSession } = this.state;
+
+        if (runningSession) {
+          throw new Error(
+            "SESSION IS ALREADY RUNNING, GOT DUPLICATE SESSION SIGNUP"
+          );
+        }
+
         // Guard against running multiple key generation sessions
         if (!runningSession) {
           this.setState({

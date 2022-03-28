@@ -36,6 +36,7 @@ lint:
 
 fmt: lint
 	@cd client && yarn prettier
+	@cd library && cargo fmt
 	@cd server && cargo fmt
 	@cd wasm && cargo fmt
 

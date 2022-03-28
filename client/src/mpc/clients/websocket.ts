@@ -105,6 +105,7 @@ export class WebSocketClient extends EventEmitter {
         }
         return _resolve(response.result);
       };
+
       this.messageRequests.set(id, { resolve, reject });
     });
     message.id = id;

@@ -223,6 +223,8 @@ pub struct State {
     pub clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
     /// Groups keyed by unique identifier (UUID)
     pub groups: HashMap<String, Group>,
+    /// Notification to dispatch after sending response to client.
+    pub notification: Option<Notification>,
 }
 
 /// Notification sent by the server to multiple connected clients.
@@ -243,6 +245,8 @@ pub enum Notification {
         group_id: String,
         /// Ignore these clients.
         filter: Option<Vec<usize>>,
+        /// Message to send to the clients.
+        response: Response,
     },
 
     /// Sends the response to all clients in the session.
@@ -253,6 +257,8 @@ pub enum Notification {
         session_id: String,
         /// Ignore these clients.
         filter: Option<Vec<usize>>,
+        /// Message to send to the clients.
+        response: Response,
     },
 
     /// Relay messages to specific clients.
@@ -308,6 +314,7 @@ impl Server {
         let state = Arc::new(RwLock::new(State {
             clients: HashMap::new(),
             groups: Default::default(),
+            notification: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
 
@@ -447,12 +454,26 @@ async fn rpc_request(
 ) {
     use json_rpc2::futures::*;
 
-    let service: Box<dyn Service<Data = (usize, Arc<RwLock<State>>)>> =
-        Box::new(ServiceHandler {});
+    let service: Box<
+        dyn Service<
+            Data = (
+                usize,
+                Arc<RwLock<State>>,
+                Arc<Mutex<Option<Notification>>>,
+            ),
+        >,
+    > = Box::new(ServiceHandler {});
     let server = Server::new(vec![&service]);
 
-    if let Some(response) =
-        server.serve(&request, &(conn_id, Arc::clone(state))).await
+    let notification: Arc<Mutex<Option<Notification>>> =
+        Arc::new(Mutex::new(None));
+
+    if let Some(response) = server
+        .serve(
+            &request,
+            &(conn_id, Arc::clone(state), Arc::clone(&notification)),
+        )
+        .await
     {
         rpc_response(conn_id, &response, state).await;
 
@@ -466,40 +487,9 @@ async fn rpc_request(
         }
     }
 
-    // Requests that require post-processing notifications
-    match request.method() {
-        SESSION_CREATE | SESSION_SIGNUP | SESSION_LOAD | SESSION_MESSAGE
-        | SESSION_FINISH | NOTIFY_PROPOSAL | NOTIFY_SIGNED => {
-            rpc_notify(conn_id, &request, state).await;
-        }
-        _ => {}
-    }
-}
-
-/// Post processing notifications.
-async fn rpc_notify(
-    conn_id: usize,
-    request: &Request,
-    state: &Arc<RwLock<State>>,
-) {
-    use json_rpc2::futures::*;
-    let service: Box<
-        dyn Service<
-            Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Notification>>),
-        >,
-    > = Box::new(NotifyHandler {});
-    let server = Server::new(vec![&service]);
-
-    let notification = Arc::new(Mutex::new(Default::default()));
-
-    if let Some(response) = server
-        .serve(
-            request,
-            &(conn_id, Arc::clone(state), Arc::clone(&notification)),
-        )
-        .await
-    {
-        rpc_broadcast(&response, state, notification).await;
+    let mut writer = notification.lock().await;
+    if let Some(notification) = writer.take() {
+        rpc_notify(state, notification).await;
     }
 }
 
@@ -518,18 +508,15 @@ fn filter_clients(
     }
 }
 
-/// Broadcast a notification to connected clients.
-async fn rpc_broadcast(
-    response: &Response,
-    state: &Arc<RwLock<State>>,
-    notification: Arc<Mutex<Notification>>,
-) {
+/// Send notification to connected client(s).
+async fn rpc_notify(state: &Arc<RwLock<State>>, notification: Notification) {
     let reader = state.read().await;
-    let mut notification = notification.lock().await;
-    let notification = std::mem::take(&mut *notification);
-
     match notification {
-        Notification::Group { group_id, filter } => {
+        Notification::Group {
+            group_id,
+            filter,
+            response,
+        } => {
             let clients = if let Some(group) = reader.groups.get(&group_id) {
                 group.clients.clone()
             } else {
@@ -538,13 +525,14 @@ async fn rpc_broadcast(
 
             let clients = filter_clients(clients, filter);
             for conn_id in clients {
-                rpc_response(conn_id, response, state).await;
+                rpc_response(conn_id, &response, state).await;
             }
         }
         Notification::Session {
             group_id,
             session_id,
             filter,
+            response,
         } => {
             let clients = if let Some(group) = reader.groups.get(&group_id) {
                 if let Some(session) = group.sessions.get(&session_id) {
@@ -561,7 +549,7 @@ async fn rpc_broadcast(
 
             let clients = filter_clients(clients, filter);
             for conn_id in clients {
-                rpc_response(conn_id, response, state).await;
+                rpc_response(conn_id, &response, state).await;
             }
         }
         Notification::Relay { messages } => {
