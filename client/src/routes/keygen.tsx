@@ -113,9 +113,10 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
       if (sessionId === this.state.session.uuid) {
         const { runningSession } = this.state;
 
+        // Keep this to check we don't regress on #49
         if (runningSession) {
           throw new Error(
-            "SESSION IS ALREADY RUNNING, GOT DUPLICATE SESSION SIGNUP"
+            `keygen session ${sessionId} is already running`
           );
         }
 

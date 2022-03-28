@@ -116,6 +116,14 @@ const Proposal = ({
 
     websocket.once("sessionSignup", async (sessionId: string) => {
       if (sessionId === session.uuid) {
+
+        // Keep this to check we don't regress on #49
+        if (runningSession) {
+          throw new Error(
+            `sign session ${sessionId} is already running`
+          );
+        }
+
         if (!runningSession) {
           setRunningSession(true);
 
