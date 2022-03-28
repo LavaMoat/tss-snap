@@ -1,7 +1,14 @@
-import { Message, KeyShare, SessionInfo, SignMessage, PartySignup } from ".";
+import {
+  Message,
+  KeyShare,
+  SessionInfo,
+  SignMessage,
+  PartySignup,
+  EcdsaWorker,
+  Signer,
+} from ".";
 import { WebSocketClient } from "./clients/websocket";
 import { GroupInfo } from "../store/group";
-import { EcdsaWorker, Signer } from "../worker";
 
 import {
   Round,

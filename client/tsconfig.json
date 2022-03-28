@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom"],
+    "lib": ["webworker", "dom"],
     "outDir": "./dist/",
     "noImplicitAny": true,
-    "module": "es2022",
-    "target": "es5",
+    "module": "esnext",
+    "target": "esnext",
     "jsx": "react",
     "allowJs": true,
     "skipLibCheck": true,
