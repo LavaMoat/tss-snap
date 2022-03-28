@@ -92,7 +92,6 @@ export class WebSocketClient extends EventEmitter {
     if (!this.connected) {
       this.queue.push(message);
     } else {
-      console.info("send ws", message);
       this.websocket.send(JSON.stringify(message));
     }
   }

@@ -368,6 +368,9 @@ impl Service for ServiceHandler {
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
                     let party_number = session.signup(*conn_id);
+
+                    tracing::info!(party_number, "session signup {}", conn_id);
+
                     let res = serde_json::to_value(&party_number).unwrap();
                     Some((req, res).into())
                 } else {
