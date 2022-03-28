@@ -37,7 +37,6 @@ lint:
 fmt: lint
 	@cd client && yarn prettier
 	@cd server && cargo fmt
-	@cd common && cargo fmt
 	@cd wasm && cargo fmt
 
 .PHONY: wasm dist dist-dev setup build release server client test lint fmt

@@ -19,7 +19,7 @@ COPY --from=rust /usr/local/cargo /usr/local/cargo
 ENV PATH=/usr/local/cargo/bin:$PATH
 
 # SERVER
-COPY common common
+COPY getrandom getrandom
 COPY server server
 RUN rustup override set nightly-2021-08-12
 RUN cargo install --path ./server

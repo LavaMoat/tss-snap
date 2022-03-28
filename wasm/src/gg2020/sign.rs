@@ -5,8 +5,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
     state_machine::{
         keygen::LocalKey,
         sign::{
-            CompletedOfflineStage, OfflineProtocolMessage, OfflineStage,
-            PartialSignature, SignManual,
+            CompletedOfflineStage, OfflineProtocolMessage, OfflineStage, PartialSignature,
+            SignManual,
         },
     },
 };
@@ -88,8 +88,7 @@ impl Signer {
     /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
     pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
-        let message: Msg<<OfflineStage as StateMachine>::MessageBody> =
-            message.into_serde()?;
+        let message: Msg<<OfflineStage as StateMachine>::MessageBody> = message.into_serde()?;
         self.inner.handle_incoming(message)?;
         Ok(())
     }
@@ -116,8 +115,7 @@ impl Signer {
         let message: String = message.into_serde()?;
         let completed_offline_stage = self.inner.pick_output().unwrap()?;
         let data = BigInt::from_bytes(message.as_bytes());
-        let (_sign, partial) =
-            SignManual::new(data.clone(), completed_offline_stage.clone())?;
+        let (_sign, partial) = SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
         self.completed = Some((completed_offline_stage, data));
 
@@ -134,13 +132,11 @@ impl Signer {
             .ok_or_else(|| JsError::new(ERR_COMPLETED_OFFLINE_STAGE))?;
         let pk = completed_offline_stage.public_key().clone();
 
-        let (sign, _partial) =
-            SignManual::new(data.clone(), completed_offline_stage.clone())?;
+        let (sign, _partial) = SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
         let signature = sign.complete(&partials)?;
-        verify(&signature, &pk, &data).map_err(|e| {
-            JsError::new(&format!("failed to verify signature: {:?}", e))
-        })?;
+        verify(&signature, &pk, &data)
+            .map_err(|e| JsError::new(&format!("failed to verify signature: {:?}", e)))?;
 
         let public_key = pk.to_bytes(false).to_vec();
         let result = Signature {
