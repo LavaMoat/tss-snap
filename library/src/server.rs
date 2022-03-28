@@ -41,7 +41,7 @@ pub enum ServerError {
 
     /// Error generated if a party number already exists for a session.
     #[error("party number already exists for session {0}")]
-    PartyNumberAlreadyExists(String),
+    PartyNumberAlreadyExists(Uuid),
 
     /// Error generated parsing a socket address.
     #[error(transparent)]
@@ -101,7 +101,7 @@ impl Default for SessionKind {
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct Group {
     /// Unique identifier for the group.
-    pub uuid: String,
+    pub uuid: Uuid,
     /// Parameters for key generation.
     pub params: Parameters,
     /// Human-readable label for the group.
@@ -111,7 +111,7 @@ pub struct Group {
     pub(crate) clients: Vec<usize>,
     /// Sessions belonging to this group.
     #[serde(skip)]
-    pub(crate) sessions: HashMap<String, Session>,
+    pub(crate) sessions: HashMap<Uuid, Session>,
 }
 
 impl Group {
@@ -120,7 +120,7 @@ impl Group {
     /// The connection identifier `conn` becomes the initial client for the group.
     pub fn new(conn: usize, params: Parameters, label: String) -> Self {
         Self {
-            uuid: Uuid::new_v4().to_string(),
+            uuid: Uuid::new_v4(),
             clients: vec![conn],
             sessions: Default::default(),
             params,
@@ -133,7 +133,7 @@ impl Group {
 #[derive(Debug, Clone, Serialize)]
 pub struct Session {
     /// Unique identifier for the session.
-    pub uuid: String,
+    pub uuid: Uuid,
     /// Kind of the session.
     pub kind: SessionKind,
 
@@ -150,7 +150,7 @@ pub struct Session {
 impl Default for Session {
     fn default() -> Self {
         Self {
-            uuid: Uuid::new_v4().to_string(),
+            uuid: Uuid::new_v4(),
             kind: Default::default(),
             party_signups: Default::default(),
             finished: Default::default(),
@@ -161,7 +161,7 @@ impl Default for Session {
 impl From<SessionKind> for Session {
     fn from(kind: SessionKind) -> Session {
         Self {
-            uuid: Uuid::new_v4().to_string(),
+            uuid: Uuid::new_v4(),
             kind,
             party_signups: Default::default(),
             finished: Default::default(),
@@ -222,7 +222,7 @@ pub struct State {
     /// Connected clients.
     pub clients: HashMap<usize, mpsc::UnboundedSender<Message>>,
     /// Groups keyed by unique identifier (UUID)
-    pub groups: HashMap<String, Group>,
+    pub groups: HashMap<Uuid, Group>,
     /// Notification to dispatch after sending response to client.
     pub notification: Option<Notification>,
 }
@@ -242,7 +242,7 @@ pub enum Notification {
     /// Sends the response to all clients in the group.
     Group {
         /// The group identifier.
-        group_id: String,
+        group_id: Uuid,
         /// Ignore these clients.
         filter: Option<Vec<usize>>,
         /// Message to send to the clients.
@@ -252,9 +252,9 @@ pub enum Notification {
     /// Sends the response to all clients in the session.
     Session {
         /// The group identifier.
-        group_id: String,
+        group_id: Uuid,
         /// The session identifier.
-        session_id: String,
+        session_id: Uuid,
         /// Ignore these clients.
         filter: Option<Vec<usize>>,
         /// Message to send to the clients.
@@ -586,7 +586,7 @@ async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
 
     // FIXME: prune session party signups for disconnected clients?
 
-    let mut empty_groups: Vec<String> = Vec::new();
+    let mut empty_groups: Vec<Uuid> = Vec::new();
     {
         let mut writer = state.write().await;
         // Stream closed up, so remove from the client list

@@ -129,6 +129,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
+use uuid::Uuid;
 
 use super::server::{
     Group, Notification, Parameters, Session, SessionKind, State,
@@ -148,13 +149,13 @@ pub enum ServiceError {
     ThresholdRange,
     /// Error generated when a group has enough connections.
     #[error("group {0} is full, cannot accept new connections")]
-    GroupFull(String),
+    GroupFull(Uuid),
     /// Error generated when a group does not exist.
     #[error("group {0} does not exist")]
-    GroupDoesNotExist(String),
+    GroupDoesNotExist(Uuid),
     /// Error generated when a session does not exist.
     #[error("group {0} does not exist")]
-    SessionDoesNotExist(String),
+    SessionDoesNotExist(Uuid),
     /// Error generated when a party number does not exist.
     #[error("party {0} does not exist")]
     PartyDoesNotExist(u16),
@@ -172,7 +173,7 @@ pub enum ServiceError {
     /// Error generated when a client connection does not belong to
     /// the specified group.
     #[error("client {0} does not belong to the group {1}")]
-    BadConnection(usize, String),
+    BadConnection(usize, Uuid),
 }
 
 /// Error data indicating the connection should be closed.
@@ -220,7 +221,6 @@ pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 /// Notification sent when a proposal has been signed.
 pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 
-type Uuid = String;
 type GroupCreateParams = (String, Parameters);
 type SessionCreateParams = (Uuid, SessionKind);
 type SessionJoinParams = (Uuid, Uuid, SessionKind);
@@ -246,7 +246,7 @@ struct Message {
 #[derive(Debug, Serialize)]
 struct Proposal {
     #[serde(rename = "sessionId")]
-    session_id: String,
+    session_id: Uuid,
     #[serde(rename = "proposalId")]
     proposal_id: String,
     message: String,
@@ -674,8 +674,8 @@ impl Service for ServiceHandler {
 
 fn get_group_mut<'a>(
     conn_id: &usize,
-    group_id: &str,
-    groups: &'a mut HashMap<String, Group>,
+    group_id: &Uuid,
+    groups: &'a mut HashMap<Uuid, Group>,
 ) -> Result<&'a mut Group> {
     if let Some(group) = groups.get_mut(group_id) {
         // Verify connection is part of the group clients
@@ -684,20 +684,20 @@ fn get_group_mut<'a>(
         } else {
             return Err(Error::from(Box::from(ServiceError::BadConnection(
                 *conn_id,
-                group_id.to_string(),
+                group_id.clone(),
             ))));
         }
     } else {
         return Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
-            group_id.to_string(),
+            group_id.clone(),
         ))));
     }
 }
 
 fn get_group<'a>(
     conn_id: &usize,
-    group_id: &str,
-    groups: &'a HashMap<String, Group>,
+    group_id: &Uuid,
+    groups: &'a HashMap<Uuid, Group>,
 ) -> Result<&'a Group> {
     if let Some(group) = groups.get(group_id) {
         // Verify connection is part of the group clients
@@ -706,28 +706,28 @@ fn get_group<'a>(
         } else {
             return Err(Error::from(Box::from(ServiceError::BadConnection(
                 *conn_id,
-                group_id.to_string(),
+                group_id.clone(),
             ))));
         }
     } else {
         return Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
-            group_id.to_string(),
+            group_id.clone(),
         ))));
     }
 }
 
 fn get_group_session<'a>(
     conn_id: &usize,
-    group_id: &str,
-    session_id: &str,
-    groups: &'a HashMap<String, Group>,
+    group_id: &Uuid,
+    session_id: &Uuid,
+    groups: &'a HashMap<Uuid, Group>,
 ) -> Result<(&'a Group, &'a Session)> {
     let group = get_group(conn_id, group_id, groups)?;
     if let Some(session) = group.sessions.get(session_id) {
         Ok((group, session))
     } else {
         return Err(Error::from(Box::from(ServiceError::SessionDoesNotExist(
-            session_id.to_string(),
+            session_id.clone(),
         ))));
     }
 }
