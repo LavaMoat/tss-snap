@@ -15,6 +15,7 @@ use uuid::Uuid;
 use warp::http::header::{HeaderMap, HeaderValue};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
+//use once_cell::sync::Lazy;
 
 use crate::services::*;
 use json_rpc2::{Request, Response};
@@ -23,6 +24,10 @@ use tracing_subscriber::fmt::format::FmtSpan;
 
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
+
+//static NOTIFY_LOCK: Lazy<std::sync::Mutex<()>> = Lazy::new(|| {
+    //std::sync::Mutex::new(())
+//});
 
 /// Error thrown by the server.
 #[derive(Debug, Error)]
@@ -491,7 +496,6 @@ async fn rpc_notify(
     let server = Server::new(vec![&service]);
 
     let notification = Arc::new(Mutex::new(Default::default()));
-
     if let Some(response) = server
         .serve(
             request,

@@ -67,6 +67,13 @@ cd client && yarn start
 cd client && TEST_URL=http://localhost:8080 yarn test
 ```
 
+Networking is racy and we have fixed quite a few race conditions so to it is a good idea to run the tests lots of times:
+
+```
+make test-server                # start the backend server
+(cd client && ./test.sh)        # run the tests 100 times
+```
+
 ## Docker
 
 For deployment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:

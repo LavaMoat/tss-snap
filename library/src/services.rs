@@ -517,6 +517,9 @@ impl Service for NotifyHandler {
                     &session_id,
                     &reader.groups,
                 )?;
+
+                tracing::info!(conn_id, "session signup {:?} {}", req.id(), session.party_signups.len());
+
                 handle_threshold_notify(
                     session.party_signups.len(),
                     group_id,
