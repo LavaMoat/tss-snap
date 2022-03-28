@@ -122,7 +122,7 @@ See the [API Documentation](https://docs.rs/mpc-websocket/latest/mpc_websocket/)
 
 ### Getrandom
 
-The common library contains a hack for the dependency tree including multiple versions of `getrandom`:
+The getrandom library contains a hack for the dependency tree including multiple versions of `getrandom`:
 
 ```
 getrandom:0.1.16

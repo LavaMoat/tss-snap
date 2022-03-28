@@ -1,6 +1,8 @@
 //! Key generation.
 use curv::elliptic::curves::secp256_k1::Secp256k1;
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{Keygen, ProtocolMessage, LocalKey};
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{
+    Keygen, LocalKey, ProtocolMessage,
+};
 
 use wasm_bindgen::prelude::*;
 
@@ -71,28 +73,19 @@ pub struct KeyGenerator {
 impl KeyGenerator {
     /// Create a key generator.
     #[wasm_bindgen(constructor)]
-    pub fn new(
-        parameters: JsValue,
-        party_signup: JsValue,
-    ) -> Result<KeyGenerator, JsError> {
+    pub fn new(parameters: JsValue, party_signup: JsValue) -> Result<KeyGenerator, JsError> {
         let params: Parameters = parameters.into_serde()?;
-        let PartySignup { number, uuid } =
-            party_signup.into_serde::<PartySignup>()?;
+        let PartySignup { number, uuid } = party_signup.into_serde::<PartySignup>()?;
         let (party_num_int, _uuid) = (number, uuid);
         Ok(Self {
-            inner: Keygen::new(
-                party_num_int,
-                params.threshold,
-                params.parties,
-            )?,
+            inner: Keygen::new(party_num_int, params.threshold, params.parties)?,
         })
     }
 
     /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
     pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
-        let message: Msg<<Keygen as StateMachine>::MessageBody> =
-            message.into_serde()?;
+        let message: Msg<<Keygen as StateMachine>::MessageBody> = message.into_serde()?;
         self.inner.handle_incoming(message)?;
         Ok(())
     }
