@@ -16,7 +16,7 @@ import WorkerProvider from "./worker-provider";
 const NotFound = () => <h3>Page not found</h3>;
 
 interface WorkerMessage {
-  ready: boolean;
+  data: { ready: boolean }
 }
 
 const App = () => {
