@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Parameters } from "../mpc";
+import { Parameters, GroupInfo } from "@metamask/mpc-client";
 
+/*
 export interface GroupInfo {
   uuid: string;
   label: string;
   params: Parameters;
 }
+*/
 
 export interface GroupState {
   group?: GroupInfo;

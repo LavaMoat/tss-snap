@@ -1,6 +1,11 @@
 import { KeyGenerator, Signer } from "ecdsa-wasm";
 export { KeyGenerator, Signer } from "ecdsa-wasm";
 
+export * from './keygen';
+export * from './sign';
+export * from './transports/websocket';
+export * from './clients/websocket';
+
 export enum SessionKind {
   KEYGEN = "keygen",
   SIGN = "sign",
@@ -19,6 +24,12 @@ export interface EcdsaWorker {
   ): Promise<Signer>;
 
   sha256(value: string): Promise<string>;
+}
+
+export interface GroupInfo {
+  uuid: string;
+  label: string;
+  params: Parameters;
 }
 
 // Message is sent by a client.

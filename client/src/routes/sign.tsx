@@ -3,15 +3,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 
-import { groupSelector, GroupInfo } from "../store/group";
+import { groupSelector } from "../store/group";
 import { keygenSelector } from "../store/keygen";
 import { WorkerContext } from "../worker-provider";
-import { WebSocketClient } from "../mpc/clients/websocket";
+//import { WebSocketClient } from "../mpc/clients/websocket";
 import { WebSocketContext } from "../websocket-provider";
-import { SessionKind, KeyShare, SignResult, EcdsaWorker } from "../mpc";
-import { sign } from "../mpc/sign";
+import { WebSocketClient, GroupInfo, WebSocketStream, WebSocketSink, SessionKind, KeyShare, SignResult, EcdsaWorker, sign } from "@metamask/mpc-client";
+//import { sign } from "@metamask/mpc-client";
 
-import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
+//import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
 
 import {
   addProposal,

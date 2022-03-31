@@ -1,6 +1,6 @@
 import React, { Component, useEffect, useContext } from "react";
 import { useSelector, useDispatch, connect } from "react-redux";
-import { groupSelector, GroupInfo, setGroup } from "../store/group";
+import { groupSelector, setGroup } from "../store/group";
 import { setKeygenSession, setKeyShare } from "../store/keygen";
 import { useParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { WebSocketContext } from "../websocket-provider";
@@ -14,10 +14,7 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { KeyShare, Session, SessionKind, EcdsaWorker } from "../mpc";
-import { generateKeyShare } from "../mpc/keygen";
-
-import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";
+import { GroupInfo, KeyShare, Session, SessionKind, EcdsaWorker, WebSocketStream, WebSocketSink, generateKeyShare } from "@metamask/mpc-client";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,

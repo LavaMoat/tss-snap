@@ -1,4 +1,4 @@
-import { KeyShare } from "./mpc";
+import { KeyShare } from "@metamask/mpc-client";
 
 const KEY = "keys";
 

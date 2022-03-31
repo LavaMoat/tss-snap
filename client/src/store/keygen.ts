@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { KeyShare, Session } from "../mpc";
+import { KeyShare, Session } from "@metamask/mpc-client";
 
 export interface KeygenState {
   session?: Session;

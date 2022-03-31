@@ -6,9 +6,10 @@ import {
   PartySignup,
   EcdsaWorker,
   Signer,
+  GroupInfo,
 } from ".";
 import { WebSocketClient } from "./clients/websocket";
-import { GroupInfo } from "../store/group";
+//import { GroupInfo } from "../store/group";
 
 import {
   Round,

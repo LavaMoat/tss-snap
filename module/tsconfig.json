@@ -1,16 +1,21 @@
 {
+  "include": ["src/**/*.ts"],
   "compilerOptions": {
-    "outDir": "./dist/",
+    "outDir": "./dist",
+    "declaration": true,
+    "emitDeclarationOnly": true,
     "noImplicitAny": true,
-    "esModuleInterop": true,
     "module": "esnext",
     "target": "esnext",
-    "lib": ["webworker", "dom"],
+    "lib": ["esnext", "webworker", "dom"],
     "jsx": "react",
     "allowJs": true,
     "skipLibCheck": true,
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node"
-  }
+  },
+  "exclude": [
+      "node_modules"
+  ]
 }
