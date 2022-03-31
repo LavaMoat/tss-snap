@@ -1,5 +1,5 @@
 module.exports = {
   cliOptions: {
-    port: 8080,
+    port: 7070,
   },
 };

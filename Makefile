@@ -9,6 +9,8 @@ dist-dev: wasm
 
 setup: wasm
 	@cd client && yarn install && npx playwright install
+	@cd snap/rpc && yarn install
+	@cd snap/ui && yarn install
 
 build:
 	@cd server && cargo build

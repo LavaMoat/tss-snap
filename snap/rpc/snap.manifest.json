@@ -1,10 +1,10 @@
 {
-  "version": "0.7.0",
-  "proposedName": "MetaMask Template Snap",
-  "description": "A MetaMask Snap template.",
+  "version": "0.1.0",
+  "proposedName": "MetaMask Snap for threshold signing.",
+  "description": "MetaMask Snap for signing ECDSA transactions using threshold signatures..",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MetaMask/snap-template.git"
+    "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "source": {
     "shasum": "s+2/CoyEeC90sWPXVVJyoNaZZJDvqC05RXILnw5bH5A=",
@@ -12,7 +12,7 @@
       "npm": {
         "filePath": "dist/bundle.js",
         "iconPath": "images/icon.svg",
-        "packageName": "@metamask/template-snap",
+        "packageName": "@metamask/mpc-snap",
         "registry": "https://registry.npmjs.org/"
       }
     }
