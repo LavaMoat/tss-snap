@@ -7,8 +7,12 @@ dist: wasm
 dist-dev: wasm
 	@cd client && yarn build:dev
 
-setup: wasm
+module:
+	@cd module && yarn build
+
+setup: wasm module
 	@cd client && yarn install && npx playwright install
+	@cd module && yarn install
 	@cd snap/rpc && yarn install
 	@cd snap/ui && yarn install
 
@@ -42,4 +46,4 @@ fmt: lint
 	@cd server && cargo fmt
 	@cd wasm && cargo fmt
 
-.PHONY: wasm dist dist-dev setup build release server client test lint fmt
+.PHONY: wasm dist dist-dev module setup build release server client test lint fmt

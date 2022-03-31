@@ -3,3 +3,4 @@ dist
 pkg
 node_modules
 *.bak
+*.log

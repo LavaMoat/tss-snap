@@ -4,11 +4,9 @@
   "description": "Threshold signatures multi-party compute client library",
   "module": "dist/index.esm.js",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "node build.js",
-    "tsc": "tsc --project tsconfig.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "yarn ts-types && node build.js",
+    "ts-types": "tsc --project tsconfig.json"
   },
   "dependencies": {
     "comlink": "^4.3.1",
@@ -20,7 +18,6 @@
   "devDependencies": {
     "@types/events": "^3.0.0",
     "esbuild": "^0.14.29",
-    "npm-dts": "^1.3.11",
     "typescript": "^4.6.3"
   }
 }
