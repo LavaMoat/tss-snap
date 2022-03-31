@@ -1,14 +1,12 @@
 import React, { createContext, PropsWithChildren } from "react";
 import * as Comlink from "comlink";
+import { webWorker } from "./web-worker";
 
 const WorkerContext = createContext(null);
-export { WorkerContext };
 
 type WorkerProviderProps = PropsWithChildren<Record<string, unknown>>;
 
-const worker = Comlink.wrap(
-  new Worker(new URL("./worker.ts", import.meta.url))
-);
+const worker = Comlink.wrap(webWorker);
 
 const WorkerProvider = (props: WorkerProviderProps) => {
   return (
@@ -18,4 +16,5 @@ const WorkerProvider = (props: WorkerProviderProps) => {
   );
 };
 
+export { WorkerContext };
 export default WorkerProvider;
