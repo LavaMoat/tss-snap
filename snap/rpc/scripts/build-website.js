@@ -24,7 +24,7 @@ async function main() {
     htmlContents.replace(
       // eslint-disable-next-line no-template-curly-in-string
       'const snapId = `local:${window.location.href}`;',
-      'const snapId = `npm:@metamask/template-snap`;',
+      'const snapId = `npm:@metamask/mpc-snap`;',
     ),
   );
 }
