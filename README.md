@@ -20,6 +20,7 @@ cargo install --version 0.10.2 wasm-pack
 * `getrandom`: Hack for webassembly compilation (see [getrandom notes](#getrandom)).
 * `library`: Websocket server library.
 * `server`: Command line interface for the server.
+* `snap`: Experimental snap for MetaMask.
 * `wasm`: Webassembly bindings to [multi-party-ecdsa][].
 
 ## Setup
