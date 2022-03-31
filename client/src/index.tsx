@@ -9,6 +9,7 @@ import Sign from "./routes/sign";
 
 import store from "./store";
 
+import {webWorker} from './web-worker';
 import WebSocketProvider, { WebSocketContext } from "./websocket-provider";
 import WorkerProvider from "./worker-provider";
 
@@ -20,8 +21,18 @@ const App = () => {
     // to determine when new tabs are connected
     const [connected, setConnected] = useState(false);
     const websocket = useContext(WebSocketContext);
+    const [workerReady, setWorkerReady] = useState(false);
+
+    const onWorkerReady =  (msg: any) => {
+      if (msg.data.ready) {
+        setWorkerReady(true);
+        webWorker.removeEventListener('message', onWorkerReady);
+      }
+    };
 
     useEffect(() => {
+      webWorker.addEventListener('message', onWorkerReady);
+
       websocket.on("open", () => {
         setConnected(true);
       });
@@ -29,7 +40,11 @@ const App = () => {
       websocket.on("close", () => {
         setConnected(false);
       });
-    });
+    }, []);
+
+    if (!workerReady) {
+      return null;
+    }
 
     return (
       <div className={connected ? "connected" : ""}>
