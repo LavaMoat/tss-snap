@@ -9,11 +9,15 @@ import Sign from "./routes/sign";
 
 import store from "./store";
 
-import {webWorker} from './web-worker';
+import { webWorker } from "./web-worker";
 import WebSocketProvider, { WebSocketContext } from "./websocket-provider";
 import WorkerProvider from "./worker-provider";
 
 const NotFound = () => <h3>Page not found</h3>;
+
+interface WorkerMessage {
+  ready: boolean;
+}
 
 const App = () => {
   if (window.Worker) {
@@ -23,15 +27,15 @@ const App = () => {
     const websocket = useContext(WebSocketContext);
     const [workerReady, setWorkerReady] = useState(false);
 
-    const onWorkerReady =  (msg: any) => {
+    const onWorkerReady = (msg: WorkerMessage) => {
       if (msg.data.ready) {
         setWorkerReady(true);
-        webWorker.removeEventListener('message', onWorkerReady);
+        webWorker.removeEventListener("message", onWorkerReady);
       }
     };
 
     useEffect(() => {
-      webWorker.addEventListener('message', onWorkerReady);
+      webWorker.addEventListener("message", onWorkerReady);
 
       websocket.on("open", () => {
         setConnected(true);

@@ -13,12 +13,12 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 };
 
 console.log("Worker is initializing...");
-void async function() {
+void (async function () {
   await init();
   //await initThreadPool(navigator.hardwareConcurrency);
   await initThreadPool(1);
-  self.postMessage({ready: true});
-}();
+  self.postMessage({ ready: true });
+})();
 
 Comlink.expose({
   KeyGenerator,

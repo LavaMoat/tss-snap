@@ -1,6 +1,6 @@
 import React, { createContext, PropsWithChildren } from "react";
 import * as Comlink from "comlink";
-import { webWorker } from './web-worker';
+import { webWorker } from "./web-worker";
 
 const WorkerContext = createContext(null);
 
