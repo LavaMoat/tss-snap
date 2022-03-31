@@ -1,5 +1,20 @@
 wallet.registerRpcMessageHandler(async (originString, requestObject) => {
   switch (requestObject.method) {
+    case 'getState':
+      return wallet.request({
+        method: 'snap_manageState',
+        params: ['get'],
+      });
+    case 'updateState':
+      return wallet.request({
+        method: 'snap_manageState',
+        params: ['update', requestObject.params],
+      });
+    case 'clearState':
+      return wallet.request({
+        method: 'snap_manageState',
+        params: ['clear'],
+      });
     case 'hello':
       return wallet.request({
         method: 'snap_confirm',

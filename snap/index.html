@@ -26,6 +26,10 @@
 
     <button class="connect">Connect</button>
     <button class="sendHello">Send Hello</button>
+    <button class="getState">Get State</button>
+
+    <textarea id="state-value" rows="4">{"mock": 42}</textarea>
+    <button class="setState">Set State</button>
   </body>
 
   <script>
@@ -33,9 +37,14 @@
 
     const connectButton = document.querySelector('button.connect')
     const sendButton = document.querySelector('button.sendHello')
+    const getStateButton = document.querySelector('button.getState')
+    const setStateButton = document.querySelector('button.setState')
 
     connectButton.addEventListener('click', connect)
     sendButton.addEventListener('click', send)
+    getStateButton.addEventListener('click', getState)
+
+    setStateButton.addEventListener('click', setState)
 
     // here we get permissions to interact with and install the snap
     async function connect () {
@@ -56,6 +65,41 @@
             method: 'hello'
           }]
         })
+      } catch (err) {
+        console.error(err)
+        alert('Problem happened: ' + err.message || err)
+      }
+    }
+
+    async function getState() {
+      try {
+        const response = await ethereum.request({
+          method: 'wallet_invokeSnap',
+          params: [snapId, {
+            method: 'getState'
+          }]
+        })
+
+        console.log("get state", response);
+      } catch (err) {
+        console.error(err)
+        alert('Problem happened: ' + err.message || err)
+      }
+    }
+
+    async function setState() {
+      const text = document.getElementById('state-value');
+      const state = JSON.parse(text.value);
+      try {
+        const response = await ethereum.request({
+          method: 'wallet_invokeSnap',
+          params: [snapId, {
+            method: 'updateState',
+            params: state,
+          }]
+        })
+
+        console.log("set state", response);
       } catch (err) {
         console.error(err)
         alert('Problem happened: ' + err.message || err)
