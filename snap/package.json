@@ -18,6 +18,7 @@
     "build:website": "node ./scripts/build-website.js",
     "build": "mm-snap build",
     "serve": "mm-snap serve",
+    "watch": "find src/* | entr -r yarn build",
     "clean": "rimraf dist/*",
     "test": "echo 'TODO'",
     "lint:eslint": "eslint . --cache --ext js,ts",
