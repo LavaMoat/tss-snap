@@ -1,5 +1,4 @@
 import { WebSocketClient } from './clients/websocket';
-// import { GroupInfo } from "../store/group";
 
 import {
   Round,
@@ -20,11 +19,16 @@ import {
 } from '.';
 
 /**
+ * Get the participant's party signup index used when generating
+ * the key share and distribute them to each party.
  *
- * @param info
- * @param keyShare
- * @param stream
- * @param sink
+ * This is required to be able to instantiate the webassembly
+ * signing state machine correctly.
+ *
+ * @param info - The session information.
+ * @param keyShare - The key share.
+ * @param stream - The stream for sending messages.
+ * @param sink - The sink for receiving messages.
  */
 async function getParticipants(
   info: SessionInfo,
@@ -91,10 +95,12 @@ async function getParticipants(
 }
 
 /**
+ * Proceed with the offline stage signing state machine until
+ * we have partial signatures.
  *
- * @param signer
- * @param stream
- * @param sink
+ * @param signer - The signer implementation.
+ * @param stream - The stream for sending messages.
+ * @param sink - The sink for receiving messages.
  */
 async function offlineStage(
   signer: Signer,
@@ -159,12 +165,13 @@ async function offlineStage(
 }
 
 /**
+ * Process the partial signatures to generate a complete signature.
  *
- * @param signer
- * @param info
- * @param message
- * @param stream
- * @param sink
+ * @param signer - The signer implementation.
+ * @param info - The session information.
+ * @param message - The message that will be signed.
+ * @param stream - The stream for sending messages.
+ * @param sink - The sink for receiving messages.
  */
 async function partialSignature(
   signer: Signer,
@@ -214,14 +221,15 @@ async function partialSignature(
 }
 
 /**
+ * Utility for performing each of the stages for signing messages.
  *
- * @param websocket
- * @param worker
- * @param stream
- * @param sink
- * @param info
- * @param keyShare
- * @param message
+ * @param websocket - The websocket client.
+ * @param worker - The worker implementation.
+ * @param stream - The stream for sending messages.
+ * @param sink - The sink for receiving messages.
+ * @param info - The session information.
+ * @param keyShare - The private key share.
+ * @param message - The message to be signed.
  */
 async function signMessage(
   websocket: WebSocketClient,
@@ -249,15 +257,16 @@ async function signMessage(
 }
 
 /**
+ * Sign a message.
  *
- * @param websocket
- * @param worker
- * @param stream
- * @param sink
- * @param message
- * @param keyShare
- * @param group
- * @param partySignup
+ * @param websocket - The websocket client implementation.
+ * @param worker - The worker implementation.
+ * @param stream - The stream for sending messages.
+ * @param sink - The sink for receiving messages.
+ * @param message - The message to be signed.
+ * @param keyShare - The private key share.
+ * @param group - The group information.
+ * @param partySignup - The party signup information for the session.
  */
 export async function sign(
   websocket: WebSocketClient,

@@ -93,7 +93,7 @@ export class WebSocketClient extends EventEmitter {
 
   notify(message: RpcRequest): void {
     message.jsonrpc = '2.0';
-    if (!this.connected) {
+    if (this.connected === false) {
       this.queue.push(message);
     } else {
       this.websocket.send(JSON.stringify(message));
@@ -101,7 +101,8 @@ export class WebSocketClient extends EventEmitter {
   }
 
   rpc(message: RpcRequest): Promise<any> {
-    const id = ++this.messageId;
+    this.messageId += 1;
+    const id = this.messageId;
     const p = new Promise((_resolve, reject) => {
       const resolve = (response: RpcResponse) => {
         if (response.error) {

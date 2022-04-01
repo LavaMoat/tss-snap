@@ -1,5 +1,3 @@
-import { WebSocketClient } from './clients/websocket';
-
 import {
   Round,
   RoundBased,
@@ -10,15 +8,14 @@ import {
 import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from '.';
 
 /**
+ * Starts the round-based processing to generate a key share.
  *
- * @param websocket
- * @param worker
- * @param stream
- * @param sink
- * @param info
+ * @param worker - The worker implementation.
+ * @param stream - The stream for sending messages.
+ * @param sink - The sink for receiving messages.
+ * @param info - The session information.
  */
 export async function generateKeyShare(
-  websocket: WebSocketClient,
   worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,

@@ -38,7 +38,8 @@ test-headed:
 	@cd demo && yarn test-headed
 
 lint:
-	@cd demo && yarn lint
+	@cd demo && yarn lint:eslint
+	@cd packages/client && yarn lint:eslint
 
 fmt: lint
 	@cd demo && yarn prettier

@@ -9,7 +9,7 @@
     "build:dev": "webpack --config webpack.config.js --node-env development",
     "start": "webpack-dev-server --no-client-overlay",
     "prettier": "prettier --write . --no-color",
-    "lint": "eslint src",
+    "lint:eslint": "eslint src",
     "test:headed": "FORCE_COLOR=0 playwright test --headed",
     "test": "FORCE_COLOR=0 playwright test"
   },

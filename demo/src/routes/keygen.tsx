@@ -154,7 +154,6 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
           );
 
           const keyShare = await generateKeyShare(
-            websocket,
             worker,
             stream,
             this.state.sink,

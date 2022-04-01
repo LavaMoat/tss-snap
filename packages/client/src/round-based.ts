@@ -63,24 +63,29 @@ export class RoundBased<R> {
   }
 
   async nextRound(previousMessages: Message[]): Promise<Message[]> {
-    const round = this.rounds[this.currentRound];
+    const currentRound = this.rounds[this.currentRound];
 
     const previousRound = this.rounds[this.currentRound - 1];
-    this.onTransition(previousRound ? previousRound.name : null, round.name);
+    this.onTransition(
+      previousRound ? previousRound.name : null,
+      currentRound.name,
+    );
 
-    if (round) {
-      const result = await round.transition(previousMessages);
+    if (currentRound) {
+      const result = await currentRound.transition(previousMessages);
       if (result) {
         const [round, messages] = result;
         for (const message of messages) {
           await this.stream.sendMessage(message);
         }
         const nextMessages = await this.waitForRound(round);
-        this.currentRound++;
+        this.currentRound += 1;
         return nextMessages;
       }
       throw new Error('Did not get result from round transition');
     }
+
+    return null;
   }
 
   async start(): Promise<R> {
