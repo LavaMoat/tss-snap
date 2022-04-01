@@ -1,3 +1,13 @@
+import { WebSocketClient } from './clients/websocket';
+// import { GroupInfo } from "../store/group";
+
+import {
+  Round,
+  RoundBased,
+  StreamTransport,
+  SinkTransport,
+  onTransition,
+} from './round-based';
 import {
   Message,
   KeyShare,
@@ -7,27 +17,24 @@ import {
   EcdsaWorker,
   Signer,
   GroupInfo,
-} from ".";
-import { WebSocketClient } from "./clients/websocket";
-//import { GroupInfo } from "../store/group";
+} from '.';
 
-import {
-  Round,
-  RoundBased,
-  StreamTransport,
-  SinkTransport,
-  onTransition,
-} from "./round-based";
-
+/**
+ *
+ * @param info
+ * @param keyShare
+ * @param stream
+ * @param sink
+ */
 async function getParticipants(
   info: SessionInfo,
   keyShare: KeyShare,
   stream: StreamTransport,
-  sink: SinkTransport
+  sink: SinkTransport,
 ): Promise<number[]> {
   const rounds: Round[] = [
     {
-      name: "SIGN_ROUND_0",
+      name: 'SIGN_ROUND_0',
       transition: async (): Promise<[number, Message[]]> => {
         const index = keyShare.localKey.i;
         const round = 0;
@@ -49,7 +56,7 @@ async function getParticipants(
   ];
 
   const finalizer = {
-    name: "SIGN_PARTICIPANTS",
+    name: 'SIGN_PARTICIPANTS',
     finalize: async (incoming: Message[]) => {
       const participants = incoming.map((msg) => [msg.sender, msg.body]);
       participants.push([keyShare.localKey.i, info.partySignup.number]);
@@ -61,6 +68,7 @@ async function getParticipants(
         if (a[1] < b[1]) {
           return -1;
         }
+
         if (a[1] > b[1]) {
           return 1;
         }
@@ -76,19 +84,25 @@ async function getParticipants(
     finalizer,
     onTransition,
     stream,
-    sink
+    sink,
   );
 
   return handler.start();
 }
 
+/**
+ *
+ * @param signer
+ * @param stream
+ * @param sink
+ */
 async function offlineStage(
   signer: Signer,
   stream: StreamTransport,
-  sink: SinkTransport
+  sink: SinkTransport,
 ): Promise<void> {
   const standardTransition = async (
-    incoming: Message[]
+    incoming: Message[],
   ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
       await signer.handleIncoming(message);
@@ -98,35 +112,35 @@ async function offlineStage(
 
   const rounds: Round[] = [
     {
-      name: "SIGN_ROUND_1",
+      name: 'SIGN_ROUND_1',
       transition: async (): Promise<[number, Message[]]> => {
         return await signer.proceed();
       },
     },
     {
-      name: "SIGN_ROUND_2",
+      name: 'SIGN_ROUND_2',
       transition: standardTransition,
     },
     {
-      name: "SIGN_ROUND_3",
+      name: 'SIGN_ROUND_3',
       transition: standardTransition,
     },
     {
-      name: "SIGN_ROUND_4",
+      name: 'SIGN_ROUND_4',
       transition: standardTransition,
     },
     {
-      name: "SIGN_ROUND_5",
+      name: 'SIGN_ROUND_5',
       transition: standardTransition,
     },
     {
-      name: "SIGN_ROUND_6",
+      name: 'SIGN_ROUND_6',
       transition: standardTransition,
     },
   ];
 
   const finalizer = {
-    name: "SIGN_OFFLINE_STAGE",
+    name: 'SIGN_OFFLINE_STAGE',
     finalize: async (incoming: Message[]): Promise<void> => {
       await standardTransition(incoming);
       return null;
@@ -138,22 +152,30 @@ async function offlineStage(
     finalizer,
     onTransition,
     stream,
-    sink
+    sink,
   );
 
   return handler.start();
 }
 
+/**
+ *
+ * @param signer
+ * @param info
+ * @param message
+ * @param stream
+ * @param sink
+ */
 async function partialSignature(
   signer: Signer,
   info: SessionInfo,
   message: string,
   stream: StreamTransport,
-  sink: SinkTransport
+  sink: SinkTransport,
 ): Promise<SignMessage> {
   const rounds: Round[] = [
     {
-      name: "SIGN_ROUND_8",
+      name: 'SIGN_ROUND_8',
       transition: async (): Promise<[number, Message[]]> => {
         const partial = await signer.partial(message);
         const round = 8;
@@ -173,7 +195,7 @@ async function partialSignature(
   ];
 
   const finalizer = {
-    name: "SIGN_PARTIAL",
+    name: 'SIGN_PARTIAL',
     finalize: async (incoming: Message[]) => {
       const partials = incoming.map((msg) => msg.body);
       return await signer.create(partials);
@@ -185,12 +207,22 @@ async function partialSignature(
     finalizer,
     onTransition,
     stream,
-    sink
+    sink,
   );
 
   return handler.start();
 }
 
+/**
+ *
+ * @param websocket
+ * @param worker
+ * @param stream
+ * @param sink
+ * @param info
+ * @param keyShare
+ * @param message
+ */
 async function signMessage(
   websocket: WebSocketClient,
   worker: EcdsaWorker,
@@ -198,7 +230,7 @@ async function signMessage(
   sink: SinkTransport,
   info: SessionInfo,
   keyShare: KeyShare,
-  message: string
+  message: string,
 ): Promise<SignMessage> {
   const participants = await getParticipants(info, keyShare, stream, sink);
 
@@ -206,16 +238,27 @@ async function signMessage(
   const signer: Signer = await new (worker.Signer as any)(
     info.partySignup.number,
     participants,
-    keyShare.localKey
+    keyShare.localKey,
   );
 
   await offlineStage(signer, stream, sink);
 
   const signed = await partialSignature(signer, info, message, stream, sink);
-  websocket.removeAllListeners("sessionMessage");
+  websocket.removeAllListeners('sessionMessage');
   return signed;
 }
 
+/**
+ *
+ * @param websocket
+ * @param worker
+ * @param stream
+ * @param sink
+ * @param message
+ * @param keyShare
+ * @param group
+ * @param partySignup
+ */
 export async function sign(
   websocket: WebSocketClient,
   worker: EcdsaWorker,
@@ -224,7 +267,7 @@ export async function sign(
   message: string,
   keyShare: KeyShare,
   group: GroupInfo,
-  partySignup: PartySignup
+  partySignup: PartySignup,
 ): Promise<SignMessage> {
   const sessionInfo = {
     groupId: group.uuid,
@@ -240,7 +283,7 @@ export async function sign(
     sink,
     sessionInfo,
     keyShare,
-    message
+    message,
   );
 
   return signedMessage;

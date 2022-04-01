@@ -1,38 +1,42 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 
-export interface RpcRequest {
+export type RpcRequest = {
   jsonrpc?: string;
   id?: number;
   method: string;
   /* eslint-disable @typescript-eslint/no-explicit-any */
   params?: any[];
-}
+};
 
-export interface RpcResponse {
+export type RpcResponse = {
   jsonrpc: string;
   id?: number;
   /* eslint-disable @typescript-eslint/no-explicit-any */
   result?: any;
   error?: RpcError;
-}
+};
 
-export interface RpcError {
+export type RpcError = {
   code: number;
   message: string;
   /* eslint-disable @typescript-eslint/no-explicit-any */
   data?: any;
-}
+};
 
-interface PromiseCache {
+type PromiseCache = {
   resolve: (message: unknown) => void;
   reject: (reason: any) => void;
-}
+};
 
 export class WebSocketClient extends EventEmitter {
   messageId: number;
+
   messageRequests: Map<number, PromiseCache>;
+
   websocket: WebSocket;
+
   connected: boolean;
+
   queue: RpcRequest[];
 
   constructor() {
@@ -58,12 +62,14 @@ export class WebSocketClient extends EventEmitter {
         this.notify(message);
       }
 
-      this.emit("open");
+      this.emit('open');
     };
+
     this.websocket.onclose = (/* event */) => {
       this.connected = false;
-      this.emit("close");
+      this.emit('close');
     };
+
     this.websocket.onmessage = async (e) => {
       const msg = JSON.parse(e.data);
 
@@ -73,22 +79,20 @@ export class WebSocketClient extends EventEmitter {
         resolve(msg);
         this.messageRequests.delete(msg.id);
         // Without an `id` we treat as a broadcast message
-      } else {
-        if (msg.error) {
-          throw new Error(msg.error.message);
-        } else if (msg.result) {
-          // Expects a tuple of (event, payload)
-          if (Array.isArray(msg.result)) {
-            const [event, payload] = msg.result;
-            this.emit(event, payload);
-          }
+      } else if (msg.error) {
+        throw new Error(msg.error.message);
+      } else if (msg.result) {
+        // Expects a tuple of (event, payload)
+        if (Array.isArray(msg.result)) {
+          const [event, payload] = msg.result;
+          this.emit(event, payload);
         }
       }
     };
   }
 
   notify(message: RpcRequest): void {
-    message.jsonrpc = "2.0";
+    message.jsonrpc = '2.0';
     if (!this.connected) {
       this.queue.push(message);
     } else {

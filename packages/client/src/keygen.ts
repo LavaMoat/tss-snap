@@ -1,5 +1,4 @@
-import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from ".";
-import { WebSocketClient } from "./clients/websocket";
+import { WebSocketClient } from './clients/websocket';
 
 import {
   Round,
@@ -7,23 +6,32 @@ import {
   StreamTransport,
   SinkTransport,
   onTransition,
-} from "./round-based";
+} from './round-based';
+import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from '.';
 
+/**
+ *
+ * @param websocket
+ * @param worker
+ * @param stream
+ * @param sink
+ * @param info
+ */
 export async function generateKeyShare(
   websocket: WebSocketClient,
   worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,
-  info: SessionInfo
+  info: SessionInfo,
 ): Promise<KeyShare> {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const keygen: KeyGenerator = await new (worker.KeyGenerator as any)(
     info.parameters,
-    info.partySignup
+    info.partySignup,
   );
 
   const standardTransition = async (
-    incoming: Message[]
+    incoming: Message[],
   ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
       await keygen.handleIncoming(message);
@@ -33,27 +41,27 @@ export async function generateKeyShare(
 
   const rounds: Round[] = [
     {
-      name: "KEYGEN_ROUND_1",
+      name: 'KEYGEN_ROUND_1',
       transition: async (): Promise<[number, Message[]]> => {
         return await keygen.proceed();
       },
     },
     {
-      name: "KEYGEN_ROUND_2",
+      name: 'KEYGEN_ROUND_2',
       transition: standardTransition,
     },
     {
-      name: "KEYGEN_ROUND_3",
+      name: 'KEYGEN_ROUND_3',
       transition: standardTransition,
     },
     {
-      name: "KEYGEN_ROUND_4",
+      name: 'KEYGEN_ROUND_4',
       transition: standardTransition,
     },
   ];
 
   const finalizer = {
-    name: "KEYGEN_FINALIZE",
+    name: 'KEYGEN_FINALIZE',
     finalize: async (incoming: Message[]) => {
       await standardTransition(incoming);
       return keygen.create();
@@ -65,7 +73,7 @@ export async function generateKeyShare(
     finalizer,
     onTransition,
     stream,
-    sink
+    sink,
   );
   return handler.start();
 }

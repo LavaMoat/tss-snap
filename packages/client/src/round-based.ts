@@ -1,32 +1,38 @@
-import { Message } from "./index";
+import { Message } from '.';
 
-export interface Round {
+export type Round = {
   name: string;
   transition: (incoming?: Message[]) => Promise<[number, Message[]]>;
-}
+};
 
-export interface Finalizer<R> {
+export type Finalizer<R> = {
   name: string;
   finalize: (incoming: Message[]) => Promise<R>;
-}
+};
 
-export interface StreamTransport {
+export type StreamTransport = {
   sendMessage(message: Message): Promise<void>;
-}
+};
 
-export interface SinkTransport {
+export type SinkTransport = {
   receiveMessage(message: Message): void;
   isReady(round: number): boolean;
   take(round: number): Message[];
-}
+};
 
 export class RoundBased<R> {
   rounds: Round[];
+
   finalizer: Finalizer<R>;
+
   onTransition: (previousRound: string, current: string) => void;
+
   currentRound: number;
+
   totalRounds: number;
+
   stream: StreamTransport;
+
   sink: SinkTransport;
 
   constructor(
@@ -34,7 +40,7 @@ export class RoundBased<R> {
     finalizer: Finalizer<R>,
     onTransition: (previousRound: string, current: string) => void,
     stream: StreamTransport,
-    sink: SinkTransport
+    sink: SinkTransport,
   ) {
     this.rounds = rounds;
     this.finalizer = finalizer;
@@ -72,9 +78,8 @@ export class RoundBased<R> {
         const nextMessages = await this.waitForRound(round);
         this.currentRound++;
         return nextMessages;
-      } else {
-        throw new Error("Did not get result from round transition");
       }
+      throw new Error('Did not get result from round transition');
     }
   }
 
@@ -87,7 +92,7 @@ export class RoundBased<R> {
     const previousRound = this.rounds[this.currentRound - 1];
     this.onTransition(
       previousRound ? previousRound.name : null,
-      this.finalizer.name
+      this.finalizer.name,
     );
 
     return this.finalizer.finalize(nextMessages);
@@ -95,7 +100,7 @@ export class RoundBased<R> {
 }
 
 export const onTransition = (previousRound: string, current: string) => {
-  let message = "";
+  let message = '';
   if (previousRound) {
     message = `transition from ${previousRound} to ${current}`;
   } else {

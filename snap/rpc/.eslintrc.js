@@ -1,8 +1,6 @@
 module.exports = {
   root: true,
-
   extends: ['@metamask/eslint-config'],
-
   overrides: [
     {
       files: ['*.js'],
@@ -20,6 +18,5 @@ module.exports = {
       extends: ['@metamask/eslint-config-jest'],
     },
   ],
-
   ignorePatterns: ['!.eslintrc.js', '!.prettierrc.js', 'dist/'],
 };

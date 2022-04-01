@@ -1,19 +1,23 @@
-import { WebSocketClient } from "../clients/websocket";
-import { Message, SessionKind } from "../";
+import { WebSocketClient } from '../clients/websocket';
+import { StreamTransport, SinkTransport } from '../round-based';
+import { Message, SessionKind } from '..';
 
 // Stream for outgoing messages that send JSON-RPC
 // via a websocket client.
-export class WebSocketStream {
+export class WebSocketStream implements StreamTransport {
   websocket: WebSocketClient;
+
   groupId: string;
+
   sessionId: string;
+
   kind: SessionKind;
 
   constructor(
     websocket: WebSocketClient,
     groupId: string,
     sessionId: string,
-    kind: SessionKind
+    kind: SessionKind,
   ) {
     this.websocket = websocket;
     this.groupId = groupId;
@@ -23,9 +27,9 @@ export class WebSocketStream {
 
   async sendMessage(message: Message) {
     message.uuid = this.sessionId;
-    //console.log("Sending websocket message", message.round, message);
+    // console.log("Sending websocket message", message.round, message);
     return this.websocket.rpc({
-      method: "Session.message",
+      method: 'Session.message',
       params: [this.groupId, this.sessionId, this.kind, message],
     });
   }
@@ -33,10 +37,13 @@ export class WebSocketStream {
 
 // Sink for incoming messages that listens for events
 // on a websocket client.
-export class WebSocketSink {
+export class WebSocketSink implements SinkTransport {
   websocket: WebSocketClient;
+
   rounds: Map<number, Message[]>;
+
   expected: number;
+
   sessionId: string;
 
   constructor(websocket: WebSocketClient, expected: number, sessionId: string) {
@@ -47,7 +54,7 @@ export class WebSocketSink {
 
     // Sink consumers must remove this listener
     // when appropriate.
-    this.websocket.on("sessionMessage", (incoming: Message) => {
+    this.websocket.on('sessionMessage', (incoming: Message) => {
       this.receiveMessage(incoming);
     });
   }
@@ -70,21 +77,21 @@ export class WebSocketSink {
     const { round, uuid } = message;
 
     if (!uuid) {
-      throw new Error("Message is missing session UUID");
+      throw new Error('Message is missing session UUID');
     }
 
     if (uuid !== this.sessionId) {
-      throw new Error("Message is for the wrong session, UUID mismatch");
+      throw new Error('Message is for the wrong session, UUID mismatch');
     }
 
-    //console.log("Received websocket message", message);
+    // console.log("Received websocket message", message);
 
     if (this.rounds.get(round) === undefined) {
       this.rounds.set(round, []);
     }
 
     if (this.isReady(round)) {
-      throw new Error("Received too many messages for round: " + round);
+      throw new Error(`Received too many messages for round: ${round}`);
     }
 
     const answers = this.rounds.get(round);
