@@ -14,7 +14,16 @@ import {
   KeyStorage,
 } from "../key-storage";
 
-import { GroupInfo, KeyShare, Session, SessionKind, EcdsaWorker, WebSocketStream, WebSocketSink, generateKeyShare } from "@metamask/mpc-client";
+import {
+  GroupInfo,
+  KeyShare,
+  Session,
+  SessionKind,
+  EcdsaWorker,
+  WebSocketStream,
+  WebSocketSink,
+  generateKeyShare,
+} from "@metamask/mpc-client";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,

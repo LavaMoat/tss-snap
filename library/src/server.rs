@@ -289,7 +289,7 @@ impl Server {
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
-        static_files: Option<PathBuf>,
+        static_files: PathBuf,
     ) -> Result<()> {
         // Filter traces based on the RUST_LOG env var.
         let filter = std::env::var("RUST_LOG").unwrap_or_else(|_| {
@@ -314,21 +314,6 @@ impl Server {
             groups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
-
-        let static_files = if let Some(static_files) = static_files {
-            if static_files.is_absolute() {
-                static_files
-            } else {
-                let cwd = std::env::current_dir()?;
-                cwd.join(static_files)
-            }
-        } else {
-            let mut static_files = std::env::current_dir()?;
-            static_files.pop();
-            static_files.push("client");
-            static_files.push("dist");
-            static_files
-        };
 
         if !static_files.is_dir() {
             return Err(ServerError::NotDirectory(static_files));

@@ -16,7 +16,7 @@ cargo install --version 0.10.2 wasm-pack
 
 ## Structure
 
-* `client`: Browser web application.
+* `demo`: Browser web application.
 * `getrandom`: Hack for webassembly compilation (see [getrandom notes](#getrandom)).
 * `library`: Websocket server library.
 * `server`: Command line interface for the server.
@@ -35,7 +35,7 @@ make setup
 # Start the server on ws://localhost:3030
 make server
 # Start the client on http://localhost:8080
-make client
+make demo
 ```
 
 Now visit `http://localhost:8080`.
@@ -46,7 +46,7 @@ During development you should link the WASM module:
 
 ```
 (cd wasm/pkg && yarn link)
-(cd client && yarn link ecdsa-wasm)
+(cd demo && yarn link ecdsa-wasm)
 ```
 
 ## Test
@@ -64,15 +64,15 @@ To hack on the code whilst running the tests open several terminal sessions:
 
 ```
 cd server && cargo run
-cd client && yarn start
-cd client && TEST_URL=http://localhost:8080 yarn test
+cd demo && yarn start
+cd demo && TEST_URL=http://localhost:8080 yarn test
 ```
 
 Networking is racy and we have fixed quite a few race conditions so to it is a good idea to run the tests lots of times:
 
 ```
 make test-server                # start the backend server
-(cd client && ./test.sh)        # run the tests 100 times
+(cd demo && ./test.sh)        # run the tests 100 times
 ```
 
 ## Docker

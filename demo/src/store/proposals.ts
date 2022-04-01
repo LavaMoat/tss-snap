@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {SignResult, Session} from "@metamask/mpc-client";
+import { SignResult, Session } from "@metamask/mpc-client";
 
 export interface SignResultWithAddress {
   signResult: SignResult;

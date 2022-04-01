@@ -8,7 +8,17 @@ import { keygenSelector } from "../store/keygen";
 import { WorkerContext } from "../worker-provider";
 //import { WebSocketClient } from "../mpc/clients/websocket";
 import { WebSocketContext } from "../websocket-provider";
-import { WebSocketClient, GroupInfo, WebSocketStream, WebSocketSink, SessionKind, KeyShare, SignResult, EcdsaWorker, sign } from "@metamask/mpc-client";
+import {
+  WebSocketClient,
+  GroupInfo,
+  WebSocketStream,
+  WebSocketSink,
+  SessionKind,
+  KeyShare,
+  SignResult,
+  EcdsaWorker,
+  sign,
+} from "@metamask/mpc-client";
 //import { sign } from "@metamask/mpc-client";
 
 //import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";

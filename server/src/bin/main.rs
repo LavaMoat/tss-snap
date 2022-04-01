@@ -24,5 +24,21 @@ async fn main() -> Result<()> {
     let opts: Options = Parser::parse();
     let bind = opts.bind.unwrap_or_else(|| "127.0.0.1:3030".to_string());
     let addr = SocketAddr::from_str(&bind)?;
-    Server::start("mpc", (addr.ip(), addr.port()), opts.files).await
+
+    let static_files = if let Some(static_files) = opts.files {
+        if static_files.is_absolute() {
+            static_files
+        } else {
+            let cwd = std::env::current_dir()?;
+            cwd.join(static_files)
+        }
+    } else {
+        let mut static_files = std::env::current_dir()?;
+        static_files.pop();
+        static_files.push("demo");
+        static_files.push("dist");
+        static_files
+    };
+
+    Server::start("mpc", (addr.ip(), addr.port()), static_files).await
 }
