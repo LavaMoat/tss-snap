@@ -1,7 +1,7 @@
 {
   "name": "@metamask/mpc-snap",
   "version": "0.1.0",
-  "description": "Snap for multi-party computation and threshold signing.",
+  "description": "Backend for threshold signing snap.",
   "repository": {
     "type": "git",
     "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
@@ -17,7 +17,7 @@
     "build:clean": "yarn clean && yarn build",
     "build:website": "node ./scripts/build-website.js",
     "build": "mm-snap build",
-    "serve": "mm-snap serve",
+    "start": "mm-snap serve",
     "watch": "find src/* | entr -r yarn build",
     "clean": "rimraf dist/*",
     "test": "echo 'TODO'",

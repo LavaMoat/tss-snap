@@ -8,8 +8,16 @@
     "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "license": "MIT",
+  "scripts": {
+    "types": "tsc --noEmit --project tsconfig.json",
+    "start": "parcel src/index.html"
+  },
   "devDependencies": {
-    "parcel": "^2.4.1"
+    "@metamask/types": "^1.1.0",
+    "@types/react": "^17.0.43",
+    "@types/react-dom": "^17.0.14",
+    "parcel": "^2.4.1",
+    "typescript": "^4.6.3"
   },
   "dependencies": {
     "react": "^18.0.0",
