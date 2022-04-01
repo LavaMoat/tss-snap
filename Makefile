@@ -44,6 +44,6 @@ fmt: lint
 	@cd demo && yarn prettier
 	@cd library && cargo fmt
 	@cd cli && cargo fmt
-	@cd wasm && cargo fmt
+	@cd packages/wasm && cargo fmt
 
 .PHONY: wasm dist dist-dev module setup build release server demo test lint fmt

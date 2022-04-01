@@ -4,7 +4,7 @@ on: [pull_request]
 
 env:
   RUST_LOG: "0"
-  WORKING_DIRECTORY: ./server
+  WORKING_DIRECTORY: ./cli
 
 jobs:
   fmt:

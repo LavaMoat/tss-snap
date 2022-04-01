@@ -39,12 +39,14 @@
     const sendButton = document.querySelector('button.sendHello')
     const getStateButton = document.querySelector('button.getState')
     const setStateButton = document.querySelector('button.setState')
+    const getKeyMaterial = document.querySelector('button.getKeyMaterial')
 
     connectButton.addEventListener('click', connect)
     sendButton.addEventListener('click', send)
     getStateButton.addEventListener('click', getState)
 
     setStateButton.addEventListener('click', setState)
+    getKeyMaterial.addEventListener('click', getKey)
 
     // here we get permissions to interact with and install the snap
     async function connect () {
@@ -96,6 +98,22 @@
           params: [snapId, {
             method: 'updateState',
             params: state,
+          }]
+        })
+
+        console.log("set state", response);
+      } catch (err) {
+        console.error(err)
+        alert('Problem happened: ' + err.message || err)
+      }
+    }
+
+    async function getKey() {
+      try {
+        const response = await ethereum.request({
+          method: 'wallet_invokeSnap',
+          params: [snapId, {
+            method: 'getKey',
           }]
         })
 

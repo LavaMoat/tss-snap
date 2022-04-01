@@ -1,10 +1,10 @@
-name: Client
+name: Demo
 
 on: [pull_request]
 
 env:
-  WORKING_DIRECTORY: ./client
-  WASM_DIRECTORY: ./wasm
+  WORKING_DIRECTORY: ./demo
+  WASM_DIRECTORY: ./packages/wasm
 
 jobs:
   fmt:

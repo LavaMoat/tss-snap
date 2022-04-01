@@ -1,4 +1,9 @@
-import init, { initThreadPool, KeyGenerator, Signer, sha256 } from "@metamask/mpc-ecdsa-wasm";
+import init, {
+  initThreadPool,
+  KeyGenerator,
+  Signer,
+  sha256,
+} from "@metamask/mpc-ecdsa-wasm";
 import * as Comlink from "comlink";
 
 // Temporary hack for getRandomValues() error

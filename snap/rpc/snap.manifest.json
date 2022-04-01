@@ -19,7 +19,8 @@
   },
   "initialPermissions": {
     "snap_confirm": {},
-    "snap_manageState": {}
+    "snap_manageState": {},
+    "snap_getBip44Entropy_60": {}
   },
   "manifestVersion": "0.1"
 }
