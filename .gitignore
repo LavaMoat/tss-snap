@@ -2,5 +2,6 @@ target
 dist
 pkg
 node_modules
+.parcel-cache
 *.bak
 *.log

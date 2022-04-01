@@ -19,6 +19,8 @@ wallet.registerRpcMessageHandler(async (originString, requestObject) => {
         method: 'snap_manageState',
         params: ['clear'],
       });
+
+    /*
     case 'hello':
       return wallet.request({
         method: 'snap_confirm',
@@ -32,6 +34,7 @@ wallet.registerRpcMessageHandler(async (originString, requestObject) => {
           },
         ],
       });
+    */
     default:
       throw new Error('Method not found.');
   }
