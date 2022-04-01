@@ -17,19 +17,19 @@ setup: wasm module
 	@cd snap/ui && yarn install
 
 build:
-	@cd server && cargo build
+	@cd cli && cargo build
 
 release: dist
-	@cd server && cargo build --release
+	@cd cli && cargo build --release
 
 server: dist
-	@cd server && cargo run
+	@cd cli && cargo run
 
 demo:
 	@cd demo && yarn start
 
 test-server: dist-dev
-	@cd server && cargo run
+	@cd cli && cargo run
 
 test:
 	@cd demo && yarn test
@@ -43,7 +43,7 @@ lint:
 fmt: lint
 	@cd demo && yarn prettier
 	@cd library && cargo fmt
-	@cd server && cargo fmt
+	@cd cli && cargo fmt
 	@cd wasm && cargo fmt
 
 .PHONY: wasm dist dist-dev module setup build release server demo test lint fmt

@@ -16,10 +16,10 @@ cargo install --version 0.10.2 wasm-pack
 
 ## Structure
 
+* `cli`: Command line interface for the server.
 * `demo`: Browser web application.
 * `getrandom`: Hack for webassembly compilation (see [getrandom notes](#getrandom)).
 * `library`: Websocket server library.
-* `server`: Command line interface for the server.
 * `snap`: Experimental snap for MetaMask.
 * `wasm`: Webassembly bindings to [multi-party-ecdsa][].
 
@@ -63,7 +63,7 @@ If you want to see the tests execute in a browser run `make test-headed`.
 To hack on the code whilst running the tests open several terminal sessions:
 
 ```
-cd server && cargo run
+cd cli && cargo run
 cd demo && yarn start
 cd demo && TEST_URL=http://localhost:8080 yarn test
 ```
