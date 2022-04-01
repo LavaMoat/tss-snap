@@ -20,9 +20,9 @@ ENV PATH=/usr/local/cargo/bin:$PATH
 
 # SERVER
 COPY getrandom getrandom
-COPY server server
+COPY cli cli
 RUN rustup override set nightly-2021-08-12
-RUN cargo install --path ./server
+RUN cargo install --path ./cli
 RUN cargo install --version 0.10.2 wasm-pack
 RUN mv ~/.cargo/bin/* /usr/bin
 RUN mpc-websocket --version
