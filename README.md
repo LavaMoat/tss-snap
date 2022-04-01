@@ -21,7 +21,7 @@ cargo install --version 0.10.2 wasm-pack
 * `getrandom`: Hack for webassembly compilation (see [getrandom notes](#getrandom)).
 * `library`: Websocket server library.
 * `snap`: Experimental snap for MetaMask.
-* `wasm`: Webassembly bindings to [multi-party-ecdsa][].
+* `packages`: Javascript packages and webassembly bindings to [multi-party-ecdsa][].
 
 ## Setup
 
@@ -42,11 +42,14 @@ Now visit `http://localhost:8080`.
 
 ## Development
 
-During development you should link the WASM module:
+During development you should link the WASM module and Javascript client package:
 
 ```
-(cd wasm/pkg && yarn link)
-(cd demo && yarn link ecdsa-wasm)
+(cd packages/wasm/pkg && yarn link)
+(cd demo && yarn link @metamask/mpc-ecdsa-wasm)
+
+(cd packages/client && yarn link)
+(cd demo && yarn link @metamask/mpc-client)
 ```
 
 ## Test

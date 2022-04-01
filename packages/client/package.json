@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "comlink": "^4.3.1",
-    "ecdsa-wasm": "link:../wasm/pkg",
+    "@metamask/mpc-ecdsa-wasm": "file:../wasm/pkg",
     "events": "^3.3.0"
   },
   "author": "muji <muji@tmpfs.org>",

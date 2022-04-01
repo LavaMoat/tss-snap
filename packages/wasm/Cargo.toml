@@ -9,7 +9,7 @@ description = "Webassembly bindings to multi-party-ecdsa"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mpc-ecdsa-getrandom-hack = {path = "../getrandom", version = "*"}
+mpc-ecdsa-getrandom-hack = {path = "../../getrandom", version = "*"}
 getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }

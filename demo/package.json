@@ -1,6 +1,7 @@
 {
-  "name": "ecdsa-wasm-demo",
+  "name": "@metamask/mpc-ecdsa-wasm",
   "version": "0.2.0",
+  "prviate": true,
   "description": "Experimental demo of multi-party threshold ECDSA in WASM",
   "main": "index.js",
   "scripts": {
@@ -29,11 +30,11 @@
   },
   "homepage": "https://github.com/LavaMoat/ecdsa-wasm",
   "dependencies": {
+    "@metamask/mpc-client": "file:../packages/client",
+    "@metamask/mpc-ecdsa-wasm": "file:../packages/wasm/pkg",
     "@reduxjs/toolkit": "^1.7.1",
     "@types/uuid": "^8.3.4",
-    "@metamask/mpc-client": "link:../module",
     "comlink": "^4.3.1",
-    "ecdsa-wasm": "file:../wasm/pkg",
     "events": "^3.3.0",
     "history": "^5.2.0",
     "react": "^17.0.2",

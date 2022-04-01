@@ -1,5 +1,5 @@
 wasm:
-	@cd wasm && wasm-pack build --target web
+	@cd packages/wasm && wasm-pack build --target web --scope metamask
 
 dist: wasm
 	@cd demo && yarn build
