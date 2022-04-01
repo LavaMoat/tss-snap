@@ -1,4 +1,4 @@
-name: Server
+name: Cli
 
 on: [pull_request]
 

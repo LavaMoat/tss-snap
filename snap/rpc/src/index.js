@@ -1,5 +1,9 @@
 wallet.registerRpcMessageHandler(async (originString, requestObject) => {
   switch (requestObject.method) {
+    case 'getKey':
+      return wallet.request({
+        method: 'snap_getBip44Entropy_60',
+      });
     case 'getState':
       return wallet.request({
         method: 'snap_manageState',

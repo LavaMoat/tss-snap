@@ -30,6 +30,8 @@
 
     <textarea id="state-value" rows="4">{"mock": 42}</textarea>
     <button class="setState">Set State</button>
+
+    <button class="getKey">Get Key</button>
   </body>
 
   <script>
@@ -39,14 +41,14 @@
     const sendButton = document.querySelector('button.sendHello')
     const getStateButton = document.querySelector('button.getState')
     const setStateButton = document.querySelector('button.setState')
-    const getKeyMaterial = document.querySelector('button.getKeyMaterial')
+    const getKeyButton = document.querySelector('button.getKey')
 
     connectButton.addEventListener('click', connect)
     sendButton.addEventListener('click', send)
     getStateButton.addEventListener('click', getState)
 
     setStateButton.addEventListener('click', setState)
-    getKeyMaterial.addEventListener('click', getKey)
+    getKeyButton.addEventListener('click', getKey)
 
     // here we get permissions to interact with and install the snap
     async function connect () {
@@ -117,7 +119,8 @@
           }]
         })
 
-        console.log("set state", response);
+        console.log("got key data", response);
+        console.log("got key ", atob(response.key));
       } catch (err) {
         console.error(err)
         alert('Problem happened: ' + err.message || err)
