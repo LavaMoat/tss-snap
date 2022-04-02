@@ -73,14 +73,12 @@ const App = () => {
 };
 
 ReactDOM.render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <HashRouter>
-        <WebSocketProvider>
-          <App />
-        </WebSocketProvider>
-      </HashRouter>
-    </Provider>
-  </React.StrictMode>,
+  <Provider store={store}>
+    <HashRouter>
+      <WebSocketProvider>
+        <App />
+      </WebSocketProvider>
+    </HashRouter>
+  </Provider>,
   document.querySelector("main")
 );

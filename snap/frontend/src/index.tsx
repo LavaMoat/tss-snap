@@ -18,7 +18,5 @@ declare global {
 
 const root = ReactDOMClient.createRoot(document.querySelector("main"));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );
