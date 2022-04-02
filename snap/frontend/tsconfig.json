@@ -14,5 +14,6 @@
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node"
-  }
+  },
+  "exclude": ["node_modules"]
 }
