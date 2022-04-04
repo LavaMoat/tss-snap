@@ -11,4 +11,9 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 console_error_panic_hook = "0.1.6"
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
-#serde = {version = "1", features = ["derive"]}
+rand = "0.8"
+getrandom = {version = "0.2", features = ["js"]}
+serde = {version = "1", features = ["derive"]}
+chacha20poly1305 = { version = "0.9", features = ["std"] }
+sha3 = "0.10"
+thiserror = "1"

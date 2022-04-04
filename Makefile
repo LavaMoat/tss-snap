@@ -1,6 +1,9 @@
 wasm:
 	@cd packages/wasm && wasm-pack build --target web --scope metamask
 
+snap-wasm:
+	@cd snap/wasm && wasm-pack build --target web --scope metamask
+
 dist: wasm
 	@cd demo && yarn build
 
@@ -10,7 +13,7 @@ dist-dev: wasm
 module:
 	@cd module && yarn build
 
-setup: wasm module
+setup: wasm snap-wasm module
 	@cd demo && yarn install && npx playwright install
 	@cd module && yarn install
 	@cd snap/rpc && yarn install
@@ -47,4 +50,4 @@ fmt: lint
 	@cd cli && cargo fmt
 	@cd packages/wasm && cargo fmt
 
-.PHONY: wasm dist dist-dev module setup build release server demo test lint fmt
+.PHONY: wasm snap-wasm dist dist-dev module setup build release server demo test lint fmt

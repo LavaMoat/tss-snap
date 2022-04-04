@@ -1,9 +1,21 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
+
+import init, {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
 
 export default function App() {
   const snapId = `local:${location.href}`;
+  const [ready, setReady] = useState(false);
 
-  const [stateValue, setStateValue] = useState({mock: 42});
+  const [stateValue, setStateValue] = useState(JSON.stringify({mock: 42}));
+
+  useEffect(() => {
+    const initialize = async () => {
+      // Setup the wasm helpers
+      await init();
+      setReady(true);
+    }
+    initialize();
+  }, []);
 
   async function connect () {
     try {
@@ -27,7 +39,6 @@ export default function App() {
           method: 'getState'
         }]
       })
-
       console.log("get state", response);
     } catch (err) {
       console.error(err)
@@ -35,6 +46,7 @@ export default function App() {
     }
   }
 
+  /*
   async function setState() {
     const text = document.getElementById('state-value');
     const state = JSON.parse(text.value);
@@ -53,6 +65,7 @@ export default function App() {
       alert('Problem happened: ' + err.message || err)
     }
   }
+  */
 
   async function getKey() {
     try {
@@ -71,14 +84,16 @@ export default function App() {
     }
   }
 
-  let value = {"mock": 42};
+  if (ready === false) {
+    return null;
+  }
+
+  //<button onClick={setState}>Set State</button>
 
   return (
     <>
       <button onClick={connect}>Connect</button>
       <button onClick={getState}>Get State</button>
-      <textarea id="state-value" rows="4" onChange={(e) => setStateValue(e.target.value)} value={JSON.stringify(stateValue)}></textarea>
-      <button onClick={setState}>Set State</button>
       <button onClick={getKey}>Get Key</button>
     </>
   );

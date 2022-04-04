@@ -52,6 +52,13 @@ During development you should link the WASM module and Javascript client package
 (cd demo && yarn link @metamask/mpc-client)
 ```
 
+To work on the snap there are some additional webassembly utilities used for encrypting and decrypting key shares:
+
+```
+(cd snap/wasm/pkg && yarn link)
+(cd snap/dapp && yarn link @metamask/mpc-snap-wasm)
+```
+
 ## Test
 
 To run the test suite using [playwright][] open two terminal sessions:
