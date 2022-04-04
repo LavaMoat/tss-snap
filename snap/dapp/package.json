@@ -14,8 +14,10 @@
     "snap.manifest.json"
   ],
   "scripts": {
-    "build:snap": "mm-snap build -s snap.js -d . && yarn build:public",
-    "build:public": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
+    "clean": "rm -rf dist .parcel-cache && mkdir dist",
+    "build:snap": "yarn clean && mm-snap build -s snap.js -d . && yarn build:assets",
+    "build:assets": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
+    "build": "yarn build:snap && parcel build src/index.html",
     "types": "tsc --noEmit --project tsconfig.json",
     "start": "parcel src/index.html --port 7070"
   },
