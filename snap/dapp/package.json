@@ -1,7 +1,7 @@
 {
   "name": "@metamask/mpc-snap",
   "version": "0.1.0",
-  "description": "Frontend for the threshold signing snap.",
+  "description": "Snap for threshold signatures.",
   "private": true,
   "repository": {
     "type": "git",
@@ -9,13 +9,13 @@
   },
   "license": "MIT",
   "files": [
-    "dist/",
+    "bundle.js",
     "images/",
     "snap.manifest.json"
   ],
   "scripts": {
     "build:snap": "mm-snap build -s snap.js -d . && yarn build:public",
-    "build:public": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r package.json dist && cp -r bundle.js dist",
+    "build:public": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
     "types": "tsc --noEmit --project tsconfig.json",
     "start": "parcel src/index.html --port 7070"
   },
