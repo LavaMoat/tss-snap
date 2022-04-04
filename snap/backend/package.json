@@ -7,7 +7,7 @@
     "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "license": "MIT",
-  "main": "src/index.js",
+  "main": "src/snap.js",
   "files": [
     "dist/",
     "images/",
@@ -16,7 +16,7 @@
   "scripts": {
     "build:clean": "yarn clean && yarn build",
     "build:website": "node ./scripts/build-website.js",
-    "build": "mm-snap build",
+    "build": "mm-snap build -s src/snap.js",
     "start": "mm-snap serve",
     "watch": "find src/* | entr -r yarn build",
     "clean": "rimraf dist/*",

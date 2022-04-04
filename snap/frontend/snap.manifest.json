@@ -7,7 +7,7 @@
     "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "source": {
-    "shasum": "W2s/sgKwHTbceTTZsAcOCp7fnKAqNRmzlpM6lF/4pWE=",
+    "shasum": "8fRCGTHiW4HVLlEx+9WCSSk5UslSDMXdx8kD5+Y9pec=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

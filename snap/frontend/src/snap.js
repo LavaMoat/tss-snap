@@ -1,4 +1,6 @@
 wallet.registerRpcMessageHandler(async (originString, requestObject) => {
+  console.log("Foo tjhis is adds das sdsfsdfdsfs...");
+  console.log("sdfsdfdsfd sd ds fdfs");
   switch (requestObject.method) {
     case 'getKey':
       return wallet.request({
@@ -19,22 +21,6 @@ wallet.registerRpcMessageHandler(async (originString, requestObject) => {
         method: 'snap_manageState',
         params: ['clear'],
       });
-
-    /*
-    case 'hello':
-      return wallet.request({
-        method: 'snap_confirm',
-        params: [
-          {
-            prompt: `Hello, ${originString}!`,
-            description:
-              'This custom confirmation is just for display purposes.',
-            textAreaContent:
-              'But you can edit the snap source code to make it do something, if you want to!',
-          },
-        ],
-      });
-    */
     default:
       throw new Error('Method not found.');
   }

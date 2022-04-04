@@ -1,5 +1,5 @@
 {
-  "name": "@metamask/mpc-snap-frontend",
+  "name": "@metamask/mpc-snap",
   "version": "0.1.0",
   "description": "Frontend for the threshold signing snap.",
   "private": true,
@@ -8,11 +8,19 @@
     "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "license": "MIT",
+  "files": [
+    "dist/",
+    "images/",
+    "snap.manifest.json"
+  ],
   "scripts": {
+    "build:snap": "mm-snap build -s src/snap.js && yarn build:public",
+    "build:public": "cp -r images dist/ && cp snap.manifest.json dist && cp package.json dist && cp snap.config.js dist",
     "types": "tsc --noEmit --project tsconfig.json",
-    "start": "parcel src/index.html"
+    "start": "parcel src/index.html --port 7070"
   },
   "devDependencies": {
+    "@metamask/snaps-cli": "^0.10.7",
     "@metamask/types": "^1.1.0",
     "@types/react": "^17.0.43",
     "@types/react-dom": "^17.0.14",
