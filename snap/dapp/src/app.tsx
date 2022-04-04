@@ -1,12 +1,15 @@
 import React, {useEffect, useState} from "react";
 
 import init, {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
+import {useDispatch, useSelector} from 'react-redux';
+import {loadPrivateKey, keySelector} from './store/keys';
+import snapId from './snap-id';
 
 export default function App() {
-  const snapId = `local:${location.href}`;
+  const dispatch = useDispatch();
   const [ready, setReady] = useState(false);
 
-  const [stateValue, setStateValue] = useState(JSON.stringify({mock: 42}));
+  //const {privateKey} = useSelector(keySelector);
 
   useEffect(() => {
     const initialize = async () => {
@@ -25,12 +28,15 @@ export default function App() {
           wallet_snap: { [snapId]: {} },
         }]
       })
+
+      dispatch(loadPrivateKey());
     } catch(e) {
       // TODO: handle snap connect failure.
       console.error(e);
     }
   }
 
+  /*
   async function getState() {
     try {
       const response = await ethereum.request({
@@ -45,6 +51,7 @@ export default function App() {
       alert('Problem happened: ' + err.message || err)
     }
   }
+  */
 
   /*
   async function setState() {
@@ -58,7 +65,6 @@ export default function App() {
           params: state,
         }]
       })
-
       console.log("set state", response);
     } catch (err) {
       console.error(err)
@@ -67,6 +73,7 @@ export default function App() {
   }
   */
 
+  /*
   async function getKey() {
     try {
       const response = await ethereum.request({
@@ -83,18 +90,20 @@ export default function App() {
       alert('Problem happened: ' + err.message || err)
     }
   }
+  */
 
   if (ready === false) {
     return null;
   }
 
   //<button onClick={setState}>Set State</button>
+      //<button onClick={getState}>Get State</button>
+      //<button onClick={getKey}>Get Key</button>
+      //<p>{key.privateKey}</p>
 
   return (
     <>
       <button onClick={connect}>Connect</button>
-      <button onClick={getState}>Get State</button>
-      <button onClick={getKey}>Get Key</button>
     </>
   );
 }

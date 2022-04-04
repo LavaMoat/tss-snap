@@ -1,5 +1,8 @@
 import React from "react";
 import * as ReactDOMClient from 'react-dom/client';
+import { Provider } from "react-redux";
+
+import store from './store';
 
 import App from './app';
 
@@ -18,5 +21,7 @@ declare global {
 
 const root = ReactDOMClient.createRoot(document.querySelector("main"));
 root.render(
-  <App />
+  <Provider store={store}>
+    <App />
+  </Provider>
 );
