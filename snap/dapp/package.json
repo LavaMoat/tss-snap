@@ -14,8 +14,8 @@
     "snap.manifest.json"
   ],
   "scripts": {
-    "build:snap": "mm-snap build -s src/snap.js && yarn build:public",
-    "build:public": "cp -r images dist/ && cp snap.manifest.json dist && cp package.json dist && cp snap.config.js dist",
+    "build:snap": "mm-snap build -s snap.js -d . && yarn build:public",
+    "build:public": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r package.json dist && cp -r bundle.js dist",
     "types": "tsc --noEmit --project tsconfig.json",
     "start": "parcel src/index.html --port 7070"
   },

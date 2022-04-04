@@ -1,6 +1,4 @@
 wallet.registerRpcMessageHandler(async (originString, requestObject) => {
-  console.log("Foo tjhis is adds das sdsfsdfdsfs...");
-  console.log("sdfsdfdsfd sd ds fdfs");
   switch (requestObject.method) {
     case 'getKey':
       return wallet.request({

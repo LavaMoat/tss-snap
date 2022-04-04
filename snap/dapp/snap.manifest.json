@@ -1,16 +1,16 @@
 {
   "version": "0.1.0",
-  "proposedName": "MetaMask Snap for threshold signing.",
-  "description": "MetaMask Snap for signing ECDSA transactions using threshold signatures..",
+  "proposedName": "Threshold signatures",
+  "description": "Snap for signing ECDSA transactions using threshold signatures..",
   "repository": {
     "type": "git",
     "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
   },
   "source": {
-    "shasum": "W2s/sgKwHTbceTTZsAcOCp7fnKAqNRmzlpM6lF/4pWE=",
+    "shasum": "VqAgz9iPTOSqoYPDRXJFKd/7aOj24+lE6yHO5kNsMKE=",
     "location": {
       "npm": {
-        "filePath": "dist/bundle.js",
+        "filePath": "bundle.js",
         "iconPath": "images/icon.svg",
         "packageName": "@metamask/mpc-snap",
         "registry": "https://registry.npmjs.org/"
