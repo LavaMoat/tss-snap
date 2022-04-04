@@ -18,15 +18,53 @@ export const loadPrivateKey = createAsyncThunk(
   }
 );
 
-type KeyShares = {}
+export const getState = createAsyncThunk(
+  "keys/getState",
+  async () => {
+      return await ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: [snapId, {
+          method: 'getState',
+        }]
+      });
+  }
+);
+
+export const setState = createAsyncThunk(
+  "keys/setState",
+  async (value: unknown) => {
+      return await ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: [snapId, {
+          method: 'updateState',
+          params: value,
+        }]
+      });
+  }
+);
+
+//inpage.js:1 MetaMask - RPC Error: this.controllerMessenger is not a function {code: -32603, message: 'this.controllerMessenger is not a function', data: {…}}
+export const clearState = createAsyncThunk(
+  "keys/clearState",
+  async () => {
+      await ethereum.request({
+        method: 'wallet_invokeSnap',
+        params: [snapId, {
+          method: 'clearState',
+        }]
+      });
+  }
+);
+
+type KeyShare = {}
 
 export type KeyState = {
   privateKey?: string;
-  keys: KeyShares;
+  keys: KeyShare[];
 }
 
 const initialState: KeyState = {
-  keys: null,
+  keys: [],
   privateKey: null,
 };
 
@@ -42,6 +80,9 @@ const keySlice = createSlice({
     builder.addCase(loadPrivateKey.fulfilled, (state, action) => {
       state.privateKey = action.payload;
     });
+    //builder.addCase(clearState.fulfilled, (state, action) => {
+      //state.keys = [];
+    //});
   },
 });
 
