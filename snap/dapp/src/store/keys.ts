@@ -1,14 +1,24 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
+import {
+  createSlice,
+  createAsyncThunk,
+  PayloadAction
+} from "@reduxjs/toolkit";
+import {
+  encrypt as xchacha20poly1305Encrypt,
+  decrypt as xchacha20poly1305Decrypt,
+} from '@metamask/mpc-snap-wasm';
 import snapId from '../snap-id';
 
 type AeadPack = {
   nonce: number[],
   ciphertext: number[],
-
 }
 
-type KeyMaterialResponse = {
+type KeyShare = {
+  label: string;
+}
+
+type KeyResponse = {
   key: string;
 }
 
@@ -22,101 +32,88 @@ function decode(value: Uint8Array): string {
   return decoder.decode(value);
 }
 
-export function decryptAndDecode(key: string, value: AeadPack): KeyShare[] {
-  const buffer = decrypt(key, value);
+function decrypt(key: string, value: AeadPack): KeyShare[] {
+  const buffer = xchacha20poly1305Decrypt(key, value);
   const decoded = decode(new Uint8Array(buffer));
   return JSON.parse(decoded);
 }
 
-export function encodeAndEncrypt(key: string, value: KeyShare[]): AeadPack {
+function encrypt(key: string, value: KeyShare[]): AeadPack {
   const json = JSON.stringify(value);
   const encoded = encode(json);
-  return encrypt(key, Array.from(encoded));
+  return xchacha20poly1305Encrypt(key, Array.from(encoded));
 }
 
-export const loadPrivateKey = createAsyncThunk(
-  "keys/loadPrivateKey",
+async function loadPrivateKey() {
+  const response = await ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: [snapId, {
+      method: 'getKey',
+    }]
+  });
+  return (response as KeyResponse).key;
+}
+
+async function getState() {
+  return await ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: [snapId, {
+      method: 'getState',
+    }]
+  });
+}
+
+async function setState(value: AeadPack) {
+  return await ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: [snapId, {
+      method: 'updateState',
+      params: value,
+    }]
+  });
+}
+
+export const loadState = createAsyncThunk(
+  "keys/loadState",
   async () => {
-      const response = await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'getKey',
-        }]
-      });
-      return (response as KeyMaterialResponse).key;
+    const state: AeadPack = await getState() as AeadPack;
+    if (state !== null) {
+      const key = await loadPrivateKey();
+      return decrypt(key, state);
+    }
+    // Treat no state as zero key shares
+    return [];
   }
 );
 
-export const getState = createAsyncThunk(
-  "keys/getState",
-  async () => {
-      return await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'getState',
-        }]
-      });
+export const saveState = createAsyncThunk(
+  "keys/saveState",
+  async (keyShares: KeyShare[]) => {
+    const key = await loadPrivateKey();
+    const aeadPack = encrypt(key, keyShares);
+    await setState(aeadPack);
   }
 );
 
-export const setState = createAsyncThunk(
-  "keys/setState",
-  async (value: unknown) => {
-      return await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'updateState',
-          params: value,
-        }]
-      });
-  }
-);
-
-//inpage.js:1 MetaMask - RPC Error: this.controllerMessenger is not a function {code: -32603, message: 'this.controllerMessenger is not a function', data: {…}}
 export const clearState = createAsyncThunk(
   "keys/clearState",
   async () => {
-      await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'clearState',
-        }]
-      });
+    const key = await loadPrivateKey();
+    const aeadPack = encrypt(key, []);
+    await setState(aeadPack);
   }
 );
 
-type KeyShare = {
-  label: string;
-}
-
-export type KeyState = {
-  privateKey?: string;
-  keys: KeyShare[];
-}
-
-const initialState: KeyState = {
-  keys: [],
-  privateKey: null,
-};
+export type KeyState = {}
+const initialState: KeyState = {};
 
 const keySlice = createSlice({
   name: "keys",
   initialState,
-  reducers: {
-    setKeyShares: (state, { payload }: PayloadAction<KeyShare[]>) => {
-      state.keys = payload;
-    },
-  },
-  extraReducers: (builder) => {
-    builder.addCase(loadPrivateKey.fulfilled, (state, action) => {
-      state.privateKey = action.payload;
-    });
-    //builder.addCase(clearState.fulfilled, (state, action) => {
-      //state.keys = [];
-    //});
-  },
+  reducers: {},
+  extraReducers: (builder) => {},
 });
 
-export const { setKeyShares } = keySlice.actions;
+//export const { setKeyShares } = keySlice.actions;
 export const keySelector = (state: {keys: KeyState}) => state.keys;
 export default keySlice.reducer;

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import init, {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
 import {useDispatch} from 'react-redux';
-import {loadPrivateKey, setState, getState, encodeAndEncrypt, decryptAndDecode} from './store/keys';
+import {loadState, saveState, clearState} from './store/keys';
 import snapId from './snap-id';
 
 export default function App() {
@@ -26,16 +26,27 @@ export default function App() {
         }]
       })
 
-      const keyShares = [{label: 'mock key share'}];
-      const key = await dispatch(loadPrivateKey());
-      console.log("Got key: ", key);
-      const aead = encodeAndEncrypt(key.payload, keyShares);
-      console.log("got aead", aead);
-      const decrypted = decryptAndDecode(key.payload, aead);
-      console.log("got decrypted", decrypted);
+      /*
+      await dispatch(clearState());
 
-      //const state = await dispatch(getState());
-      //console.log(state);
+      const {payload: keyShares} = await dispatch(loadState());
+      console.log("Got key shares", keyShares);
+      */
+
+      /*
+      keyShares.push({label: 'Mock Key Share'});
+      console.log("After append", keyShares);
+
+      // Update with amended state
+      await dispatch(saveState(keyShares));
+      */
+
+      /*
+      // Check the new state is good
+      const {payload: newKeyShares} = await dispatch(loadState());
+      console.log("After saveState", newKeyShares);
+      */
+
     } catch(e) {
       // TODO: handle snap connect failure.
       console.error(e);
