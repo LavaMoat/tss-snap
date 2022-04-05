@@ -1,15 +1,12 @@
 import React, {useEffect, useState} from "react";
-
 import init, {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
-import {useDispatch, useSelector} from 'react-redux';
-import {loadPrivateKey, setState, getState} from './store/keys';
+import {useDispatch} from 'react-redux';
+import {loadPrivateKey, setState, getState, encodeAndEncrypt, decryptAndDecode} from './store/keys';
 import snapId from './snap-id';
 
 export default function App() {
   const dispatch = useDispatch();
   const [ready, setReady] = useState(false);
-
-  //const {privateKey} = useSelector(keySelector);
 
   useEffect(() => {
     const initialize = async () => {
@@ -28,10 +25,17 @@ export default function App() {
           wallet_snap: { [snapId]: {} },
         }]
       })
-      await dispatch(loadPrivateKey());
 
-      const state = await dispatch(getState());
-      console.log(state);
+      const keyShares = [{label: 'mock key share'}];
+      const key = await dispatch(loadPrivateKey());
+      console.log("Got key: ", key);
+      const aead = encodeAndEncrypt(key.payload, keyShares);
+      console.log("got aead", aead);
+      const decrypted = decryptAndDecode(key.payload, aead);
+      console.log("got decrypted", decrypted);
+
+      //const state = await dispatch(getState());
+      //console.log(state);
     } catch(e) {
       // TODO: handle snap connect failure.
       console.error(e);

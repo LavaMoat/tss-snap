@@ -1,8 +1,37 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
 import snapId from '../snap-id';
+
+type AeadPack = {
+  nonce: number[],
+  ciphertext: number[],
+
+}
 
 type KeyMaterialResponse = {
   key: string;
+}
+
+function encode(value: string): Uint8Array {
+  const encoder = new TextEncoder();
+  return encoder.encode(value);
+}
+
+function decode(value: Uint8Array): string {
+  const decoder = new TextDecoder();
+  return decoder.decode(value);
+}
+
+export function decryptAndDecode(key: string, value: AeadPack): KeyShare[] {
+  const buffer = decrypt(key, value);
+  const decoded = decode(new Uint8Array(buffer));
+  return JSON.parse(decoded);
+}
+
+export function encodeAndEncrypt(key: string, value: KeyShare[]): AeadPack {
+  const json = JSON.stringify(value);
+  const encoded = encode(json);
+  return encrypt(key, Array.from(encoded));
 }
 
 export const loadPrivateKey = createAsyncThunk(
@@ -56,7 +85,9 @@ export const clearState = createAsyncThunk(
   }
 );
 
-type KeyShare = {}
+type KeyShare = {
+  label: string;
+}
 
 export type KeyState = {
   privateKey?: string;
@@ -72,7 +103,7 @@ const keySlice = createSlice({
   name: "keys",
   initialState,
   reducers: {
-    setKeyShares: (state, { payload }: PayloadAction<KeyShares>) => {
+    setKeyShares: (state, { payload }: PayloadAction<KeyShare[]>) => {
       state.keys = payload;
     },
   },
@@ -87,5 +118,5 @@ const keySlice = createSlice({
 });
 
 export const { setKeyShares } = keySlice.actions;
-export const keySelector = (state) => state.keys;
+export const keySelector = (state: {keys: KeyState}) => state.keys;
 export default keySlice.reducer;
