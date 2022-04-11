@@ -26,6 +26,7 @@
   "devDependencies": {
     "@metamask/snaps-cli": "^0.10.7",
     "@metamask/types": "^1.1.0",
+    "@metamask/mpc-client": "^1.0.0",
     "@types/react": "^18.0.1",
     "@types/react-dom": "^18.0.0",
     "parcel": "^2.4.1",

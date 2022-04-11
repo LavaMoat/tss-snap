@@ -5,7 +5,7 @@ import { Stack, Button, Typography } from "@mui/material";
 export default function Keys() {
   return (
     <Stack spacing={2}>
-      <Typography variant="h3" component="div">
+      <Typography variant="h3" component="div" gutterBottom>
         Keys
       </Typography>
 

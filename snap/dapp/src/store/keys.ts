@@ -1,8 +1,16 @@
-import { createSlice, createAsyncThunk /*, PayloadAction */ } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  PayloadAction,
+} from "@reduxjs/toolkit";
+
 import {
   encrypt as xchacha20poly1305Encrypt,
   decrypt as xchacha20poly1305Decrypt,
 } from "@metamask/mpc-snap-wasm";
+
+import { Parameters, GroupInfo } from "@metamask/mpc-client";
+
 import snapId from "../snap-id";
 
 type AeadPack = {
@@ -103,16 +111,24 @@ export const clearState = createAsyncThunk("keys/clearState", async () => {
   await setState(aeadPack);
 });
 
-export type KeyState = null;
-const initialState: KeyState = null;
+export type KeyState = {
+  group?: GroupInfo;
+};
+const initialState: KeyState = {
+  group: null,
+};
 
 const keySlice = createSlice({
   name: "keys",
   initialState,
-  reducers: {},
+  reducers: {
+    setGroup: (state, { payload }: PayloadAction<GroupInfo>) => {
+      state.group = payload;
+    },
+  },
   //extraReducers: (builder) => {},
 });
 
-//export const { setKeyShares } = keySlice.actions;
-export const keySelector = (state: { keys: KeyState }) => state.keys;
+export const { setGroup } = keySlice.actions;
+export const keysSelector = (state: { keys: KeyState }) => state.keys;
 export default keySlice.reducer;

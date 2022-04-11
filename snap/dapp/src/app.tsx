@@ -13,6 +13,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme } from "@mui/material/styles";
 
+import WebSocketProvider from "./websocket-provider";
+
 import Connect from "./connect";
 import Keys from "./keys";
 import Create from "./create";
@@ -26,7 +28,7 @@ const NotFound = () => (
 function MainAppBar() {
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+      <AppBar position="static" sx={{pl: 4, pr: 4, pt: 1, pb: 1}}>
         <Stack direction="row" padding={1} spacing={2}>
           <img src="/images/icon.svg" width="32" />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -40,7 +42,7 @@ function MainAppBar() {
 
 function Content() {
   return (
-    <Box padding={7}>
+    <Box padding={5}>
       <Routes>
         <Route path="/" element={<Connect />} />
         <Route path="/keys" element={<Keys />} />
@@ -83,8 +85,10 @@ export default function App() {
       <>
         <CssBaseline />
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <MainAppBar />
-          <Content />
+          <WebSocketProvider>
+            <MainAppBar />
+            <Content />
+          </WebSocketProvider>
         </div>
       </>
     </ThemeProvider>

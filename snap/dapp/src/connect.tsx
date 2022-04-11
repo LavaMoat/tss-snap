@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 import {
   Stack,
@@ -28,7 +28,7 @@ export default function Connect() {
       });
 
       console.log("Got connect result", result);
-      navigate('/keys/create?step=parameters');
+      navigate("/keys/create?step=parameters");
 
       /*
       await dispatch(clearState());
@@ -68,7 +68,7 @@ export default function Connect() {
   return (
     <>
       <Stack spacing={2}>
-        <Typography variant="h3" component="div">
+        <Typography variant="h3" component="div" gutterBottom>
           Connect
         </Typography>
 
@@ -84,7 +84,7 @@ export default function Connect() {
 
       <Snackbar open={showError} autoHideDuration={6000} onClose={handleClose}>
         <Alert onClose={handleClose} severity="error">
-          Could not connect: {connectError ? connectError.message : ''}
+          Could not connect: {connectError ? connectError.message : ""}
         </Alert>
       </Snackbar>
     </>
