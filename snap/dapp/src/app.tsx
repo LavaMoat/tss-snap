@@ -15,6 +15,7 @@ import { createTheme } from "@mui/material/styles";
 
 import Connect from "./connect";
 import Keys from "./keys";
+import Create from "./create";
 
 const NotFound = () => (
   <Typography variant="h3" component="div">
@@ -43,6 +44,7 @@ function Content() {
       <Routes>
         <Route path="/" element={<Connect />} />
         <Route path="/keys" element={<Keys />} />
+        <Route path="/keys/create" element={<Create />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Box>

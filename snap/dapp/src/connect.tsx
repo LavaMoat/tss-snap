@@ -28,7 +28,7 @@ export default function Connect() {
       });
 
       console.log("Got connect result", result);
-      navigate('/keys');
+      navigate('/keys/create');
 
       /*
       await dispatch(clearState());
