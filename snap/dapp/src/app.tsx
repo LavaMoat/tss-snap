@@ -1,22 +1,39 @@
-import React, {useEffect, useState} from "react";
-import init, {encrypt, decrypt} from '@metamask/mpc-snap-wasm';
+import React, {useEffect, useState, useMemo} from "react";
+import init from '@metamask/mpc-snap-wasm';
 import {useDispatch} from 'react-redux';
 import {loadState, saveState, clearState} from './store/keys';
 import snapId from './snap-id';
 
-export default function App() {
-  const dispatch = useDispatch();
-  const [ready, setReady] = useState(false);
+import * as React from 'react';
+import AppBar from '@mui/material/AppBar';
+import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
 
-  useEffect(() => {
-    const initialize = async () => {
-      // Setup the wasm helpers
-      await init();
-      setReady(true);
-    }
-    initialize();
-  }, []);
 
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { createTheme } from "@mui/material/styles";
+
+function MainAppBar() {
+  return (
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Stack direction="row" padding={1} spacing={2}>
+          <img src="/images/icon.svg" width="32" />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Threshold Signatures
+          </Typography>
+        </Stack>
+      </AppBar>
+    </Box>
+  );
+}
+
+function Content() {
   async function connect () {
     try {
       await ethereum.request({
@@ -53,74 +70,61 @@ export default function App() {
     }
   }
 
-  /*
-  async function getState() {
-    try {
-      const response = await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'getState'
-        }]
-      })
-      console.log("get state", response);
-    } catch (err) {
-      console.error(err)
-      alert('Problem happened: ' + err.message || err)
-    }
-  }
-  */
 
-  /*
-  async function setState() {
-    const text = document.getElementById('state-value');
-    const state = JSON.parse(text.value);
-    try {
-      const response = await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'updateState',
-          params: state,
-        }]
-      })
-      console.log("set state", response);
-    } catch (err) {
-      console.error(err)
-      alert('Problem happened: ' + err.message || err)
-    }
-  }
-  */
+  return (
+    <Stack
+      paddingTop={4}
+      alignItems="center"
+      justifyContent="center">
 
-  /*
-  async function getKey() {
-    try {
-      const response = await ethereum.request({
-        method: 'wallet_invokeSnap',
-        params: [snapId, {
-          method: 'getKey',
-        }]
-      })
+      <Typography variant="body1" component="div" gutterBottom>
+        To begin you should have installed MetaMask Flask and then you can
+        connect.
+      </Typography>
 
-      console.log("got key data", response);
-      console.log("got key ", atob(response.key));
-    } catch (err) {
-      console.error(err)
-      alert('Problem happened: ' + err.message || err)
+      <Button variant="contained" onClick={connect}>Connect</Button>
+    </Stack>
+  );
+}
+
+export default function App() {
+  const dispatch = useDispatch();
+  const [ready, setReady] = useState(false);
+
+
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: prefersDarkMode ? "dark" : "light",
+        },
+      }),
+    [prefersDarkMode]
+  );
+
+  useEffect(() => {
+    const initialize = async () => {
+      // Setup the wasm helpers
+      await init();
+      setReady(true);
     }
-  }
-  */
+    initialize();
+  }, []);
 
   if (ready === false) {
     return null;
   }
 
-  //<button onClick={setState}>Set State</button>
-      //<button onClick={getState}>Get State</button>
-      //<button onClick={getKey}>Get Key</button>
-      //<p>{key.privateKey}</p>
-
   return (
-    <>
-      <button onClick={connect}>Connect</button>
-    </>
+    <ThemeProvider theme={theme}>
+      <>
+        <CssBaseline />
+        <div style={{display: 'flex', flexDirection: 'column'}}>
+          <MainAppBar />
+          <Content />
+        </div>
+      </>
+    </ThemeProvider>
   );
 }
