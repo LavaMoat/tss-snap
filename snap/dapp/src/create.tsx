@@ -14,21 +14,19 @@ import {
   TextField,
   Paper,
   Link,
+  Snackbar,
+  Alert,
+  LinearProgress,
 } from "@mui/material";
 
-import { Parameters } from "@metamask/mpc-client";
+import { Parameters, SessionKind } from "@metamask/mpc-client";
 
-import { setGroup, keysSelector } from "./store/keys";
+import { setGroup, setSession, keysSelector } from "./store/keys";
 import { copyToClipboard } from "./utils";
 
 type GroupFormData = [string, Parameters];
 
-const steps = [
-  "Set parameters",
-  "Invite people",
-  "Wait for participants",
-  "Generate",
-];
+const steps = ["Set parameters", "Invite people", "Create session", "Generate"];
 
 type StepProps = {
   next: () => void;
@@ -44,7 +42,6 @@ function SetParameters(props: StepProps) {
   const [name, setName] = useState("");
   const [parties, setParties] = useState(3);
   const [threshold, setThreshold] = useState(2);
-  const [thresholdMax, setThresholdMax] = useState(3);
   const [nameError, setNameError] = useState(false);
 
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -78,6 +75,15 @@ function SetParameters(props: StepProps) {
     });
     const group = { label, params, uuid };
     dispatch(setGroup(group));
+
+    const session = await websocket.rpc({
+      method: "Session.create",
+      params: [uuid, SessionKind.KEYGEN],
+    });
+    dispatch(setSession(session));
+
+    console.log("Created session", session);
+
     next();
   };
 
@@ -182,20 +188,86 @@ function SetParameters(props: StepProps) {
   );
 }
 
-function InvitePeople(props: StepProps) {
+type InviteProps = {
+  onCopy: () => void;
+};
+
+function InviteCard(props: InviteProps) {
+  const { onCopy } = props;
+  const [copied, setCopied] = useState(false);
+  const { group, session } = useSelector(keysSelector);
+  const href = `${location.protocol}//${location.host}/#/keys/create?join=${group.uuid}&session=${session.uuid}`;
+
+  const copy = async () => {
+    await copyToClipboard(href);
+    setCopied(true);
+    onCopy();
+  };
+
+  return (
+    <>
+      <Paper variant="outlined">
+        <Box padding={4}>
+          <details>
+            <summary>
+              <Typography
+                variant="body2"
+                component="span"
+                color="text.secondary"
+              >
+                Send this link via email or private message to the people you
+                wish to invite.
+              </Typography>
+            </summary>
+            <Link href={href} onClick={(e) => e.preventDefault()}>
+              {href}
+            </Link>
+          </details>
+          <Button onClick={copy} sx={{ mt: 4 }}>
+            Copy link to clipboard
+          </Button>
+        </Box>
+      </Paper>
+      <Snackbar
+        open={copied}
+        autoHideDuration={3000}
+        onClose={() => setCopied(false)}
+      >
+        <Alert onClose={() => setCopied(false)} severity="success">
+          Link copied to clipboard
+        </Alert>
+      </Snackbar>
+    </>
+  );
+}
+
+function InvitePeople() {
+  const [showProgress, setShowProgress] = useState(false);
   const { group } = useSelector(keysSelector);
 
-  const href = `${location.protocol}//${location.host}/#/keys/create?join=${group.uuid}`;
+  const onCopy = () => setShowProgress(true);
+
+  const Progress = () => (
+    <Stack>
+      <Typography variant="body1" component="div">
+        Once enough people have connected we can proceed to the next step.
+      </Typography>
+      <Typography variant="body2" component="div" color="text.secondary">
+        Waiting for participants...
+      </Typography>
+      <LinearProgress />
+    </Stack>
+  );
 
   return (
     <Stack padding={2} spacing={2} marginTop={2}>
-      <Stack marginBottom={1}>
+      <Stack>
         <Typography variant="h4" component="div">
           {group.label}
         </Typography>
       </Stack>
 
-      <Stack marginBottom={1}>
+      <Stack>
         <Typography variant="body1" component="div">
           Invite people to share the new key with you.
         </Typography>
@@ -204,34 +276,18 @@ function InvitePeople(props: StepProps) {
           a key.
         </Typography>
       </Stack>
-      <Stack marginBottom={1}>
-        <Paper variant="outlined">
-          <Stack padding={4} spacing={2} alignItems="center">
-            <Typography variant="body2" component="div" color="text.secondary">
-              Send this link via email or private message to the people you wish to invite.
-            </Typography>
-            <Link href={href}>{href}</Link>
-            <Button onClick={async (e) => await copyToClipboard(href)}>
-              Copy link to clipboard
-            </Button>
-          </Stack>
-        </Paper>
+      <Stack>
+        <InviteCard onCopy={onCopy} />
       </Stack>
-
-      <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
-        <Box sx={{ flex: "1 1 auto" }} />
-        <Button onClick={() => console.log("Start a session...")}>
-          Next
-        </Button>
-      </Box>
+      {showProgress ? <Progress /> : null}
     </Stack>
   );
 }
 
 const getStepComponent = (activeStep: number, props: StepProps) => {
   const stepComponents = [
-    <SetParameters {...props} />,
-    <InvitePeople {...props} />,
+    <SetParameters key={0} {...props} />,
+    <InvitePeople key={1} {...props} />,
     null,
     null,
   ];
@@ -245,10 +301,6 @@ function CreateStepper() {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
   const handleReset = () => {
     setActiveStep(0);
   };
@@ -256,14 +308,11 @@ function CreateStepper() {
   return (
     <Box sx={{ width: "100%" }}>
       <Stepper activeStep={activeStep}>
-        {steps.map((label, index) => {
+        {steps.map((label) => {
           const stepProps: { completed?: boolean } = {};
-          const labelProps: {
-            optional?: React.ReactNode;
-          } = {};
           return (
             <Step key={label} {...stepProps}>
-              <StepLabel {...labelProps}>{label}</StepLabel>
+              <StepLabel>{label}</StepLabel>
             </Step>
           );
         })}

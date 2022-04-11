@@ -28,7 +28,7 @@ const NotFound = () => (
 function MainAppBar() {
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{pl: 4, pr: 4, pt: 1, pb: 1}}>
+      <AppBar position="static" sx={{ pl: 4, pr: 4, pt: 1, pb: 1 }}>
         <Stack direction="row" padding={1} spacing={2}>
           <img src="/images/icon.svg" width="32" />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
