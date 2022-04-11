@@ -1,10 +1,9 @@
 import React, {useEffect, useState, useMemo} from "react";
 import init from '@metamask/mpc-snap-wasm';
 import {useDispatch} from 'react-redux';
-import {loadState, saveState, clearState} from './store/keys';
-import snapId from './snap-id';
 
-import * as React from 'react';
+import {Routes, Route} from 'react-router-dom';
+
 import AppBar from '@mui/material/AppBar';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
@@ -12,11 +11,21 @@ import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 
-
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme } from "@mui/material/styles";
+
+import {loadState, saveState, clearState} from './store/keys';
+import snapId from './snap-id';
+
+import Connect from './connect';
+
+const NotFound = () => (
+  <Typography variant="h3" component="div">
+    Page not found
+  </Typography>
+);
 
 function MainAppBar() {
   return (
@@ -70,20 +79,26 @@ function Content() {
     }
   }
 
+    //<Stack
+      //paddingTop={4}
+      //alignItems="center"
+      //justifyContent="center">
+
+      //<Typography variant="body1" component="div" gutterBottom>
+        //To begin you should have installed MetaMask Flask and then you can
+        //connect.
+      //</Typography>
+
+      //<Button variant="contained" onClick={connect}>Connect</Button>
+    //</Stack>
 
   return (
-    <Stack
-      paddingTop={4}
-      alignItems="center"
-      justifyContent="center">
-
-      <Typography variant="body1" component="div" gutterBottom>
-        To begin you should have installed MetaMask Flask and then you can
-        connect.
-      </Typography>
-
-      <Button variant="contained" onClick={connect}>Connect</Button>
-    </Stack>
+    <Box padding={7}>
+      <Routes>
+        <Route path="/" element={<Connect />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Box>
   );
 }
 
