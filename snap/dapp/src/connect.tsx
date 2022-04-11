@@ -1,24 +1,29 @@
-import React, {useEffect, useState, useMemo} from "react";
-//import init from '@metamask/mpc-snap-wasm';
-//import {useDispatch} from 'react-redux';
+import React, {useState} from "react";
 
 import {
   Stack,
-  Box,
   Button,
   Link,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 
+import snapId from './snap-id';
+
 export default function Connect() {
-  async function connect () {
+  const [[showError, connectError], setConnectError] = useState([false, null]);
+
+  async function onConnect () {
     try {
-      await ethereum.request({
+      const result = await ethereum.request({
         method: 'wallet_enable',
         params: [{
           wallet_snap: { [snapId]: {} },
         }]
-      })
+      });
+
+      console.log("Got connect result", result);
 
       /*
       await dispatch(clearState());
@@ -42,23 +47,36 @@ export default function Connect() {
       */
 
     } catch(e) {
-      // TODO: handle snap connect failure.
-      console.error(e);
+      setConnectError([true, e]);
     }
   }
 
+  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setConnectError([false, null]);
+  };
+
   return (
-    <Stack spacing={2}>
-      <Typography variant="h3" component="div">
-        Connect
-      </Typography>
+    <>
+      <Stack spacing={2}>
+        <Typography variant="h3" component="div">
+          Connect
+        </Typography>
 
-      <Typography variant="body1" component="div" gutterBottom>
-        To begin you should have installed <Link href="https://metamask.io/flask/">MetaMask Flask</Link> and then you can
-        connect.
-      </Typography>
+        <Typography variant="body1" component="div" gutterBottom>
+          To begin you should have installed <Link href="https://metamask.io/flask/">MetaMask Flask</Link> and then you can
+          connect.
+        </Typography>
+        <Button variant="contained" onClick={onConnect}>Connect to MetaMask</Button>
+      </Stack>
 
-      <Button variant="contained" onClick={connect}>Connect to MetaMask</Button>
-    </Stack>
+      <Snackbar open={showError} autoHideDuration={6000} onClose={handleClose}>
+        <Alert onClose={handleClose} severity="error">
+          Could not connect
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
