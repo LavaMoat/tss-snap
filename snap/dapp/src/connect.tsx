@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import {useNavigate} from 'react-router-dom';
 
 import {
   Stack,
@@ -12,6 +13,7 @@ import {
 import snapId from "./snap-id";
 
 export default function Connect() {
+  const navigate = useNavigate();
   const [[showError, connectError], setConnectError] = useState([false, null]);
 
   async function onConnect() {
@@ -26,6 +28,7 @@ export default function Connect() {
       });
 
       console.log("Got connect result", result);
+      navigate('/keys');
 
       /*
       await dispatch(clearState());

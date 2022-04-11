@@ -14,6 +14,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme } from "@mui/material/styles";
 
 import Connect from "./connect";
+import Keys from "./keys";
 
 const NotFound = () => (
   <Typography variant="h3" component="div">
@@ -41,6 +42,7 @@ function Content() {
     <Box padding={7}>
       <Routes>
         <Route path="/" element={<Connect />} />
+        <Route path="/keys" element={<Keys />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Box>
