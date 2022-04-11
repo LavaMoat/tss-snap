@@ -1,11 +1,6 @@
 import React from "react";
 
-import {
-  Stack,
-  Button,
-  Link,
-  Typography,
-} from '@mui/material';
+import { Stack, Button, Link, Typography } from "@mui/material";
 
 export default function Keys() {
   return (
@@ -18,7 +13,12 @@ export default function Keys() {
         No key shares yet.
       </Typography>
 
-      <Button variant="contained" onClick={() => console.log('create key share')}>Create a new key share</Button>
+      <Button
+        variant="contained"
+        onClick={() => console.log("create key share")}
+      >
+        Create a new key share
+      </Button>
     </Stack>
   );
 }

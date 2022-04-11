@@ -1,26 +1,22 @@
-import {
-  createSlice,
-  createAsyncThunk,
-  PayloadAction
-} from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import {
   encrypt as xchacha20poly1305Encrypt,
   decrypt as xchacha20poly1305Decrypt,
-} from '@metamask/mpc-snap-wasm';
-import snapId from '../snap-id';
+} from "@metamask/mpc-snap-wasm";
+import snapId from "../snap-id";
 
 type AeadPack = {
-  nonce: number[],
-  ciphertext: number[],
-}
+  nonce: number[];
+  ciphertext: number[];
+};
 
 type KeyShare = {
   label: string;
-}
+};
 
 type KeyResponse = {
   key: string;
-}
+};
 
 function encode(value: string): Uint8Array {
   const encoder = new TextEncoder();
@@ -46,45 +42,51 @@ function encrypt(key: string, value: KeyShare[]): AeadPack {
 
 async function loadPrivateKey() {
   const response = await ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: [snapId, {
-      method: 'getKey',
-    }]
+    method: "wallet_invokeSnap",
+    params: [
+      snapId,
+      {
+        method: "getKey",
+      },
+    ],
   });
   return (response as KeyResponse).key;
 }
 
 async function getState() {
   return await ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: [snapId, {
-      method: 'getState',
-    }]
+    method: "wallet_invokeSnap",
+    params: [
+      snapId,
+      {
+        method: "getState",
+      },
+    ],
   });
 }
 
 async function setState(value: AeadPack) {
   return await ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: [snapId, {
-      method: 'updateState',
-      params: value,
-    }]
+    method: "wallet_invokeSnap",
+    params: [
+      snapId,
+      {
+        method: "updateState",
+        params: value,
+      },
+    ],
   });
 }
 
-export const loadState = createAsyncThunk(
-  "keys/loadState",
-  async () => {
-    const state: AeadPack = await getState() as AeadPack;
-    if (state !== null) {
-      const key = await loadPrivateKey();
-      return decrypt(key, state);
-    }
-    // Treat no state as zero key shares
-    return [];
+export const loadState = createAsyncThunk("keys/loadState", async () => {
+  const state: AeadPack = (await getState()) as AeadPack;
+  if (state !== null) {
+    const key = await loadPrivateKey();
+    return decrypt(key, state);
   }
-);
+  // Treat no state as zero key shares
+  return [];
+});
 
 export const saveState = createAsyncThunk(
   "keys/saveState",
@@ -95,16 +97,13 @@ export const saveState = createAsyncThunk(
   }
 );
 
-export const clearState = createAsyncThunk(
-  "keys/clearState",
-  async () => {
-    const key = await loadPrivateKey();
-    const aeadPack = encrypt(key, []);
-    await setState(aeadPack);
-  }
-);
+export const clearState = createAsyncThunk("keys/clearState", async () => {
+  const key = await loadPrivateKey();
+  const aeadPack = encrypt(key, []);
+  await setState(aeadPack);
+});
 
-export type KeyState = {}
+export type KeyState = {};
 const initialState: KeyState = {};
 
 const keySlice = createSlice({
@@ -115,5 +114,5 @@ const keySlice = createSlice({
 });
 
 //export const { setKeyShares } = keySlice.actions;
-export const keySelector = (state: {keys: KeyState}) => state.keys;
+export const keySelector = (state: { keys: KeyState }) => state.keys;
 export default keySlice.reducer;

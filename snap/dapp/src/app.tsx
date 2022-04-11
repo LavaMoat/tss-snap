@@ -1,25 +1,25 @@
-import React, {useEffect, useState, useMemo} from "react";
-import init from '@metamask/mpc-snap-wasm';
-import {useDispatch} from 'react-redux';
+import React, { useEffect, useState, useMemo } from "react";
+import init from "@metamask/mpc-snap-wasm";
+import { useDispatch } from "react-redux";
 
-import {Routes, Route} from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
-import AppBar from '@mui/material/AppBar';
-import Stack from '@mui/material/Stack';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
+import AppBar from "@mui/material/AppBar";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme } from "@mui/material/styles";
 
-import {loadState, saveState, clearState} from './store/keys';
-import snapId from './snap-id';
+import { loadState, saveState, clearState } from "./store/keys";
+import snapId from "./snap-id";
 
-import Connect from './connect';
+import Connect from "./connect";
 
 const NotFound = () => (
   <Typography variant="h3" component="div">
@@ -43,14 +43,16 @@ function MainAppBar() {
 }
 
 function Content() {
-  async function connect () {
+  async function connect() {
     try {
       await ethereum.request({
-        method: 'wallet_enable',
-        params: [{
-          wallet_snap: { [snapId]: {} },
-        }]
-      })
+        method: "wallet_enable",
+        params: [
+          {
+            wallet_snap: { [snapId]: {} },
+          },
+        ],
+      });
 
       /*
       await dispatch(clearState());
@@ -72,25 +74,24 @@ function Content() {
       const {payload: newKeyShares} = await dispatch(loadState());
       console.log("After saveState", newKeyShares);
       */
-
-    } catch(e) {
+    } catch (e) {
       // TODO: handle snap connect failure.
       console.error(e);
     }
   }
 
-    //<Stack
-      //paddingTop={4}
-      //alignItems="center"
-      //justifyContent="center">
+  //<Stack
+  //paddingTop={4}
+  //alignItems="center"
+  //justifyContent="center">
 
-      //<Typography variant="body1" component="div" gutterBottom>
-        //To begin you should have installed MetaMask Flask and then you can
-        //connect.
-      //</Typography>
+  //<Typography variant="body1" component="div" gutterBottom>
+  //To begin you should have installed MetaMask Flask and then you can
+  //connect.
+  //</Typography>
 
-      //<Button variant="contained" onClick={connect}>Connect</Button>
-    //</Stack>
+  //<Button variant="contained" onClick={connect}>Connect</Button>
+  //</Stack>
 
   return (
     <Box padding={7}>
@@ -105,7 +106,6 @@ function Content() {
 export default function App() {
   const dispatch = useDispatch();
   const [ready, setReady] = useState(false);
-
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
@@ -123,7 +123,7 @@ export default function App() {
       // Setup the wasm helpers
       await init();
       setReady(true);
-    }
+    };
     initialize();
   }, []);
 
@@ -135,7 +135,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <>
         <CssBaseline />
-        <div style={{display: 'flex', flexDirection: 'column'}}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <MainAppBar />
           <Content />
         </div>

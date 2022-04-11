@@ -1,7 +1,5 @@
 {
-  "includes": [
-    "src/**/.tsx?"
-  ],
+  "includes": ["src/**/.tsx?"],
   "compilerOptions": {
     "outDir": "./dist/",
     "noImplicitAny": true,
