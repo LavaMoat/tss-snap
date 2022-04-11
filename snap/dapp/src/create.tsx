@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 
-import { Box, Stack, Button, Typography, Stepper, Step, StepLabel, Slider } from "@mui/material";
+import { Box, Stack, Button, Typography, Stepper, Step, StepLabel, Slider, TextField } from "@mui/material";
 
 const steps = [
   'Set parameters',
@@ -13,10 +13,15 @@ function SetParameters() {
 
   const maxParties = 8;
 
+  const [name, setName] = useState("");
   const [parties, setParties] = useState(3);
   const [threshold, setThreshold] = useState(2);
   const [thresholdMax, setThresholdMax] = useState(3);
+  const [nameError, setNameError] = useState(false);
+  const [nameHelperText, setNameHelperText] = useState("");
 
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setName(e.target.value);
   const onPartiesChange = (value: number) => setParties(value);
   const onThresholdChange = (value: number) => setThreshold(value);
 
@@ -36,6 +41,29 @@ function SetParameters() {
 
   return (
     <Stack padding={2} spacing={2} marginTop={2}>
+
+      <Stack padding={1}>
+
+        <Stack marginBottom={1}>
+          <Typography variant="body1" component="div">
+            Choose a name for the key share.
+          </Typography>
+          <Typography variant="body2" component="div" color="text.secondary">
+            The name will help you select the key share when you want to sign a transaction.
+          </Typography>
+        </Stack>
+
+        <TextField
+          label="Name"
+          autoFocus
+          onChange={onNameChange}
+          value={name}
+          error={nameError}
+          helperText={nameHelperText}
+          variant="outlined"
+          placeholder="Name of the key share"
+        />
+      </Stack>
 
       <Stack marginBottom={4} padding={1}>
         <Stack>
