@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk /*, PayloadAction */ } from "@reduxjs/toolkit";
 import {
   encrypt as xchacha20poly1305Encrypt,
   decrypt as xchacha20poly1305Decrypt,
@@ -103,14 +103,14 @@ export const clearState = createAsyncThunk("keys/clearState", async () => {
   await setState(aeadPack);
 });
 
-export type KeyState = {};
-const initialState: KeyState = {};
+export type KeyState = null;
+const initialState: KeyState = null;
 
 const keySlice = createSlice({
   name: "keys",
   initialState,
   reducers: {},
-  extraReducers: (builder) => {},
+  //extraReducers: (builder) => {},
 });
 
 //export const { setKeyShares } = keySlice.actions;

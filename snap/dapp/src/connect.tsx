@@ -81,7 +81,7 @@ export default function Connect() {
 
       <Snackbar open={showError} autoHideDuration={6000} onClose={handleClose}>
         <Alert onClose={handleClose} severity="error">
-          Could not connect
+          Could not connect: {connectError ? connectError.message : ''}
         </Alert>
       </Snackbar>
     </>

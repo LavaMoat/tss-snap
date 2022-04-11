@@ -8,6 +8,7 @@ import App from "./app";
 
 type RpcRequest = {
   method: string;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   params?: any;
 };
 
