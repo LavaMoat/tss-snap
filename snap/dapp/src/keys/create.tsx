@@ -15,7 +15,7 @@ import {
   Link,
   Snackbar,
   Alert,
-  LinearProgress,
+  CircularProgress,
 } from "@mui/material";
 
 import { Parameters, SessionKind } from "@metamask/mpc-client";
@@ -26,7 +26,7 @@ import { WebSocketContext } from "../websocket-provider";
 
 type GroupFormData = [string, Parameters];
 
-const steps = ["Set parameters", "Invite people", "Create session", "Generate"];
+const steps = ["Set parameters", "Invite people", "Compute", "Save"];
 
 type StepProps = {
   next: () => void;
@@ -76,10 +76,24 @@ function SetParameters(props: StepProps) {
     const group = { label, params, uuid };
     dispatch(setGroup(group));
 
-    const session = await websocket.rpc({
+    let session = await websocket.rpc({
       method: "Session.create",
       params: [uuid, SessionKind.KEYGEN],
     });
+
+    const partyNumber = await websocket.rpc({
+      method: "Session.signup",
+      params: [
+        uuid,
+        session.uuid,
+        SessionKind.KEYGEN,
+      ],
+    });
+
+    session = {
+      ...session,
+      partySignup: { number: partyNumber, uuid: session.uuid },
+    };
     dispatch(setSession(session));
 
     console.log("Created session", session);
@@ -251,13 +265,12 @@ function InvitePeople() {
 
   const Progress = () => (
     <Stack>
-      <Typography variant="body1" component="div">
-        Once enough people have connected we can proceed to the next step.
-      </Typography>
-      <Typography variant="body2" component="div" color="text.secondary">
-        Waiting for participants...
-      </Typography>
-      <LinearProgress />
+      <Stack direction="row" alignItems='center' spacing={2}>
+        <CircularProgress size={20} />
+        <Typography variant="body2" component="div" color="text.secondary">
+          Waiting for other participants...
+        </Typography>
+      </Stack>
     </Stack>
   );
 
@@ -337,7 +350,6 @@ function CreateStepper() {
 }
 
 export default function Create() {
-  console.log("CREATE IS RENDERING");
   return (
     <Stack spacing={2}>
       <Typography variant="h3" component="div" gutterBottom>

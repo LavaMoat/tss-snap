@@ -4,6 +4,7 @@ import { Stack, Button, Typography } from "@mui/material";
 
 import Create from './create';
 import Join from './join';
+import Participate from './participate';
 
 function Keys() {
   return (
@@ -26,4 +27,4 @@ function Keys() {
   );
 }
 
-export { Keys, Create, Join };
+export { Keys, Create, Join, Participate };

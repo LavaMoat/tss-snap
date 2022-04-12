@@ -1,1 +1,1 @@
-export default `local:${location.href}`;
+export default `local:${location.protocol}//${location.host}/`;
