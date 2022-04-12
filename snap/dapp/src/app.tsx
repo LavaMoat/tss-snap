@@ -16,8 +16,7 @@ import { createTheme } from "@mui/material/styles";
 import WebSocketProvider from "./websocket-provider";
 
 import Connect from "./connect";
-import Keys from "./keys";
-import Create from "./create";
+import {Keys, Create, Join} from "./keys";
 
 const NotFound = () => (
   <Typography variant="h3" component="div">
@@ -45,8 +44,9 @@ function Content() {
     <Box padding={5}>
       <Routes>
         <Route path="/" element={<Connect />} />
-        <Route path="/keys" element={<Keys />} />
         <Route path="/keys/create" element={<Create />} />
+        <Route path="/keys/join/:group/:session" element={<Join />} />
+        <Route path="/keys" element={<Keys />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Box>

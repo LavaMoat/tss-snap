@@ -1,6 +1,5 @@
 import React, { useState, useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { WebSocketContext } from "./websocket-provider";
 
 import {
   Box,
@@ -21,8 +20,9 @@ import {
 
 import { Parameters, SessionKind } from "@metamask/mpc-client";
 
-import { setGroup, setSession, keysSelector } from "./store/keys";
-import { copyToClipboard } from "./utils";
+import { setGroup, setSession, keysSelector } from "../store/keys";
+import { copyToClipboard } from "../utils";
+import { WebSocketContext } from "../websocket-provider";
 
 type GroupFormData = [string, Parameters];
 
@@ -196,7 +196,9 @@ function InviteCard(props: InviteProps) {
   const { onCopy } = props;
   const [copied, setCopied] = useState(false);
   const { group, session } = useSelector(keysSelector);
-  const href = `${location.protocol}//${location.host}/#/keys/create?join=${group.uuid}&session=${session.uuid}`;
+  const href = `${location.protocol}//${location.host}/#/keys/join/${group.uuid}/${session.uuid}`;
+
+  console.log("Invite with url", href);
 
   const copy = async () => {
     await copyToClipboard(href);
@@ -335,6 +337,7 @@ function CreateStepper() {
 }
 
 export default function Create() {
+  console.log("CREATE IS RENDERING");
   return (
     <Stack spacing={2}>
       <Typography variant="h3" component="div" gutterBottom>

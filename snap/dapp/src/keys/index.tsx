@@ -2,7 +2,10 @@ import React from "react";
 
 import { Stack, Button, Typography } from "@mui/material";
 
-export default function Keys() {
+import Create from './create';
+import Join from './join';
+
+function Keys() {
   return (
     <Stack spacing={2}>
       <Typography variant="h3" component="div" gutterBottom>
@@ -22,3 +25,5 @@ export default function Keys() {
     </Stack>
   );
 }
+
+export { Keys, Create, Join };
