@@ -1,38 +1,25 @@
 import React, { useState, useContext } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import {
   Box,
   Stack,
   Button,
   Typography,
-  Stepper,
-  Step,
-  StepLabel,
   Slider,
   TextField,
-  Paper,
-  Link,
-  Snackbar,
-  Alert,
-  CircularProgress,
 } from "@mui/material";
 
 import { Parameters, SessionKind } from "@metamask/mpc-client";
 
-import { setGroup, setSession, keysSelector } from "../store/keys";
-import { copyToClipboard } from "../utils";
-import { WebSocketContext } from "../websocket-provider";
+import { setGroup, setSession } from "../../store/keys";
+import { WebSocketContext } from "../../websocket-provider";
+
+import { StepProps } from './index';
 
 type GroupFormData = [string, Parameters];
 
-const steps = ["Set parameters", "Invite people", "Compute", "Save"];
-
-type StepProps = {
-  next: () => void;
-};
-
-function SetParameters(props: StepProps) {
+export default function SetParameters(props: StepProps) {
   const { next } = props;
   const websocket = useContext(WebSocketContext);
   const dispatch = useDispatch();
@@ -83,11 +70,7 @@ function SetParameters(props: StepProps) {
 
     const partyNumber = await websocket.rpc({
       method: "Session.signup",
-      params: [
-        uuid,
-        session.uuid,
-        SessionKind.KEYGEN,
-      ],
+      params: [uuid, session.uuid, SessionKind.KEYGEN],
     });
 
     session = {
@@ -199,163 +182,5 @@ function SetParameters(props: StepProps) {
         </Box>
       </Stack>
     </form>
-  );
-}
-
-type InviteProps = {
-  onCopy: () => void;
-};
-
-function InviteCard(props: InviteProps) {
-  const { onCopy } = props;
-  const [copied, setCopied] = useState(false);
-  const { group, session } = useSelector(keysSelector);
-  const href = `${location.protocol}//${location.host}/#/keys/join/${group.uuid}/${session.uuid}`;
-
-  console.log("Invite with url", href);
-
-  const copy = async () => {
-    await copyToClipboard(href);
-    setCopied(true);
-    onCopy();
-  };
-
-  return (
-    <>
-      <Paper variant="outlined">
-        <Box padding={4}>
-          <details>
-            <summary>
-              <Typography
-                variant="body2"
-                component="span"
-                color="text.secondary"
-              >
-                Send this link via email or private message to the people you
-                wish to invite.
-              </Typography>
-            </summary>
-            <Link href={href} onClick={(e) => e.preventDefault()}>
-              {href}
-            </Link>
-          </details>
-          <Button onClick={copy} sx={{ mt: 4 }}>
-            Copy link to clipboard
-          </Button>
-        </Box>
-      </Paper>
-      <Snackbar
-        open={copied}
-        autoHideDuration={3000}
-        onClose={() => setCopied(false)}
-      >
-        <Alert onClose={() => setCopied(false)} severity="success">
-          Link copied to clipboard
-        </Alert>
-      </Snackbar>
-    </>
-  );
-}
-
-function InvitePeople() {
-  const [showProgress, setShowProgress] = useState(false);
-  const { group } = useSelector(keysSelector);
-
-  const onCopy = () => setShowProgress(true);
-
-  const Progress = () => (
-    <Stack>
-      <Stack direction="row" alignItems='center' spacing={2}>
-        <CircularProgress size={20} />
-        <Typography variant="body2" component="div" color="text.secondary">
-          Waiting for other participants...
-        </Typography>
-      </Stack>
-    </Stack>
-  );
-
-  return (
-    <Stack padding={2} spacing={2} marginTop={2}>
-      <Stack>
-        <Typography variant="h4" component="div">
-          {group.label}
-        </Typography>
-      </Stack>
-
-      <Stack>
-        <Typography variant="body1" component="div">
-          Invite people to share the new key with you.
-        </Typography>
-        <Typography variant="body2" component="div" color="text.secondary">
-          You must invite {group.params.parties - 1} people to continue creating
-          a key.
-        </Typography>
-      </Stack>
-      <Stack>
-        <InviteCard onCopy={onCopy} />
-      </Stack>
-      {showProgress ? <Progress /> : null}
-    </Stack>
-  );
-}
-
-const getStepComponent = (activeStep: number, props: StepProps) => {
-  const stepComponents = [
-    <SetParameters key={0} {...props} />,
-    <InvitePeople key={1} {...props} />,
-    null,
-    null,
-  ];
-  return stepComponents[activeStep];
-};
-
-function CreateStepper() {
-  const [activeStep, setActiveStep] = useState(0);
-
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  const handleReset = () => {
-    setActiveStep(0);
-  };
-
-  return (
-    <Box sx={{ width: "100%" }}>
-      <Stepper activeStep={activeStep}>
-        {steps.map((label) => {
-          const stepProps: { completed?: boolean } = {};
-          return (
-            <Step key={label} {...stepProps}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          );
-        })}
-      </Stepper>
-      {activeStep === steps.length ? (
-        <>
-          <Typography sx={{ mt: 2, mb: 1 }}>
-            All steps completed - you&apos;re finished
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
-            <Box sx={{ flex: "1 1 auto" }} />
-            <Button onClick={handleReset}>Reset</Button>
-          </Box>
-        </>
-      ) : (
-        <>{getStepComponent(activeStep, { next: handleNext })}</>
-      )}
-    </Box>
-  );
-}
-
-export default function Create() {
-  return (
-    <Stack spacing={2}>
-      <Typography variant="h3" component="div" gutterBottom>
-        Create a key share
-      </Typography>
-      <CreateStepper />
-    </Stack>
   );
 }

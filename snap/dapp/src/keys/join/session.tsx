@@ -1,23 +1,23 @@
-import React, {useEffect, useContext, useState} from 'react';
-import {useDispatch} from 'react-redux';
-import {useParams} from 'react-router-dom';
+import React, { useEffect, useContext, useState } from "react";
+import { useDispatch } from "react-redux";
 
-import {
-  Stack,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
+import { Stack, Typography, CircularProgress } from "@mui/material";
 
 import { SessionKind } from "@metamask/mpc-client";
 
-import {setGroup, setSession} from '../store/keys';
-import SnapConnect from '../snap-connect';
-import NotFound from '../not-found';
-import {WebSocketContext} from '../websocket-provider';
+import { setGroup, setSession } from "../../store/keys";
+import { WebSocketContext } from "../../websocket-provider";
 
-export default function Participate() {
-  const [progressMessage, setProgressMessage] = useState("Connecting to session...");
-  const {groupId, sessionId} = useParams();
+import { StepProps } from './index';
+
+export default function Compute(props: StepProps) {
+  const {next} = props;
+  const [label, setLabel] = useState("...");
+
+  const [progressMessage, setProgressMessage] = useState(
+    "Connecting to session..."
+  );
+  const { groupId, sessionId } = props;
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
 
@@ -32,6 +32,8 @@ export default function Participate() {
       });
       dispatch(setGroup(group));
 
+      setLabel(group.label);
+
       let session = await websocket.rpc({
         method: "Session.join",
         params: [groupId, sessionId, SessionKind.KEYGEN],
@@ -39,11 +41,7 @@ export default function Participate() {
 
       const partyNumber = await websocket.rpc({
         method: "Session.signup",
-        params: [
-          groupId,
-          sessionId,
-          SessionKind.KEYGEN,
-        ],
+        params: [groupId, sessionId, SessionKind.KEYGEN],
       });
 
       session = {
@@ -55,30 +53,41 @@ export default function Participate() {
       console.log("Joined the session", session);
 
       setProgressMessage("Waiting for other participants...");
-    }
+
+      // All parties signed up to key generation
+      websocket.once("sessionSignup", async (sessionId: string) => {
+        if (sessionId === session.uuid) {
+          console.log("Invited participant got session ready...");
+          next();
+        } else {
+          throw new Error("Session id is for another session");
+        }
+      });
+    };
     // Delay a little so we don't get flicker when the connection
     // is very fast.
     setTimeout(joinGroupAndSession, 1000);
   }, []);
 
-  if (!groupId || !sessionId) {
-    return <NotFound />
-  }
-
   return (
-    <Stack spacing={2}>
-      <Typography variant="h3" component="div" gutterBottom>
-        Join a key
-      </Typography>
+    <Stack spacing={2} marginTop={2} padding={2}>
+
+      <Stack>
+        <Typography variant="h4" component="div">
+          {label}
+        </Typography>
+      </Stack>
+
       <Stack>
         <Typography variant="body1" component="div">
           You have been invited to own a share of a key.
         </Typography>
         <Typography variant="body2" component="div" color="text.secondary">
-          By owning a share in the key you will be able to participate in collaborative signing of messages and transactions.
+          By owning a share in the key you will be able to participate in
+          collaborative signing of messages and transactions.
         </Typography>
       </Stack>
-      <Stack direction="row" alignItems='center' spacing={2}>
+      <Stack direction="row" alignItems="center" spacing={2}>
         <CircularProgress size={20} />
         <Typography variant="body2" component="div" color="text.secondary">
           {progressMessage}

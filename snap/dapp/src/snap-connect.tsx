@@ -12,18 +12,20 @@ import {
 
 import snapId from "./snap-id";
 
+type RedirectHandler = () => void;
+
 type SnapConnectProps = {
-  redirect: string;
-}
+  redirect: string | RedirectHandler;
+};
 
 export default function SnapConnect(props: SnapConnectProps) {
-  const {redirect} = props;
+  const { redirect } = props;
   const navigate = useNavigate();
   const [[showError, connectError], setConnectError] = useState([false, null]);
 
   async function onConnect() {
     try {
-      const result = await ethereum.request({
+      await ethereum.request({
         method: "wallet_enable",
         params: [
           {
@@ -32,8 +34,11 @@ export default function SnapConnect(props: SnapConnectProps) {
         ],
       });
 
-      console.log("Got connect result", result);
-      navigate(redirect);
+      if (typeof(redirect) === 'string') {
+        navigate(redirect);
+      } else {
+        redirect();
+      }
 
       /*
       await dispatch(clearState());

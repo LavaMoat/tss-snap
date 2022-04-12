@@ -16,8 +16,8 @@ import { createTheme } from "@mui/material/styles";
 import WebSocketProvider from "./websocket-provider";
 
 import Connect from "./connect";
-import {Keys, Create, Join, Participate} from "./keys";
-import NotFound from './not-found';
+import { Keys, Create, Join } from "./keys";
+import NotFound from "./not-found";
 
 function MainAppBar() {
   return (
@@ -41,7 +41,6 @@ function Content() {
         <Route path="/" element={<Connect />} />
         <Route path="/keys/create" element={<Create />} />
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />
-        <Route path="/keys/participate/:groupId/:sessionId" element={<Participate />} />
         <Route path="/keys" element={<Keys />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

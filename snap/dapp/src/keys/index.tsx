@@ -2,9 +2,8 @@ import React from "react";
 
 import { Stack, Button, Typography } from "@mui/material";
 
-import Create from './create';
-import Join from './join';
-import Participate from './participate';
+import Create from "./create";
+import Join from "./join";
 
 function Keys() {
   return (
@@ -27,4 +26,4 @@ function Keys() {
   );
 }
 
-export { Keys, Create, Join, Participate };
+export { Keys, Create, Join };
