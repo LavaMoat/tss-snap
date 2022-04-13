@@ -1,8 +1,7 @@
-import React, { createContext, PropsWithChildren } from "react";
+import React, { createContext, PropsWithChildren, Component } from "react";
 import { WebSocketClient } from "@metamask/mpc-client";
 
 const WebSocketContext = createContext(null);
-export { WebSocketContext };
 
 type WebSocketProviderProps = PropsWithChildren<Record<string, unknown>>;
 
@@ -20,4 +19,24 @@ const WebSocketProvider = (props: WebSocketProviderProps) => {
   );
 };
 
+class ListenerCleanup extends Component<{}, {}> {
+  static contextType = WebSocketContext;
+
+  componentWillUnmount() {
+    const websocket = this.context as WebSocketClient;
+    websocket.removeAllListeners("sessionCreate");
+    websocket.removeAllListeners("sessionSignup");
+    websocket.removeAllListeners("sessionLoad");
+    websocket.removeAllListeners("sessionClosed");
+
+    // Clean up listeners managed by the sink implementation too.
+    websocket.removeAllListeners("sessionMessage");
+  }
+
+  render() {
+    return null;
+  }
+}
+
+export { WebSocketContext, ListenerCleanup };
 export default WebSocketProvider;

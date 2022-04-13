@@ -6,14 +6,17 @@ import { Stack, Typography } from "@mui/material";
 import { SessionInfo } from "@metamask/mpc-client";
 
 import { keysSelector } from "../store/keys";
-import { WebSocketContext } from "../websocket-provider";
+import { WebSocketContext, ListenerCleanup } from "../websocket-provider";
+import { WorkerContext } from "../worker";
 
 import { StepProps } from "./create";
 
 export default function Compute(props: StepProps) {
   const { next } = props;
-  const { group, session, transport } = useSelector(keysSelector);
+
+  const worker = useContext(WorkerContext);
   const websocket = useContext(WebSocketContext);
+  const { group, session, transport } = useSelector(keysSelector);
 
   useEffect(() => {
     console.log("TODO: start the computation, websocket", websocket);
@@ -33,6 +36,7 @@ export default function Compute(props: StepProps) {
     };
 
     console.log("TODO: start the computation, sessionInfo", sessionInfo);
+    console.log("TODO: start the computation, sessionInfo", worker);
 
     //const keyShare = await generateKeyShare(
     //worker,
@@ -57,6 +61,8 @@ export default function Compute(props: StepProps) {
           Please be patient, this may take a while...
         </Typography>
       </Stack>
+
+      <ListenerCleanup />
     </Stack>
   );
 }

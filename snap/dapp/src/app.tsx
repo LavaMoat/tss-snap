@@ -20,6 +20,10 @@ import Connect from "./connect";
 import { Keys, Create, Join } from "./keys";
 import NotFound from "./not-found";
 
+type WorkerMessage = {
+  data: { ready: boolean };
+}
+
 function MainAppBar() {
   return (
     <Box sx={{ flexGrow: 1 }}>
