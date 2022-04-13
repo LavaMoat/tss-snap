@@ -14,6 +14,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme } from "@mui/material/styles";
 
 import WebSocketProvider from "./websocket-provider";
+import WorkerProvider, { webWorker } from './worker';
 
 import Connect from "./connect";
 import { Keys, Create, Join } from "./keys";
@@ -51,6 +52,8 @@ function Content() {
 export default function App() {
   const [ready, setReady] = useState(false);
 
+  console.log("App running with", webWorker);
+
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
     () =>
@@ -81,8 +84,10 @@ export default function App() {
         <CssBaseline />
         <div style={{ display: "flex", flexDirection: "column" }}>
           <WebSocketProvider>
-            <MainAppBar />
-            <Content />
+            <WorkerProvider>
+              <MainAppBar />
+              <Content />
+            </WorkerProvider>
           </WebSocketProvider>
         </div>
       </>
