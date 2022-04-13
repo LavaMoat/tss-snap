@@ -19,7 +19,7 @@ const WebSocketProvider = (props: WebSocketProviderProps) => {
   );
 };
 
-class ListenerCleanup extends Component<{}, {}> {
+class ListenerCleanup extends Component {
   static contextType = WebSocketContext;
 
   componentWillUnmount() {
@@ -34,7 +34,8 @@ class ListenerCleanup extends Component<{}, {}> {
   }
 
   render() {
-    return null;
+    // NOTE: returning null here annoys the typescript typechecker
+    return <></>;
   }
 }
 

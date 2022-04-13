@@ -13,6 +13,7 @@ import {
 import SetParameters from "./set-parameters";
 import InvitePeople from "./invite-people";
 import Compute from "../compute";
+import Save from "../save";
 
 const steps = ["Set parameters", "Invite people", "Compute", "Save"];
 
@@ -25,7 +26,7 @@ const getStepComponent = (activeStep: number, props: StepProps) => {
     <SetParameters key={0} {...props} />,
     <InvitePeople key={1} {...props} />,
     <Compute key={2} {...props} />,
-    null,
+    <Save key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };

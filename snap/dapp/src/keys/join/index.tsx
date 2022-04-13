@@ -16,6 +16,7 @@ import NotFound from "../../not-found";
 import Connect from "./connect";
 import Session from "./session";
 import Compute from "../compute";
+import Save from "../save";
 
 const steps = ["Connect", "Join session", "Compute", "Save"];
 
@@ -30,7 +31,7 @@ const getStepComponent = (activeStep: number, props: StepProps) => {
     <Connect key={0} {...props} />,
     <Session key={1} {...props} />,
     <Compute key={2} {...props} />,
-    null,
+    <Save key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };

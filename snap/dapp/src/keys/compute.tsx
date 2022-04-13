@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 
 import { Stack, Typography } from "@mui/material";
 
-import { SessionInfo } from "@metamask/mpc-client";
+import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
 
 import { keysSelector } from "../store/keys";
 import { WebSocketContext, ListenerCleanup } from "../websocket-provider";
@@ -19,31 +19,44 @@ export default function Compute(props: StepProps) {
   const { group, session, transport } = useSelector(keysSelector);
 
   useEffect(() => {
-    console.log("TODO: start the computation, websocket", websocket);
-    console.log("TODO: start the computation, group", group);
-    console.log("TODO: start the computation, session", session);
-    console.log("TODO: start the computation, transport", transport);
+    const startCompute = async () => {
 
-    const { stream, sink } = transport;
-    const { uuid: groupId, params: parameters } = group;
-    const { partySignup, uuid: sessionId } = session;
+      console.log("TODO: start the computation, websocket", websocket);
+      console.log("TODO: start the computation, group", group);
+      console.log("TODO: start the computation, session", session);
+      console.log("TODO: start the computation, transport", transport);
 
-    const sessionInfo: SessionInfo = {
-      groupId,
-      sessionId,
-      parameters,
-      partySignup,
-    };
+      const onTransition = (previousRound: string, current: string) => {
+        console.log("UI thread onTransition called", current);
+      };
 
-    console.log("TODO: start the computation, sessionInfo", sessionInfo);
-    console.log("TODO: start the computation, sessionInfo", worker);
+      const { stream, sink } = transport;
+      const { uuid: groupId, params: parameters } = group;
+      const { partySignup, uuid: sessionId } = session;
 
-    //const keyShare = await generateKeyShare(
-    //worker,
-    //stream,
-    //sink,
-    //sessionInfo
-    //);
+      const sessionInfo: SessionInfo = {
+        groupId,
+        sessionId,
+        parameters,
+        partySignup,
+      };
+
+      console.log("TODO: start the computation, sessionInfo", sessionInfo);
+      console.log("TODO: start the computation, sessionInfo", worker);
+
+      const keyShare = await generateKeyShare(
+        worker,
+        stream,
+        sink,
+        sessionInfo,
+        onTransition,
+      );
+
+      console.log("Generated a key share", keyShare);
+
+      next();
+    }
+    startCompute();
   }, []);
 
   return (

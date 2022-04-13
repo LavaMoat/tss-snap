@@ -8,8 +8,8 @@
     "lint": "eslint src --cache --ext js,ts",
     "fmt": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
     "lint:fix": "yarn lint --fix && yarn fmt --write",
-    "build": "yarn ts-types && node build.js",
-    "ts-types": "tsc --project tsconfig.json"
+    "build": "yarn types && node build.js",
+    "types": "tsc --project tsconfig.json"
   },
   "dependencies": {
     "@metamask/mpc-ecdsa-wasm": "file:../wasm/pkg",

@@ -3,7 +3,7 @@ import {
   RoundBased,
   StreamTransport,
   SinkTransport,
-  onTransition,
+  onTransition as onTransitionLog,
 } from './round-based';
 import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from '.';
 
@@ -14,18 +14,29 @@ import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from '.';
  * @param stream - The stream for sending messages.
  * @param sink - The sink for receiving messages.
  * @param info - The session information.
+ * @param onTransition - Optional transition handler.
  */
 export async function generateKeyShare(
   worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,
   info: SessionInfo,
+  onTransition?: (previousRound: string, current: string) => void,
 ): Promise<KeyShare> {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const keygen: KeyGenerator = await new (worker.KeyGenerator as any)(
     info.parameters,
     info.partySignup,
   );
+
+  const doTransition = (previousRound: string, current: string) => {
+    // Call standard onTransition for logs
+    onTransitionLog(previousRound, current);
+    // Call custom handler for UI progress updates
+    if (onTransition) {
+      onTransition(previousRound, current);
+    }
+  };
 
   const standardTransition = async (
     incoming: Message[],
@@ -68,7 +79,7 @@ export async function generateKeyShare(
   const handler = new RoundBased<KeyShare>(
     rounds,
     finalizer,
-    onTransition,
+    doTransition,
     stream,
     sink,
   );
