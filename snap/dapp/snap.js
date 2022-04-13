@@ -1,4 +1,6 @@
 wallet.registerRpcMessageHandler(async (originString, requestObject) => {
+  console.log("Snap running...");
+
   switch (requestObject.method) {
     case "getKey":
       return wallet.request({

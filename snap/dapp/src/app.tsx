@@ -14,7 +14,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme } from "@mui/material/styles";
 
 import WebSocketProvider from "./websocket-provider";
-import WorkerProvider, { webWorker } from './worker';
+import WorkerProvider, { webWorker } from "./worker";
 
 import Connect from "./connect";
 import { Keys, Create, Join } from "./keys";
@@ -22,7 +22,7 @@ import NotFound from "./not-found";
 
 type WorkerMessage = {
   data: { ready: boolean };
-}
+};
 
 function MainAppBar() {
   return (
@@ -68,7 +68,6 @@ export default function App() {
   );
 
   useEffect(() => {
-
     const initialize = async () => {
       // Setup the wasm helpers that run on the main UI thread
       await init();

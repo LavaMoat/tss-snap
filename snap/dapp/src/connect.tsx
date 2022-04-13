@@ -13,7 +13,7 @@ export default function Connect() {
         <Typography variant="h3" component="div" gutterBottom>
           Connect
         </Typography>
-        <SnapConnect redirect="/keys/create" />
+        <SnapConnect redirect="/keys" />
       </Stack>
     </>
   );

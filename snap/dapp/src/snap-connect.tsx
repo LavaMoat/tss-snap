@@ -24,6 +24,8 @@ export default function SnapConnect(props: SnapConnectProps) {
   const [[showError, connectError], setConnectError] = useState([false, null]);
 
   async function onConnect() {
+    console.log("Connect to snap", snapId);
+
     try {
       await ethereum.request({
         method: "wallet_enable",

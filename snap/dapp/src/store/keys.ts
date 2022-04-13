@@ -5,7 +5,7 @@ import {
   decrypt as xchacha20poly1305Decrypt,
 } from "@metamask/mpc-snap-wasm";
 
-import { GroupInfo, Session } from "@metamask/mpc-client";
+import { GroupInfo, Session, KeyShare } from "@metamask/mpc-client";
 
 import { Transport } from "../types";
 
@@ -16,8 +16,9 @@ type AeadPack = {
   ciphertext: number[];
 };
 
-type KeyShare = {
+export type NamedKeyShare = {
   label: string;
+  share: KeyShare;
 };
 
 type KeyResponse = {
@@ -34,13 +35,13 @@ function decode(value: Uint8Array): string {
   return decoder.decode(value);
 }
 
-function decrypt(key: string, value: AeadPack): KeyShare[] {
+function decrypt(key: string, value: AeadPack): NamedKeyShare[] {
   const buffer = xchacha20poly1305Decrypt(key, value);
   const decoded = decode(new Uint8Array(buffer));
   return JSON.parse(decoded);
 }
 
-function encrypt(key: string, value: KeyShare[]): AeadPack {
+function encrypt(key: string, value: NamedKeyShare[]): AeadPack {
   const json = JSON.stringify(value);
   const encoded = encode(json);
   return xchacha20poly1305Encrypt(key, Array.from(encoded));
@@ -96,7 +97,7 @@ export const loadState = createAsyncThunk("keys/loadState", async () => {
 
 export const saveState = createAsyncThunk(
   "keys/saveState",
-  async (keyShares: KeyShare[]) => {
+  async (keyShares: NamedKeyShare[]) => {
     const key = await loadPrivateKey();
     const aeadPack = encrypt(key, keyShares);
     await setState(aeadPack);
