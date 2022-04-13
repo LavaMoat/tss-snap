@@ -52,8 +52,6 @@ function Content() {
 export default function App() {
   const [ready, setReady] = useState(false);
 
-  console.log("App running with", webWorker);
-
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
     () =>
@@ -66,12 +64,23 @@ export default function App() {
   );
 
   useEffect(() => {
+
     const initialize = async () => {
-      // Setup the wasm helpers
+      // Setup the wasm helpers that run on the main UI thread
       await init();
+      // Now we are ready to render
       setReady(true);
     };
-    initialize();
+
+    // Wait for the worker webassembly to be ready
+    const onWorkerReady = (msg: WorkerMessage) => {
+      if (msg.data.ready) {
+        webWorker.removeEventListener("message", onWorkerReady);
+        initialize();
+      }
+    };
+
+    webWorker.addEventListener("message", onWorkerReady);
   }, []);
 
   if (ready === false) {
