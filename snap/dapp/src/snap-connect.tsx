@@ -34,7 +34,7 @@ export default function SnapConnect(props: SnapConnectProps) {
         ],
       });
 
-      if (typeof(redirect) === 'string') {
+      if (typeof redirect === "string") {
         navigate(redirect);
       } else {
         redirect();

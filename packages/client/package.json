@@ -5,9 +5,9 @@
   "module": "dist/index.esm.js",
   "main": "dist/index.js",
   "scripts": {
-    "lint:eslint": "eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
-    "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
+    "lint": "eslint src --cache --ext js,ts",
+    "fmt": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
+    "lint:fix": "yarn lint --fix && yarn fmt --write",
     "build": "yarn ts-types && node build.js",
     "ts-types": "tsc --project tsconfig.json"
   },

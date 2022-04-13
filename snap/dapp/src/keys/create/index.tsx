@@ -12,7 +12,7 @@ import {
 
 import SetParameters from "./set-parameters";
 import InvitePeople from "./invite-people";
-import Compute from "./compute";
+import Compute from "../compute";
 
 const steps = ["Set parameters", "Invite people", "Compute", "Save"];
 

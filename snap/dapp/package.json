@@ -19,8 +19,8 @@
     "build:assets": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
     "build": "yarn build:snap && parcel build src/index.html",
     "types": "tsc --noEmit --project tsconfig.json",
-    "prettier": "prettier --write . --no-color",
-    "lint:eslint": "eslint src",
+    "fmt": "prettier --write . --no-color",
+    "lint": "eslint src",
     "start": "parcel src/index.html --port 7070"
   },
   "devDependencies": {

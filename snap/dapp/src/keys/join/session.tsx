@@ -3,15 +3,19 @@ import { useDispatch } from "react-redux";
 
 import { Stack, Typography, CircularProgress } from "@mui/material";
 
-import { SessionKind } from "@metamask/mpc-client";
+import {
+  SessionKind,
+  WebSocketStream,
+  WebSocketSink,
+} from "@metamask/mpc-client";
 
-import { setGroup, setSession } from "../../store/keys";
+import { setGroup, setSession, setTransport } from "../../store/keys";
 import { WebSocketContext } from "../../websocket-provider";
 
-import { StepProps } from './index';
+import { StepProps } from "./index";
 
 export default function Compute(props: StepProps) {
-  const {next} = props;
+  const { next } = props;
   const [label, setLabel] = useState("...");
 
   const [progressMessage, setProgressMessage] = useState(
@@ -52,6 +56,21 @@ export default function Compute(props: StepProps) {
 
       console.log("Joined the session", session);
 
+      const stream = new WebSocketStream(
+        websocket,
+        groupId,
+        sessionId,
+        SessionKind.KEYGEN
+      );
+
+      const sink = new WebSocketSink(
+        websocket,
+        group.params.parties - 1,
+        sessionId
+      );
+
+      dispatch(setTransport({ stream, sink }));
+
       setProgressMessage("Waiting for other participants...");
 
       // All parties signed up to key generation
@@ -64,6 +83,7 @@ export default function Compute(props: StepProps) {
         }
       });
     };
+
     // Delay a little so we don't get flicker when the connection
     // is very fast.
     setTimeout(joinGroupAndSession, 1000);
@@ -71,7 +91,6 @@ export default function Compute(props: StepProps) {
 
   return (
     <Stack spacing={2} marginTop={2} padding={2}>
-
       <Stack>
         <Typography variant="h4" component="div">
           {label}

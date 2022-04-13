@@ -17,7 +17,7 @@ import { keysSelector } from "../../store/keys";
 import { copyToClipboard } from "../../utils";
 import { WebSocketContext } from "../../websocket-provider";
 
-import { StepProps } from './index';
+import { StepProps } from "./index";
 
 type InviteProps = {
   onCopy: () => void;
@@ -75,7 +75,7 @@ function InviteCard(props: InviteProps) {
 }
 
 export default function InvitePeople(props: StepProps) {
-  const {next} = props;
+  const { next } = props;
   const [showProgress, setShowProgress] = useState(false);
   const { group, session } = useSelector(keysSelector);
   const websocket = useContext(WebSocketContext);

@@ -4,17 +4,17 @@ import { Stack, Typography } from "@mui/material";
 
 import SnapConnect from "../../snap-connect";
 
-import { StepProps } from './index';
+import { StepProps } from "./index";
 
 export default function Connect(props: StepProps) {
-  const {next} = props;
+  const { next } = props;
 
   //const redirect = `/keys/participate/${groupId}/${sessionId}`;
 
   const redirect = () => {
     console.log("Connected....");
     next();
-  }
+  };
 
   return (
     <Stack spacing={2} marginTop={2} padding={2}>

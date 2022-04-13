@@ -6,6 +6,7 @@ export * from './keygen';
 export * from './sign';
 export * from './transports/websocket';
 export * from './clients/websocket';
+export { StreamTransport, SinkTransport } from './round-based';
 
 export enum SessionKind {
   KEYGEN = 'keygen',

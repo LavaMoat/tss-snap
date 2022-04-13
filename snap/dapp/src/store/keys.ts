@@ -7,6 +7,8 @@ import {
 
 import { GroupInfo, Session } from "@metamask/mpc-client";
 
+import { Transport } from "../types";
+
 import snapId from "../snap-id";
 
 type AeadPack = {
@@ -110,10 +112,13 @@ export const clearState = createAsyncThunk("keys/clearState", async () => {
 export type KeyState = {
   group?: GroupInfo;
   session?: Session;
+  transport?: Transport;
 };
+
 const initialState: KeyState = {
   group: null,
   session: null,
+  transport: null,
 };
 
 const keySlice = createSlice({
@@ -126,10 +131,13 @@ const keySlice = createSlice({
     setSession: (state, { payload }: PayloadAction<Session>) => {
       state.session = payload;
     },
+    setTransport: (state, { payload }: PayloadAction<Transport>) => {
+      state.transport = payload;
+    },
   },
   //extraReducers: (builder) => {},
 });
 
-export const { setGroup, setSession } = keySlice.actions;
+export const { setGroup, setSession, setTransport } = keySlice.actions;
 export const keysSelector = (state: { keys: KeyState }) => state.keys;
 export default keySlice.reducer;

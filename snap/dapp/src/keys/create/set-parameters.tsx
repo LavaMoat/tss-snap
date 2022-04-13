@@ -10,12 +10,17 @@ import {
   TextField,
 } from "@mui/material";
 
-import { Parameters, SessionKind } from "@metamask/mpc-client";
+import {
+  Parameters,
+  SessionKind,
+  WebSocketSink,
+  WebSocketStream,
+} from "@metamask/mpc-client";
 
-import { setGroup, setSession } from "../../store/keys";
+import { setGroup, setSession, setTransport } from "../../store/keys";
 import { WebSocketContext } from "../../websocket-provider";
 
-import { StepProps } from './index';
+import { StepProps } from "./index";
 
 type GroupFormData = [string, Parameters];
 
@@ -80,6 +85,21 @@ export default function SetParameters(props: StepProps) {
     dispatch(setSession(session));
 
     console.log("Created session", session);
+
+    const stream = new WebSocketStream(
+      websocket,
+      uuid,
+      session.uuid,
+      SessionKind.KEYGEN
+    );
+
+    const sink = new WebSocketSink(
+      websocket,
+      group.params.parties - 1,
+      session.uuid
+    );
+
+    dispatch(setTransport({ stream, sink }));
 
     next();
   };

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {useParams} from 'react-router-dom';
+import { useParams } from "react-router-dom";
 
 import {
   Box,
@@ -11,11 +11,11 @@ import {
   StepLabel,
 } from "@mui/material";
 
-import NotFound from '../../not-found';
+import NotFound from "../../not-found";
 
 import Connect from "./connect";
 import Session from "./session";
-import Compute from "../create/compute";
+import Compute from "../compute";
 
 const steps = ["Connect", "Join session", "Compute", "Save"];
 
@@ -75,7 +75,13 @@ function CreateStepper() {
           </Box>
         </>
       ) : (
-        <>{getStepComponent(activeStep, { next: handleNext, groupId, sessionId })}</>
+        <>
+          {getStepComponent(activeStep, {
+            next: handleNext,
+            groupId,
+            sessionId,
+          })}
+        </>
       )}
     </Box>
   );
