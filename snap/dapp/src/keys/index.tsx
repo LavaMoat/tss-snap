@@ -1,58 +1,46 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useDispatch } from "react-redux";
 
 import {
+  Box,
   Stack,
+  ButtonGroup,
   Button,
+  IconButton,
   Typography,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
+  Tooltip,
 } from "@mui/material";
 
-import { loadState, NamedKeyShare } from "../store/keys";
+import CopyIcon from "@mui/icons-material/ContentCopy";
+
+import { loadState, NamedKeyShare, groupKeys } from "../store/keys";
+import { copyToClipboard, abbreviateAddress } from "../utils";
 
 import Create from "./create";
 import Join from "./join";
 
 function Keys() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [shares, setShares] = useState([]);
+
+  const copyAddress = async (e, address) => {
+    e.stopPropagation();
+    await copyToClipboard(address);
+  };
+
+  const showKey = (address) => navigate(`/keys/${address}`);
 
   useEffect(() => {
     const loadKeys = async () => {
       const { payload: keyShares } = await dispatch(loadState());
-      console.log(keyShares);
-
-      // Group key shares by public address
-      const addressGroups = keyShares.reduce((previous, namedKeyShare) => {
-        const { label, share } = namedKeyShare;
-        const { address, localKey } = share;
-        const { i: number, t: threshold, n: parties } = localKey;
-
-        previous[address] = previous[address] || {label, items: []};
-        const item = { label, number, threshold, parties };
-        previous[address].items.push(item);
-
-        return previous;
-      }, {});
-
-      // Ensure shares are ordered according to their party number
-      for (const keyShare of Object.values(addressGroups)) {
-        keyShare.items.sort((a, b) => {
-          const an = a.number;
-          const bn = b.number;
-          if (an < bn) {
-            return -1;
-          }
-          if (an > bn) {
-            return 1;
-          }
-          return 0;
-        });
-      }
-      setShares(Object.entries(addressGroups));
+      setShares(groupKeys(keyShares));
     };
 
     loadKeys();
@@ -60,29 +48,54 @@ function Keys() {
 
   const view =
     shares.length > 0 ? (
-      <List component="div" disablePadding >
+      <List component="div" disablePadding>
         {shares.map((share, index) => {
-          const [address, {label, items}] = share;
-
-          console.log(address, label, items);
-
+          const [address, { label, threshold, parties, items }] = share;
           return (
-            <div key={address}>
-              <ListItemText primary={label} secondary={address} />
-              <List component="div" disablePadding>
-                {items.map((item, index) => {
-                  const {number, threshold, parties} = item;
-                  const primary = `Share ${number}`;
-                  const secondary = `In ${threshold + 1} of ${parties}`;
-                  return (
-                    <ListItem key={index}>
-                      <ListItemText primary={primary} secondary={secondary} />
-                    </ListItem>
-                  )
-                })}
-              </List>
+            <ListItem
+              key={address}
+              disablePadding
+              component="div"
+              sx={{ display: "block" }}
+            >
+              <ListItemButton onClick={() => showKey(address)}>
+                <Stack>
+                  <Typography variant="subtitle2" component="div">
+                    {label}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography
+                      variant="body2"
+                      component="div"
+                      color="text.secondary"
+                    >
+                      {abbreviateAddress(address)}
+                    </Typography>
+                    <Tooltip title="Copy address">
+                      <IconButton onClick={(e) => copyAddress(e, address)}>
+                        <CopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    component="div"
+                    color="text.secondary"
+                  >
+                    {items.length} share(s) in a {threshold + 1} of {parties}
+                  </Typography>
+                </Stack>
 
-            </div>
+                <Box sx={{ flexGrow: 1 }} />
+
+                <ButtonGroup
+                  variant="outlined"
+                  aria-label="outlined button group"
+                >
+                  <Button>Sign</Button>
+                </ButtonGroup>
+              </ListItemButton>
+            </ListItem>
           );
         })}
       </List>

@@ -21,6 +21,35 @@ export type NamedKeyShare = {
   share: KeyShare;
 };
 
+type KeyShareGroup = {
+  label: string;
+  threshold: number;
+  parties: number;
+  items: number[];
+}
+
+// Group key shares by public address containing only enough
+// information for listing and showing key shares.
+export function groupKeys(keyShares: NamedKeyShare[]): [string, KeyShareGroup] {
+  // Group key shares by public address
+  const addressGroups = keyShares.reduce((previous, namedKeyShare) => {
+    const { label, share } = namedKeyShare;
+    const { address, localKey } = share;
+    const { i: number, t: threshold, n: parties } = localKey;
+    previous[address] = previous[address] || { label, threshold, parties, items: [] };
+    previous[address].items.push(number);
+    return previous;
+  }, {});
+
+  // Ensure shares are ordered according to their party number
+  for (const keyShare of Object.values(addressGroups)) {
+    keyShare.items.sort();
+  }
+
+  return Object.entries(addressGroups);
+}
+
+// Key material returned from `getBip44Entropy_*`.
 type KeyResponse = {
   key: string;
 };
