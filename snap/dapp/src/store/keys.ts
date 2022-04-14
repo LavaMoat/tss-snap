@@ -26,25 +26,32 @@ type KeyShareGroup = {
   threshold: number;
   parties: number;
   items: number[];
-}
+};
+
+type KeyList = [string, KeyShareGroup][];
+
+type KeyMap = {
+  [key: string]: KeyShareGroup;
+};
 
 // Group key shares by public address containing only enough
 // information for listing and showing key shares.
-export function groupKeys(keyShares: NamedKeyShare[]): [string, KeyShareGroup] {
+export function groupKeys(keyShares: NamedKeyShare[]): KeyList {
   // Group key shares by public address
-  const addressGroups = keyShares.reduce((previous, namedKeyShare) => {
+  const addressGroups = keyShares.reduce((previous: KeyMap, namedKeyShare) => {
     const { label, share } = namedKeyShare;
     const { address, localKey } = share;
     const { i: number, t: threshold, n: parties } = localKey;
-    previous[address] = previous[address] || { label, threshold, parties, items: [] };
+    previous[address] = previous[address] || {
+      label,
+      threshold,
+      parties,
+      items: [],
+    };
     previous[address].items.push(number);
+    previous[address].items.sort();
     return previous;
   }, {});
-
-  // Ensure shares are ordered according to their party number
-  for (const keyShare of Object.values(addressGroups)) {
-    keyShare.items.sort();
-  }
 
   return Object.entries(addressGroups);
 }
@@ -143,12 +150,24 @@ export type KeyState = {
   group?: GroupInfo;
   session?: Session;
   transport?: Transport;
+  // Key share awaiting confirmation to be saved.
+  //
+  // Ideally we would save this automatically in `compute`
+  // at the end of key generation but for testing where a single
+  // party is generating multiple key shares there is a data race
+  // persisting the snap state that can cause some key shares not
+  // to be saved correctly.
+  //
+  // Therefore we need a manually triggered action on the `save` screen
+  // to prevent the race.
+  keyShare?: NamedKeyShare;
 };
 
 const initialState: KeyState = {
   group: null,
   session: null,
   transport: null,
+  keyShare: null,
 };
 
 const keySlice = createSlice({
@@ -164,10 +183,14 @@ const keySlice = createSlice({
     setTransport: (state, { payload }: PayloadAction<Transport>) => {
       state.transport = payload;
     },
+    setKeyShare: (state, { payload }: PayloadAction<NamedKeyShare>) => {
+      state.keyShare = payload;
+    },
   },
   //extraReducers: (builder) => {},
 });
 
-export const { setGroup, setSession, setTransport } = keySlice.actions;
+export const { setGroup, setSession, setTransport, setKeyShare } =
+  keySlice.actions;
 export const keysSelector = (state: { keys: KeyState }) => state.keys;
 export default keySlice.reducer;

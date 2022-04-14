@@ -1,11 +1,36 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
-import { Stack, Typography } from "@mui/material";
-import { keysSelector } from "../store/keys";
+import { Stack, Button, Typography } from "@mui/material";
+import { keysSelector, loadState, saveState } from "../store/keys";
 
 export default function Save() {
-  const { group } = useSelector(keysSelector);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { group, keyShare } = useSelector(keysSelector);
+
+  if (!group || !keyShare) {
+    return (
+      <Stack padding={2} spacing={2} marginTop={2}>
+        <Stack>
+          <Typography variant="h4" component="div">
+            Error
+          </Typography>
+        </Stack>
+        <Typography variant="body1" component="div">
+          Group information or key share is missing!
+        </Typography>
+      </Stack>
+    );
+  }
+
+  const saveKeyShare = async () => {
+    const { payload: keyShares } = await dispatch(loadState());
+    keyShares.push(keyShare);
+    await dispatch(saveState(keyShares));
+    navigate("/keys");
+  };
 
   return (
     <Stack padding={2} spacing={2} marginTop={2}>
@@ -16,11 +41,13 @@ export default function Save() {
       </Stack>
       <Stack>
         <Typography variant="body1" component="div">
-          Your key share has been saved!
+          Your key share has been created.
         </Typography>
         <Typography variant="body2" component="div" color="text.secondary">
-          Now you can use it to sign messages and transactions.
+          Save the key share so you can use it to sign messages and
+          transactions.
         </Typography>
+        <Button onClick={saveKeyShare}>Save key share</Button>
       </Stack>
     </Stack>
   );

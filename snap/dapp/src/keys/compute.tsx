@@ -5,7 +5,7 @@ import { Stack, Typography } from "@mui/material";
 
 import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
 
-import { keysSelector, loadState, saveState } from "../store/keys";
+import { keysSelector, setKeyShare } from "../store/keys";
 import { WebSocketContext, ListenerCleanup } from "../websocket-provider";
 import { WorkerContext } from "../worker";
 
@@ -52,14 +52,11 @@ export default function Compute(props: StepProps) {
         onTransition
       );
 
-      const { address } = share;
-
-      // Save the key share into the encrypted snap state
+      // Stash the key share for save confirmation on the
+      // next screen
       const { label } = group;
       const namedKeyShare = { label, share };
-      const { payload: keyShares } = await dispatch(loadState());
-      keyShares.push(namedKeyShare);
-      await dispatch(saveState(keyShares));
+      dispatch(setKeyShare(namedKeyShare));
 
       next();
     };

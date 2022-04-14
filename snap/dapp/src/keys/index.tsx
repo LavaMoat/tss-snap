@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
 import {
@@ -12,13 +12,12 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
   Tooltip,
 } from "@mui/material";
 
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
-import { loadState, NamedKeyShare, groupKeys } from "../store/keys";
+import { loadState, groupKeys } from "../store/keys";
 import { copyToClipboard, abbreviateAddress } from "../utils";
 
 import Create from "./create";
@@ -30,12 +29,15 @@ function Keys() {
 
   const [shares, setShares] = useState([]);
 
-  const copyAddress = async (e, address) => {
+  const copyAddress = async (
+    e: React.MouseEvent<HTMLElement>,
+    address: string
+  ) => {
     e.stopPropagation();
     await copyToClipboard(address);
   };
 
-  const showKey = (address) => navigate(`/keys/${address}`);
+  const showKey = (address: string) => navigate(`/keys/${address}`);
 
   useEffect(() => {
     const loadKeys = async () => {
@@ -49,7 +51,7 @@ function Keys() {
   const view =
     shares.length > 0 ? (
       <List component="div" disablePadding>
-        {shares.map((share, index) => {
+        {shares.map((share) => {
           const [address, { label, threshold, parties, items }] = share;
           return (
             <ListItem
