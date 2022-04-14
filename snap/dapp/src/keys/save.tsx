@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { Stack, Button, Typography } from "@mui/material";
-import { keysSelector, loadState, saveState } from "../store/keys";
+import { keysSelector, saveKey } from "../store/keys";
 
 export default function Save() {
   const dispatch = useDispatch();
@@ -26,9 +26,7 @@ export default function Save() {
   }
 
   const saveKeyShare = async () => {
-    const { payload: keyShares } = await dispatch(loadState());
-    keyShares.push(keyShare);
-    await dispatch(saveState(keyShares));
+    await dispatch(saveKey(keyShare));
     navigate("/keys");
   };
 

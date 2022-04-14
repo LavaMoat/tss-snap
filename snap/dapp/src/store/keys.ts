@@ -121,7 +121,7 @@ async function setState(value: AeadPack) {
   });
 }
 
-export const loadState = createAsyncThunk("keys/loadState", async () => {
+const loadStateData = async () => {
   const state: AeadPack = (await getState()) as AeadPack;
   if (state !== null) {
     const key = await loadPrivateKey();
@@ -129,22 +129,36 @@ export const loadState = createAsyncThunk("keys/loadState", async () => {
   }
   // Treat no state as zero key shares
   return [];
-});
+};
 
-export const saveState = createAsyncThunk(
-  "keys/saveState",
-  async (keyShares: NamedKeyShare[]) => {
-    const key = await loadPrivateKey();
-    const aeadPack = encrypt(key, keyShares);
-    await setState(aeadPack);
-  }
-);
+const saveStateData = async (keyShares: NamedKeyShare[]) => {
+  const key = await loadPrivateKey();
+  const aeadPack = encrypt(key, keyShares);
+  await setState(aeadPack);
+};
+
+export const loadState = createAsyncThunk("keys/loadState", loadStateData);
+export const saveState = createAsyncThunk("keys/saveState", saveStateData);
 
 export const clearState = createAsyncThunk("keys/clearState", async () => {
   const key = await loadPrivateKey();
   const aeadPack = encrypt(key, []);
   await setState(aeadPack);
 });
+
+export const loadKeys = createAsyncThunk("keys/loadKeys", async () => {
+  const keys = await loadStateData();
+  return groupKeys(keys);
+});
+
+export const saveKey = createAsyncThunk(
+  "keys/saveKey",
+  async (keyShare: NamedKeyShare) => {
+    const keys = await loadStateData();
+    keys.push(keyShare);
+    await saveStateData(keys);
+  }
+);
 
 export type KeyState = {
   group?: GroupInfo;
@@ -161,6 +175,9 @@ export type KeyState = {
   // Therefore we need a manually triggered action on the `save` screen
   // to prevent the race.
   keyShare?: NamedKeyShare;
+
+  // Sanitized list of key information without any private data.
+  keyShares: KeyList;
 };
 
 const initialState: KeyState = {
@@ -168,6 +185,7 @@ const initialState: KeyState = {
   session: null,
   transport: null,
   keyShare: null,
+  keyShares: [],
 };
 
 const keySlice = createSlice({
@@ -187,7 +205,11 @@ const keySlice = createSlice({
       state.keyShare = payload;
     },
   },
-  //extraReducers: (builder) => {},
+  extraReducers: (builder) => {
+    builder.addCase(loadKeys.fulfilled, (state, action) => {
+      state.keyShares = action.payload;
+    });
+  },
 });
 
 export const { setGroup, setSession, setTransport, setKeyShare } =

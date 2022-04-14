@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useDispatch } from "react-redux";
 import init from "@metamask/mpc-snap-wasm";
 
 import { Routes, Route } from "react-router-dom";
@@ -17,8 +18,10 @@ import WebSocketProvider from "./websocket-provider";
 import WorkerProvider, { webWorker } from "./worker";
 
 import Connect from "./connect";
-import { Keys, Create, Join } from "./keys";
+import { Keys, Create, Join, ShowKey } from "./keys";
 import NotFound from "./not-found";
+
+import { loadKeys } from "./store/keys";
 
 type WorkerMessage = {
   data: { ready: boolean };
@@ -46,6 +49,7 @@ function Content() {
         <Route path="/" element={<Connect />} />
         <Route path="/keys/create" element={<Create />} />
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />
+        <Route path="/keys/:address" element={<ShowKey />} />
         <Route path="/keys" element={<Keys />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -54,6 +58,7 @@ function Content() {
 }
 
 export default function App() {
+  const dispatch = useDispatch();
   const [ready, setReady] = useState(false);
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -71,6 +76,10 @@ export default function App() {
     const initialize = async () => {
       // Setup the wasm helpers that run on the main UI thread
       await init();
+
+      // Load any saved key information
+      await dispatch(loadKeys());
+
       // Now we are ready to render
       setReady(true);
     };

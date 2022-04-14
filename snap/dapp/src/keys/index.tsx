@@ -1,58 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 
 import {
   Box,
   Stack,
   ButtonGroup,
   Button,
-  IconButton,
   Typography,
   List,
   ListItem,
   ListItemButton,
-  Tooltip,
 } from "@mui/material";
 
-import CopyIcon from "@mui/icons-material/ContentCopy";
-
-import { loadState, groupKeys } from "../store/keys";
-import { copyToClipboard, abbreviateAddress } from "../utils";
+import { keysSelector } from "../store/keys";
 
 import Create from "./create";
 import Join from "./join";
+import ShowKey from "./show";
+
+import PublicAddress from "./public-address";
 
 function Keys() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const [shares, setShares] = useState([]);
-
-  const copyAddress = async (
-    e: React.MouseEvent<HTMLElement>,
-    address: string
-  ) => {
-    e.stopPropagation();
-    await copyToClipboard(address);
-  };
+  const { keyShares } = useSelector(keysSelector);
 
   const showKey = (address: string) => navigate(`/keys/${address}`);
 
-  useEffect(() => {
-    const loadKeys = async () => {
-      const { payload: keyShares } = await dispatch(loadState());
-      setShares(groupKeys(keyShares));
-    };
-
-    loadKeys();
-  }, []);
-
   const view =
-    shares.length > 0 ? (
+    keyShares.length > 0 ? (
       <List component="div" disablePadding>
-        {shares.map((share) => {
-          const [address, { label, threshold, parties, items }] = share;
+        {keyShares.map((share) => {
+          const [address, { label }] = share;
           return (
             <ListItem
               key={address}
@@ -65,27 +44,7 @@ function Keys() {
                   <Typography variant="subtitle2" component="div">
                     {label}
                   </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography
-                      variant="body2"
-                      component="div"
-                      color="text.secondary"
-                    >
-                      {abbreviateAddress(address)}
-                    </Typography>
-                    <Tooltip title="Copy address">
-                      <IconButton onClick={(e) => copyAddress(e, address)}>
-                        <CopyIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                  <Typography
-                    variant="body2"
-                    component="div"
-                    color="text.secondary"
-                  >
-                    {items.length} share(s) in a {threshold + 1} of {parties}
-                  </Typography>
+                  <PublicAddress address={address} abbreviate={true} />
                 </Stack>
 
                 <Box sx={{ flexGrow: 1 }} />
@@ -126,4 +85,4 @@ function Keys() {
   );
 }
 
-export { Keys, Create, Join };
+export { Keys, Create, Join, ShowKey };
