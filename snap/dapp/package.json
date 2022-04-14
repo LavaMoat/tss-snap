@@ -39,6 +39,7 @@
   "dependencies": {
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
+    "@metamask/detect-provider": "^1.2.0",
     "@metamask/mpc-client": "file:../../packages/client",
     "@metamask/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
     "@metamask/mpc-snap-wasm": "file:../wasm/pkg",
@@ -46,6 +47,7 @@
     "@mui/material": "^5.5.3",
     "@reduxjs/toolkit": "^1.8.1",
     "comlink": "^4.3.1",
+    "ethers": "^5.6.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-redux": "^7.2.8",

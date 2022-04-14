@@ -45,8 +45,11 @@ export default function Save() {
           Save the key share so you can use it to sign messages and
           transactions.
         </Typography>
-        <Button onClick={saveKeyShare}>Save key share</Button>
       </Stack>
+
+      <Button variant="contained" onClick={saveKeyShare}>
+        Save key share
+      </Button>
     </Stack>
   );
 }

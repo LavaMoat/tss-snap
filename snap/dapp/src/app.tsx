@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import init from "@metamask/mpc-snap-wasm";
 
 import { Routes, Route } from "react-router-dom";
+import detectEthereumProvider from "@metamask/detect-provider";
 
 import AppBar from "@mui/material/AppBar";
 import Stack from "@mui/material/Stack";
@@ -60,6 +61,7 @@ function Content() {
 export default function App() {
   const dispatch = useDispatch();
   const [ready, setReady] = useState(false);
+  const [provider, setProvider] = useState(null);
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
@@ -74,6 +76,9 @@ export default function App() {
 
   useEffect(() => {
     const initialize = async () => {
+      const provider = await detectEthereumProvider();
+      setProvider(provider);
+
       // Setup the wasm helpers that run on the main UI thread
       await init();
 
@@ -97,6 +102,24 @@ export default function App() {
 
   if (ready === false) {
     return null;
+  }
+
+  if (!provider) {
+    return (
+      <p>
+        Failed to detect an ethereum provider, please install{" "}
+        <a href="https://metamask.io/flask/">MetaMask Flask</a>
+      </p>
+    );
+  }
+
+  if (provider !== window.ethereum) {
+    return (
+      <p>
+        The wallet provider is not correct, do you have multiple wallets
+        installed?
+      </p>
+    );
   }
 
   return (

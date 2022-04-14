@@ -137,26 +137,27 @@ const saveStateData = async (keyShares: NamedKeyShare[]) => {
   await setState(aeadPack);
 };
 
+const loadKeyData = async () => {
+  const keys = await loadStateData();
+  return groupKeys(keys);
+};
+
 export const loadState = createAsyncThunk("keys/loadState", loadStateData);
 export const saveState = createAsyncThunk("keys/saveState", saveStateData);
-
 export const clearState = createAsyncThunk("keys/clearState", async () => {
   const key = await loadPrivateKey();
   const aeadPack = encrypt(key, []);
   await setState(aeadPack);
 });
 
-export const loadKeys = createAsyncThunk("keys/loadKeys", async () => {
-  const keys = await loadStateData();
-  return groupKeys(keys);
-});
-
+export const loadKeys = createAsyncThunk("keys/loadKeys", loadKeyData);
 export const saveKey = createAsyncThunk(
   "keys/saveKey",
   async (keyShare: NamedKeyShare) => {
     const keys = await loadStateData();
     keys.push(keyShare);
     await saveStateData(keys);
+    return await loadKeyData();
   }
 );
 
@@ -207,6 +208,9 @@ const keySlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(loadKeys.fulfilled, (state, action) => {
+      state.keyShares = action.payload;
+    });
+    builder.addCase(saveKey.fulfilled, (state, action) => {
       state.keyShares = action.payload;
     });
   },
