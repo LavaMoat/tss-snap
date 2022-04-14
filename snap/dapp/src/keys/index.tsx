@@ -25,12 +25,34 @@ function Keys() {
       const { payload: keyShares } = await dispatch(loadState());
       console.log(keyShares);
 
-      const shares = keyShares.map((namedKeyShare: NamedKeyShare) => {
-        const { label } = namedKeyShare;
-        return { label };
-      });
+      // Group key shares by public address
+      const addressGroups = keyShares.reduce((previous, namedKeyShare) => {
+        const { label, share } = namedKeyShare;
+        const { address, localKey } = share;
+        const { i: number, t: threshold, n: parties } = localKey;
 
-      setShares(shares);
+        previous[address] = previous[address] || {label, items: []};
+        const item = { label, number, threshold, parties };
+        previous[address].items.push(item);
+
+        return previous;
+      }, {});
+
+      // Ensure shares are ordered according to their party number
+      for (const keyShare of Object.values(addressGroups)) {
+        keyShare.items.sort((a, b) => {
+          const an = a.number;
+          const bn = b.number;
+          if (an < bn) {
+            return -1;
+          }
+          if (an > bn) {
+            return 1;
+          }
+          return 0;
+        });
+      }
+      setShares(Object.entries(addressGroups));
     };
 
     loadKeys();
@@ -38,12 +60,29 @@ function Keys() {
 
   const view =
     shares.length > 0 ? (
-      <List component="div" disablePadding>
+      <List component="div" disablePadding >
         {shares.map((share, index) => {
+          const [address, {label, items}] = share;
+
+          console.log(address, label, items);
+
           return (
-            <ListItem key={index}>
-              <ListItemText primary={share.label} />
-            </ListItem>
+            <div key={address}>
+              <ListItemText primary={label} secondary={address} />
+              <List component="div" disablePadding>
+                {items.map((item, index) => {
+                  const {number, threshold, parties} = item;
+                  const primary = `Share ${number}`;
+                  const secondary = `In ${threshold + 1} of ${parties}`;
+                  return (
+                    <ListItem key={index}>
+                      <ListItemText primary={primary} secondary={secondary} />
+                    </ListItem>
+                  )
+                })}
+              </List>
+
+            </div>
           );
         })}
       </List>
