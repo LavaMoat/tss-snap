@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import keysReducer from "./keys";
+import dialogsReducer from "./dialogs";
 
 const store = configureStore({
   reducer: {
     keys: keysReducer,
+    dialogs: dialogsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
