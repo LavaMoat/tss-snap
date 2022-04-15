@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import { utils } from "ethers";
 
@@ -30,6 +30,7 @@ import NotFound from "../not-found";
 
 export default function ShowKey() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { address } = useParams();
   const { keyShares } = useSelector(keysSelector);
 
@@ -68,11 +69,18 @@ export default function ShowKey() {
     return <NotFound />;
   }
 
-  const onDeleteKeyShare = async (address: string, number: number) => {
+  const onDeleteKeyShare = async (
+    address: string, number: number, length: number) => {
     // TODO: show dialog to confirm key share deletion!
 
     await dispatch(deleteKey([address, number]));
     setDeleted(true);
+
+    // Deleting the last key share so navigate
+    // to the keys list rather than show a 404
+    if (length === 1) {
+      navigate("/keys");
+    }
   }
 
   const share = keyShare[1];
@@ -134,7 +142,7 @@ export default function ShowKey() {
                   <ButtonGroup
                     variant="outlined" size="small" aria-label="key share actions">
                     <Button>Export</Button>
-                    <Button color="error" onClick={() => onDeleteKeyShare(address, number)}>Delete</Button>
+                    <Button color="error" onClick={() => onDeleteKeyShare(address, number, items.length)}>Delete</Button>
                   </ButtonGroup>
                 </ListItem>
               );
