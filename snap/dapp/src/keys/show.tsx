@@ -47,8 +47,9 @@ export default function ShowKey() {
   useEffect(() => {
     ethereum.on("chainChanged", handleChainChanged);
 
-    function handleChainChanged() {
-      window.location.reload();
+    function handleChainChanged(chainId) {
+      //window.location.reload();
+      setChain(chainId);
     }
 
     const getBalance = async () => {
@@ -115,7 +116,7 @@ export default function ShowKey() {
         </Typography>
         <Stack direction="row" spacing={1}>
           <Box>
-            <Chip label={chainName} />
+            <Chip label={chainName} color="secondary" />
           </Box>
           <Box>
             <Chip label={sharesLabel} />

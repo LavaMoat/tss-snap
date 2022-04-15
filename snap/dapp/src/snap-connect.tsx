@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import {useDispatch} from 'react-redux';
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -6,11 +7,10 @@ import {
   Button,
   Link,
   Typography,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 
 import snapId from "./snap-id";
+import {setSnackbar} from './store/snackbars';
 
 type RedirectHandler = () => void;
 
@@ -20,8 +20,8 @@ type SnapConnectProps = {
 
 export default function SnapConnect(props: SnapConnectProps) {
   const { redirect } = props;
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [[showError, connectError], setConnectError] = useState([false, null]);
 
   async function onConnect() {
     console.log("Connect to snap", snapId);
@@ -41,41 +41,13 @@ export default function SnapConnect(props: SnapConnectProps) {
       } else {
         redirect();
       }
-
-      /*
-      await dispatch(clearState());
-
-      const {payload: keyShares} = await dispatch(loadState());
-      console.log("Got key shares", keyShares);
-      */
-
-      /*
-      keyShares.push({label: 'Mock Key Share'});
-      console.log("After append", keyShares);
-
-      // Update with amended state
-      await dispatch(saveState(keyShares));
-      */
-
-      /*
-      // Check the new state is good
-      const {payload: newKeyShares} = await dispatch(loadState());
-      console.log("After saveState", newKeyShares);
-      */
     } catch (e) {
-      setConnectError([true, e]);
+      dispatch(setSnackbar({
+        message: `Could not connect: ${e.message || ''}`,
+        severity: 'error'
+      }));
     }
   }
-
-  const handleClose = (
-    event?: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setConnectError([false, null]);
-  };
 
   return (
     <>
@@ -89,12 +61,6 @@ export default function SnapConnect(props: SnapConnectProps) {
           Connect to MetaMask
         </Button>
       </Stack>
-
-      <Snackbar open={showError} autoHideDuration={6000} onClose={handleClose}>
-        <Alert onClose={handleClose} severity="error">
-          Could not connect: {connectError ? connectError.message : ""}
-        </Alert>
-      </Snackbar>
     </>
   );
 }

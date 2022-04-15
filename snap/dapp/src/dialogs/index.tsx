@@ -9,6 +9,7 @@ import {
 } from "../store/dialogs";
 
 import {deleteKey} from '../store/keys';
+import {setSnackbar} from '../store/snackbars';
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 
@@ -25,7 +26,12 @@ export default function Dialogs() {
 
     await dispatch(deleteKey([address, number]));
 
-    // TODO: restore snackbar
+    dispatch(
+      setSnackbar({
+        message: 'Key share deleted',
+        severity: 'success'
+      })
+    );
 
     // Deleting the last key share so navigate
     // to the keys list rather than show a 404

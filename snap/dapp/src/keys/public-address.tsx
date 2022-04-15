@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import {useDispatch} from 'react-redux';
 
-import { Stack, Button, Tooltip, Snackbar, Alert } from "@mui/material";
+import { Stack, Button, Tooltip } from "@mui/material";
 
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
+import {setSnackbar} from '../store/snackbars';
 import { copyToClipboard, abbreviateAddress } from "../utils";
 
 type PublicAddressProps = {
@@ -12,7 +14,7 @@ type PublicAddressProps = {
 };
 
 export default function PublicAddress(props: PublicAddressProps) {
-  const [copied, setCopied] = useState(false);
+  const dispatch = useDispatch();
   const { address, abbreviate } = props;
 
   const copyAddress = async (
@@ -21,7 +23,11 @@ export default function PublicAddress(props: PublicAddressProps) {
   ) => {
     e.stopPropagation();
     await copyToClipboard(address);
-    setCopied(true);
+
+    dispatch(setSnackbar({
+      message: 'Address copied to clipboard',
+      severity: 'success'
+    }));
   };
 
   return (
@@ -37,16 +43,6 @@ export default function PublicAddress(props: PublicAddressProps) {
           </Button>
         </Tooltip>
       </Stack>
-
-      <Snackbar
-        open={copied}
-        autoHideDuration={3000}
-        onClose={() => setCopied(false)}
-      >
-        <Alert onClose={() => setCopied(false)} severity="success">
-          Address copied to clipboard
-        </Alert>
-      </Snackbar>
     </>
   );
 }

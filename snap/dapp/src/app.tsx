@@ -20,6 +20,7 @@ import WorkerProvider, { webWorker } from "./worker";
 
 import Connect from "./connect";
 import Dialogs from "./dialogs";
+import Snackbars from "./snackbars";
 import { Keys, Create, Join, ShowKey } from "./keys";
 import NotFound from "./not-found";
 
@@ -133,6 +134,7 @@ export default function App() {
               <MainAppBar />
               <Content />
               <Dialogs />
+              <Snackbars />
             </WorkerProvider>
           </WebSocketProvider>
         </div>

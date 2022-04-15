@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   Box,
@@ -8,12 +8,11 @@ import {
   Typography,
   Paper,
   Link,
-  Snackbar,
-  Alert,
   CircularProgress,
 } from "@mui/material";
 
 import { keysSelector } from "../../store/keys";
+import { setSnackbar } from "../../store/snackbars";
 import { copyToClipboard } from "../../utils";
 import { WebSocketContext } from "../../websocket-provider";
 
@@ -24,16 +23,19 @@ type InviteProps = {
 };
 
 function InviteCard(props: InviteProps) {
+  const dispatch = useDispatch();
   const { onCopy } = props;
-  const [copied, setCopied] = useState(false);
   const { group, session } = useSelector(keysSelector);
   const href = `${location.protocol}//${location.host}/#/keys/join/${group.uuid}/${session.uuid}`;
 
-  console.log("Invite with url", href);
-
   const copy = async () => {
     await copyToClipboard(href);
-    setCopied(true);
+
+    dispatch(setSnackbar({
+      message: 'Link copied to clipboard',
+      severity: 'success'
+    }));
+
     onCopy();
   };
 
@@ -61,15 +63,6 @@ function InviteCard(props: InviteProps) {
           </Button>
         </Box>
       </Paper>
-      <Snackbar
-        open={copied}
-        autoHideDuration={3000}
-        onClose={() => setCopied(false)}
-      >
-        <Alert onClose={() => setCopied(false)} severity="success">
-          Link copied to clipboard
-        </Alert>
-      </Snackbar>
     </>
   );
 }

@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import keysReducer from "./keys";
 import dialogsReducer from "./dialogs";
+import snackbarsReducer from "./snackbars";
 
 const store = configureStore({
   reducer: {
     keys: keysReducer,
     dialogs: dialogsReducer,
+    snackbars: snackbarsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
