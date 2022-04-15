@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 
 import { keysSelector, deleteKey } from "../store/keys";
+import { setDialogVisible, CONFIRM_DELETE_KEY_SHARE } from "../store/dialogs";
 import { chains } from "../utils";
 
 import PublicAddress from "./public-address";
@@ -34,7 +35,7 @@ export default function ShowKey() {
   const { address } = useParams();
   const { keyShares } = useSelector(keysSelector);
 
-  const [deleted, setDeleted] = useState(false);
+  //const [deleted, setDeleted] = useState(false);
   const [balance, setBalance] = useState("0x0");
   const [chain, setChain] = useState<string>(null);
 
@@ -71,16 +72,9 @@ export default function ShowKey() {
 
   const onDeleteKeyShare = async (
     address: string, number: number, length: number) => {
-    // TODO: show dialog to confirm key share deletion!
-
-    await dispatch(deleteKey([address, number]));
-    setDeleted(true);
-
-    // Deleting the last key share so navigate
-    // to the keys list rather than show a 404
-    if (length === 1) {
-      navigate("/keys");
-    }
+    dispatch(
+      setDialogVisible(
+        [CONFIRM_DELETE_KEY_SHARE, true, [address, number, length]]))
   }
 
   const share = keyShare[1];
@@ -94,6 +88,17 @@ export default function ShowKey() {
   }
 
   const chainName = chains[chain] as string;
+
+
+      //<Snackbar
+        //open={deleted}
+        //autoHideDuration={3000}
+        //onClose={() => setDeleted(false)}
+      //>
+        //<Alert onClose={() => setDeleted(false)} severity="success">
+          //Key share deleted
+        //</Alert>
+      //</Snackbar>
 
   return (
     <>
@@ -152,15 +157,6 @@ export default function ShowKey() {
 
       </Stack>
 
-      <Snackbar
-        open={deleted}
-        autoHideDuration={3000}
-        onClose={() => setDeleted(false)}
-      >
-        <Alert onClose={() => setDeleted(false)} severity="success">
-          Key share deleted
-        </Alert>
-      </Snackbar>
     </>
   );
 }

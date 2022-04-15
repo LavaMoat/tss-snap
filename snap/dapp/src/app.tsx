@@ -19,6 +19,7 @@ import WebSocketProvider from "./websocket-provider";
 import WorkerProvider, { webWorker } from "./worker";
 
 import Connect from "./connect";
+import Dialogs from "./dialogs";
 import { Keys, Create, Join, ShowKey } from "./keys";
 import NotFound from "./not-found";
 
@@ -131,6 +132,7 @@ export default function App() {
             <WorkerProvider>
               <MainAppBar />
               <Content />
+              <Dialogs />
             </WorkerProvider>
           </WebSocketProvider>
         </div>
