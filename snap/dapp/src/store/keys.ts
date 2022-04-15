@@ -93,7 +93,12 @@ async function loadPrivateKey() {
       },
     ],
   });
-  return (response as KeyResponse).key;
+  const key = (response as KeyResponse).key;
+  if (!key) {
+    throw new Error(
+      `private key material is not available, got: ${key}`);
+  }
+  return key;
 }
 
 async function getState() {

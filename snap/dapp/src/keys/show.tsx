@@ -68,9 +68,9 @@ export default function ShowKey() {
     return <NotFound />;
   }
 
-  const onDeleteKeyShare = async (address, number) => {
-    console.log("Delete the key share", address);
-    console.log("Delete the key share", number);
+  const onDeleteKeyShare = async (address: string, number: number) => {
+    // TODO: show dialog to confirm key share deletion!
+
     await dispatch(deleteKey([address, number]));
     setDeleted(true);
   }

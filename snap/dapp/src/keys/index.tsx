@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import {
-  Box,
   Stack,
-  ButtonGroup,
   Button,
   Typography,
   List,
