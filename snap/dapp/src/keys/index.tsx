@@ -46,15 +46,6 @@ function Keys() {
                   </Typography>
                   <PublicAddress address={address} abbreviate={true} />
                 </Stack>
-
-                <Box sx={{ flexGrow: 1 }} />
-
-                <ButtonGroup
-                  variant="outlined"
-                  aria-label="outlined button group"
-                >
-                  <Button>Sign</Button>
-                </ButtonGroup>
               </ListItemButton>
             </ListItem>
           );

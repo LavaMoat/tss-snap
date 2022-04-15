@@ -152,11 +152,31 @@ export const clearState = createAsyncThunk("keys/clearState", async () => {
 
 export const loadKeys = createAsyncThunk("keys/loadKeys", loadKeyData);
 export const saveKey = createAsyncThunk(
-  "keys/saveKey",
+  "keys/saveKeyShare",
   async (keyShare: NamedKeyShare) => {
     const keys = await loadStateData();
     keys.push(keyShare);
     await saveStateData(keys);
+    return await loadKeyData();
+  }
+);
+
+// Request used to delete a key share using it's
+// address and party number.
+type DeleteKeyShare = [string, number];
+
+export const deleteKey = createAsyncThunk(
+  "keys/deleteKeyShare",
+  async (deleteRequest: DeleteKeyShare) => {
+    const [address, number] = deleteRequest;
+    const keys = await loadStateData();
+    const newKeys = keys.filter((item: NamedKeyShare) => {
+      const { share } = item;
+      const { address: itemAddress, localKey } = share;
+      const { i: itemNumber } = localKey;
+      return !(address === itemAddress && number === itemNumber);
+    });
+    await saveStateData(newKeys);
     return await loadKeyData();
   }
 );
@@ -211,6 +231,9 @@ const keySlice = createSlice({
       state.keyShares = action.payload;
     });
     builder.addCase(saveKey.fulfilled, (state, action) => {
+      state.keyShares = action.payload;
+    });
+    builder.addCase(deleteKey.fulfilled, (state, action) => {
       state.keyShares = action.payload;
     });
   },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import { utils } from "ethers";
@@ -7,22 +7,33 @@ import { utils } from "ethers";
 import {
   Box,
   Breadcrumbs,
+  ButtonGroup,
+  Button,
   Chip,
   Link,
   Paper,
   Stack,
   Typography,
+  List,
+  ListSubheader,
+  ListItem,
+  ListItemText,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 
-import { keysSelector } from "../store/keys";
+import { keysSelector, deleteKey } from "../store/keys";
 import { chains } from "../utils";
 
 import PublicAddress from "./public-address";
 import NotFound from "../not-found";
 
 export default function ShowKey() {
+  const dispatch = useDispatch();
   const { address } = useParams();
   const { keyShares } = useSelector(keysSelector);
+
+  const [deleted, setDeleted] = useState(false);
   const [balance, setBalance] = useState("0x0");
   const [chain, setChain] = useState<string>(null);
 
@@ -57,6 +68,13 @@ export default function ShowKey() {
     return <NotFound />;
   }
 
+  const onDeleteKeyShare = async (address, number) => {
+    console.log("Delete the key share", address);
+    console.log("Delete the key share", number);
+    await dispatch(deleteKey([address, number]));
+    setDeleted(true);
+  }
+
   const share = keyShare[1];
   const { label, threshold, parties, items } = share;
   const sharesLabel = `${items.length} share(s) in a ${
@@ -70,34 +88,71 @@ export default function ShowKey() {
   const chainName = chains[chain] as string;
 
   return (
-    <Stack spacing={2}>
-      <Breadcrumbs aria-label="breadcrumb">
-        <Link underline="hover" color="inherit" href="#/keys">
-          Keys
-        </Link>
-        <Typography color="text.primary">{label}</Typography>
-      </Breadcrumbs>
+    <>
+      <Stack spacing={2}>
+        <Breadcrumbs aria-label="breadcrumb">
+          <Link underline="hover" color="inherit" href="#/keys">
+            Keys
+          </Link>
+          <Typography color="text.primary">{label}</Typography>
+        </Breadcrumbs>
 
-      <Typography variant="h3" component="div">
-        {label}
-      </Typography>
-      <Stack direction="row" spacing={1}>
-        <Box>
-          <Chip label={chainName} />
-        </Box>
-        <Box>
-          <Chip label={sharesLabel} />
-        </Box>
-      </Stack>
-      <PublicAddress address={address} />
-
-      <Paper variant="outlined">
-        <Stack alignItems="center" padding={2}>
-          <Typography variant="h1" component="div">
-            {utils.formatEther(balance)} ETH
-          </Typography>
+        <Typography variant="h3" component="div">
+          {label}
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <Box>
+            <Chip label={chainName} />
+          </Box>
+          <Box>
+            <Chip label={sharesLabel} />
+          </Box>
         </Stack>
-      </Paper>
-    </Stack>
+        <PublicAddress address={address} />
+
+        <Paper variant="outlined">
+          <Stack alignItems="center" padding={2}>
+            <Typography variant="h1" component="div">
+              {utils.formatEther(balance)} ETH
+            </Typography>
+          </Stack>
+        </Paper>
+
+        <List
+          component="div"
+          subheader={
+            <ListSubheader component="div">
+              Shares
+            </ListSubheader>
+          }
+        >
+          {
+            items.map((number, index) => {
+              return (
+                <ListItem key={index}>
+                  <ListItemText secondary={`Party #${number}`}>Key Share {index + 1}</ListItemText>
+                  <ButtonGroup
+                    variant="outlined" size="small" aria-label="key share actions">
+                    <Button>Export</Button>
+                    <Button color="error" onClick={() => onDeleteKeyShare(address, number)}>Delete</Button>
+                  </ButtonGroup>
+                </ListItem>
+              );
+            })
+          }
+        </List>
+
+      </Stack>
+
+      <Snackbar
+        open={deleted}
+        autoHideDuration={3000}
+        onClose={() => setDeleted(false)}
+      >
+        <Alert onClose={() => setDeleted(false)} severity="success">
+          Key share deleted
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
