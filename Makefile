@@ -50,5 +50,6 @@ fmt: lint
 	@cd library && cargo fmt
 	@cd cli && cargo fmt
 	@cd packages/wasm && cargo fmt
+	@cd snap/wasm && cargo fmt
 
 .PHONY: wasm snap-wasm dist dist-dev module setup build release server demo test lint fmt
