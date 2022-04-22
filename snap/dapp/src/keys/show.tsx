@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import { utils } from "ethers";
 
@@ -18,12 +18,10 @@ import {
   ListSubheader,
   ListItem,
   ListItemText,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 
-import { keysSelector, deleteKey } from "../store/keys";
-import { setDialogVisible, CONFIRM_DELETE_KEY_SHARE } from "../store/dialogs";
+import { keysSelector } from "../store/keys";
+import { setDialogVisible, CONFIRM_DELETE_KEY_SHARE, EXPORT_KEY_STORE } from "../store/dialogs";
 import { chains } from "../utils";
 
 import PublicAddress from "./public-address";
@@ -31,11 +29,9 @@ import NotFound from "../not-found";
 
 export default function ShowKey() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { address } = useParams();
   const { keyShares } = useSelector(keysSelector);
 
-  //const [deleted, setDeleted] = useState(false);
   const [balance, setBalance] = useState("0x0");
   const [chain, setChain] = useState<string>(null);
 
@@ -47,8 +43,7 @@ export default function ShowKey() {
   useEffect(() => {
     ethereum.on("chainChanged", handleChainChanged);
 
-    function handleChainChanged(chainId) {
-      //window.location.reload();
+    function handleChainChanged(chainId: string) {
       setChain(chainId);
     }
 
@@ -76,6 +71,13 @@ export default function ShowKey() {
     dispatch(
       setDialogVisible(
         [CONFIRM_DELETE_KEY_SHARE, true, [address, number, length]]))
+  }
+
+  const onExportKeyShare = async (
+    address: string, number: number, length: number) => {
+    dispatch(
+      setDialogVisible(
+        [EXPORT_KEY_STORE, true, [address, number, length]]))
   }
 
   const share = keyShare[1];
@@ -147,7 +149,7 @@ export default function ShowKey() {
                   <ListItemText secondary={`Party #${number}`}>Key Share {index + 1}</ListItemText>
                   <ButtonGroup
                     variant="outlined" size="small" aria-label="key share actions">
-                    <Button>Export</Button>
+                    <Button onClick={() => onExportKeyShare(address, number, items.length)}>Export</Button>
                     <Button color="error" onClick={() => onDeleteKeyShare(address, number, items.length)}>Delete</Button>
                   </ButtonGroup>
                 </ListItem>

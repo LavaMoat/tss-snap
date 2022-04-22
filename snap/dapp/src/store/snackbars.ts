@@ -1,8 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+import { AlertColor } from '@mui/material';
+
 export type SnackbarInfo = {
   message: string;
-  severity: string;
+  severity: AlertColor;
 }
 
 export type SnackbarState = {
@@ -19,7 +21,7 @@ const snackbarsSlice = createSlice({
   reducers: {
     setSnackbar: (
       state,
-      { payload }: PayloadAction<SnackbarState>
+      { payload }: PayloadAction<SnackbarInfo>
     ) => {
       state.snackbar = payload;
     },

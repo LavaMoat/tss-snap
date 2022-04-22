@@ -21,7 +21,7 @@
     "types": "tsc --noEmit --project tsconfig.json",
     "fmt": "prettier --write . --no-color",
     "lint": "eslint src",
-    "start": "parcel src/index.html --port 7070"
+    "start": "yarn build:snap && parcel src/index.html --port 7070"
   },
   "devDependencies": {
     "@metamask/snaps-cli": "^0.10.7",

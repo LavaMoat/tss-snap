@@ -86,8 +86,8 @@ pub fn decrypt(key: JsValue, aead_pack: JsValue) -> Result<JsValue, JsError> {
 }
 
 /// Export a key share as an encrypted web3 keystore.
-#[wasm_bindgen]
-pub fn export(
+#[wasm_bindgen(js_name = "exportKeyStore")]
+pub fn export_key_store(
     address: JsValue,
     passphrase: JsValue,
     key_share: JsValue,
@@ -103,8 +103,8 @@ pub fn export(
 }
 
 /// Import an encrypted web3 keystore as a named key share.
-#[wasm_bindgen]
-pub fn import(
+#[wasm_bindgen(js_name = "importKeyStore")]
+pub fn import_key_store(
     passphrase: JsValue,
     key_store: JsValue,
 ) -> Result<JsValue, JsError> {

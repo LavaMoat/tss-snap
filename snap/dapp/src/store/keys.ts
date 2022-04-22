@@ -7,6 +7,8 @@ import {
 
 import { GroupInfo, Session, KeyShare } from "@metamask/mpc-client";
 
+import {encode, decode} from '../utils';
+
 import { Transport } from "../types";
 
 import snapId from "../snap-id";
@@ -60,16 +62,6 @@ export function groupKeys(keyShares: NamedKeyShare[]): KeyList {
 type KeyResponse = {
   key: string;
 };
-
-function encode(value: string): Uint8Array {
-  const encoder = new TextEncoder();
-  return encoder.encode(value);
-}
-
-function decode(value: Uint8Array): string {
-  const decoder = new TextDecoder();
-  return decoder.decode(value);
-}
 
 function decrypt(key: string, value: AeadPack): NamedKeyShare[] {
   const buffer = xchacha20poly1305Decrypt(key, value);
@@ -146,6 +138,18 @@ const loadKeyData = async () => {
   const keys = await loadStateData();
   return groupKeys(keys);
 };
+
+export const findKeyShare = async (
+  keyAddress: string,
+  partyNumber: number): Promise<NamedKeyShare | undefined> => {
+  const keys = await loadStateData();
+  return keys.find((namedKeyShare) => {
+    const { share } = namedKeyShare;
+    const { address, localKey } = share;
+    const { i: number } = localKey;
+    return keyAddress === address && partyNumber === number;
+  });
+}
 
 export const loadState = createAsyncThunk("keys/loadState", loadStateData);
 export const saveState = createAsyncThunk("keys/saveState", saveStateData);
