@@ -42,7 +42,7 @@ export default function ConfirmDeleteSecretDialog(
           </Paper>
 
           <Alert severity="warning">
-            Deletion is permanent, it cannot be undone.
+            Deletion is permanent, it cannot be undone
           </Alert>
         </Stack>
       </DialogContent>

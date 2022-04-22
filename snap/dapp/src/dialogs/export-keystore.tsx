@@ -1,6 +1,7 @@
 import React from "react";
 
 import {
+  Alert,
   Stack,
   Button,
   Dialog,
@@ -44,6 +45,11 @@ export default function ExportKeyStoreDialog(
             </Typography>
           </Stack>
           <ConfirmPasswordForm onFormSubmit={onFormSubmit} />
+
+          <Alert severity="warning">
+            You will not be able to import the key share if you forget the password
+          </Alert>
+
         </Stack>
       </DialogContent>
       <DialogActions>
