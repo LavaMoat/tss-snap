@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 
@@ -9,9 +9,10 @@ import {
   List,
   ListItem,
   ListItemButton,
+  CircularProgress,
 } from "@mui/material";
 
-import { keysSelector } from "../store/keys";
+import { keysSelector, loadKeys } from "../store/keys";
 import { setDialogVisible, IMPORT_KEY_STORE } from "../store/dialogs";
 
 import Create from "./create";
@@ -23,12 +24,21 @@ import PublicAddress from "./public-address";
 function Keys() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const { keyShares } = useSelector(keysSelector);
+
+  useEffect(() => {
+    const onLoadKeys = async() => {
+      // Load any saved key information
+      await dispatch(loadKeys());
+      setLoading(false);
+    }
+    onLoadKeys();
+  }, [])
 
   const showKey = (address: string) => navigate(`/keys/${address}`);
 
   const onImport = () => {
-    console.log("Do import...");
     dispatch(setDialogVisible([IMPORT_KEY_STORE, true, null]));
   }
 
@@ -62,14 +72,17 @@ function Keys() {
       </Typography>
     );
 
-  return (
-    <Stack spacing={2}>
-      <Typography variant="h3" component="div" gutterBottom>
-        Keys
+  const main = loading ? (
+    <Stack direction="row" spacing={2}>
+      <CircularProgress size={20} />
+      <Typography variant="body2" component="div" color="text.secondary">
+        Loading key shares...
       </Typography>
+    </Stack>
+  ) : (
+    <>
 
       {view}
-
       <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
@@ -84,6 +97,15 @@ function Keys() {
           Create a new key share
         </Button>
       </Stack>
+    </>
+  );
+
+  return (
+    <Stack spacing={2}>
+      <Typography variant="h3" component="div" gutterBottom>
+        Keys
+      </Typography>
+      {main}
     </Stack>
   );
 }

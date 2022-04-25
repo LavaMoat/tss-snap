@@ -76,6 +76,8 @@ export default function App() {
     [prefersDarkMode]
   );
 
+  console.log("App is rendering...");
+
   useEffect(() => {
     const initialize = async () => {
       const provider = await detectEthereumProvider();
@@ -83,9 +85,6 @@ export default function App() {
 
       // Setup the wasm helpers that run on the main UI thread
       await init();
-
-      // Load any saved key information
-      await dispatch(loadKeys());
 
       // Now we are ready to render
       setReady(true);

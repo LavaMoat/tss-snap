@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useDispatch } from 'react-redux';
 
 import {
-  Alert,
   Stack,
   Button,
   Dialog,
@@ -14,9 +13,9 @@ import {
 
 import { ImportKeyStore } from './index';
 import FileUploadReader from '../components/file-upload-reader';
+import PasswordForm from './password-form';
 import {setSnackbar} from '../store/snackbars';
 import { decode } from '../utils';
-//import ConfirmPasswordForm from './confirm-password-form';
 
 interface ImportKeyStoreProps {
   open: boolean;
@@ -30,65 +29,71 @@ export default function ImportKeyStoreDialog(
   const dispatch = useDispatch();
   const { open, handleCancel, handleOk } = props;
   const [keyStore, setKeyStore] = useState(null);
+  const [file, setFile] = useState(null);
 
   const onFormSubmit = (password: string) => {
-    handleOk(request, password);
+    handleOk({ keyStore }, password);
   }
 
-  const onFileSelect = (file: File) => {
-    //console.log("file selected", file.name);
-  };
+  const onCancel = () => {
+    setKeyStore(null);
+    setFile(null);
+    handleCancel();
+  }
 
-  const onFileChange = (data: FileBuffer) => {
-    console.log("Got file change event: ", data);
+  const onFileSelect = (file?: File) => setFile(file);
 
-    try {
-      const contents = decode(new Uint8Array(data.buffer));
+  const readFileBuffer = async () => {
+    if (file) {
+      const buffer = await file.arrayBuffer();
       try {
-        const keystore = JSON.parse(contents);
-
-        /*
-        if (keystore.address !== address) {
+        const contents = decode(new Uint8Array(buffer));
+        try {
+          const keystore = JSON.parse(contents);
+          setKeyStore(keystore);
+        } catch (e) {
+          console.error(e);
           dispatch(
             setSnackbar({
-              message: `Keystore address ${keystore.address} does not match expected address: ${address}, perhaps you uploaded the wrong keystore?`,
+              message: `Could not parse file as JSON: ${e.message || ""}`,
               severity: "error",
             })
           );
         }
-        */
-        setKeyStore(keystore);
       } catch (e) {
         console.error(e);
         dispatch(
           setSnackbar({
-            message: `Could not parse file as JSON: ${e.message || ""}`,
+            message: `Could not decode file as UTF-8: ${e.message || ""}`,
             severity: "error",
           })
         );
       }
-    } catch (e) {
-      console.error(e);
-      dispatch(
-        setSnackbar({
-          message: `Could not decode file as UTF-8: ${e.message || ""}`,
-          severity: "error",
-        })
-      );
     }
   };
 
   const content = keyStore === null ? (
-    <FileUploadReader onChange={onFileChange} onSelect={onFileSelect} />
+    <FileUploadReader onSelect={onFileSelect} />
   ) : (
     <p>TODO</p>
   );
 
+
+    //<PasswordForm onFormSubmit={onFormSubmit} submitLabel="Import" />
+
   const actions = keyStore === null ? (
-    <Button onClick={handleCancel}>Cancel</Button>
+    <>
+      <Button onClick={onCancel}>Cancel</Button>
+      <Button
+        disabled={file === null}
+        onClick={readFileBuffer}
+        variant="contained">
+        Upload
+      </Button>
+    </>
   ) : (
     <>
-      <Button onClick={handleCancel}>Cancel</Button>
+      <Button onClick={onCancel}>Cancel</Button>
       <Button
         type="submit"
         form="password-form"

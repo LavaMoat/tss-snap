@@ -67,12 +67,14 @@ export default function Dialogs() {
       severity: 'success'
     });
 
-    cancelDialog(EXPORT_KEY_STORE)
+    cancelDialog(EXPORT_KEY_STORE);
   }
 
   const onImportKeyStore = async (result: ImportKeyStore, password: string) => {
     console.log("Import the key store", result);
     console.log("Import", password);
+
+    //cancelDialog(IMPORT_KEY_STORE);
   }
 
   const cancelDialog = (key: string) => {
