@@ -5,8 +5,6 @@ import { Alert, Stack, Typography } from "@mui/material";
 import SnapConnect from "./snap-connect";
 
 export default function Connect() {
-  // TODO: redirect to /keys instead later
-
   return (
     <>
       <Stack spacing={2}>

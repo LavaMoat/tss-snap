@@ -25,6 +25,7 @@ import Home from "./home";
 import Dialogs from "./dialogs";
 import Snackbars from "./snackbars";
 import { Keys, Create, Join, ShowKey, Import } from "./keys";
+import { Message, Transaction } from "./sign";
 import NotFound from "./not-found";
 
 type WorkerMessage = {
@@ -63,6 +64,8 @@ function Content() {
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />
         <Route path="/keys/:address" element={<ShowKey />} />
         <Route path="/keys" element={<Keys />} />
+        <Route path="/keys/:address/sign/message" element={<Message />} />
+        <Route path="/keys/:address/sign/transaction" element={<Transaction />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Box>

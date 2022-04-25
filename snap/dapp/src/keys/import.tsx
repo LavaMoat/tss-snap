@@ -21,7 +21,7 @@ import {
 } from "@metamask/mpc-snap-wasm";
 
 import FileUploadReader from '../components/file-upload-reader';
-import PublicAddress from './public-address';
+import PublicAddress from '../components/public-address';
 import {decode} from '../utils';
 import {setSnackbar} from '../store/snackbars';
 import {findKeyShare, saveKey} from '../store/keys';

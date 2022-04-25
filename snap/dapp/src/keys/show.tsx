@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import { utils } from "ethers";
 
@@ -24,10 +24,11 @@ import { keysSelector } from "../store/keys";
 import { setDialogVisible, CONFIRM_DELETE_KEY_SHARE, EXPORT_KEY_STORE } from "../store/dialogs";
 import { chains } from "../utils";
 
-import PublicAddress from "./public-address";
+import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 
 export default function ShowKey() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { address } = useParams();
   const { keyShares } = useSelector(keysSelector);
@@ -39,6 +40,14 @@ export default function ShowKey() {
     const [keyAddress] = item;
     return keyAddress === address;
   });
+
+  const signMessage = () => {
+    navigate(`/keys/${address}/sign/message`);
+  }
+
+  const signTransaction = () => {
+    navigate(`/keys/${address}/sign/transaction`);
+  }
 
   useEffect(() => {
     ethereum.on("chainChanged", handleChainChanged);
@@ -91,18 +100,6 @@ export default function ShowKey() {
   }
 
   const chainName = chains[chain] as string;
-
-
-      //<Snackbar
-        //open={deleted}
-        //autoHideDuration={3000}
-        //onClose={() => setDeleted(false)}
-      //>
-        //<Alert onClose={() => setDeleted(false)} severity="success">
-          //Key share deleted
-        //</Alert>
-      //</Snackbar>
-
   return (
     <>
       <Stack spacing={2}>
@@ -118,13 +115,23 @@ export default function ShowKey() {
             {label}
           </Typography>
         </Stack>
-        <Stack direction="row" spacing={1}>
-          <Box>
-            <Chip label={chainName} color="secondary" />
-          </Box>
-          <Box>
-            <Chip label={sharesLabel} />
-          </Box>
+        <Stack direction="row">
+          <Stack direction="row" spacing={1}>
+            <Box>
+              <Chip label={chainName} color="secondary" />
+            </Box>
+            <Box>
+              <Chip label={sharesLabel} />
+            </Box>
+          </Stack>
+
+          <Box sx={{flexGrow: 1}} />
+
+          <ButtonGroup variant="contained">
+            <Button onClick={signMessage}>Sign Message</Button>
+            <Button onClick={signTransaction}>Sign Transaction</Button>
+          </ButtonGroup>
+
         </Stack>
         <PublicAddress address={address} />
 

@@ -19,7 +19,7 @@ import Join from "./join";
 import ShowKey from "./show";
 import Import from "./import";
 
-import PublicAddress from "./public-address";
+import PublicAddress from "../components/public-address";
 
 function Keys() {
   const dispatch = useDispatch();
