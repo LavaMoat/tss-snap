@@ -11,6 +11,7 @@ import {
   setDialogVisible,
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
+  IMPORT_KEY_STORE,
 } from "../store/dialogs";
 
 import {deleteKey, findKeyShare} from '../store/keys';
@@ -19,9 +20,11 @@ import {encode, download} from '../utils';
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 import ExportKeyStoreDialog from "./export-keystore";
+import ImportKeyStoreDialog from "./import-keystore";
 
 export type DeleteRequest = [string, number, number];
 export type ExportKeyStore = [string, number, number];
+export type ImportKeyStore = { keyStore: any; };
 
 export default function Dialogs() {
   const navigate = useNavigate();
@@ -67,6 +70,11 @@ export default function Dialogs() {
     cancelDialog(EXPORT_KEY_STORE)
   }
 
+  const onImportKeyStore = async (result: ImportKeyStore, password: string) => {
+    console.log("Import the key store", result);
+    console.log("Import", password);
+  }
+
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
   };
@@ -85,6 +93,12 @@ export default function Dialogs() {
         handleCancel={() => cancelDialog(EXPORT_KEY_STORE)}
         handleOk={onExportKeyStore}
         request={(dialogs[EXPORT_KEY_STORE][1] || []) as ExportKeyStore}
+      />
+
+      <ImportKeyStoreDialog
+        open={dialogs[IMPORT_KEY_STORE][0] || false}
+        handleCancel={() => cancelDialog(IMPORT_KEY_STORE)}
+        handleOk={onImportKeyStore}
       />
 
     </>

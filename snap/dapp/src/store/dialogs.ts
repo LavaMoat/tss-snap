@@ -4,10 +4,12 @@ import { Dictionary } from '../utils';
 
 export const CONFIRM_DELETE_KEY_SHARE = "confirm-delete-key-share";
 export const EXPORT_KEY_STORE = "export-key-store";
+export const IMPORT_KEY_STORE = "import-key-store";
 
 const dialogs: DialogDict = {};
 dialogs[CONFIRM_DELETE_KEY_SHARE] = [false, null];
 dialogs[EXPORT_KEY_STORE] = [false, null];
+dialogs[IMPORT_KEY_STORE] = [false, null];
 
 export type DialogDict = Dictionary<[boolean, unknown?]>;
 

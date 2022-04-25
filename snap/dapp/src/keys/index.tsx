@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 import {
   Stack,
@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 
 import { keysSelector } from "../store/keys";
+import { setDialogVisible, IMPORT_KEY_STORE } from "../store/dialogs";
 
 import Create from "./create";
 import Join from "./join";
@@ -20,10 +21,16 @@ import ShowKey from "./show";
 import PublicAddress from "./public-address";
 
 function Keys() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { keyShares } = useSelector(keysSelector);
 
   const showKey = (address: string) => navigate(`/keys/${address}`);
+
+  const onImport = () => {
+    console.log("Do import...");
+    dispatch(setDialogVisible([IMPORT_KEY_STORE, true, null]));
+  }
 
   const view =
     keyShares.length > 0 ? (
@@ -63,13 +70,20 @@ function Keys() {
 
       {view}
 
-      <Button
-        variant="contained"
-        href="#/keys/create"
-        onClick={() => console.log("create key share")}
-      >
-        Create a new key share
-      </Button>
+      <Stack direction="row" spacing={2}>
+        <Button
+          variant="contained"
+          onClick={onImport}
+        >
+          Import from keystore
+        </Button>
+
+        <Button
+          variant="contained"
+          href="#/keys/create">
+          Create a new key share
+        </Button>
+      </Stack>
     </Stack>
   );
 }
