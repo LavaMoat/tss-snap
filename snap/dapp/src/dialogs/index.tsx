@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   exportKeyStore,
+  importKeyStore,
 } from "@metamask/mpc-snap-wasm";
 
 import {
@@ -14,7 +15,7 @@ import {
   IMPORT_KEY_STORE,
 } from "../store/dialogs";
 
-import {deleteKey, findKeyShare} from '../store/keys';
+import {saveKey, deleteKey, findKeyShare} from '../store/keys';
 import {setSnackbar} from '../store/snackbars';
 import {encode, download} from '../utils';
 
@@ -62,19 +63,40 @@ export default function Dialogs() {
     const buffer = encode(JSON.stringify(keyStore, undefined, 2));
     download(fileName, buffer);
 
-    setSnackbar({
+    dispatch(setSnackbar({
       message: 'Key store exported',
       severity: 'success'
-    });
+    }));
 
     cancelDialog(EXPORT_KEY_STORE);
   }
 
   const onImportKeyStore = async (result: ImportKeyStore, password: string) => {
-    console.log("Import the key store", result);
-    console.log("Import", password);
+    try {
+      const keyShare = importKeyStore(password, result.keyStore);
+      const { address, localKey } = keyShare.share;
+      const { i: number } = localKey;
+      const existingKeyShare = await findKeyShare(address, number);
+      if (!existingKeyShare) {
+        await dispatch(saveKey(keyShare));
+        dispatch(setSnackbar({
+          message: 'Key share imported',
+          severity: 'success'
+        }));
+        cancelDialog(IMPORT_KEY_STORE);
+      } else {
+        dispatch(setSnackbar({
+          message: 'Key share already exists',
+          severity: 'error'
+        }));
+      }
+    } catch (e) {
+      dispatch(setSnackbar({
+        message: 'Failed to import keystore',
+        severity: 'error'
+      }));
+    }
 
-    //cancelDialog(IMPORT_KEY_STORE);
   }
 
   const cancelDialog = (key: string) => {

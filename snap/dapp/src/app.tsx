@@ -76,8 +76,6 @@ export default function App() {
     [prefersDarkMode]
   );
 
-  console.log("App is rendering...");
-
   useEffect(() => {
     const initialize = async () => {
       const provider = await detectEthereumProvider();

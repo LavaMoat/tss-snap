@@ -33,12 +33,14 @@ export default function ImportKeyStoreDialog(
 
   const onFormSubmit = (password: string) => {
     handleOk({ keyStore }, password);
+    setKeyStore(null);
+    setFile(null);
   }
 
   const onCancel = () => {
+    handleCancel();
     setKeyStore(null);
     setFile(null);
-    handleCancel();
   }
 
   const onFileSelect = (file?: File) => setFile(file);
@@ -75,11 +77,8 @@ export default function ImportKeyStoreDialog(
   const content = keyStore === null ? (
     <FileUploadReader onSelect={onFileSelect} />
   ) : (
-    <p>TODO</p>
+    <PasswordForm onFormSubmit={onFormSubmit} autoFocus />
   );
-
-
-    //<PasswordForm onFormSubmit={onFormSubmit} submitLabel="Import" />
 
   const actions = keyStore === null ? (
     <>
@@ -98,10 +97,12 @@ export default function ImportKeyStoreDialog(
         type="submit"
         form="password-form"
         variant="contained">
-        OK
+        Import
       </Button>
     </>
   );
+
+  const message = keyStore === null ? "Upload a key store" : "Enter the key store password";
 
   return (
     <Dialog open={open} onClose={handleCancel}>
@@ -110,10 +111,10 @@ export default function ImportKeyStoreDialog(
         <Stack spacing={2}>
           <Stack>
             <Typography variant="body1" component="div">
-              Your key share will be imported from an encrypted key store protected by a password.
+              Your key share will be imported from an encrypted key store.
             </Typography>
             <Typography variant="body2" component="div" color="text.secondary">
-              Upload a key store to begin.
+              {message}
             </Typography>
           </Stack>
           {content}

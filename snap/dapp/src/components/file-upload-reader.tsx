@@ -22,7 +22,6 @@ export default function FileUploadReader(props: FileUploadReaderProps) {
   const [fileInput, setFileInput] = useState(null);
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("onFileChange fired...");
     const file = e.target.files[0];
     setFile(file);
     onSelect(file);
