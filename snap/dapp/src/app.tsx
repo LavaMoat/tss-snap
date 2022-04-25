@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useDispatch } from "react-redux";
 import init from "@metamask/mpc-snap-wasm";
 
 import { Routes, Route } from "react-router-dom";
@@ -21,10 +20,8 @@ import WorkerProvider, { webWorker } from "./worker";
 import Connect from "./connect";
 import Dialogs from "./dialogs";
 import Snackbars from "./snackbars";
-import { Keys, Create, Join, ShowKey } from "./keys";
+import { Keys, Create, Join, ShowKey, Import } from "./keys";
 import NotFound from "./not-found";
-
-import { loadKeys } from "./store/keys";
 
 type WorkerMessage = {
   data: { ready: boolean };
@@ -51,6 +48,7 @@ function Content() {
       <Routes>
         <Route path="/" element={<Connect />} />
         <Route path="/keys/create" element={<Create />} />
+        <Route path="/keys/import" element={<Import />} />
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />
         <Route path="/keys/:address" element={<ShowKey />} />
         <Route path="/keys" element={<Keys />} />
@@ -61,7 +59,6 @@ function Content() {
 }
 
 export default function App() {
-  const dispatch = useDispatch();
   const [ready, setReady] = useState(false);
   const [provider, setProvider] = useState(null);
 

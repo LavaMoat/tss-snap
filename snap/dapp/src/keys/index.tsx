@@ -13,11 +13,11 @@ import {
 } from "@mui/material";
 
 import { keysSelector, loadKeys } from "../store/keys";
-import { setDialogVisible, IMPORT_KEY_STORE } from "../store/dialogs";
 
 import Create from "./create";
 import Join from "./join";
 import ShowKey from "./show";
+import Import from "./import";
 
 import PublicAddress from "./public-address";
 
@@ -38,9 +38,9 @@ function Keys() {
 
   const showKey = (address: string) => navigate(`/keys/${address}`);
 
-  const onImport = () => {
-    dispatch(setDialogVisible([IMPORT_KEY_STORE, true, null]));
-  }
+  //const onImport = () => {
+    //dispatch(setDialogVisible([IMPORT_KEY_STORE, true, null]));
+  //}
 
   const view =
     keyShares.length > 0 ? (
@@ -86,11 +86,9 @@ function Keys() {
       <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
-          onClick={onImport}
-        >
+          href="#/keys/import">
           Import from keystore
         </Button>
-
         <Button
           variant="contained"
           href="#/keys/create">
@@ -110,4 +108,4 @@ function Keys() {
   );
 }
 
-export { Keys, Create, Join, ShowKey };
+export { Keys, Create, Join, ShowKey, Import };

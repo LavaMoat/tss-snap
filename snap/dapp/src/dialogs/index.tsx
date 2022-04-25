@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 
 import {
   exportKeyStore,
-  importKeyStore,
 } from "@metamask/mpc-snap-wasm";
 
 import {
@@ -12,20 +11,17 @@ import {
   setDialogVisible,
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
-  IMPORT_KEY_STORE,
 } from "../store/dialogs";
 
-import {saveKey, deleteKey, findKeyShare} from '../store/keys';
+import {deleteKey, findKeyShare} from '../store/keys';
 import {setSnackbar} from '../store/snackbars';
 import {encode, download} from '../utils';
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 import ExportKeyStoreDialog from "./export-keystore";
-import ImportKeyStoreDialog from "./import-keystore";
 
 export type DeleteRequest = [string, number, number];
 export type ExportKeyStore = [string, number, number];
-export type ImportKeyStore = { keyStore: any; };
 
 export default function Dialogs() {
   const navigate = useNavigate();
@@ -71,34 +67,6 @@ export default function Dialogs() {
     cancelDialog(EXPORT_KEY_STORE);
   }
 
-  const onImportKeyStore = async (result: ImportKeyStore, password: string) => {
-    try {
-      const keyShare = importKeyStore(password, result.keyStore);
-      const { address, localKey } = keyShare.share;
-      const { i: number } = localKey;
-      const existingKeyShare = await findKeyShare(address, number);
-      if (!existingKeyShare) {
-        await dispatch(saveKey(keyShare));
-        dispatch(setSnackbar({
-          message: 'Key share imported',
-          severity: 'success'
-        }));
-        cancelDialog(IMPORT_KEY_STORE);
-      } else {
-        dispatch(setSnackbar({
-          message: 'Key share already exists',
-          severity: 'error'
-        }));
-      }
-    } catch (e) {
-      dispatch(setSnackbar({
-        message: 'Failed to import keystore',
-        severity: 'error'
-      }));
-    }
-
-  }
-
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
   };
@@ -117,12 +85,6 @@ export default function Dialogs() {
         handleCancel={() => cancelDialog(EXPORT_KEY_STORE)}
         handleOk={onExportKeyStore}
         request={(dialogs[EXPORT_KEY_STORE][1] || []) as ExportKeyStore}
-      />
-
-      <ImportKeyStoreDialog
-        open={dialogs[IMPORT_KEY_STORE][0] || false}
-        handleCancel={() => cancelDialog(IMPORT_KEY_STORE)}
-        handleOk={onImportKeyStore}
       />
 
     </>

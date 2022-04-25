@@ -106,16 +106,18 @@ export default function ShowKey() {
   return (
     <>
       <Stack spacing={2}>
-        <Breadcrumbs aria-label="breadcrumb">
-          <Link underline="hover" color="inherit" href="#/keys">
-            Keys
-          </Link>
-          <Typography color="text.primary">{label}</Typography>
-        </Breadcrumbs>
+        <Stack spacing={1}>
+          <Breadcrumbs aria-label="breadcrumb">
+            <Link underline="hover" color="inherit" href="#/keys">
+              Keys
+            </Link>
+            <Typography color="text.primary">{label}</Typography>
+          </Breadcrumbs>
 
-        <Typography variant="h3" component="div">
-          {label}
-        </Typography>
+          <Typography variant="h3" component="div">
+            {label}
+          </Typography>
+        </Stack>
         <Stack direction="row" spacing={1}>
           <Box>
             <Chip label={chainName} color="secondary" />

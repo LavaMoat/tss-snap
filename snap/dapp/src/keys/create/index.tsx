@@ -2,6 +2,8 @@ import React, { useState } from "react";
 
 import {
   Box,
+  Breadcrumbs,
+  Link,
   Stack,
   Button,
   Typography,
@@ -74,9 +76,18 @@ function CreateStepper() {
 export default function Create() {
   return (
     <Stack spacing={2}>
-      <Typography variant="h3" component="div" gutterBottom>
-        Create a key share
-      </Typography>
+      <Stack spacing={1}>
+        <Breadcrumbs aria-label="breadcrumb">
+          <Link underline="hover" color="inherit" href="#/keys">
+            Keys
+          </Link>
+          <Typography color="text.primary">Create</Typography>
+        </Breadcrumbs>
+        <Typography variant="h3" component="div" gutterBottom>
+          Create a key share
+        </Typography>
+      </Stack>
+
       <CreateStepper />
     </Stack>
   );
