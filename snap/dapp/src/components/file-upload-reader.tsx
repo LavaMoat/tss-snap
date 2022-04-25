@@ -19,18 +19,27 @@ type FileUploadReaderProps = {
 export default function FileUploadReader(props: FileUploadReaderProps) {
   const { onSelect } = props;
   const [file, setFile] = useState(null);
+  const [fileInput, setFileInput] = useState(null);
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log("onFileChange fired...");
     const file = e.target.files[0];
     setFile(file);
     onSelect(file);
+    setFileInput(e.target);
   };
 
   const removeFile = (e: React.MouseEvent<HTMLInputElement>) => {
     e.preventDefault();
     setFile(null);
     onSelect(null);
+
+    // Must reset the file input otherwise
+    // selecting another file will not update the
+    // component view
+    if (fileInput) {
+      fileInput.value = null;
+    }
   }
 
   const onDragOver = (e: React.DragEvent<HTMLElement>) => {
@@ -41,7 +50,6 @@ export default function FileUploadReader(props: FileUploadReaderProps) {
   const onDrop = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
     const files = getDroppedFiles(e);
-    // TODO: handle drop of more than one file?
     if (files.length > 0) {
       const file = files[0];
       setFile(file);
