@@ -4,20 +4,24 @@ import init from "@metamask/mpc-snap-wasm";
 import { Routes, Route } from "react-router-dom";
 import detectEthereumProvider from "@metamask/detect-provider";
 
-import AppBar from "@mui/material/AppBar";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
+import {
+  AppBar,
+  Chip,
+  Link,
+  Stack,
+  Box,
+  Typography,
+  CssBaseline,
+} from "@mui/material";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import { createTheme } from "@mui/material/styles";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import ScienceIcon from '@mui/icons-material/Science';
 
 import WebSocketProvider from "./websocket-provider";
 import WorkerProvider, { webWorker } from "./worker";
 
-import Connect from "./connect";
+import Home from "./home";
 import Dialogs from "./dialogs";
 import Snackbars from "./snackbars";
 import { Keys, Create, Join, ShowKey, Import } from "./keys";
@@ -31,11 +35,18 @@ function MainAppBar() {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static" sx={{ pl: 4, pr: 4, pt: 1, pb: 1 }}>
-        <Stack direction="row" padding={1} spacing={2}>
-          <img src="/images/icon.svg" width="32" />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Threshold Signatures
-          </Typography>
+        <Stack direction="row" alignItems="center">
+          <Stack direction="row" padding={1} spacing={2}>
+            <Link href="#/">
+              <img src="/images/icon.svg" width="32" />
+            </Link>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              Threshold Signatures
+            </Typography>
+          </Stack>
+
+          <Box sx={{flexGrow: 1}} />
+          <Chip icon={<ScienceIcon />} label="BETA" color="secondary" />
         </Stack>
       </AppBar>
     </Box>
@@ -46,7 +57,7 @@ function Content() {
   return (
     <Box padding={5}>
       <Routes>
-        <Route path="/" element={<Connect />} />
+        <Route path="/" element={<Home />} />
         <Route path="/keys/create" element={<Create />} />
         <Route path="/keys/import" element={<Import />} />
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />
