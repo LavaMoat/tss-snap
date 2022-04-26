@@ -2,7 +2,6 @@ import React, { useState, useContext } from "react";
 import { useDispatch } from "react-redux";
 
 import {
-  Box,
   Stack,
   Button,
   Typography,
@@ -193,13 +192,9 @@ export default function SetParameters(props: StepProps) {
             max={parties}
           />
         </Stack>
-
-        <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
-          <Box sx={{ flex: "1 1 auto" }} />
-          <Button type="submit" form="parameters-form">
-            Next
-          </Button>
-        </Box>
+        <Button variant="contained" type="submit" form="parameters-form">
+          Next
+        </Button>
       </Stack>
     </form>
   );

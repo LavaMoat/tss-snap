@@ -26,7 +26,7 @@ export default function SignTransaction() {
   }
 
   const share = keyShare[1];
-  const { label, threshold, parties, items } = share;
+  const { label } = share;
   return (
     <>
       <Stack spacing={2}>

@@ -5,7 +5,6 @@ import {
   Alert,
   Breadcrumbs,
   Link,
-  Box,
   Stack,
   Stepper,
   Step,
@@ -43,7 +42,7 @@ function UploadKeyStore(props: UploadKeyStoreProps) {
   const { setFile } = props;
   const onFileSelect = (file?: File) => setFile(file);
   return (
-    <Stack padding={2} spacing={2} marginTop={2}>
+    <Stack marginTop={2}>
       <FileUploadReader onSelect={onFileSelect} />
     </Stack>
   );
@@ -64,7 +63,7 @@ function EnterPassword(props: EnterPasswordProps) {
   }
 
   return (
-    <Stack padding={2} spacing={2} marginTop={2}>
+    <Stack marginTop={2}>
       <form id="import-password" onSubmit={onSubmit} noValidate>
         <Stack>
           <TextField
@@ -90,7 +89,7 @@ function ImportKeyStore(props: ImportKeyStoreProps) {
   const { label, address, partyNumber, parties } = result;
   const href = `#/keys/${address}`;
   return (
-    <Stack padding={2} spacing={2} marginTop={2}>
+    <Stack>
       <Paper variant="outlined">
         <Stack padding={2} spacing={2}>
           <Stack>
@@ -221,7 +220,7 @@ function ImportStepper() {
   ];
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <>
       <Stepper activeStep={activeStep}>
         {steps.map((label) => {
           return (
@@ -233,20 +232,17 @@ function ImportStepper() {
       </Stepper>
       {
         activeStep < 2 ? (
-          <>
+          <Stack spacing={4}>
             {components[activeStep]}
-            <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-              <Box sx={{ flex: '1 1 auto' }} />
-              <Button onClick={handleNext}>
-                {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-              </Button>
-            </Box>
-          </>
+            <Button variant="contained" onClick={handleNext}>
+              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+            </Button>
+          </Stack>
         ) : (
           <ImportKeyStore result={result} startAgain={startAgain} />
         )
       }
-    </Box>
+    </>
   );
 }
 

@@ -23,14 +23,14 @@ export type NamedKeyShare = {
   share: KeyShare;
 };
 
-type KeyShareGroup = {
+export type KeyShareGroup = {
   label: string;
   threshold: number;
   parties: number;
   items: number[];
 };
 
-type KeyList = [string, KeyShareGroup][];
+export type KeyList = [string, KeyShareGroup][];
 
 type KeyMap = {
   [key: string]: KeyShareGroup;
