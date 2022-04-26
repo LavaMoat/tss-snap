@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 
 import {
   Stack,
@@ -9,10 +9,9 @@ import {
   List,
   ListItem,
   ListItemButton,
-  CircularProgress,
 } from "@mui/material";
 
-import { keysSelector, loadKeys } from "../store/keys";
+import { keysSelector } from "../store/keys";
 
 import Create from "./create";
 import Join from "./join";
@@ -20,27 +19,24 @@ import ShowKey from "./show";
 import Import from "./import";
 
 import PublicAddress from "../components/public-address";
+import KeysLoader from './loader';
 
 function Keys() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const { keyShares } = useSelector(keysSelector);
+  const { keyShares, loaded } = useSelector(keysSelector);
 
-  useEffect(() => {
-    const onLoadKeys = async() => {
-      // Load any saved key information
-      await dispatch(loadKeys());
-      setLoading(false);
-    }
-    onLoadKeys();
-  }, [])
+  if (!loaded) {
+    return (
+      <Stack spacing={2}>
+        <Typography variant="h3" component="div" gutterBottom>
+          Keys
+        </Typography>
+        <KeysLoader />
+      </Stack>
+    )
+  }
 
   const showKey = (address: string) => navigate(`/keys/${address}`);
-
-  //const onImport = () => {
-    //dispatch(setDialogVisible([IMPORT_KEY_STORE, true, null]));
-  //}
 
   const view =
     keyShares.length > 0 ? (
@@ -72,16 +68,11 @@ function Keys() {
       </Typography>
     );
 
-  const main = loading ? (
-    <Stack direction="row" spacing={2}>
-      <CircularProgress size={20} />
-      <Typography variant="body2" component="div" color="text.secondary">
-        Loading key shares...
+  return (
+    <Stack spacing={2}>
+      <Typography variant="h3" component="div" gutterBottom>
+        Keys
       </Typography>
-    </Stack>
-  ) : (
-    <>
-
       {view}
       <Stack direction="row" spacing={2}>
         <Button
@@ -95,15 +86,6 @@ function Keys() {
           Create a new key share
         </Button>
       </Stack>
-    </>
-  );
-
-  return (
-    <Stack spacing={2}>
-      <Typography variant="h3" component="div" gutterBottom>
-        Keys
-      </Typography>
-      {main}
     </Stack>
   );
 }

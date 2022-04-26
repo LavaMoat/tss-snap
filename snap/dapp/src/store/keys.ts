@@ -194,6 +194,7 @@ export type KeyState = {
   group?: GroupInfo;
   session?: Session;
   transport?: Transport;
+
   // Key share awaiting confirmation to be saved.
   //
   // Ideally we would save this automatically in `compute`
@@ -208,6 +209,11 @@ export type KeyState = {
 
   // Sanitized list of key information without any private data.
   keyShares: KeyList;
+
+  // Has an initial load operation of the key shares happened?
+  //
+  // Used so that deep links can load key shares on demand.
+  loaded: boolean;
 };
 
 const initialState: KeyState = {
@@ -216,6 +222,7 @@ const initialState: KeyState = {
   transport: null,
   keyShare: null,
   keyShares: [],
+  loaded: false,
 };
 
 const keySlice = createSlice({
@@ -238,6 +245,7 @@ const keySlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(loadKeys.fulfilled, (state, action) => {
       state.keyShares = action.payload;
+      state.loaded = true;
     });
     builder.addCase(saveKey.fulfilled, (state, action) => {
       state.keyShares = action.payload;

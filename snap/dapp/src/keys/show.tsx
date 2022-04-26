@@ -26,28 +26,15 @@ import { chains } from "../utils";
 
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
+import KeysLoader from './loader';
 
 export default function ShowKey() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { address } = useParams();
-  const { keyShares } = useSelector(keysSelector);
-
+  const { keyShares, loaded } = useSelector(keysSelector);
   const [balance, setBalance] = useState("0x0");
   const [chain, setChain] = useState<string>(null);
-
-  const keyShare = keyShares.find((item) => {
-    const [keyAddress] = item;
-    return keyAddress === address;
-  });
-
-  const signMessage = () => {
-    navigate(`/keys/${address}/sign/message`);
-  }
-
-  const signTransaction = () => {
-    navigate(`/keys/${address}/sign/transaction`);
-  }
 
   useEffect(() => {
     ethereum.on("chainChanged", handleChainChanged);
@@ -71,8 +58,27 @@ export default function ShowKey() {
     getBalance();
   }, [address]);
 
+  if (!loaded) {
+    return (
+      <KeysLoader />
+    )
+  }
+
+  const keyShare = keyShares.find((item) => {
+    const [keyAddress] = item;
+    return keyAddress === address;
+  });
+
   if (!keyShare) {
     return <NotFound />;
+  }
+
+  const signMessage = () => {
+    navigate(`/keys/${address}/sign/message`);
+  }
+
+  const signTransaction = () => {
+    navigate(`/keys/${address}/sign/transaction`);
   }
 
   const onDeleteKeyShare = async (

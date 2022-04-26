@@ -9,10 +9,11 @@ import {
   Typography,
 } from "@mui/material";
 
-import NotFound from '../../not-found';
-import PublicAddress from "../../components/public-address";
-import {keysSelector, KeyShareGroup} from '../../store/keys';
-import SignStepper from '../../components/stepper';
+import NotFound from '../../../not-found';
+import PublicAddress from "../../../components/public-address";
+import {keysSelector, KeyShareGroup} from '../../../store/keys';
+import SignStepper from '../../../components/stepper';
+import KeysLoader from '../../loader';
 import CreateMessage from './create-message';
 
 const steps = [
@@ -39,9 +40,14 @@ export type SignMessageProps = {
 
 export default function SignMessage() {
   const { address } = useParams();
-  const { keyShares } = useSelector(keysSelector);
+  const { keyShares, loaded } = useSelector(keysSelector);
   const [activeStep, setActiveStep] = useState(0);
   const [message, setMessage] = useState("");
+  const [selectedParty, setSelectedParty] = useState(null);
+
+  if (!loaded) {
+    return <KeysLoader />;
+  }
 
   const keyShare = keyShares.find((item) => {
     const [keyAddress] = item;
@@ -63,8 +69,6 @@ export default function SignMessage() {
     throw new Error("Invalid key share, no items found");
   }
 
-  const [selectedParty, setSelectedParty] = useState(items[0]);
-
   const onShareChange = (n: number) => {
     setSelectedParty(n);
   }
@@ -77,7 +81,7 @@ export default function SignMessage() {
   const stepProps = {
     next: handleNext,
     share,
-    selectedParty,
+    selectedParty: selectedParty || items[0],
     onShareChange,
     message,
     onMessage,

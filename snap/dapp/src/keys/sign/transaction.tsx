@@ -9,9 +9,9 @@ import {
   Typography,
 } from "@mui/material";
 
-import NotFound from '../not-found';
-import PublicAddress from "../components/public-address";
-import {keysSelector} from '../store/keys';
+import NotFound from '../../not-found';
+import PublicAddress from "../../components/public-address";
+import {keysSelector} from '../../store/keys';
 
 export default function SignTransaction() {
   const { address } = useParams();

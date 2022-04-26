@@ -25,7 +25,7 @@ import Home from "./home";
 import Dialogs from "./dialogs";
 import Snackbars from "./snackbars";
 import { Keys, Create, Join, ShowKey, Import } from "./keys";
-import { Message, Transaction } from "./sign";
+import { Message, Transaction } from "./keys/sign";
 import NotFound from "./not-found";
 
 type WorkerMessage = {
