@@ -1,71 +1,17 @@
 import React, { useState, useEffect, useContext } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import {
-  Box,
   Stack,
-  Button,
   Typography,
-  Paper,
-  Link,
   CircularProgress,
 } from "@mui/material";
 
 import { keysSelector } from "../../store/keys";
-import { setSnackbar } from "../../store/snackbars";
-import { copyToClipboard } from "../../utils";
 import { WebSocketContext } from "../../websocket-provider";
 
 import { StepProps } from "./index";
-
-type InviteProps = {
-  onCopy: () => void;
-};
-
-function InviteCard(props: InviteProps) {
-  const dispatch = useDispatch();
-  const { onCopy } = props;
-  const { group, session } = useSelector(keysSelector);
-  const href = `${location.protocol}//${location.host}/#/keys/join/${group.uuid}/${session.uuid}`;
-
-  const copy = async () => {
-    await copyToClipboard(href);
-
-    dispatch(setSnackbar({
-      message: 'Link copied to clipboard',
-      severity: 'success'
-    }));
-
-    onCopy();
-  };
-
-  return (
-    <>
-      <Paper variant="outlined">
-        <Box padding={4}>
-          <details>
-            <summary>
-              <Typography
-                variant="body2"
-                component="span"
-                color="text.secondary"
-              >
-                Send this link via email or private message to the people you
-                wish to invite.
-              </Typography>
-            </summary>
-            <Link href={href} onClick={(e) => e.preventDefault()}>
-              {href}
-            </Link>
-          </details>
-          <Button onClick={copy} sx={{ mt: 4 }}>
-            Copy link to clipboard
-          </Button>
-        </Box>
-      </Paper>
-    </>
-  );
-}
+import InviteCard, { inviteHref } from '../invite-card';
 
 export default function InvitePeople(props: StepProps) {
   const { next } = props;
@@ -77,7 +23,6 @@ export default function InvitePeople(props: StepProps) {
     // All parties signed up to key generation
     websocket.once("sessionSignup", async (sessionId: string) => {
       if (sessionId === session.uuid) {
-        console.log("Owner got session ready...");
         next();
       } else {
         throw new Error("Session id is for another session");
@@ -85,7 +30,11 @@ export default function InvitePeople(props: StepProps) {
     });
   }, []);
 
-  const onCopy = () => setShowProgress(true);
+  const onCopy = () => {
+    if (!showProgress) {
+      setShowProgress(true);
+    }
+  }
 
   const Progress = () => (
     <Stack>
@@ -97,6 +46,10 @@ export default function InvitePeople(props: StepProps) {
       </Stack>
     </Stack>
   );
+
+  const totalInvites = group.params.parties - 1;
+  const href = inviteHref("keys/join", group.uuid, session.uuid)
+  const links = Array(totalInvites).fill("").map(() => href);
 
   return (
     <Stack padding={2} spacing={2} marginTop={2}>
@@ -111,12 +64,14 @@ export default function InvitePeople(props: StepProps) {
           Invite people to share the new key with you.
         </Typography>
         <Typography variant="body2" component="div" color="text.secondary">
-          You must invite {group.params.parties - 1} people to continue creating
+          You must invite {totalInvites} people to continue creating
           a key.
         </Typography>
       </Stack>
       <Stack>
-        <InviteCard onCopy={onCopy} />
+        <InviteCard
+          onCopy={onCopy}
+          links={links} />
       </Stack>
       {showProgress ? <Progress /> : null}
     </Stack>

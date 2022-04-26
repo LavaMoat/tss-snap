@@ -9,16 +9,24 @@ import {
   Typography,
 } from "@mui/material";
 
+import {
+  keccak256,
+} from "@metamask/mpc-snap-wasm";
+
+import {encode} from '../../../utils';
+
 import NotFound from '../../../not-found';
 import PublicAddress from "../../../components/public-address";
 import {keysSelector, KeyShareGroup} from '../../../store/keys';
 import SignStepper from '../../../components/stepper';
 import KeysLoader from '../../loader';
+
 import CreateMessage from './create-message';
+import InvitePeople from './invite-people';
 
 const steps = [
   "Create message",
-  "Invite participants",
+  "Invite people",
   "Compute",
   "Save Proof"
 ];
@@ -26,6 +34,7 @@ const steps = [
 const getStepComponent = (activeStep: number, props: SignMessageProps) => {
   const stepComponents = [
     <CreateMessage key={0} {...props} />,
+    <InvitePeople key={1} {...props} />,
   ];
   return stepComponents[activeStep];
 };
@@ -35,6 +44,7 @@ export type SignMessageProps = {
   onShareChange: (partyNumber: number) => void;
   selectedParty: number;
   message: string;
+  messageHash: Uint8Array,
   onMessage: (message: string) => void;
 };
 
@@ -43,6 +53,7 @@ export default function SignMessage() {
   const { keyShares, loaded } = useSelector(keysSelector);
   const [activeStep, setActiveStep] = useState(0);
   const [message, setMessage] = useState("");
+  const [messageHash, setMessageHash] = useState(new Uint8Array());
   const [selectedParty, setSelectedParty] = useState(null);
 
   if (!loaded) {
@@ -73,8 +84,10 @@ export default function SignMessage() {
     setSelectedParty(n);
   }
 
-  const onMessage = (message: string) => {
+  const onMessage = async (message: string) => {
     setMessage(message);
+    const digest = await keccak256(Array.from(encode(message)));
+    setMessageHash(digest);
     handleNext();
   }
 
@@ -85,6 +98,7 @@ export default function SignMessage() {
     onShareChange,
     message,
     onMessage,
+    messageHash,
   };
 
   return (

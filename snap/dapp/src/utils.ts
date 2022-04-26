@@ -26,6 +26,17 @@ export const abbreviateAddress = (address: string): string => {
   return `${start}...${end}`;
 };
 
+export function fromHexString(hex: string) {
+  return new Uint8Array(
+    hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+}
+
+export function toHexString(bytes: Uint8Array) {
+  return bytes.reduce(
+    (str: string, byte: number) => str + byte.toString(16).padStart(2, '0'),
+  '');
+}
+
 export type Dictionary<T> = {
   [key: string]: T;
 };

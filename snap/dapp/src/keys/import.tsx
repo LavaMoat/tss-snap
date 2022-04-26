@@ -211,9 +211,9 @@ function ImportStepper() {
   };
 
   const components = [
-    <UploadKeyStore key="upload" setFile={setFile} />,
+    <UploadKeyStore key={0} setFile={setFile} />,
     <EnterPassword
-      key="password"
+      key={1}
       onSubmit={handleNext}
       onChange={onPasswordChange}
       value={password} />,
