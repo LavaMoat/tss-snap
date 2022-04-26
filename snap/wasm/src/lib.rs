@@ -115,3 +115,11 @@ pub fn import_key_store(
     let key_share: NamedKeyShare = serde_json::from_slice(&json_data)?;
     Ok(JsValue::from_serde(&key_share)?)
 }
+
+/// Compute the Keccak256 hash of a value.
+#[wasm_bindgen]
+pub fn keccak256(message: JsValue) -> Result<JsValue, JsError> {
+    let message: Vec<u8> = message.into_serde()?;
+    let digest = Keccak256::digest(&message).to_vec();
+    Ok(JsValue::from_serde(&digest)?)
+}
