@@ -5,12 +5,11 @@ import { Stack, Typography, CircularProgress } from "@mui/material";
 
 import {
   SessionKind,
-  WebSocketStream,
-  WebSocketSink,
 } from "@metamask/mpc-client";
 
 import { setGroup, setSession, setTransport } from "../../store/keys";
 import { WebSocketContext } from "../../websocket-provider";
+import { joinGroupSession } from '../../group-session';
 
 import { StepProps } from "./index";
 
@@ -26,7 +25,9 @@ export default function Compute(props: StepProps) {
   const websocket = useContext(WebSocketContext);
 
   useEffect(() => {
-    const joinGroupAndSession = async () => {
+
+    /*
+    const joinGroupAndSession = async (groupId: string, sessionId: string) => {
       console.log("joinGroupAndSession", groupId, sessionId);
       console.log("joinGroupAndSession", websocket);
 
@@ -83,10 +84,34 @@ export default function Compute(props: StepProps) {
         }
       });
     };
+    */
 
     // Delay a little so we don't get flicker when the connection
     // is very fast.
-    setTimeout(joinGroupAndSession, 1000);
+    setTimeout(async () => {
+      const [group, session] = await joinGroupSession(
+        SessionKind.KEYGEN,
+        groupId,
+        sessionId,
+        websocket,
+        dispatch
+      );
+
+      setLabel(group.label);
+
+      setProgressMessage("Waiting for other participants...");
+
+      // All parties signed up to key generation
+      websocket.once("sessionSignup", async (sessionId: string) => {
+        if (sessionId === session.uuid) {
+          console.log("Invited participant got session ready...");
+          next();
+        } else {
+          throw new Error("Session id is for another session");
+        }
+      });
+
+    }, 1000);
   }, []);
 
   return (

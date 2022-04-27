@@ -9,10 +9,7 @@ import { StepProps } from "./index";
 export default function Connect(props: StepProps) {
   const { next } = props;
 
-  //const redirect = `/keys/participate/${groupId}/${sessionId}`;
-
   const redirect = () => {
-    console.log("Connected....");
     next();
   };
 

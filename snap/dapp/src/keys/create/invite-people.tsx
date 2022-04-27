@@ -68,11 +68,9 @@ export default function InvitePeople(props: StepProps) {
           a key.
         </Typography>
       </Stack>
-      <Stack>
-        <InviteCard
-          onCopy={onCopy}
-          links={links} />
-      </Stack>
+      <InviteCard
+        onCopy={onCopy}
+        links={links} />
       {showProgress ? <Progress /> : null}
     </Stack>
   );

@@ -10,18 +10,13 @@ import {
 } from "@mui/material";
 
 import {
-  Parameters,
   SessionKind,
-  WebSocketSink,
-  WebSocketStream,
 } from "@metamask/mpc-client";
 
-import { setGroup, setSession, setTransport } from "../../store/keys";
 import { WebSocketContext } from "../../websocket-provider";
+import { createGroupSession } from '../../group-session';
 
 import { StepProps } from "./index";
-
-type GroupFormData = [string, Parameters];
 
 export default function SetParameters(props: StepProps) {
   const { next } = props;
@@ -58,52 +53,7 @@ export default function SetParameters(props: StepProps) {
       };
     });
 
-  const createGroup = async (data: GroupFormData) => {
-    const [label, params] = data;
-    const uuid = await websocket.rpc({
-      method: "Group.create",
-      params: data,
-    });
-    const group = { label, params, uuid };
-    dispatch(setGroup(group));
-
-    let session = await websocket.rpc({
-      method: "Session.create",
-      params: [uuid, SessionKind.KEYGEN],
-    });
-
-    const partyNumber = await websocket.rpc({
-      method: "Session.signup",
-      params: [uuid, session.uuid, SessionKind.KEYGEN],
-    });
-
-    session = {
-      ...session,
-      partySignup: { number: partyNumber, uuid: session.uuid },
-    };
-    dispatch(setSession(session));
-
-    console.log("Created session", session);
-
-    const stream = new WebSocketStream(
-      websocket,
-      uuid,
-      session.uuid,
-      SessionKind.KEYGEN
-    );
-
-    const sink = new WebSocketSink(
-      websocket,
-      group.params.parties - 1,
-      session.uuid
-    );
-
-    dispatch(setTransport({ stream, sink }));
-
-    next();
-  };
-
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setNameError(false);
@@ -112,10 +62,22 @@ export default function SetParameters(props: StepProps) {
       setNameError(true);
       setName("");
     } else {
-      // NOTE: convert from the human-friendly threshold
+
+      // NOTE: Convert from the human-friendly threshold
       // NOTE: to the internal representation which requires
-      // NOTE: t+1 to sign
-      createGroup([name, { parties, threshold: threshold - 1 }]);
+      // NOTE: t+1 to sign.
+      const formData = [name, { parties, threshold: threshold - 1 }];
+
+      // Create the remote server group and session and store
+      // the information in the redux state before proceeding to
+      // the next view
+      await createGroupSession(
+        SessionKind.KEYGEN,
+        formData,
+        websocket,
+        dispatch
+      );
+      next();
     }
   };
 
