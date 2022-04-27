@@ -65,6 +65,9 @@ function Content() {
         <Route path="/keys/:address" element={<ShowKey />} />
         <Route path="/keys" element={<Keys />} />
         <Route path="/keys/:address/sign/message" element={<Message />} />
+        <Route
+          path="/keys/:address/sign/message/:groupId/:sessionId"
+          element={<Message />} />
         <Route path="/keys/:address/sign/transaction" element={<Transaction />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

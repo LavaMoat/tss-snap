@@ -1,4 +1,6 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import {
   Stack,
@@ -8,15 +10,23 @@ import {
 } from "@mui/material";
 
 import { SignMessageProps } from './index';
+import {keysSelector} from '../../../store/keys';
 import {toHexString} from '../../../utils';
-import InviteCard from '../../invite-card';
+import InviteCard, { inviteHref } from '../../invite-card';
 
 export default function InvitePeople(props: SignMessageProps) {
+  const { address } = useParams();
   const { message, messageHash } = props;
+  const { group, session } = useSelector(keysSelector);
 
-  const links = [
-    "foo"
-  ];
+  const totalInvites = group.params.parties - 1;
+  const hrefPrefix = `keys/${address}/sign/message`;
+  const href = inviteHref(hrefPrefix, group.uuid, session.uuid)
+  const links = Array(totalInvites).fill("").map(() => href);
+
+  const onCopy = () => {
+    console.log("Link was copied...");
+  }
 
   return (
     <Stack spacing={4}>
@@ -33,12 +43,10 @@ export default function InvitePeople(props: SignMessageProps) {
           <Typography variant="body2" component="div" color="text.secondary">
             {toHexString(messageHash)}
           </Typography>
-
         </Stack>
       </Paper>
-
       <InviteCard
-        onCopy={() => {}}
+        onCopy={onCopy}
         links={links} />
     </Stack>
   )

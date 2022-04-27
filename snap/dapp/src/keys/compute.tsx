@@ -6,7 +6,7 @@ import { Stack, Typography } from "@mui/material";
 import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
 
 import { keysSelector, setKeyShare } from "../store/keys";
-import { WebSocketContext, ListenerCleanup } from "../websocket-provider";
+import { WebSocketContext } from "../websocket-provider";
 import { WorkerContext } from "../worker";
 
 import { StepProps } from "./create";
@@ -79,7 +79,6 @@ export default function Compute(props: StepProps) {
         </Typography>
       </Stack>
 
-      <ListenerCleanup />
     </Stack>
   );
 }

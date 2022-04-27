@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useParams } from "react-router-dom";
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 
 import {
   Breadcrumbs,
@@ -13,7 +13,14 @@ import {
   keccak256,
 } from "@metamask/mpc-snap-wasm";
 
+import {
+  SessionKind,
+} from "@metamask/mpc-client";
+
 import {encode} from '../../../utils';
+
+import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
+import { createGroupSession } from '../../../group-session';
 
 import NotFound from '../../../not-found';
 import PublicAddress from "../../../components/public-address";
@@ -49,6 +56,9 @@ export type SignMessageProps = {
 };
 
 export default function SignMessage() {
+  const dispatch = useDispatch();
+  const websocket = useContext(WebSocketContext);
+
   const { address } = useParams();
   const { keyShares, loaded } = useSelector(keysSelector);
   const [activeStep, setActiveStep] = useState(0);
@@ -74,7 +84,7 @@ export default function SignMessage() {
   };
 
   const share: KeyShareGroup = keyShare[1];
-  const { label, items } = share;
+  const { label, threshold, parties, items } = share;
 
   if (items.length === 0) {
     throw new Error("Invalid key share, no items found");
@@ -88,6 +98,19 @@ export default function SignMessage() {
     setMessage(message);
     const digest = await keccak256(Array.from(encode(message)));
     setMessageHash(digest);
+
+    const formData = [label, { parties, threshold }];
+
+    // Create the remote server group and session and store
+    // the information in the redux state before proceeding to
+    // the next view
+    await createGroupSession(
+      SessionKind.SIGN,
+      formData,
+      websocket,
+      dispatch
+    );
+
     handleNext();
   }
 
@@ -121,6 +144,7 @@ export default function SignMessage() {
         <PublicAddress address={address} abbreviate />
         <SignStepper steps={steps} activeStep={activeStep} />
         {getStepComponent(activeStep, stepProps)}
+        <ListenerCleanup />
       </Stack>
     </>
   );
