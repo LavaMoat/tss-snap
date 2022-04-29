@@ -22,12 +22,12 @@ export function inviteHref(
 }
 
 type InviteProps = {
-  onCopy: () => void;
+  onCopy?: () => void;
   links: string[];
 };
 
 type InviteLinkProps = {
-  onCopy: () => void;
+  onCopy?: () => void;
   href: string;
   index: number;
 }
@@ -36,22 +36,18 @@ function InviteLink(props: InviteLinkProps) {
   const dispatch = useDispatch();
   const {href, onCopy, index} = props;
 
-  console.log("Invite link rendering", index);
-
   const copy = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     await copyToClipboard(href);
-
-    console.log("Copied to clipboard ", Math.random(), index);
 
     dispatch(setSnackbar({
       message: 'Link copied to clipboard',
       severity: 'success'
     }));
 
-    console.log("Calling onCopy", Math.random());
-
-    onCopy();
+    if (onCopy) {
+      onCopy();
+    }
   };
 
   return (

@@ -1,3 +1,4 @@
 import Message from './message';
 import Transaction from './transaction';
-export { Message, Transaction }
+import JoinSignSession from './join';
+export { Message, Transaction, JoinSignSession }

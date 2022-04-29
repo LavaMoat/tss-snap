@@ -20,7 +20,7 @@ export async function createGroupSession(
   data: GroupFormData,
   websocket: WebSocketClient,
   dispatch: AppDispatch
-): [GroupInfo, Session] {
+): Promise<[GroupInfo, Session]> {
   const [label, params] = data;
   const uuid = await websocket.rpc({
     method: "Group.create",
@@ -61,7 +61,7 @@ export async function createGroupSession(
   dispatch(setTransport({ stream, sink }));
 
   return [group, session];
-};
+}
 
 // Join an existing group and session.
 //
@@ -72,7 +72,7 @@ export async function joinGroupSession(
   sessionId: string,
   websocket: WebSocketClient,
   dispatch: AppDispatch
-): [GroupInfo, Session] {
+): Promise<[GroupInfo, Session]> {
 
   const group = await websocket.rpc({
     method: "Group.join",
@@ -112,4 +112,4 @@ export async function joinGroupSession(
   dispatch(setTransport({ stream, sink }));
 
   return [group, session];
-};
+}

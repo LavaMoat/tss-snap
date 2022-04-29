@@ -14,7 +14,7 @@ import {
 } from "@metamask/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
-import { createGroupSession } from '../../group-session';
+import { createGroupSession, GroupFormData } from '../../group-session';
 
 import { StepProps } from "./index";
 
@@ -66,7 +66,8 @@ export default function SetParameters(props: StepProps) {
       // NOTE: Convert from the human-friendly threshold
       // NOTE: to the internal representation which requires
       // NOTE: t+1 to sign.
-      const formData = [name, { parties, threshold: threshold - 1 }];
+      const formData: GroupFormData = [
+        name, { parties, threshold: threshold - 1 }];
 
       // Create the remote server group and session and store
       // the information in the redux state before proceeding to

@@ -5,7 +5,7 @@ export type RpcRequest = {
   id?: number;
   method: string;
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  params?: any[];
+  params?: any;
 };
 
 export type RpcResponse = {

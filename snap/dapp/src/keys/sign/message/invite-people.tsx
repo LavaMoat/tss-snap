@@ -16,25 +16,28 @@ import InviteCard, { inviteHref } from '../../invite-card';
 
 export default function InvitePeople(props: SignMessageProps) {
   const { address } = useParams();
-  const { message, messageHash } = props;
+  const { message, messageHash, selectedParty } = props;
   const { group, session } = useSelector(keysSelector);
 
   const totalInvites = group.params.parties - 1;
-  const hrefPrefix = `keys/${address}/sign/message`;
+  const hrefPrefix = `keys/${address}/sign/join/message`;
   const href = inviteHref(hrefPrefix, group.uuid, session.uuid)
   const links = Array(totalInvites).fill("").map(() => href);
 
-  const onCopy = () => {
-    console.log("Link was copied...");
-  }
-
   return (
     <Stack spacing={4}>
+      <Typography variant="h5" component="div">
+      </Typography>
       <Paper variant="outlined">
         <Stack padding={2} spacing={2}>
-          <Typography variant="subtitle1" component="div">
-            Message
-          </Typography>
+          <Stack>
+            <Typography variant="subtitle1" component="div">
+              Message to sign
+            </Typography>
+            <Typography variant="subtitle2" component="div" color="text.secondary">
+              Using key share for party #{selectedParty}
+            </Typography>
+          </Stack>
           <Divider />
           <Typography variant="body1" component="div">
             {message}
@@ -45,9 +48,7 @@ export default function InvitePeople(props: SignMessageProps) {
           </Typography>
         </Stack>
       </Paper>
-      <InviteCard
-        onCopy={onCopy}
-        links={links} />
+      <InviteCard links={links} />
     </Stack>
   )
 }

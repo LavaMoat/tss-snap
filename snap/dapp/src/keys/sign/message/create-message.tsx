@@ -3,17 +3,11 @@ import React, { useState } from 'react';
 import {
   Button,
   Stack,
-  Paper,
-
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  Radio,
-  FormControlLabel,
   TextField,
 } from "@mui/material";
 
 import { SignMessageProps } from './index';
+import ChooseKeyShare from '../choose-key-share';
 
 function MessageForm(props: SignMessageProps) {
   const [value, setValue] = useState("");
@@ -44,40 +38,6 @@ function MessageForm(props: SignMessageProps) {
           />
       </Stack>
     </form>
-  );
-}
-
-function ChooseKeyShare(props: SignMessageProps) {
-  const { share, onShareChange, selectedParty } = props;
-
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const partyNumber = parseInt(e.target.value);
-    onShareChange(partyNumber);
-  }
-
-  const { threshold, parties } = share;
-
-  return (
-    <Paper variant="outlined">
-      <Stack padding={2}>
-        <FormControl>
-          <FormLabel id="key-share-label">Choose a key share ({`${threshold + 1} of ${parties}`})</FormLabel>
-          <RadioGroup
-            onChange={onChange}
-            aria-labelledby="key-share-label"
-            value={selectedParty.toString()}
-            name="key-share-group">
-            {share.items.map((partyNumber, index) => {
-              return <FormControlLabel
-                key={index}
-                value={partyNumber.toString()}
-                control={<Radio />}
-                label={`Party #${partyNumber}`} />
-            })}
-          </RadioGroup>
-        </FormControl>
-      </Stack>
-    </Paper>
   );
 }
 

@@ -7,13 +7,13 @@ import {
   SessionKind,
 } from "@metamask/mpc-client";
 
-import { WebSocketContext } from "../../websocket-provider";
-import { joinGroupSession } from '../../group-session';
+import { WebSocketContext } from "../../../websocket-provider";
+import { joinGroupSession } from '../../../group-session';
 
 import { StepProps } from "./index";
 
 export default function Compute(props: StepProps) {
-  const { next } = props;
+  const { address, next, signingType } = props;
   const [label, setLabel] = useState("...");
 
   const [progressMessage, setProgressMessage] = useState(
@@ -23,6 +23,7 @@ export default function Compute(props: StepProps) {
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
 
+  /*
   useEffect(() => {
     // Delay a little so we don't get flicker when the connection
     // is very fast.
@@ -43,7 +44,7 @@ export default function Compute(props: StepProps) {
       websocket.once("sessionSignup", async (sessionId: string) => {
         if (sessionId === session.uuid) {
           console.log("Invited participant got session ready...");
-          next();
+          //next();
         } else {
           throw new Error("Session id is for another session");
         }
@@ -51,6 +52,7 @@ export default function Compute(props: StepProps) {
 
     }, 1000);
   }, []);
+  */
 
   return (
     <Stack spacing={2} marginTop={2} padding={2}>
@@ -62,11 +64,10 @@ export default function Compute(props: StepProps) {
 
       <Stack>
         <Typography variant="body1" component="div">
-          You have been invited to own a share of a key.
+          You have been invited to sign a {signingType}.
         </Typography>
         <Typography variant="body2" component="div" color="text.secondary">
-          By owning a share in the key you will be able to participate in
-          collaborative signing of messages and transactions.
+          Approve the {signingType} by signing it.
         </Typography>
       </Stack>
       <Stack direction="row" alignItems="center" spacing={2}>

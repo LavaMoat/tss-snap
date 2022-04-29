@@ -20,7 +20,7 @@ import {
 import {encode} from '../../../utils';
 
 import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
-import { createGroupSession } from '../../../group-session';
+import { createGroupSession, GroupFormData } from '../../../group-session';
 
 import NotFound from '../../../not-found';
 import PublicAddress from "../../../components/public-address";
@@ -30,6 +30,8 @@ import KeysLoader from '../../loader';
 
 import CreateMessage from './create-message';
 import InvitePeople from './invite-people';
+
+import { ChooseKeyShareProps } from '../choose-key-share';
 
 const steps = [
   "Create message",
@@ -47,13 +49,10 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
 };
 
 export type SignMessageProps = {
-  share: KeyShareGroup;
-  onShareChange: (partyNumber: number) => void;
-  selectedParty: number;
   message: string;
   messageHash: Uint8Array,
   onMessage: (message: string) => void;
-};
+} & ChooseKeyShareProps;
 
 export default function SignMessage() {
   const dispatch = useDispatch();
@@ -99,7 +98,9 @@ export default function SignMessage() {
     const digest = await keccak256(Array.from(encode(message)));
     setMessageHash(digest);
 
-    const formData = [label, { parties, threshold }];
+    const formData: GroupFormData = [
+      label, { parties, threshold }
+    ];
 
     // Create the remote server group and session and store
     // the information in the redux state before proceeding to

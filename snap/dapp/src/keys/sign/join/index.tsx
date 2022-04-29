@@ -10,17 +10,24 @@ import {
   StepLabel,
 } from "@mui/material";
 
-import NotFound from "../../not-found";
+import NotFound from "../../../not-found";
 
 import Connect from "./connect";
 import Session from "./session";
-import Compute from "../compute";
-import Save from "../save";
+//import Compute from "../compute";
+//import Save from "../save";
 
-const steps = ["Connect", "Join session", "Compute", "Save"];
+const steps = ["Connect", "Join session", "Approve", "Save Proof"];
+
+export enum SigningType {
+  Message = "message",
+  Transaction = "transaction",
+}
 
 export type StepProps = {
   next: () => void;
+  address: string;
+  signingType: SigningType;
   groupId: string;
   sessionId: string;
 };
@@ -29,14 +36,29 @@ const getStepComponent = (activeStep: number, props: StepProps) => {
   const stepComponents = [
     <Connect key={0} {...props} />,
     <Session key={1} {...props} />,
-    <Compute key={2} {...props} />,
-    <Save key={3} {...props} />,
+    //<Compute key={2} {...props} />,
+    //<Save key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };
 
+function BadSigningType() {
+  return (
+    <Typography variant="h3" component="div">
+      Signing type is invalid, must be message or transaction.
+    </Typography>
+  );
+}
+
 function CreateStepper() {
-  const { groupId, sessionId } = useParams();
+  const { address, signingType, groupId, sessionId } = useParams();
+
+  console.log(address, signingType, groupId, sessionId);
+
+  if (signingType !== SigningType.Message
+      && signingType !== SigningType.Transaction) {
+    return <BadSigningType />
+  }
 
   if (!groupId || !sessionId) {
     return <NotFound />;
@@ -62,6 +84,8 @@ function CreateStepper() {
       </Stepper>
       {getStepComponent(activeStep, {
         next: handleNext,
+        address,
+        signingType,
         groupId,
         sessionId,
       })}
@@ -69,11 +93,22 @@ function CreateStepper() {
   );
 }
 
-export default function Create() {
+export default function JoinSignSession() {
+  const { signingType, groupId, sessionId } = useParams();
+
+  if (signingType !== SigningType.Message
+      && signingType !== SigningType.Transaction) {
+    return <BadSigningType />
+  }
+
+  if (!groupId || !sessionId) {
+    return <NotFound />;
+  }
+
   return (
     <Stack spacing={2}>
       <Typography variant="h3" component="div" gutterBottom>
-        Join a key
+        Sign a {signingType}
       </Typography>
       <CreateStepper />
     </Stack>
