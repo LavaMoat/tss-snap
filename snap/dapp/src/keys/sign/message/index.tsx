@@ -50,7 +50,7 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
 
 export type SignMessageProps = {
   message: string;
-  messageHash: Uint8Array,
+  digest: Uint8Array,
   onMessage: (message: string) => void;
 } & ChooseKeyShareProps;
 
@@ -62,7 +62,7 @@ export default function SignMessage() {
   const { keyShares, loaded } = useSelector(keysSelector);
   const [activeStep, setActiveStep] = useState(0);
   const [message, setMessage] = useState("");
-  const [messageHash, setMessageHash] = useState(new Uint8Array());
+  const [digest, setDigest] = useState(new Uint8Array());
   const [selectedParty, setSelectedParty] = useState(null);
 
   if (!loaded) {
@@ -96,7 +96,7 @@ export default function SignMessage() {
   const onMessage = async (message: string) => {
     setMessage(message);
     const digest = await keccak256(Array.from(encode(message)));
-    setMessageHash(digest);
+    setDigest(digest);
 
     const formData: GroupFormData = [
       label, { parties, threshold }
@@ -126,7 +126,7 @@ export default function SignMessage() {
     onShareChange,
     message,
     onMessage,
-    messageHash,
+    digest,
   };
 
   return (

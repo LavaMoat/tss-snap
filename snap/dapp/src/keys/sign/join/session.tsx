@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { Stack, Typography, CircularProgress } from "@mui/material";
 
@@ -9,21 +9,33 @@ import {
 
 import { WebSocketContext } from "../../../websocket-provider";
 import { joinGroupSession } from '../../../group-session';
+import {keysSelector, KeyShareGroup} from '../../../store/keys';
+import { SignValue }from "../../../types";
 
-import { StepProps } from "./index";
+import NotFound from "../../../not-found";
+import KeysLoader from '../../loader';
+import SignMessageView from '../message-view';
 
-export default function Compute(props: StepProps) {
-  const { address, next, signingType } = props;
+import { StepProps, SigningType } from "./index";
+
+type SessionConnectProps = {
+  address: string;
+  groupId: string;
+  sessionId: string;
+  keyShare: KeyShareGroup;
+  signingType: SigningType;
+}
+
+function SessionConnect(props: SessionConnectProps) {
+  const { address, groupId, sessionId, keyShare, signingType } = props;
   const [label, setLabel] = useState("...");
-
+  const [value, setValue] = useState<SignValue>(null);
   const [progressMessage, setProgressMessage] = useState(
     "Connecting to session..."
   );
-  const { groupId, sessionId } = props;
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
 
-  /*
   useEffect(() => {
     // Delay a little so we don't get flicker when the connection
     // is very fast.
@@ -36,6 +48,7 @@ export default function Compute(props: StepProps) {
         dispatch
       );
 
+      setValue(session.value);
       setLabel(group.label);
 
       setProgressMessage("Waiting for other participants...");
@@ -52,7 +65,15 @@ export default function Compute(props: StepProps) {
 
     }, 1000);
   }, []);
-  */
+
+  let preview = null;
+  if (value) {
+    preview = signingType === SigningType.Message ? (
+      <SignMessageView message={value.message} digest={value.digest} />
+    ) : (
+      <p>TODO: show transaction preview</p>
+    );
+  }
 
   return (
     <Stack spacing={2} marginTop={2} padding={2}>
@@ -61,7 +82,6 @@ export default function Compute(props: StepProps) {
           {label}
         </Typography>
       </Stack>
-
       <Stack>
         <Typography variant="body1" component="div">
           You have been invited to sign a {signingType}.
@@ -76,6 +96,39 @@ export default function Compute(props: StepProps) {
           {progressMessage}
         </Typography>
       </Stack>
+      {
+        value && preview
+      }
     </Stack>
   );
+}
+
+export default function Compute(props: StepProps) {
+  const { address, next, signingType, groupId, sessionId } = props;
+  const { keyShares, loaded } = useSelector(keysSelector);
+
+  if (!loaded) {
+    return <KeysLoader />;
+  }
+
+  const keyShare = keyShares.find((value: [string, KeyShareGroup]) => {
+    const [keyAddress] = value;
+    return address === keyAddress;
+  });
+
+  if (!keyShare) {
+    return (
+      <Stack marginTop={4}>
+        <NotFound />
+      </Stack>
+    );
+  }
+
+  return <SessionConnect
+    address={address}
+    groupId={groupId}
+    sessionId={sessionId}
+    keyShare={keyShare}
+    signingType={signingType}
+    />
 }
