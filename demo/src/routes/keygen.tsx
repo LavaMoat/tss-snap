@@ -227,7 +227,7 @@ class Keygen extends Component<KeygenProps, KeygenStateProps> {
 
       const session = await websocket.rpc({
         method: "Session.create",
-        params: [this.props.group.uuid, SessionKind.KEYGEN],
+        params: [this.props.group.uuid, SessionKind.KEYGEN, null],
       });
 
       this.props.dispatch(setKeygenSession(session));

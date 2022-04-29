@@ -222,7 +222,7 @@ pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
 pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 
 type GroupCreateParams = (String, Parameters);
-type SessionCreateParams = (Uuid, SessionKind);
+type SessionCreateParams = (Uuid, SessionKind, Option<Value>);
 type SessionJoinParams = (Uuid, Uuid, SessionKind);
 type SessionSignupParams = (Uuid, Uuid, SessionKind);
 type SessionLoadParams = (Uuid, Uuid, SessionKind, u16);
@@ -327,11 +327,11 @@ impl Service for ServiceHandler {
             SESSION_CREATE => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionCreateParams = req.deserialize()?;
-                let (group_id, kind) = params;
+                let (group_id, kind, value) = params;
                 let mut writer = state.write().await;
                 let group =
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
-                let session = Session::from(kind.clone());
+                let session = Session::from((kind.clone(), value));
                 let key = session.uuid.clone();
                 group.sessions.insert(key, session.clone());
 

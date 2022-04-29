@@ -8,6 +8,7 @@ use std::sync::{
 
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -136,6 +137,16 @@ pub struct Session {
     pub uuid: Uuid,
     /// Kind of the session.
     pub kind: SessionKind,
+    /// Public value associated with the session.
+    ///
+    /// The owner of a session will assign this when
+    /// the session is created and other participants
+    /// in the session can read this value.
+    ///
+    /// This can be used to assign public data like the
+    /// message or transaction that will be signed during
+    /// a signing session.
+    pub value: Option<Value>,
 
     /// Map party number to connection identifier
     #[serde(skip)]
@@ -154,17 +165,19 @@ impl Default for Session {
             kind: Default::default(),
             party_signups: Default::default(),
             finished: Default::default(),
+            value: None,
         }
     }
 }
 
-impl From<SessionKind> for Session {
-    fn from(kind: SessionKind) -> Session {
+impl From<(SessionKind, Option<Value>)> for Session {
+    fn from(value: (SessionKind, Option<Value>)) -> Session {
         Self {
             uuid: Uuid::new_v4(),
-            kind,
+            kind: value.0,
             party_signups: Default::default(),
             finished: Default::default(),
+            value: value.1,
         }
     }
 }

@@ -102,6 +102,8 @@ export default function SignMessage() {
       label, { parties, threshold }
     ];
 
+    const signValue = { message, digest };
+
     // Create the remote server group and session and store
     // the information in the redux state before proceeding to
     // the next view
@@ -109,7 +111,9 @@ export default function SignMessage() {
       SessionKind.SIGN,
       formData,
       websocket,
-      dispatch
+      dispatch,
+      selectedParty || items[0],
+      signValue,
     );
 
     handleNext();

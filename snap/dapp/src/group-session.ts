@@ -12,6 +12,8 @@ import {
 import { AppDispatch } from './store';
 import {setGroup, setSession, setTransport} from './store/keys';
 
+import { SignValue } from './types';
+
 export type GroupFormData = [string, Parameters];
 
 // Sets up the session and group for an owner.
@@ -19,7 +21,12 @@ export async function createGroupSession(
   kind: SessionKind,
   data: GroupFormData,
   websocket: WebSocketClient,
-  dispatch: AppDispatch
+  dispatch: AppDispatch,
+  // Party number to load into the session
+  keySharePartyNumber?: number,
+  // Value to sign which can be associated
+  // with the remote session
+  signValue?: SignValue,
 ): Promise<[GroupInfo, Session]> {
   const [label, params] = data;
   const uuid = await websocket.rpc({
@@ -31,7 +38,7 @@ export async function createGroupSession(
 
   let session = await websocket.rpc({
     method: "Session.create",
-    params: [uuid, kind],
+    params: [uuid, kind, signValue],
   });
 
   const partyNumber = await websocket.rpc({

@@ -80,7 +80,7 @@ const Proposal = ({
       const createProposalSession = async () => {
         const targetSession = await websocket.rpc({
           method: "Session.create",
-          params: [group.uuid, SessionKind.SIGN],
+          params: [group.uuid, SessionKind.SIGN, null],
         });
         const session = await websocket.rpc({
           method: "Session.join",
