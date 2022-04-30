@@ -84,6 +84,10 @@ export type PartySignup = {
 export type Session = {
   uuid: string;
   partySignup?: PartySignup;
+  // Public data used during signing sessions.
+  //
+  // Typically either a message or transaction to sign.
+  value?: any;
 };
 
 // State for party signup round during keygen.

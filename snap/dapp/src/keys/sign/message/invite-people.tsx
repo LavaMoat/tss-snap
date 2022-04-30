@@ -4,20 +4,16 @@ import { useSelector } from 'react-redux';
 
 import {
   Stack,
-  Paper,
-  Typography,
-  Divider,
 } from "@mui/material";
 
 import { SignMessageProps } from './index';
 import {keysSelector} from '../../../store/keys';
-import {toHexString} from '../../../utils';
 import InviteCard, { inviteHref } from '../../invite-card';
 import SignMessageView from '../message-view';
 
 export default function InvitePeople(props: SignMessageProps) {
   const { address } = useParams();
-  const { message, digest, selectedParty } = props;
+  const { message, digest } = props;
   const { group, session } = useSelector(keysSelector);
 
   const totalInvites = group.params.parties - 1;

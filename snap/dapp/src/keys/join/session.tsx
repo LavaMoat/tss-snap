@@ -8,7 +8,7 @@ import {
 } from "@metamask/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
-import { joinGroupSession } from '../../group-session';
+import { joinGroupSessionWithSignup } from '../../group-session';
 
 import { StepProps } from "./index";
 
@@ -27,7 +27,7 @@ export default function Compute(props: StepProps) {
     // Delay a little so we don't get flicker when the connection
     // is very fast.
     setTimeout(async () => {
-      const [group, session] = await joinGroupSession(
+      const [group, session] = await joinGroupSessionWithSignup(
         SessionKind.KEYGEN,
         groupId,
         sessionId,
@@ -53,7 +53,7 @@ export default function Compute(props: StepProps) {
   }, []);
 
   return (
-    <Stack spacing={2} marginTop={2} padding={2}>
+    <Stack spacing={2} marginTop={2} padding={1}>
       <Stack>
         <Typography variant="h4" component="div">
           {label}

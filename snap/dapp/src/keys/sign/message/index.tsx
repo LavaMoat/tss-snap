@@ -82,8 +82,8 @@ export default function SignMessage() {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
-  const share: KeyShareGroup = keyShare[1];
-  const { label, threshold, parties, items } = share;
+  const keyShareGroup: KeyShareGroup = keyShare[1];
+  const { label, threshold, parties, items } = keyShareGroup;
 
   if (items.length === 0) {
     throw new Error("Invalid key share, no items found");
@@ -121,7 +121,7 @@ export default function SignMessage() {
 
   const stepProps = {
     next: handleNext,
-    share,
+    keyShare: keyShareGroup,
     selectedParty: selectedParty || items[0],
     onShareChange,
     message,

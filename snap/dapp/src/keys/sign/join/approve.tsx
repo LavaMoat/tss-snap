@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { Stack, Typography, CircularProgress } from "@mui/material";
+import { Stack, Typography, CircularProgress, Checkbox, FormControlLabel, Button } from "@mui/material";
 
 import {
   SessionKind,
@@ -9,12 +9,14 @@ import {
 
 import { WebSocketContext } from "../../../websocket-provider";
 import { joinGroupSession } from '../../../group-session';
-import {keysSelector, KeyShareGroup} from '../../../store/keys';
+import {keysSelector, KeyShareGroup, setGroup, setSession} from '../../../store/keys';
 import { SignValue }from "../../../types";
 
 import NotFound from "../../../not-found";
 import KeysLoader from '../../loader';
 import SignMessageView from '../message-view';
+import ChooseKeyShare from '../choose-key-share';
+import PublicAddress from "../../../components/public-address";
 
 import { StepProps, SigningType } from "./index";
 
@@ -24,63 +26,78 @@ type SessionConnectProps = {
   sessionId: string;
   keyShare: KeyShareGroup;
   signingType: SigningType;
+  onApprove: () => void;
 }
 
 function SessionConnect(props: SessionConnectProps) {
-  const { address, groupId, sessionId, keyShare, signingType } = props;
+  const { address, groupId, sessionId, keyShare, signingType, onApprove } = props;
   const [label, setLabel] = useState("...");
   const [value, setValue] = useState<SignValue>(null);
-  const [progressMessage, setProgressMessage] = useState(
-    "Connecting to session..."
-  );
+  const [selectedParty, setSelectedParty] = useState(null);
+  const [approved, setApproved] = useState(false);
+  const [progressVisible, setProgressVisible] = useState(true);
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
+
+  const onShareChange = (n: number) => {
+    setSelectedParty(n);
+  }
 
   useEffect(() => {
     // Delay a little so we don't get flicker when the connection
     // is very fast.
     setTimeout(async () => {
       const [group, session] = await joinGroupSession(
-        SessionKind.KEYGEN,
+        SessionKind.SIGN,
         groupId,
         sessionId,
         websocket,
-        dispatch
       );
 
       setValue(session.value);
       setLabel(group.label);
 
-      setProgressMessage("Waiting for other participants...");
+      dispatch(setGroup(group));
+      dispatch(setSession(session));
 
-      // All parties signed up to key generation
-      websocket.once("sessionSignup", async (sessionId: string) => {
-        if (sessionId === session.uuid) {
-          console.log("Invited participant got session ready...");
-          //next();
-        } else {
-          throw new Error("Session id is for another session");
-        }
-      });
-
+      setProgressVisible(false);
     }, 1000);
   }, []);
 
   let preview = null;
   if (value) {
     preview = signingType === SigningType.Message ? (
-      <SignMessageView message={value.message} digest={value.digest} />
+      <SignMessageView
+        message={value.message}
+        digest={value.digest} />
     ) : (
       <p>TODO: show transaction preview</p>
     );
   }
 
+  const approval = (
+    <>
+      <FormControlLabel
+        control={<Checkbox />}
+        onChange={() => setApproved(!approved)}
+        label={`I approve this ${signingType}`}
+      />
+      <Button
+        disabled={!approved}
+        variant="contained"
+        onClick={onApprove}>
+        Next
+      </Button>
+    </>
+  );
+
   return (
-    <Stack spacing={2} marginTop={2} padding={2}>
+    <Stack spacing={2} marginTop={2} padding={1}>
       <Stack>
         <Typography variant="h4" component="div">
           {label}
         </Typography>
+        <PublicAddress address={address} />
       </Stack>
       <Stack>
         <Typography variant="body1" component="div">
@@ -90,20 +107,32 @@ function SessionConnect(props: SessionConnectProps) {
           Approve the {signingType} by signing it.
         </Typography>
       </Stack>
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <CircularProgress size={20} />
-        <Typography variant="body2" component="div" color="text.secondary">
-          {progressMessage}
-        </Typography>
-      </Stack>
+      {
+        progressVisible && (
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <CircularProgress size={20} />
+            <Typography variant="body2" component="div" color="text.secondary">
+              Connecting to session...
+            </Typography>
+          </Stack>
+        )
+      }
+      <ChooseKeyShare
+        keyShare={keyShare}
+        onShareChange={onShareChange}
+        selectedParty={selectedParty || keyShare.items[0]}
+        />
       {
         value && preview
+      }
+      {
+        value && approval
       }
     </Stack>
   );
 }
 
-export default function Compute(props: StepProps) {
+export default function Approve(props: StepProps) {
   const { address, next, signingType, groupId, sessionId } = props;
   const { keyShares, loaded } = useSelector(keysSelector);
 
@@ -124,11 +153,13 @@ export default function Compute(props: StepProps) {
     );
   }
 
+  const keyShareGroup: KeyShareGroup = keyShare[1];
   return <SessionConnect
     address={address}
     groupId={groupId}
     sessionId={sessionId}
-    keyShare={keyShare}
+    keyShare={keyShareGroup}
     signingType={signingType}
+    onApprove={next}
     />
 }

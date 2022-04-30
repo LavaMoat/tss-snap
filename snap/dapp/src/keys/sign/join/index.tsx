@@ -13,11 +13,11 @@ import {
 import NotFound from "../../../not-found";
 
 import Connect from "./connect";
-import Session from "./session";
-//import Compute from "../compute";
+import Approve from "./approve";
+//import Compute from "./compute";
 //import Save from "../save";
 
-const steps = ["Connect", "Join session", "Approve", "Save Proof"];
+const steps = ["Connect", "Approve", "Compute", "Save Proof"];
 
 export enum SigningType {
   Message = "message",
@@ -35,7 +35,7 @@ export type StepProps = {
 const getStepComponent = (activeStep: number, props: StepProps) => {
   const stepComponents = [
     <Connect key={0} {...props} />,
-    <Session key={1} {...props} />,
+    <Approve key={1} {...props} />,
     //<Compute key={2} {...props} />,
     //<Save key={3} {...props} />,
   ];

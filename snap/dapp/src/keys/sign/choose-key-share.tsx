@@ -14,20 +14,20 @@ import {
 import {KeyShareGroup} from '../../store/keys';
 
 export type ChooseKeyShareProps = {
-  share: KeyShareGroup;
+  keyShare: KeyShareGroup;
   onShareChange: (partyNumber: number) => void;
   selectedParty: number;
 };
 
 export default function ChooseKeyShare(props: ChooseKeyShareProps) {
-  const { share, onShareChange, selectedParty } = props;
+  const { keyShare, onShareChange, selectedParty } = props;
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const partyNumber = parseInt(e.target.value);
     onShareChange(partyNumber);
   }
 
-  const { threshold, parties } = share;
+  const { threshold, parties } = keyShare;
 
   return (
     <Paper variant="outlined">
@@ -39,7 +39,7 @@ export default function ChooseKeyShare(props: ChooseKeyShareProps) {
             aria-labelledby="key-share-label"
             value={selectedParty.toString()}
             name="key-share-group">
-            {share.items.map((partyNumber: number, index: number) => {
+            {keyShare.items.map((partyNumber: number, index: number) => {
               return <FormControlLabel
                 key={index}
                 value={partyNumber.toString()}

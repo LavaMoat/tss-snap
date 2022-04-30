@@ -31,7 +31,7 @@ export default function Save() {
   };
 
   return (
-    <Stack padding={2} spacing={2} marginTop={2}>
+    <Stack padding={1} spacing={2} marginTop={2}>
       <Stack>
         <Typography variant="h4" component="div">
           {group.label}

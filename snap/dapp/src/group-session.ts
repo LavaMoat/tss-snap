@@ -72,36 +72,58 @@ export async function createGroupSession(
 
 // Join an existing group and session.
 //
-// This is used by participants that are invited by the owner.
+// Does not modify the state and just retrieves the group and session
+// from the remote server.
+//
+// This is used during signing sessions to retrieve the value associated
+// with the session before approving the value to be signed.
 export async function joinGroupSession(
   kind: SessionKind,
   groupId: string,
   sessionId: string,
   websocket: WebSocketClient,
-  dispatch: AppDispatch
 ): Promise<[GroupInfo, Session]> {
 
   const group = await websocket.rpc({
     method: "Group.join",
     params: groupId,
   });
-  dispatch(setGroup(group));
 
-  let session = await websocket.rpc({
+  const session = await websocket.rpc({
     method: "Session.join",
     params: [groupId, sessionId, kind],
   });
+
+  return [group, session];
+}
+
+// Join an existing group and session and signup to participate in the
+// session computation.
+export async function joinGroupSessionWithSignup(
+  kind: SessionKind,
+  groupId: string,
+  sessionId: string,
+  websocket: WebSocketClient,
+  dispatch: AppDispatch
+): Promise<[GroupInfo, Session]> {
+  const [group, session] = await joinGroupSession(
+    kind,
+    groupId,
+    sessionId,
+    websocket,
+  );
+  dispatch(setGroup(group));
 
   const partyNumber = await websocket.rpc({
     method: "Session.signup",
     params: [groupId, sessionId, kind],
   });
 
-  session = {
+  const newSession = {
     ...session,
     partySignup: { number: partyNumber, uuid: session.uuid },
   };
-  dispatch(setSession(session));
+  dispatch(setSession(newSession));
 
   const stream = new WebSocketStream(
     websocket,

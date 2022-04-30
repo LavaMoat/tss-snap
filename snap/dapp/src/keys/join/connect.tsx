@@ -14,7 +14,7 @@ export default function Connect(props: StepProps) {
   };
 
   return (
-    <Stack spacing={2} marginTop={2} padding={2}>
+    <Stack spacing={2} marginTop={2} padding={1}>
       <Stack>
         <Typography variant="body1" component="div">
           You have been invited to join a key.
