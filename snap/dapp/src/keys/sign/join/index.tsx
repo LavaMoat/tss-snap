@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 
 import NotFound from "../../../not-found";
+import { SigningType } from '../../../types';
 
 import Connect from "./connect";
 import Approve from "./approve";
@@ -18,11 +19,6 @@ import Approve from "./approve";
 //import Save from "../save";
 
 const steps = ["Connect", "Approve", "Compute", "Save Proof"];
-
-export enum SigningType {
-  Message = "message",
-  Transaction = "transaction",
-}
 
 export type StepProps = {
   next: () => void;
@@ -55,8 +51,8 @@ function CreateStepper() {
 
   console.log(address, signingType, groupId, sessionId);
 
-  if (signingType !== SigningType.Message
-      && signingType !== SigningType.Transaction) {
+  if (signingType !== SigningType.MESSAGE
+      && signingType !== SigningType.TRANSACTION) {
     return <BadSigningType />
   }
 
@@ -96,8 +92,8 @@ function CreateStepper() {
 export default function JoinSignSession() {
   const { signingType, groupId, sessionId } = useParams();
 
-  if (signingType !== SigningType.Message
-      && signingType !== SigningType.Transaction) {
+  if (signingType !== SigningType.MESSAGE
+      && signingType !== SigningType.TRANSACTION) {
     return <BadSigningType />
   }
 

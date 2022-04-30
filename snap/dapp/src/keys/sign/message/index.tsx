@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import {useSelector, useDispatch} from 'react-redux';
 
 import {
+  Box,
+  Chip,
   Breadcrumbs,
   Link,
   Stack,
@@ -49,6 +51,7 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
 };
 
 export type SignMessageProps = {
+  next: () => void;
   message: string;
   digest: Uint8Array,
   onMessage: (message: string) => void;
@@ -146,7 +149,11 @@ export default function SignMessage() {
             {label}
           </Typography>
         </Stack>
-        <PublicAddress address={address} abbreviate />
+        <Stack direction="row" alignItems="center">
+          <PublicAddress address={address} abbreviate />
+          <Box sx={{flexGrow: 1}} />
+          <Chip label={`Using key share for party #${selectedParty || items[0]}`} />
+        </Stack>
         <SignStepper steps={steps} activeStep={activeStep} />
         {getStepComponent(activeStep, stepProps)}
         <ListenerCleanup />

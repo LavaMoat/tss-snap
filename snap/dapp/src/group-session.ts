@@ -16,6 +16,27 @@ import { SignValue } from './types';
 
 export type GroupFormData = [string, Parameters];
 
+export async function prepareTransport(
+  kind: SessionKind,
+  group: GroupInfo,
+  session: Session,
+  websocket: WebSocketClient,
+  dispatch: AppDispatch,
+): Promise<void> {
+  const stream = new WebSocketStream(
+    websocket,
+    group.uuid,
+    session.uuid,
+    kind
+  );
+  const sink = new WebSocketSink(
+    websocket,
+    group.params.parties - 1,
+    session.uuid
+  );
+  dispatch(setTransport({ stream, sink }));
+}
+
 // Sets up the session and group for an owner.
 export async function createGroupSession(
   kind: SessionKind,
@@ -41,10 +62,28 @@ export async function createGroupSession(
     params: [uuid, kind, signValue],
   });
 
-  const partyNumber = await websocket.rpc({
-    method: "Session.signup",
-    params: [uuid, session.uuid, kind],
-  });
+  let partyNumber = null;
+  if (!keySharePartyNumber) {
+    partyNumber = await websocket.rpc({
+      method: "Session.signup",
+      params: [uuid, session.uuid, kind],
+    });
+  } else if (keySharePartyNumber > 0) {
+    await websocket.rpc({
+      method: "Session.load",
+      params: [
+        uuid,
+        session.uuid,
+        kind,
+        keySharePartyNumber,
+      ],
+    });
+    partyNumber = keySharePartyNumber;
+  }
+
+  if (!partyNumber) {
+    throw new Error("Unable to determine party number for session");
+  }
 
   session = {
     ...session,
@@ -52,20 +91,7 @@ export async function createGroupSession(
   };
   dispatch(setSession(session));
 
-  const stream = new WebSocketStream(
-    websocket,
-    uuid,
-    session.uuid,
-    kind
-  );
-
-  const sink = new WebSocketSink(
-    websocket,
-    group.params.parties - 1,
-    session.uuid
-  );
-
-  dispatch(setTransport({ stream, sink }));
+  await prepareTransport(kind, group, session, websocket, dispatch);
 
   return [group, session];
 }
@@ -125,20 +151,7 @@ export async function joinGroupSessionWithSignup(
   };
   dispatch(setSession(newSession));
 
-  const stream = new WebSocketStream(
-    websocket,
-    groupId,
-    sessionId,
-    kind,
-  );
-
-  const sink = new WebSocketSink(
-    websocket,
-    group.params.parties - 1,
-    sessionId
-  );
-
-  dispatch(setTransport({ stream, sink }));
+  await prepareTransport(kind, group, session, websocket, dispatch);
 
   return [group, session];
 }

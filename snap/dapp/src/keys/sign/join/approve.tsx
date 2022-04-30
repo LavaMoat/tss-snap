@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { Stack, Typography, CircularProgress, Checkbox, FormControlLabel, Button } from "@mui/material";
+import { Box, Chip, Stack, Typography, CircularProgress } from "@mui/material";
 
 import {
   SessionKind,
@@ -12,15 +12,16 @@ import { joinGroupSession } from '../../../group-session';
 import {keysSelector, KeyShareGroup} from '../../../store/keys';
 
 import {setGroup, setSession} from '../../../store/session';
-import { SignValue }from "../../../types";
+import { SignValue, SigningType }from "../../../types";
 
 import NotFound from "../../../not-found";
 import KeysLoader from '../../loader';
+import Approval from '../approval';
 import SignMessageView from '../message-view';
 import ChooseKeyShare from '../choose-key-share';
 import PublicAddress from "../../../components/public-address";
 
-import { StepProps, SigningType } from "./index";
+import { StepProps } from "./index";
 
 type SessionConnectProps = {
   address: string;
@@ -36,10 +37,11 @@ function SessionConnect(props: SessionConnectProps) {
   const [label, setLabel] = useState("...");
   const [value, setValue] = useState<SignValue>(null);
   const [selectedParty, setSelectedParty] = useState(null);
-  const [approved, setApproved] = useState(false);
   const [progressVisible, setProgressVisible] = useState(true);
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
+
+  const { items } = keyShare;
 
   const onShareChange = (n: number) => {
     setSelectedParty(n);
@@ -68,7 +70,7 @@ function SessionConnect(props: SessionConnectProps) {
 
   let preview = null;
   if (value) {
-    preview = signingType === SigningType.Message ? (
+    preview = signingType === SigningType.MESSAGE ? (
       <SignMessageView
         message={value.message}
         digest={value.digest} />
@@ -77,36 +79,24 @@ function SessionConnect(props: SessionConnectProps) {
     );
   }
 
-  const approval = (
-    <>
-      <FormControlLabel
-        control={<Checkbox />}
-        onChange={() => setApproved(!approved)}
-        label={`I approve this ${signingType}`}
-      />
-      <Button
-        disabled={!approved}
-        variant="contained"
-        onClick={onApprove}>
-        Sign {signingType}
-      </Button>
-    </>
-  );
-
   return (
     <Stack spacing={2} marginTop={2} padding={1}>
       <Stack>
         <Typography variant="h4" component="div">
           {label}
         </Typography>
-        <PublicAddress address={address} />
+        <Stack direction="row" alignItems="center">
+          <PublicAddress address={address} />
+          <Box sx={{flexGrow: 1}} />
+          <Chip label={`Using key share for party #${selectedParty || items[0]}`} />
+        </Stack>
       </Stack>
       <Stack>
         <Typography variant="body1" component="div">
           You have been invited to sign a {signingType}.
         </Typography>
         <Typography variant="body2" component="div" color="text.secondary">
-          Approve the {signingType} by signing it.
+          Approve the {signingType} to sign it.
         </Typography>
       </Stack>
       {
@@ -128,7 +118,7 @@ function SessionConnect(props: SessionConnectProps) {
         value && preview
       }
       {
-        value && approval
+        value && (<Approval signingType={signingType} onApprove={onApprove} />)
       }
     </Stack>
   );

@@ -69,7 +69,7 @@ export default function Create() {
           <Typography color="text.primary">Create</Typography>
         </Breadcrumbs>
         <Typography variant="h3" component="div" gutterBottom>
-          Create a key share
+          Create a key
         </Typography>
       </Stack>
       <CreateStepper />

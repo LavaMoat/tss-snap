@@ -67,7 +67,7 @@
 //!
 //! Load a client into a given slot (party signup number). This is used to allow the party signup numbers allocated to saved key shares to be assigned and validated in the context of a session.
 //!
-//! The given `number` must be in range and must be an available slot; calling this method with a `kind` other than `keygen` will result in an error.
+//! The given `number` must be in range and must be an available slot.
 //!
 //! When the required number of `parties` have been allocated to a session a `sessionLoad` event is emitted to all the clients in the session.
 //!
@@ -162,10 +162,6 @@ pub enum ServiceError {
     /// Error generated when a party number does not belong to the caller.
     #[error("party {0} is not valid in this context")]
     BadParty(u16),
-    /// Error generated when a session kind was given, but
-    /// does not match the expected kind.
-    #[error("keygen session kind expected")]
-    KeygenSessionExpected,
     /// Error generated when the receiver for a peer to peer message
     /// does not exist.
     #[error("receiver {0} for peer to peer message does not exist")]
@@ -422,52 +418,40 @@ impl Service for ServiceHandler {
                 let params: SessionLoadParams = req.deserialize()?;
                 let (group_id, session_id, kind, party_number) = params;
 
-                if let SessionKind::Keygen = kind {
-                    let mut writer = state.write().await;
-                    let group =
-                        get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
-                    if let Some(session) = group.sessions.get_mut(&session_id) {
-                        // Enough parties are loaded into the session
-                        if threshold(
-                            &kind,
-                            &group.params,
-                            session.party_signups.len(),
-                        ) {
-                            let value = serde_json::to_value((
-                                SESSION_LOAD_EVENT,
-                                &session_id,
-                            ))
-                            .unwrap();
-                            let response: Response = value.into();
-                            let ctx = Notification::Session {
-                                group_id,
-                                session_id,
-                                filter: None,
-                                response,
-                            };
-                            let mut writer = notification.lock().await;
-                            *writer = Some(ctx);
-                        }
+                let mut writer = state.write().await;
+                let group =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                if let Some(session) = group.sessions.get_mut(&session_id) {
+                    // Enough parties are loaded into the session
+                    if threshold(
+                        &kind,
+                        &group.params,
+                        session.party_signups.len(),
+                    ) {
+                        let value = serde_json::to_value((
+                            SESSION_LOAD_EVENT,
+                            &session_id,
+                        ))
+                        .unwrap();
+                        let response: Response = value.into();
+                        let ctx = Notification::Session {
+                            group_id,
+                            session_id,
+                            filter: None,
+                            response,
+                        };
+                        let mut writer = notification.lock().await;
+                        *writer = Some(ctx);
+                    }
 
-                        let res = serde_json::to_value(&party_number).unwrap();
-                        match session.load(
-                            &group.params,
-                            *conn_id,
-                            party_number,
-                        ) {
-                            Ok(_) => Some((req, res).into()),
-                            Err(err) => {
-                                return Err(Error::from(Box::from(err)))
-                            }
-                        }
-                    } else {
-                        return Err(Error::from(Box::from(
-                            ServiceError::SessionDoesNotExist(session_id),
-                        )));
+                    let res = serde_json::to_value(&party_number).unwrap();
+                    match session.load(&group.params, *conn_id, party_number) {
+                        Ok(_) => Some((req, res).into()),
+                        Err(err) => return Err(Error::from(Box::from(err))),
                     }
                 } else {
                     return Err(Error::from(Box::from(
-                        ServiceError::KeygenSessionExpected,
+                        ServiceError::SessionDoesNotExist(session_id),
                     )));
                 }
             }

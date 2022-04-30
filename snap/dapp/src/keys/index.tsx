@@ -83,7 +83,7 @@ function Keys() {
         <Button
           variant="contained"
           href="#/keys/create">
-          Create a new key share
+          Create a new key
         </Button>
       </Stack>
     </Stack>

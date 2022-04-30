@@ -2,7 +2,7 @@ import React from "react";
 
 import { Stack, Typography } from "@mui/material";
 
-import { SigningType } from './index';
+import { SigningType } from '../../../types';
 
 import SnapConnect from "../../../snap-connect";
 

@@ -88,11 +88,11 @@ export default function SetParameters(props: StepProps) {
         <Stack padding={1}>
           <Stack marginBottom={1}>
             <Typography variant="body1" component="div">
-              Choose a name for the key share.
+              Choose a name for the key.
             </Typography>
             <Typography variant="body2" component="div" color="text.secondary">
-              The name will help you select the key share when you want to sign
-              a transaction.
+              The name will help you select the key when you want to sign
+              a message or transaction.
             </Typography>
           </Stack>
 
@@ -104,7 +104,7 @@ export default function SetParameters(props: StepProps) {
             value={name}
             error={nameError}
             variant="outlined"
-            placeholder="Name of the key share"
+            placeholder="Name of the key"
           />
         </Stack>
 
