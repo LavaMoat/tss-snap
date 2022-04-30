@@ -4,11 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 import { Stack, Button, Typography } from "@mui/material";
 import { keysSelector, saveKey } from "../store/keys";
+import { sessionSelector } from "../store/session";
 
 export default function Save() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { group, keyShare } = useSelector(keysSelector);
+  const { keyShare } = useSelector(keysSelector);
+  const { group } = useSelector(sessionSelector);
 
   if (!group || !keyShare) {
     return (

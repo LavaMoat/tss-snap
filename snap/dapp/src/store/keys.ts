@@ -5,11 +5,9 @@ import {
   decrypt as xchacha20poly1305Decrypt,
 } from "@metamask/mpc-snap-wasm";
 
-import { GroupInfo, Session, KeyShare } from "@metamask/mpc-client";
+import { KeyShare } from "@metamask/mpc-client";
 
 import {encode, decode} from '../utils';
-
-import { Transport } from "../types";
 
 import snapId from "../snap-id";
 
@@ -191,10 +189,6 @@ export const deleteKey = createAsyncThunk(
 );
 
 export type KeyState = {
-  group?: GroupInfo;
-  session?: Session;
-  transport?: Transport;
-
   // Key share awaiting confirmation to be saved.
   //
   // Ideally we would save this automatically in `compute`
@@ -217,9 +211,6 @@ export type KeyState = {
 };
 
 const initialState: KeyState = {
-  group: null,
-  session: null,
-  transport: null,
   keyShare: null,
   keyShares: [],
   loaded: false,
@@ -229,15 +220,6 @@ const keySlice = createSlice({
   name: "keys",
   initialState,
   reducers: {
-    setGroup: (state, { payload }: PayloadAction<GroupInfo>) => {
-      state.group = payload;
-    },
-    setSession: (state, { payload }: PayloadAction<Session>) => {
-      state.session = payload;
-    },
-    setTransport: (state, { payload }: PayloadAction<Transport>) => {
-      state.transport = payload;
-    },
     setKeyShare: (state, { payload }: PayloadAction<NamedKeyShare>) => {
       state.keyShare = payload;
     },
@@ -256,7 +238,7 @@ const keySlice = createSlice({
   },
 });
 
-export const { setGroup, setSession, setTransport, setKeyShare } =
+export const { setKeyShare } =
   keySlice.actions;
 export const keysSelector = (state: { keys: KeyState }) => state.keys;
 export default keySlice.reducer;

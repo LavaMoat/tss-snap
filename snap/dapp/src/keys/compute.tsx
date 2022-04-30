@@ -5,7 +5,8 @@ import { Stack, Typography } from "@mui/material";
 
 import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
 
-import { keysSelector, setKeyShare } from "../store/keys";
+import { setKeyShare } from "../store/keys";
+import { sessionSelector } from "../store/session";
 import { WebSocketContext } from "../websocket-provider";
 import { WorkerContext } from "../worker";
 
@@ -17,7 +18,7 @@ export default function Compute(props: StepProps) {
   const dispatch = useDispatch();
   const worker = useContext(WorkerContext);
   const websocket = useContext(WebSocketContext);
-  const { group, session, transport } = useSelector(keysSelector);
+  const { group, session, transport } = useSelector(sessionSelector);
 
   useEffect(() => {
     const startCompute = async () => {

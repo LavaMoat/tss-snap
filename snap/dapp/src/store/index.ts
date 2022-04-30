@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import keysReducer from "./keys";
+import sessionReducer from "./session";
 import dialogsReducer from "./dialogs";
 import snackbarsReducer from "./snackbars";
 
 const store = configureStore({
   reducer: {
     keys: keysReducer,
+    session: sessionReducer,
     dialogs: dialogsReducer,
     snackbars: snackbarsReducer,
   },
@@ -13,11 +15,11 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types
-        ignoredActions: ["keys/setTransport"],
+        ignoredActions: ["session/setTransport"],
         // Ignore these field paths in all actions
         ignoredActionPaths: [],
         // Ignore these paths in the state
-        ignoredPaths: ["keys"],
+        ignoredPaths: ["session"],
       },
     }),
 });

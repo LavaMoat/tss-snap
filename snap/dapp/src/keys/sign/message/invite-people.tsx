@@ -7,14 +7,14 @@ import {
 } from "@mui/material";
 
 import { SignMessageProps } from './index';
-import {keysSelector} from '../../../store/keys';
+import {sessionSelector} from '../../../store/session';
 import InviteCard, { inviteHref } from '../../invite-card';
 import SignMessageView from '../message-view';
 
 export default function InvitePeople(props: SignMessageProps) {
   const { address } = useParams();
   const { message, digest } = props;
-  const { group, session } = useSelector(keysSelector);
+  const { group, session } = useSelector(sessionSelector);
 
   const totalInvites = group.params.parties - 1;
   const hrefPrefix = `keys/${address}/sign/join/message`;

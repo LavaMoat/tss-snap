@@ -10,7 +10,7 @@ import {
 } from "@metamask/mpc-client";
 
 import { AppDispatch } from './store';
-import {setGroup, setSession, setTransport} from './store/keys';
+import {setGroup, setSession, setTransport} from './store/session';
 
 import { SignValue } from './types';
 

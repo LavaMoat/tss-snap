@@ -7,7 +7,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import { keysSelector } from "../../store/keys";
+import { sessionSelector } from "../../store/session";
 import { WebSocketContext } from "../../websocket-provider";
 
 import { StepProps } from "./index";
@@ -16,7 +16,7 @@ import InviteCard, { inviteHref } from '../invite-card';
 export default function InvitePeople(props: StepProps) {
   const { next } = props;
   const [showProgress, setShowProgress] = useState(false);
-  const { group, session } = useSelector(keysSelector);
+  const { group, session } = useSelector(sessionSelector);
   const websocket = useContext(WebSocketContext);
 
   useEffect(() => {

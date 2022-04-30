@@ -9,7 +9,9 @@ import {
 
 import { WebSocketContext } from "../../../websocket-provider";
 import { joinGroupSession } from '../../../group-session';
-import {keysSelector, KeyShareGroup, setGroup, setSession} from '../../../store/keys';
+import {keysSelector, KeyShareGroup} from '../../../store/keys';
+
+import {setGroup, setSession} from '../../../store/session';
 import { SignValue }from "../../../types";
 
 import NotFound from "../../../not-found";
@@ -86,7 +88,7 @@ function SessionConnect(props: SessionConnectProps) {
         disabled={!approved}
         variant="contained"
         onClick={onApprove}>
-        Next
+        Sign {signingType}
       </Button>
     </>
   );
