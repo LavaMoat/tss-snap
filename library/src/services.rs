@@ -422,31 +422,33 @@ impl Service for ServiceHandler {
                 let group =
                     get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
-                    // Enough parties are loaded into the session
-                    if threshold(
-                        &kind,
-                        &group.params,
-                        session.party_signups.len(),
-                    ) {
-                        let value = serde_json::to_value((
-                            SESSION_LOAD_EVENT,
-                            &session_id,
-                        ))
-                        .unwrap();
-                        let response: Response = value.into();
-                        let ctx = Notification::Session {
-                            group_id,
-                            session_id,
-                            filter: None,
-                            response,
-                        };
-                        let mut writer = notification.lock().await;
-                        *writer = Some(ctx);
-                    }
-
                     let res = serde_json::to_value(&party_number).unwrap();
                     match session.load(&group.params, *conn_id, party_number) {
-                        Ok(_) => Some((req, res).into()),
+                        Ok(_) => {
+                            // Enough parties are loaded into the session
+                            if threshold(
+                                &kind,
+                                &group.params,
+                                session.party_signups.len(),
+                            ) {
+                                let value = serde_json::to_value((
+                                    SESSION_LOAD_EVENT,
+                                    &session_id,
+                                ))
+                                .unwrap();
+                                let response: Response = value.into();
+                                let ctx = Notification::Session {
+                                    group_id,
+                                    session_id,
+                                    filter: None,
+                                    response,
+                                };
+                                let mut writer = notification.lock().await;
+                                *writer = Some(ctx);
+                            }
+
+                            Some((req, res).into())
+                        }
                         Err(err) => return Err(Error::from(Box::from(err))),
                     }
                 } else {
