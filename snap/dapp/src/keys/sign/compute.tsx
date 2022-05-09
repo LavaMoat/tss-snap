@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import { Box, Chip, Stack, Typography, CircularProgress } from "@mui/material";
@@ -23,19 +23,17 @@ function WaitForApproval() {
 
 export default function Compute(props: ComputeProps) {
   const { next } = props;
-  const { group, signCandidate } = useSelector(sessionSelector);
+  const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, selectedParty } = signCandidate;
   const { label } = group;
 
-  //<Stack>
-  //<Typography variant="body1" component="div">
-  //Computing the key share
-  //</Typography>
-  //<Typography variant="body2" component="div" color="text.secondary">
-  //Please be patient, this may take a while...
-  //</Typography>
-  //</Stack>
-  //
+  useEffect(() => {
+    console.log("Compute effect running", signProof);
+    if (signProof !== null) {
+      next();
+    }
+  }, [signProof]);
+
   const heading = creator ? null : (
     <Stack>
       <Typography variant="h4" component="div">

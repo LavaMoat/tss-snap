@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { GroupInfo, Session } from "@metamask/mpc-client";
+import { GroupInfo, Session, SignResult } from "@metamask/mpc-client";
 import { Transport, SignValue, SigningType } from "../types";
 
 export type SignCandidate = {
@@ -11,11 +11,18 @@ export type SignCandidate = {
   creator: boolean;
 };
 
+export type SignProof = {
+  signature: SignResult;
+  address: string;
+  value: SignValue;
+};
+
 export type SessionState = {
   group?: GroupInfo;
   session?: Session;
   transport?: Transport;
   signCandidate?: SignCandidate;
+  signProof?: SignProof;
 };
 
 const initialState: SessionState = {
@@ -23,6 +30,7 @@ const initialState: SessionState = {
   session: null,
   transport: null,
   signCandidate: null,
+  signProof: null,
 };
 
 const sessionSlice = createSlice({
@@ -41,11 +49,19 @@ const sessionSlice = createSlice({
     setSignCandidate: (state, { payload }: PayloadAction<SignCandidate>) => {
       state.signCandidate = payload;
     },
+    setSignProof: (state, { payload }: PayloadAction<SignProof>) => {
+      state.signProof = payload;
+    },
   },
 });
 
-export const { setGroup, setSession, setTransport, setSignCandidate } =
-  sessionSlice.actions;
+export const {
+  setGroup,
+  setSession,
+  setTransport,
+  setSignCandidate,
+  setSignProof,
+} = sessionSlice.actions;
 export const sessionSelector = (state: { session: SessionState }) =>
   state.session;
 export default sessionSlice.reducer;
