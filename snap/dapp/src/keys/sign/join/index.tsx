@@ -15,7 +15,7 @@ import { SigningType } from '../../../types';
 
 import Connect from "./connect";
 import Approve from "./approve";
-//import Compute from "./compute";
+import Compute from "../compute";
 //import Save from "../save";
 
 const steps = ["Connect", "Approve", "Compute", "Save Proof"];
@@ -32,7 +32,7 @@ const getStepComponent = (activeStep: number, props: StepProps) => {
   const stepComponents = [
     <Connect key={0} {...props} />,
     <Approve key={1} {...props} />,
-    //<Compute key={2} {...props} />,
+    <Compute key={2} {...props} />,
     //<Save key={3} {...props} />,
   ];
   return stepComponents[activeStep];

@@ -79,7 +79,6 @@ export default function Compute(props: StepProps) {
           Please be patient, this may take a while...
         </Typography>
       </Stack>
-
     </Stack>
   );
 }

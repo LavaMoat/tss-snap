@@ -32,6 +32,7 @@ import KeysLoader from '../../loader';
 
 import CreateMessage from './create-message';
 import InvitePeople from './invite-people';
+import Compute from '../Compute';
 
 import { ChooseKeyShareProps } from '../choose-key-share';
 
@@ -46,6 +47,7 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
   const stepComponents = [
     <CreateMessage key={0} {...props} />,
     <InvitePeople key={1} {...props} />,
+    <Compute key={2} {...props} />,
   ];
   return stepComponents[activeStep];
 };
