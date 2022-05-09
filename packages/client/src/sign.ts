@@ -240,7 +240,12 @@ async function signMessage(
   keyShare: KeyShare,
   message: string,
 ): Promise<SignMessage> {
+
+  console.log("Starting to sign the message...");
+
   const participants = await getParticipants(info, keyShare, stream, sink);
+
+  console.log("Got participants", participants);
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const signer: Signer = await new (worker.Signer as any)(
@@ -284,6 +289,8 @@ export async function sign(
     parameters: group.params,
     partySignup,
   };
+
+  console.log("SIGN WAS CALLED", sessionInfo, message);
 
   const signedMessage = await signMessage(
     websocket,
