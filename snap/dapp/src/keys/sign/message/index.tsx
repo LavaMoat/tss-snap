@@ -20,6 +20,7 @@ import {
 } from "@metamask/mpc-client";
 
 import {encode} from '../../../utils';
+import {SigningType} from '../../../types';
 
 import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
 import { createGroupSession, GroupFormData } from '../../../group-session';
@@ -27,6 +28,7 @@ import { createGroupSession, GroupFormData } from '../../../group-session';
 import NotFound from '../../../not-found';
 import PublicAddress from "../../../components/public-address";
 import {keysSelector, KeyShareGroup} from '../../../store/keys';
+import {setSignCandidate} from '../../../store/session';
 import SignStepper from '../../../components/stepper';
 import KeysLoader from '../../loader';
 
@@ -54,8 +56,6 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
 
 export type SignMessageProps = {
   next: () => void;
-  message: string;
-  digest: Uint8Array,
   onMessage: (message: string) => void;
 } & ChooseKeyShareProps;
 
@@ -66,8 +66,6 @@ export default function SignMessage() {
   const { address } = useParams();
   const { keyShares, loaded } = useSelector(keysSelector);
   const [activeStep, setActiveStep] = useState(0);
-  const [message, setMessage] = useState("");
-  const [digest, setDigest] = useState(new Uint8Array());
   const [selectedParty, setSelectedParty] = useState(null);
 
   if (!loaded) {
@@ -99,9 +97,7 @@ export default function SignMessage() {
   }
 
   const onMessage = async (message: string) => {
-    setMessage(message);
     const digest = await keccak256(Array.from(encode(message)));
-    setDigest(digest);
 
     const formData: GroupFormData = [
       label, { parties, threshold }
@@ -121,6 +117,15 @@ export default function SignMessage() {
       signValue,
     );
 
+    // Store the sign candidate state
+    const signCandidate = {
+      address,
+      selectedParty: selectedParty || items[0],
+      value: signValue,
+      signingType: SigningType.MESSAGE,
+    }
+    dispatch(setSignCandidate(signCandidate));
+
     handleNext();
   }
 
@@ -129,9 +134,7 @@ export default function SignMessage() {
     keyShare: keyShareGroup,
     selectedParty: selectedParty || items[0],
     onShareChange,
-    message,
     onMessage,
-    digest,
   };
 
   return (

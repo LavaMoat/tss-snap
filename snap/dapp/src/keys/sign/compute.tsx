@@ -14,9 +14,6 @@ import PublicAddress from "../../components/public-address";
 
 type ComputeProps = {
   next: () => void;
-  address: string;
-  signingType: SigningType;
-  selectedParty: number;
 }
 
 function WaitForApproval() {
@@ -39,12 +36,16 @@ function WaitForApproval() {
 }
 
 export default function Compute(props: ComputeProps) {
-  const { next, address, signingType, selectedParty } = props;
+  const { next } = props;
 
   const dispatch = useDispatch();
   const worker = useContext(WorkerContext);
   const websocket = useContext(WebSocketContext);
-  const { group, session, transport } = useSelector(sessionSelector);
+  const { group, session, transport, signCandidate } = useSelector(sessionSelector);
+
+  console.log("Sign candidate compute running", signCandidate);
+
+  const { address, signingType, selectedParty } = signCandidate;
 
   const { label } = group;
 

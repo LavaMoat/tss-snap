@@ -8,15 +8,16 @@ import {
 
 import { SignMessageProps } from './index';
 import {sessionSelector} from '../../../store/session';
-import {SigningType} from '../../../types';
+import {SigningType, SignMessage} from '../../../types';
 import InviteCard, { inviteHref } from '../../invite-card';
 import SignMessageView from '../message-view';
 import Approval from '../approval';
 
 export default function InvitePeople(props: SignMessageProps) {
   const { address } = useParams();
-  const { message, digest, next } = props;
-  const { group, session } = useSelector(sessionSelector);
+  const { next } = props;
+  const { group, session, signCandidate } = useSelector(sessionSelector);
+  const { message, digest } = signCandidate.value as SignMessage;
 
   const totalInvites = group.params.parties - 1;
   const hrefPrefix = `keys/${address}/sign/join/message`;

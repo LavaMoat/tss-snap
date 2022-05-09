@@ -11,7 +11,7 @@ import { WebSocketContext } from "../../../websocket-provider";
 import { joinGroupSession } from '../../../group-session';
 import {keysSelector, KeyShareGroup} from '../../../store/keys';
 
-import {setGroup, setSession} from '../../../store/session';
+import {setGroup, setSession, setSignCandidate} from '../../../store/session';
 import { SignValue, SigningType }from "../../../types";
 
 import NotFound from "../../../not-found";
@@ -29,22 +29,25 @@ type SessionConnectProps = {
   sessionId: string;
   keyShare: KeyShareGroup;
   signingType: SigningType;
-  onApprove: () => void;
+  onApprove: (selectedParty: number, value: SignValue) => void;
 }
 
 function SessionConnect(props: SessionConnectProps) {
+  const dispatch = useDispatch();
+  const websocket = useContext(WebSocketContext);
   const { address, groupId, sessionId, keyShare, signingType, onApprove } = props;
   const [label, setLabel] = useState("...");
   const [value, setValue] = useState<SignValue>(null);
   const [selectedParty, setSelectedParty] = useState(null);
   const [progressVisible, setProgressVisible] = useState(true);
-  const dispatch = useDispatch();
-  const websocket = useContext(WebSocketContext);
-
   const { items } = keyShare;
 
   const onShareChange = (n: number) => {
     setSelectedParty(n);
+  }
+
+  const doApprove = () => {
+    onApprove(selectedParty || items[0], value);
   }
 
   useEffect(() => {
@@ -118,13 +121,14 @@ function SessionConnect(props: SessionConnectProps) {
         value && preview
       }
       {
-        value && (<Approval signingType={signingType} onApprove={onApprove} />)
+        value && (<Approval signingType={signingType} onApprove={doApprove} />)
       }
     </Stack>
   );
 }
 
 export default function Approve(props: StepProps) {
+  const dispatch = useDispatch();
   const { address, next, signingType, groupId, sessionId } = props;
   const { keyShares, loaded } = useSelector(keysSelector);
 
@@ -145,6 +149,17 @@ export default function Approve(props: StepProps) {
     );
   }
 
+  const onApprove = (selectedParty: number, value: SignValue) => {
+    const signCandidate = {
+      address,
+      signingType,
+      selectedParty,
+      value,
+    }
+    dispatch(setSignCandidate(signCandidate));
+    next();
+  }
+
   const keyShareGroup: KeyShareGroup = keyShare[1];
   return <SessionConnect
     address={address}
@@ -152,6 +167,6 @@ export default function Approve(props: StepProps) {
     sessionId={sessionId}
     keyShare={keyShareGroup}
     signingType={signingType}
-    onApprove={next}
+    onApprove={onApprove}
     />
 }
