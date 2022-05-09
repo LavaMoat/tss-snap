@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import {useDispatch} from 'react-redux';
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 
 import {
   Alert,
@@ -13,26 +13,24 @@ import {
   Typography,
   TextField,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
 
-import {
-  importKeyStore,
-} from "@metamask/mpc-snap-wasm";
+import { importKeyStore } from "@metamask/mpc-snap-wasm";
 
-import FileUploadReader from '../components/file-upload-reader';
-import PublicAddress from '../components/public-address';
-import {decode} from '../utils';
-import {setSnackbar} from '../store/snackbars';
-import {findKeyShare, saveKey} from '../store/keys';
+import FileUploadReader from "../components/file-upload-reader";
+import PublicAddress from "../components/public-address";
+import { decode } from "../utils";
+import { setSnackbar } from "../store/snackbars";
+import { findKeyShare, saveKey } from "../store/keys";
 
-const steps = ['Load key store', 'Enter password', 'Import'];
+const steps = ["Load key store", "Enter password", "Import"];
 
 type ImportResult = {
   label: string;
   address: string;
   partyNumber: number;
   parties: number;
-}
+};
 
 type UploadKeyStoreProps = {
   setFile: (file: File) => void;
@@ -55,12 +53,12 @@ type EnterPasswordProps = {
 };
 
 function EnterPassword(props: EnterPasswordProps) {
-  const {onChange, value} = props;
+  const { onChange, value } = props;
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     props.onSubmit();
-  }
+  };
 
   return (
     <Stack marginTop={2}>
@@ -82,7 +80,7 @@ function EnterPassword(props: EnterPasswordProps) {
 type ImportKeyStoreProps = {
   result: ImportResult;
   startAgain: () => void;
-}
+};
 
 function ImportKeyStore(props: ImportKeyStoreProps) {
   const { result, startAgain } = props;
@@ -102,8 +100,12 @@ function ImportKeyStore(props: ImportKeyStoreProps) {
             Imported key share {partyNumber} or {parties}!
           </Alert>
           <Stack direction="row" spacing={2}>
-            <Button variant="outlined" onClick={startAgain}>Import another key share</Button>
-            <Button variant="contained" href={href}>Open {label}</Button>
+            <Button variant="outlined" onClick={startAgain}>
+              Import another key share
+            </Button>
+            <Button variant="contained" href={href}>
+              Open {label}
+            </Button>
           </Stack>
         </Stack>
       </Paper>
@@ -125,7 +127,7 @@ function ImportStepper() {
     setKeyStore(null);
     setPassword("");
     setResult(null);
-  }
+  };
 
   const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setPassword(e.target.value);
@@ -173,34 +175,40 @@ function ImportStepper() {
       const existingKeyShare = await findKeyShare(address, partyNumber);
       if (!existingKeyShare) {
         await dispatch(saveKey(keyShare));
-        dispatch(setSnackbar({
-          message: 'Key share imported',
-          severity: 'success'
-        }));
-        const result = {label, address, partyNumber, parties};
+        dispatch(
+          setSnackbar({
+            message: "Key share imported",
+            severity: "success",
+          })
+        );
+        const result = { label, address, partyNumber, parties };
         setPassword("");
         setResult(result);
         return result;
       } else {
-        dispatch(setSnackbar({
-          message: 'Key share already exists',
-          severity: 'error'
-        }));
+        dispatch(
+          setSnackbar({
+            message: "Key share already exists",
+            severity: "error",
+          })
+        );
       }
     } catch (e) {
-      dispatch(setSnackbar({
-        message: 'Failed to import keystore',
-        severity: 'error'
-      }));
+      dispatch(
+        setSnackbar({
+          message: "Failed to import keystore",
+          severity: "error",
+        })
+      );
     }
-  }
+  };
 
   const handleNext = async () => {
     if (activeStep === 0) {
       if (await readFileBuffer()) {
         proceed();
       }
-    } else if(activeStep === 1) {
+    } else if (activeStep === 1) {
       if (keyStore && password) {
         const result = await doImportKeyStore();
         if (result) {
@@ -216,7 +224,8 @@ function ImportStepper() {
       key={1}
       onSubmit={handleNext}
       onChange={onPasswordChange}
-      value={password} />,
+      value={password}
+    />,
   ];
 
   return (
@@ -230,18 +239,16 @@ function ImportStepper() {
           );
         })}
       </Stepper>
-      {
-        activeStep < 2 ? (
-          <Stack spacing={4}>
-            {components[activeStep]}
-            <Button variant="contained" onClick={handleNext}>
-              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-            </Button>
-          </Stack>
-        ) : (
-          <ImportKeyStore result={result} startAgain={startAgain} />
-        )
-      }
+      {activeStep < 2 ? (
+        <Stack spacing={4}>
+          {components[activeStep]}
+          <Button variant="contained" onClick={handleNext}>
+            {activeStep === steps.length - 1 ? "Finish" : "Next"}
+          </Button>
+        </Stack>
+      ) : (
+        <ImportKeyStore result={result} startAgain={startAgain} />
+      )}
     </>
   );
 }

@@ -3,12 +3,10 @@ import { useDispatch } from "react-redux";
 
 import { Stack, Typography, CircularProgress } from "@mui/material";
 
-import {
-  SessionKind,
-} from "@metamask/mpc-client";
+import { SessionKind } from "@metamask/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
-import { joinGroupSessionWithSignup } from '../../group-session';
+import { joinGroupSessionWithSignup } from "../../group-session";
 
 import { StepProps } from "./index";
 
@@ -48,7 +46,6 @@ export default function Compute(props: StepProps) {
           throw new Error("Session id is for another session");
         }
       });
-
     }, 1000);
   }, []);
 

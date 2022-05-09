@@ -19,7 +19,7 @@ import ShowKey from "./show";
 import Import from "./import";
 
 import PublicAddress from "../components/public-address";
-import KeysLoader from './loader';
+import KeysLoader from "./loader";
 
 function Keys() {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ function Keys() {
         </Typography>
         <KeysLoader />
       </Stack>
-    )
+    );
   }
 
   const showKey = (address: string) => navigate(`/keys/${address}`);
@@ -75,14 +75,10 @@ function Keys() {
       </Typography>
       {view}
       <Stack direction="row" spacing={2}>
-        <Button
-          variant="contained"
-          href="#/keys/import">
+        <Button variant="contained" href="#/keys/import">
           Import from keystore
         </Button>
-        <Button
-          variant="contained"
-          href="#/keys/create">
+        <Button variant="contained" href="#/keys/create">
           Create a new key
         </Button>
       </Stack>

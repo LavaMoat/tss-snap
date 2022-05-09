@@ -21,12 +21,16 @@ import {
 } from "@mui/material";
 
 import { keysSelector } from "../store/keys";
-import { setDialogVisible, CONFIRM_DELETE_KEY_SHARE, EXPORT_KEY_STORE } from "../store/dialogs";
+import {
+  setDialogVisible,
+  CONFIRM_DELETE_KEY_SHARE,
+  EXPORT_KEY_STORE,
+} from "../store/dialogs";
 import { chains } from "../utils";
 
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
-import KeysLoader from './loader';
+import KeysLoader from "./loader";
 
 export default function ShowKey() {
   const navigate = useNavigate();
@@ -59,9 +63,7 @@ export default function ShowKey() {
   }, [address]);
 
   if (!loaded) {
-    return (
-      <KeysLoader />
-    )
+    return <KeysLoader />;
   }
 
   const keyShare = keyShares.find((item) => {
@@ -75,25 +77,35 @@ export default function ShowKey() {
 
   const signMessage = () => {
     navigate(`/keys/${address}/sign/message`);
-  }
+  };
 
   const signTransaction = () => {
     navigate(`/keys/${address}/sign/transaction`);
-  }
+  };
 
   const onDeleteKeyShare = async (
-    address: string, number: number, length: number) => {
+    address: string,
+    number: number,
+    length: number
+  ) => {
     dispatch(
-      setDialogVisible(
-        [CONFIRM_DELETE_KEY_SHARE, true, [address, number, length]]))
-  }
+      setDialogVisible([
+        CONFIRM_DELETE_KEY_SHARE,
+        true,
+        [address, number, length],
+      ])
+    );
+  };
 
   const onExportKeyShare = async (
-    address: string, number: number, length: number) => {
+    address: string,
+    number: number,
+    length: number
+  ) => {
     dispatch(
-      setDialogVisible(
-        [EXPORT_KEY_STORE, true, [address, number, length]]))
-  }
+      setDialogVisible([EXPORT_KEY_STORE, true, [address, number, length]])
+    );
+  };
 
   const share = keyShare[1];
   const { label, threshold, parties, items } = share;
@@ -131,13 +143,12 @@ export default function ShowKey() {
             </Box>
           </Stack>
 
-          <Box sx={{flexGrow: 1}} />
+          <Box sx={{ flexGrow: 1 }} />
 
           <ButtonGroup variant="contained">
             <Button onClick={signMessage}>Sign Message</Button>
             <Button onClick={signTransaction}>Sign Transaction</Button>
           </ButtonGroup>
-
         </Stack>
         <PublicAddress address={address} />
 
@@ -151,30 +162,40 @@ export default function ShowKey() {
 
         <List
           component="div"
-          subheader={
-            <ListSubheader component="div">
-              Shares
-            </ListSubheader>
-          }
+          subheader={<ListSubheader component="div">Shares</ListSubheader>}
         >
-          {
-            items.map((number, index) => {
-              return (
-                <ListItem key={index}>
-                  <ListItemText secondary={`Party #${number}`}>Key Share {index + 1}</ListItemText>
-                  <ButtonGroup
-                    variant="outlined" size="small" aria-label="key share actions">
-                    <Button onClick={() => onExportKeyShare(address, number, items.length)}>Export</Button>
-                    <Button color="error" onClick={() => onDeleteKeyShare(address, number, items.length)}>Delete</Button>
-                  </ButtonGroup>
-                </ListItem>
-              );
-            })
-          }
+          {items.map((number, index) => {
+            return (
+              <ListItem key={index}>
+                <ListItemText secondary={`Party #${number}`}>
+                  Key Share {index + 1}
+                </ListItemText>
+                <ButtonGroup
+                  variant="outlined"
+                  size="small"
+                  aria-label="key share actions"
+                >
+                  <Button
+                    onClick={() =>
+                      onExportKeyShare(address, number, items.length)
+                    }
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    color="error"
+                    onClick={() =>
+                      onDeleteKeyShare(address, number, items.length)
+                    }
+                  >
+                    Delete
+                  </Button>
+                </ButtonGroup>
+              </ListItem>
+            );
+          })}
         </List>
-
       </Stack>
-
     </>
   );
 }

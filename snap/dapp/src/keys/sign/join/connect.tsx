@@ -2,14 +2,14 @@ import React from "react";
 
 import { Stack, Typography } from "@mui/material";
 
-import { SigningType } from '../../../types';
+import { SigningType } from "../../../types";
 
 import SnapConnect from "../../../snap-connect";
 
 type SignConnectProps = {
   next: () => void;
   signingType: SigningType;
-}
+};
 
 export default function Connect(props: SignConnectProps) {
   const { next, signingType } = props;

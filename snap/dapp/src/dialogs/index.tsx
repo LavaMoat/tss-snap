@@ -2,9 +2,7 @@ import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import {
-  exportKeyStore,
-} from "@metamask/mpc-snap-wasm";
+import { exportKeyStore } from "@metamask/mpc-snap-wasm";
 
 import {
   dialogsSelector,
@@ -13,9 +11,9 @@ import {
   EXPORT_KEY_STORE,
 } from "../store/dialogs";
 
-import {deleteKey, findKeyShare} from '../store/keys';
-import {setSnackbar} from '../store/snackbars';
-import {encode, download} from '../utils';
+import { deleteKey, findKeyShare } from "../store/keys";
+import { setSnackbar } from "../store/snackbars";
+import { encode, download } from "../utils";
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 import ExportKeyStoreDialog from "./export-keystore";
@@ -36,8 +34,8 @@ export default function Dialogs() {
 
     dispatch(
       setSnackbar({
-        message: 'Key share deleted',
-        severity: 'success'
+        message: "Key share deleted",
+        severity: "success",
       })
     );
 
@@ -59,13 +57,15 @@ export default function Dialogs() {
     const buffer = encode(JSON.stringify(keyStore, undefined, 2));
     download(fileName, buffer);
 
-    dispatch(setSnackbar({
-      message: 'Key store exported',
-      severity: 'success'
-    }));
+    dispatch(
+      setSnackbar({
+        message: "Key store exported",
+        severity: "success",
+      })
+    );
 
     cancelDialog(EXPORT_KEY_STORE);
-  }
+  };
 
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
@@ -86,7 +86,6 @@ export default function Dialogs() {
         handleOk={onExportKeyStore}
         request={(dialogs[EXPORT_KEY_STORE][1] || []) as ExportKeyStore}
       />
-
     </>
   );
 }

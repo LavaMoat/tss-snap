@@ -1,11 +1,11 @@
 import React from "react";
-import {useDispatch} from 'react-redux';
+import { useDispatch } from "react-redux";
 
 import { Stack, Button, Tooltip } from "@mui/material";
 
 import CopyIcon from "@mui/icons-material/ContentCopy";
 
-import {setSnackbar} from '../store/snackbars';
+import { setSnackbar } from "../store/snackbars";
 import { copyToClipboard, abbreviateAddress } from "../utils";
 
 type PublicAddressProps = {
@@ -24,10 +24,12 @@ export default function PublicAddress(props: PublicAddressProps) {
     e.stopPropagation();
     await copyToClipboard(address);
 
-    dispatch(setSnackbar({
-      message: 'Address copied to clipboard',
-      severity: 'success'
-    }));
+    dispatch(
+      setSnackbar({
+        message: "Address copied to clipboard",
+        severity: "success",
+      })
+    );
   };
 
   return (

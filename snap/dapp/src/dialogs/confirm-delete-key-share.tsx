@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { DeleteRequest } from './index';
+import { DeleteRequest } from "./index";
 
 interface ConfirmDeleteSecretProps {
   open: boolean;
@@ -38,7 +38,9 @@ export default function ConfirmDeleteSecretDialog(
           </Typography>
 
           <Paper variant="outlined">
-            <Box padding={2}>Key share for party #{number} in {address}</Box>
+            <Box padding={2}>
+              Key share for party #{number} in {address}
+            </Box>
           </Paper>
 
           <Alert severity="warning">

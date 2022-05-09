@@ -1,17 +1,12 @@
-import React from 'react';
+import React from "react";
 import { useParams } from "react-router-dom";
-import {useSelector} from 'react-redux';
+import { useSelector } from "react-redux";
 
-import {
-  Breadcrumbs,
-  Link,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
-import NotFound from '../../not-found';
+import NotFound from "../../not-found";
 import PublicAddress from "../../components/public-address";
-import {keysSelector} from '../../store/keys';
+import { keysSelector } from "../../store/keys";
 
 export default function SignTransaction() {
   const { address } = useParams();

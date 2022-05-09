@@ -1,15 +1,11 @@
-import React from 'react';
+import React from "react";
 
-import {
-  Stepper,
-  Step,
-  StepLabel,
-} from "@mui/material";
+import { Stepper, Step, StepLabel } from "@mui/material";
 
 type SignStepperProps = {
   steps: string[];
   activeStep: number;
-}
+};
 
 export default function SignStepper(props: SignStepperProps) {
   const { steps, activeStep } = props;

@@ -1,49 +1,35 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from "react";
 import { useParams } from "react-router-dom";
-import {useSelector, useDispatch} from 'react-redux';
+import { useSelector, useDispatch } from "react-redux";
 
-import {
-  Box,
-  Chip,
-  Breadcrumbs,
-  Link,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
-import {
-  keccak256,
-} from "@metamask/mpc-snap-wasm";
+import { keccak256 } from "@metamask/mpc-snap-wasm";
 
-import {
-  SessionKind,
-} from "@metamask/mpc-client";
+import { SessionKind } from "@metamask/mpc-client";
 
-import {encode} from '../../../utils';
-import {SigningType} from '../../../types';
+import { encode } from "../../../utils";
+import { SigningType } from "../../../types";
 
-import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
-import { createGroupSession, GroupFormData } from '../../../group-session';
+import { WebSocketContext } from "../../../websocket-provider";
+import { createGroupSession, GroupFormData } from "../../../group-session";
 
-import NotFound from '../../../not-found';
+import NotFound from "../../../not-found";
 import PublicAddress from "../../../components/public-address";
-import {keysSelector, KeyShareGroup} from '../../../store/keys';
-import {setSignCandidate} from '../../../store/session';
-import SignStepper from '../../../components/stepper';
-import KeysLoader from '../../loader';
+import { keysSelector, KeyShareGroup } from "../../../store/keys";
+import { setSignCandidate } from "../../../store/session";
+import SignStepper from "../../../components/stepper";
+import KeysLoader from "../../loader";
 
-import CreateMessage from './create-message';
-import InvitePeople from './invite-people';
-import Compute from '../Compute';
+import CreateMessage from "./create-message";
+import InvitePeople from "./invite-people";
+import Compute from "../Compute";
 
-import { ChooseKeyShareProps } from '../choose-key-share';
+import Signer from "../signer";
 
-const steps = [
-  "Create message",
-  "Invite people",
-  "Compute",
-  "Save Proof"
-];
+import { ChooseKeyShareProps } from "../choose-key-share";
+
+const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
 
 const getStepComponent = (activeStep: number, props: SignMessageProps) => {
   const stepComponents = [
@@ -94,14 +80,12 @@ export default function SignMessage() {
 
   const onShareChange = (n: number) => {
     setSelectedParty(n);
-  }
+  };
 
   const onMessage = async (message: string) => {
     const digest = await keccak256(Array.from(encode(message)));
 
-    const formData: GroupFormData = [
-      label, { parties, threshold }
-    ];
+    const formData: GroupFormData = [label, { parties, threshold }];
 
     const signValue = { message, digest };
 
@@ -114,7 +98,7 @@ export default function SignMessage() {
       websocket,
       dispatch,
       selectedParty || items[0],
-      signValue,
+      signValue
     );
 
     // Store the sign candidate state
@@ -123,11 +107,12 @@ export default function SignMessage() {
       selectedParty: selectedParty || items[0],
       value: signValue,
       signingType: SigningType.MESSAGE,
-    }
+      creator: true,
+    };
     dispatch(setSignCandidate(signCandidate));
 
     handleNext();
-  }
+  };
 
   const stepProps = {
     next: handleNext,
@@ -156,12 +141,14 @@ export default function SignMessage() {
         </Stack>
         <Stack direction="row" alignItems="center">
           <PublicAddress address={address} abbreviate />
-          <Box sx={{flexGrow: 1}} />
-          <Chip label={`Using key share for party #${selectedParty || items[0]}`} />
+          <Box sx={{ flexGrow: 1 }} />
+          <Chip
+            label={`Using key share for party #${selectedParty || items[0]}`}
+          />
         </Stack>
         <SignStepper steps={steps} activeStep={activeStep} />
         {getStepComponent(activeStep, stepProps)}
-        <ListenerCleanup />
+        <Signer />
       </Stack>
     </>
   );

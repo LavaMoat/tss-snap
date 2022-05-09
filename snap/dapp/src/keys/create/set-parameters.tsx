@@ -1,20 +1,12 @@
 import React, { useState, useContext } from "react";
 import { useDispatch } from "react-redux";
 
-import {
-  Stack,
-  Button,
-  Typography,
-  Slider,
-  TextField,
-} from "@mui/material";
+import { Stack, Button, Typography, Slider, TextField } from "@mui/material";
 
-import {
-  SessionKind,
-} from "@metamask/mpc-client";
+import { SessionKind } from "@metamask/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
-import { createGroupSession, GroupFormData } from '../../group-session';
+import { createGroupSession, GroupFormData } from "../../group-session";
 
 import { StepProps } from "./index";
 
@@ -62,12 +54,13 @@ export default function SetParameters(props: StepProps) {
       setNameError(true);
       setName("");
     } else {
-
       // NOTE: Convert from the human-friendly threshold
       // NOTE: to the internal representation which requires
       // NOTE: t+1 to sign.
       const formData: GroupFormData = [
-        name, { parties, threshold: threshold - 1 }];
+        name,
+        { parties, threshold: threshold - 1 },
+      ];
 
       // Create the remote server group and session and store
       // the information in the redux state before proceeding to
@@ -91,8 +84,8 @@ export default function SetParameters(props: StepProps) {
               Choose a name for the key.
             </Typography>
             <Typography variant="body2" component="div" color="text.secondary">
-              The name will help you select the key when you want to sign
-              a message or transaction.
+              The name will help you select the key when you want to sign a
+              message or transaction.
             </Typography>
           </Stack>
 

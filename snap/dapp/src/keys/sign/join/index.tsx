@@ -11,12 +11,14 @@ import {
 } from "@mui/material";
 
 import NotFound from "../../../not-found";
-import { SigningType } from '../../../types';
+import { SigningType } from "../../../types";
 
 import Connect from "./connect";
 import Approve from "./approve";
 import Compute from "../compute";
 //import Save from "../save";
+
+import Signer from "../signer";
 
 const steps = ["Connect", "Approve", "Compute", "Save Proof"];
 
@@ -49,11 +51,11 @@ function BadSigningType() {
 function CreateStepper() {
   const { address, signingType, groupId, sessionId } = useParams();
 
-  console.log(address, signingType, groupId, sessionId);
-
-  if (signingType !== SigningType.MESSAGE
-      && signingType !== SigningType.TRANSACTION) {
-    return <BadSigningType />
+  if (
+    signingType !== SigningType.MESSAGE &&
+    signingType !== SigningType.TRANSACTION
+  ) {
+    return <BadSigningType />;
   }
 
   if (!groupId || !sessionId) {
@@ -92,9 +94,11 @@ function CreateStepper() {
 export default function JoinSignSession() {
   const { signingType, groupId, sessionId } = useParams();
 
-  if (signingType !== SigningType.MESSAGE
-      && signingType !== SigningType.TRANSACTION) {
-    return <BadSigningType />
+  if (
+    signingType !== SigningType.MESSAGE &&
+    signingType !== SigningType.TRANSACTION
+  ) {
+    return <BadSigningType />;
   }
 
   if (!groupId || !sessionId) {
@@ -107,6 +111,7 @@ export default function JoinSignSession() {
         Sign a {signingType}
       </Typography>
       <CreateStepper />
+      <Signer />
     </Stack>
   );
 }

@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-import {
-  Stack,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
+import { Stack, Typography, CircularProgress } from "@mui/material";
 
 import { keysSelector, loadKeys } from "../store/keys";
 
@@ -15,15 +11,15 @@ export default function KeysLoader() {
   const { loaded } = useSelector(keysSelector);
 
   useEffect(() => {
-    const onLoadKeys = async() => {
+    const onLoadKeys = async () => {
       // Load any saved key information
       await dispatch(loadKeys());
       setLoading(false);
-    }
+    };
     if (!loaded) {
       onLoadKeys();
     }
-  }, [])
+  }, []);
 
   if (loading) {
     return (
@@ -33,7 +29,7 @@ export default function KeysLoader() {
           Loading key shares...
         </Typography>
       </Stack>
-    )
+    );
   }
   return null;
 }

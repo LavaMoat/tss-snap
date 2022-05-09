@@ -7,7 +7,7 @@ import {
 
 import { KeyShare } from "@metamask/mpc-client";
 
-import {encode, decode} from '../utils';
+import { encode, decode } from "../utils";
 
 import snapId from "../snap-id";
 
@@ -85,8 +85,7 @@ async function loadPrivateKey() {
   });
   const key = (response as KeyResponse).key;
   if (!key) {
-    throw new Error(
-      `private key material is not available, got: ${key}`);
+    throw new Error(`private key material is not available, got: ${key}`);
   }
   return key;
 }
@@ -139,7 +138,8 @@ const loadKeyData = async () => {
 
 export const findKeyShare = async (
   keyAddress: string,
-  partyNumber: number): Promise<NamedKeyShare | undefined> => {
+  partyNumber: number
+): Promise<NamedKeyShare | undefined> => {
   const keys = await loadStateData();
   return keys.find((namedKeyShare) => {
     const { share } = namedKeyShare;
@@ -147,7 +147,7 @@ export const findKeyShare = async (
     const { i: number } = localKey;
     return keyAddress === address && partyNumber === number;
   });
-}
+};
 
 export const loadState = createAsyncThunk("keys/loadState", loadStateData);
 export const saveState = createAsyncThunk("keys/saveState", saveStateData);
@@ -238,7 +238,6 @@ const keySlice = createSlice({
   },
 });
 
-export const { setKeyShare } =
-  keySlice.actions;
+export const { setKeyShare } = keySlice.actions;
 export const keysSelector = (state: { keys: KeyState }) => state.keys;
 export default keySlice.reducer;

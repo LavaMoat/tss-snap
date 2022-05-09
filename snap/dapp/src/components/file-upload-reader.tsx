@@ -1,14 +1,8 @@
 import React, { useState } from "react";
 
-import {
-  Stack,
-  Input,
-  Paper,
-  Typography,
-  IconButton,
-} from "@mui/material";
+import { Stack, Input, Paper, Typography, IconButton } from "@mui/material";
 
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 import { getDroppedFiles, humanFileSize } from "../utils";
 
@@ -39,7 +33,7 @@ export default function FileUploadReader(props: FileUploadReaderProps) {
     if (fileInput) {
       fileInput.value = null;
     }
-  }
+  };
 
   const onDragOver = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
@@ -72,7 +66,8 @@ export default function FileUploadReader(props: FileUploadReaderProps) {
                 <Stack direction="row" spacing={2}>
                   <IconButton
                     onClick={removeFile}
-                    sx={{width: 40, height: 40}}>
+                    sx={{ width: 40, height: 40 }}
+                  >
                     <RemoveCircleIcon />
                   </IconButton>
                   <Stack>

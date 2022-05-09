@@ -16,7 +16,7 @@ import InvitePeople from "./invite-people";
 import Compute from "../compute";
 import Save from "../save";
 
-import { ListenerCleanup } from '../../websocket-provider';
+import { ListenerCleanup } from "../../websocket-provider";
 
 const steps = ["Set parameters", "Invite people", "Compute", "Save"];
 

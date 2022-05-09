@@ -4,7 +4,7 @@ import { StreamTransport, SinkTransport } from "@metamask/mpc-client";
 export type SignMessage = {
   message: string;
   digest: string;
-}
+};
 
 export enum SigningType {
   MESSAGE = "message",
@@ -12,7 +12,10 @@ export enum SigningType {
 }
 
 // TODO: type for signing transactions
-export type SignTransaction = null;
+export type SignTransaction = {
+  // TODO: store the transaction information
+  digest: string;
+};
 
 export type SignValue = SignMessage | SignTransaction;
 

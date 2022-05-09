@@ -12,7 +12,8 @@ export default function Connect() {
           Connect
         </Typography>
         <Alert severity="warning">
-          This is BETA software, you use it at your own risk; at the very least avoid Mainnet for your transactions.
+          This is BETA software, you use it at your own risk; at the very least
+          avoid Mainnet for your transactions.
         </Alert>
         <SnapConnect redirect="/keys" />
       </Stack>

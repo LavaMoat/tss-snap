@@ -8,14 +8,15 @@ export type SignCandidate = {
   value: SignValue;
   selectedParty: number;
   signingType: SigningType;
-}
+  creator: boolean;
+};
 
 export type SessionState = {
   group?: GroupInfo;
   session?: Session;
   transport?: Transport;
   signCandidate?: SignCandidate;
-}
+};
 
 const initialState: SessionState = {
   group: null,
@@ -45,5 +46,6 @@ const sessionSlice = createSlice({
 
 export const { setGroup, setSession, setTransport, setSignCandidate } =
   sessionSlice.actions;
-export const sessionSelector = (state: { session: SessionState }) => state.session;
+export const sessionSelector = (state: { session: SessionState }) =>
+  state.session;
 export default sessionSlice.reducer;

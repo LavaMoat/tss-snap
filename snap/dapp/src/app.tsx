@@ -16,7 +16,7 @@ import {
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import ScienceIcon from '@mui/icons-material/Science';
+import ScienceIcon from "@mui/icons-material/Science";
 
 import WebSocketProvider from "./websocket-provider";
 import WorkerProvider, { webWorker } from "./worker";
@@ -46,7 +46,7 @@ function MainAppBar() {
             </Typography>
           </Stack>
 
-          <Box sx={{flexGrow: 1}} />
+          <Box sx={{ flexGrow: 1 }} />
           <Chip icon={<ScienceIcon />} label="BETA" color="secondary" />
         </Stack>
       </AppBar>
@@ -67,8 +67,12 @@ function Content() {
         <Route path="/keys/:address/sign/message" element={<Message />} />
         <Route
           path="/keys/:address/sign/join/:signingType/:groupId/:sessionId"
-          element={<JoinSignSession />} />
-        <Route path="/keys/:address/sign/transaction" element={<Transaction />} />
+          element={<JoinSignSession />}
+        />
+        <Route
+          path="/keys/:address/sign/transaction"
+          element={<Transaction />}
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Box>

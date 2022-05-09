@@ -9,26 +9,21 @@ import {
   Session,
 } from "@metamask/mpc-client";
 
-import { AppDispatch } from './store';
-import {setGroup, setSession, setTransport} from './store/session';
+import { AppDispatch } from "./store";
+import { setGroup, setSession, setTransport } from "./store/session";
 
-import { SignValue } from './types';
+import { SignValue } from "./types";
 
 export type GroupFormData = [string, Parameters];
 
-export async function prepareTransport(
+async function prepareTransport(
   kind: SessionKind,
   group: GroupInfo,
   session: Session,
   websocket: WebSocketClient,
-  dispatch: AppDispatch,
+  dispatch: AppDispatch
 ): Promise<void> {
-  const stream = new WebSocketStream(
-    websocket,
-    group.uuid,
-    session.uuid,
-    kind
-  );
+  const stream = new WebSocketStream(websocket, group.uuid, session.uuid, kind);
   const sink = new WebSocketSink(
     websocket,
     group.params.parties - 1,
@@ -47,7 +42,7 @@ export async function createGroupSession(
   keySharePartyNumber?: number,
   // Value to sign which can be associated
   // with the remote session
-  signValue?: SignValue,
+  signValue?: SignValue
 ): Promise<[GroupInfo, Session]> {
   const [label, params] = data;
   const uuid = await websocket.rpc({
@@ -71,12 +66,7 @@ export async function createGroupSession(
   } else if (keySharePartyNumber > 0) {
     await websocket.rpc({
       method: "Session.load",
-      params: [
-        uuid,
-        session.uuid,
-        kind,
-        keySharePartyNumber,
-      ],
+      params: [uuid, session.uuid, kind, keySharePartyNumber],
     });
     partyNumber = keySharePartyNumber;
   }
@@ -107,9 +97,8 @@ export async function joinGroupSession(
   kind: SessionKind,
   groupId: string,
   sessionId: string,
-  websocket: WebSocketClient,
+  websocket: WebSocketClient
 ): Promise<[GroupInfo, Session]> {
-
   const group = await websocket.rpc({
     method: "Group.join",
     params: groupId,
@@ -136,7 +125,7 @@ export async function joinGroupSessionWithSignup(
     kind,
     groupId,
     sessionId,
-    websocket,
+    websocket
   );
   dispatch(setGroup(group));
 
@@ -154,4 +143,32 @@ export async function joinGroupSessionWithSignup(
   await prepareTransport(kind, group, session, websocket, dispatch);
 
   return [group, session];
+}
+
+// Try to load a party number into an existing session.
+//
+// If the call succeeds then the session state is updated to
+// reflect the given party number.
+export async function loadPartyNumber(
+  kind: SessionKind,
+  group: GroupInfo,
+  session: Session,
+  websocket: WebSocketClient,
+  dispatch: AppDispatch,
+  keySharePartyNumber: number
+): Promise<[GroupInfo, Session]> {
+  await websocket.rpc({
+    method: "Session.load",
+    params: [group.uuid, session.uuid, kind, keySharePartyNumber],
+  });
+
+  const newSession = {
+    ...session,
+    partySignup: { number: keySharePartyNumber, uuid: session.uuid },
+  };
+  dispatch(setSession(newSession));
+
+  await prepareTransport(kind, group, session, websocket, dispatch);
+
+  return [group, newSession];
 }

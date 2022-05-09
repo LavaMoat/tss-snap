@@ -1,15 +1,9 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 
-import {
-  Box,
-  Stack,
-  Typography,
-  Paper,
-  Link,
-} from "@mui/material";
+import { Box, Stack, Typography, Paper, Link } from "@mui/material";
 
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 import { setSnackbar } from "../store/snackbars";
 import { copyToClipboard } from "../utils";
@@ -17,7 +11,8 @@ import { copyToClipboard } from "../utils";
 export function inviteHref(
   hrefPrefix: string,
   groupId: string,
-  sessionId: string) {
+  sessionId: string
+) {
   return `${location.protocol}//${location.host}/#/${hrefPrefix}/${groupId}/${sessionId}`;
 }
 
@@ -30,20 +25,22 @@ type InviteLinkProps = {
   onCopy?: () => void;
   href: string;
   index: number;
-}
+};
 
 function InviteLink(props: InviteLinkProps) {
   const dispatch = useDispatch();
-  const {href, onCopy, index} = props;
+  const { href, onCopy, index } = props;
 
   const copy = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     await copyToClipboard(href);
 
-    dispatch(setSnackbar({
-      message: 'Link copied to clipboard',
-      severity: 'success'
-    }));
+    dispatch(
+      setSnackbar({
+        message: "Link copied to clipboard",
+        severity: "success",
+      })
+    );
 
     if (onCopy) {
       onCopy();
@@ -51,52 +48,55 @@ function InviteLink(props: InviteLinkProps) {
   };
 
   return (
-    <Stack direction="row"
+    <Stack
+      direction="row"
       onClick={copy}
       sx={{
-        cursor: 'pointer',
-      }}>
-      <Box component="span"
+        cursor: "pointer",
+      }}
+    >
+      <Box
+        component="span"
         sx={{
-          border: '1px solid gray',
-          padding: '8px',
-          borderTopLeftRadius: '4px',
-          borderBottomLeftRadius: '4px',
-        }}>
-        <Typography
-          variant="body2"
-          component="span"
-          color="text.secondary"
-        >
+          border: "1px solid gray",
+          padding: "8px",
+          borderTopLeftRadius: "4px",
+          borderBottomLeftRadius: "4px",
+        }}
+      >
+        <Typography variant="body2" component="span" color="text.secondary">
           #{index + 1}
         </Typography>
       </Box>
       <Box
         sx={{
-          border: '1px solid gray',
-          overflow: 'hidden',
-          padding: '0 8px',
-          alignItems: 'center',
-          display: 'flex',
+          border: "1px solid gray",
+          overflow: "hidden",
+          padding: "0 8px",
+          alignItems: "center",
+          display: "flex",
         }}
-        component="span">
+        component="span"
+      >
         <Link
           href={href}
           sx={{
-            whiteSpace: 'nowrap',
-            textDecoration: 'none',
-          }}>
+            whiteSpace: "nowrap",
+            textDecoration: "none",
+          }}
+        >
           {href}
         </Link>
       </Box>
       <Box
         component="span"
         sx={{
-          border: '1px solid gray',
-          padding: '8px',
-          borderTopRightRadius: '4px',
-          borderBottomRightRadius: '4px',
-        }}>
+          border: "1px solid gray",
+          padding: "8px",
+          borderTopRightRadius: "4px",
+          borderBottomRightRadius: "4px",
+        }}
+      >
         <Stack direction="row" spacing={1}>
           <ContentCopyIcon color="primary" />
         </Stack>
@@ -112,32 +112,19 @@ export default function InviteCard(props: InviteProps) {
     <Paper variant="outlined">
       <Stack padding={4} spacing={2}>
         <Stack>
-          <Typography
-            variant="body1"
-            component="span"
-          >
-            Send these links via email or private message to the people you
-            wish to invite.
+          <Typography variant="body1" component="span">
+            Send these links via email or private message to the people you wish
+            to invite.
           </Typography>
-          <Typography
-            variant="body2"
-            component="span"
-            color="text.secondary"
-          >
+          <Typography variant="body2" component="span" color="text.secondary">
             Click a link to copy it to your clipboard
           </Typography>
         </Stack>
-        {
-          links.map((href, index) => {
-            return (
-              <InviteLink
-                key={index}
-                href={href}
-                onCopy={onCopy}
-                index={index} />
-            );
-          })
-        }
+        {links.map((href, index) => {
+          return (
+            <InviteLink key={index} href={href} onCopy={onCopy} index={index} />
+          );
+        })}
       </Stack>
     </Paper>
   );

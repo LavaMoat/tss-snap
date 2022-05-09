@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { Dictionary } from '../utils';
+import { Dictionary } from "../utils";
 
 export const CONFIRM_DELETE_KEY_SHARE = "confirm-delete-key-share";
 export const EXPORT_KEY_STORE = "export-key-store";
@@ -13,7 +13,7 @@ export type DialogDict = Dictionary<[boolean, unknown?]>;
 
 export type DialogState = {
   dialogs: DialogDict;
-}
+};
 
 const initialState: DialogState = { dialogs };
 

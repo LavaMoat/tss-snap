@@ -1,9 +1,8 @@
-import React from 'react';
+import React from "react";
 
 import {
   Stack,
   Paper,
-
   FormControl,
   FormLabel,
   RadioGroup,
@@ -11,7 +10,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 
-import {KeyShareGroup} from '../../store/keys';
+import { KeyShareGroup } from "../../store/keys";
 
 export type ChooseKeyShareProps = {
   keyShare: KeyShareGroup;
@@ -25,7 +24,7 @@ export default function ChooseKeyShare(props: ChooseKeyShareProps) {
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const partyNumber = parseInt(e.target.value);
     onShareChange(partyNumber);
-  }
+  };
 
   const { threshold, parties } = keyShare;
 
@@ -33,18 +32,24 @@ export default function ChooseKeyShare(props: ChooseKeyShareProps) {
     <Paper variant="outlined">
       <Stack padding={2}>
         <FormControl>
-          <FormLabel id="key-share-label">Choose a key share ({`${threshold + 1} of ${parties}`})</FormLabel>
+          <FormLabel id="key-share-label">
+            Choose a key share ({`${threshold + 1} of ${parties}`})
+          </FormLabel>
           <RadioGroup
             onChange={onChange}
             aria-labelledby="key-share-label"
             value={selectedParty.toString()}
-            name="key-share-group">
+            name="key-share-group"
+          >
             {keyShare.items.map((partyNumber: number, index: number) => {
-              return <FormControlLabel
-                key={index}
-                value={partyNumber.toString()}
-                control={<Radio />}
-                label={`Party #${partyNumber}`} />
+              return (
+                <FormControlLabel
+                  key={index}
+                  value={partyNumber.toString()}
+                  control={<Radio />}
+                  label={`Party #${partyNumber}`}
+                />
+              );
             })}
           </RadioGroup>
         </FormControl>

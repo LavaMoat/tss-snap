@@ -1,21 +1,16 @@
-import React from 'react';
+import React from "react";
 
-import {
-  Stack,
-  Paper,
-  Typography,
-  Divider,
-} from "@mui/material";
+import { Stack, Paper, Typography, Divider } from "@mui/material";
 
-import {toHexString} from '../../utils';
+import { toHexString } from "../../utils";
 
 type SignMessageViewProps = {
   message: string;
   digest: string | Uint8Array;
-}
+};
 
 export default function SignMessageView(props: SignMessageViewProps) {
-  const { message, digest} = props;
+  const { message, digest } = props;
   return (
     <Paper variant="outlined">
       <Stack padding={2} spacing={2}>
@@ -30,10 +25,7 @@ export default function SignMessageView(props: SignMessageViewProps) {
         </Typography>
         <Divider />
         <Typography variant="body2" component="div" color="text.secondary">
-          {
-            typeof(digest) === "string" ?
-            digest : toHexString(digest)
-          }
+          {typeof digest === "string" ? digest : toHexString(digest)}
         </Typography>
       </Stack>
     </Paper>

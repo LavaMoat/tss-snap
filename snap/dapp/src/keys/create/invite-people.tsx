@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useSelector } from "react-redux";
 
-import {
-  Stack,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
+import { Stack, Typography, CircularProgress } from "@mui/material";
 
 import { sessionSelector } from "../../store/session";
 import { WebSocketContext } from "../../websocket-provider";
 
 import { StepProps } from "./index";
-import InviteCard, { inviteHref } from '../invite-card';
+import InviteCard, { inviteHref } from "../invite-card";
 
 export default function InvitePeople(props: StepProps) {
   const { next } = props;
@@ -34,7 +30,7 @@ export default function InvitePeople(props: StepProps) {
     if (!showProgress) {
       setShowProgress(true);
     }
-  }
+  };
 
   const Progress = () => (
     <Stack>
@@ -48,8 +44,10 @@ export default function InvitePeople(props: StepProps) {
   );
 
   const totalInvites = group.params.parties - 1;
-  const href = inviteHref("keys/join", group.uuid, session.uuid)
-  const links = Array(totalInvites).fill("").map(() => href);
+  const href = inviteHref("keys/join", group.uuid, session.uuid);
+  const links = Array(totalInvites)
+    .fill("")
+    .map(() => href);
 
   return (
     <Stack padding={2} spacing={2} marginTop={2}>
@@ -64,13 +62,10 @@ export default function InvitePeople(props: StepProps) {
           Invite people to share the new key with you.
         </Typography>
         <Typography variant="body2" component="div" color="text.secondary">
-          You must invite {totalInvites} people to continue creating
-          a key.
+          You must invite {totalInvites} people to continue creating a key.
         </Typography>
       </Stack>
-      <InviteCard
-        onCopy={onCopy}
-        links={links} />
+      <InviteCard onCopy={onCopy} links={links} />
       {showProgress ? <Progress /> : null}
     </Stack>
   );

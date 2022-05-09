@@ -1,16 +1,11 @@
 import React from "react";
-import {useDispatch} from 'react-redux';
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import {
-  Stack,
-  Button,
-  Link,
-  Typography,
-} from "@mui/material";
+import { Stack, Button, Link, Typography } from "@mui/material";
 
 import snapId from "./snap-id";
-import {setSnackbar} from './store/snackbars';
+import { setSnackbar } from "./store/snackbars";
 
 type RedirectHandler = () => void;
 
@@ -42,10 +37,12 @@ export default function SnapConnect(props: SnapConnectProps) {
         redirect();
       }
     } catch (e) {
-      dispatch(setSnackbar({
-        message: `Could not connect: ${e.message || ''}`,
-        severity: 'error'
-      }));
+      dispatch(
+        setSnackbar({
+          message: `Could not connect: ${e.message || ""}`,
+          severity: "error",
+        })
+      );
     }
   }
 
