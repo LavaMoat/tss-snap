@@ -30,14 +30,6 @@ export default function Signer(): null {
       const namedKeyShare = await findKeyShare(address, partySignup.number);
       const { share: keyShare } = namedKeyShare;
 
-      console.log("Got session LOAD event", sessionId);
-      console.log(address);
-      console.log(websocket, worker, stream, sink);
-      console.log(digest);
-      console.log(group, session);
-      console.log(partySignup);
-      console.log(keyShare);
-
       const { signature, address: signAddress } = await sign(
         websocket,
         worker,
@@ -53,7 +45,6 @@ export default function Signer(): null {
         throw new Error("Key share address and signature address do not match");
       }
 
-      console.log("Sign completed", signature, signAddress);
       const signProof = {
         signature,
         address: signAddress,
@@ -61,7 +52,7 @@ export default function Signer(): null {
       };
       dispatch(setSignProof(signProof));
     } else {
-      throw new Error("Got sessionLoad event for the wrong session.");
+      throw new Error("Got sessionLoad event for the wrong session");
     }
   });
   return null;

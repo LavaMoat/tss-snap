@@ -17,8 +17,7 @@ import { ListenerCleanup } from "../../../websocket-provider";
 import Connect from "./connect";
 import Approve from "./approve";
 import Compute from "../compute";
-//import Save from "../save";
-
+import SaveProof from "../save-proof";
 import Signer from "../signer";
 
 const steps = ["Connect", "Approve", "Compute", "Save Proof"];
@@ -36,7 +35,7 @@ const getStepComponent = (activeStep: number, props: StepProps) => {
     <Connect key={0} {...props} />,
     <Approve key={1} {...props} />,
     <Compute key={2} {...props} />,
-    //<Save key={3} {...props} />,
+    <SaveProof key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };

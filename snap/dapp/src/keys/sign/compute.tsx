@@ -28,7 +28,6 @@ export default function Compute(props: ComputeProps) {
   const { label } = group;
 
   useEffect(() => {
-    console.log("Compute effect running", signProof);
     if (signProof !== null) {
       next();
     }

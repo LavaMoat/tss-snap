@@ -6,7 +6,7 @@ import { toHexString } from "../../utils";
 
 type SignMessageViewProps = {
   message: string;
-  digest: string | Uint8Array;
+  digest: Uint8Array;
 };
 
 export default function SignMessageView(props: SignMessageViewProps) {
@@ -25,7 +25,7 @@ export default function SignMessageView(props: SignMessageViewProps) {
         </Typography>
         <Divider />
         <Typography variant="body2" component="div" color="text.secondary">
-          {typeof digest === "string" ? digest : toHexString(digest)}
+          {toHexString(digest)}
         </Typography>
       </Stack>
     </Paper>

@@ -17,13 +17,15 @@ import { createGroupSession, GroupFormData } from "../../../group-session";
 import NotFound from "../../../not-found";
 import PublicAddress from "../../../components/public-address";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
+import { sessionSelector } from "../../../store/session";
 import { setSignCandidate } from "../../../store/session";
 import SignStepper from "../../../components/stepper";
 import KeysLoader from "../../loader";
 
 import CreateMessage from "./create-message";
 import InvitePeople from "./invite-people";
-import Compute from "../Compute";
+import Compute from "../compute";
+import SaveProof from "../save-proof";
 
 import Signer from "../signer";
 
@@ -36,6 +38,7 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
     <CreateMessage key={0} {...props} />,
     <InvitePeople key={1} {...props} />,
     <Compute key={2} {...props} />,
+    <SaveProof key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };
@@ -51,6 +54,7 @@ export default function SignMessage() {
 
   const { address } = useParams();
   const { keyShares, loaded } = useSelector(keysSelector);
+  const { signProof } = useSelector(sessionSelector);
   const [activeStep, setActiveStep] = useState(0);
   const [selectedParty, setSelectedParty] = useState(null);
 
@@ -122,6 +126,16 @@ export default function SignMessage() {
     onMessage,
   };
 
+
+  const selectedKeyShare = signProof === null ? (
+    <>
+      <Box sx={{ flexGrow: 1 }} />
+      <Chip
+        label={`Using key share for party #${selectedParty || items[0]}`}
+      />
+    </>
+  ) : null;
+
   return (
     <>
       <Stack spacing={2}>
@@ -141,10 +155,7 @@ export default function SignMessage() {
         </Stack>
         <Stack direction="row" alignItems="center">
           <PublicAddress address={address} abbreviate />
-          <Box sx={{ flexGrow: 1 }} />
-          <Chip
-            label={`Using key share for party #${selectedParty || items[0]}`}
-          />
+          {selectedKeyShare}
         </Stack>
         <SignStepper steps={steps} activeStep={activeStep} />
         {getStepComponent(activeStep, stepProps)}
