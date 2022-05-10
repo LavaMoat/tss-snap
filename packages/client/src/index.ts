@@ -25,7 +25,9 @@ export type EcdsaWorker = {
     localKey: LocalKey,
   ): Promise<Signer>;
 
-  sha256(value: string): Promise<string>;
+  // Value is a `Uint8Array` wrapped into a sequence
+  // using `Array.from` so it is deserialized correctly.
+  keccak256(value: number[]): Promise<Uint8Array>;
 };
 
 export type GroupInfo = {

@@ -2,7 +2,6 @@ import init, {
   initThreadPool,
   KeyGenerator,
   Signer,
-  sha256,
 } from "@metamask/mpc-ecdsa-wasm";
 import * as Comlink from "comlink";
 
@@ -28,5 +27,4 @@ void (async function () {
 Comlink.expose({
   KeyGenerator,
   Signer,
-  sha256,
 });

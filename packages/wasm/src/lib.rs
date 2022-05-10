@@ -1,7 +1,6 @@
 //! Webassembly bindings to the GG2020 protocol in [multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa) for MPC key generation and signing.
 #![deny(missing_docs)]
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use wasm_bindgen::prelude::*;
 
 extern crate wasm_bindgen;
@@ -59,11 +58,11 @@ impl Default for Parameters {
     }
 }
 
-#[doc(hidden)]
+/// Compute the Keccak256 hash of a value.
 #[wasm_bindgen]
-pub fn sha256(message: JsValue) -> Result<JsValue, JsError> {
-    let message: String = message.into_serde()?;
-    let mut hasher = Sha256::new();
-    hasher.update(&message);
-    Ok(JsValue::from_serde(&hex::encode(hasher.finalize()))?)
+pub fn keccak256(message: JsValue) -> Result<JsValue, JsError> {
+    use sha3::{Digest, Keccak256};
+    let message: Vec<u8> = message.into_serde()?;
+    let digest = Keccak256::digest(&message).to_vec();
+    Ok(JsValue::from_serde(&digest)?)
 }

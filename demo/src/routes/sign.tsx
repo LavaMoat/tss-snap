@@ -56,6 +56,11 @@ interface ProposalProps {
   ) => void;
 }
 
+function encode(value: string): Uint8Array {
+  const encoder = new TextEncoder();
+  return encoder.encode(value);
+}
+
 const Proposal = ({
   address,
   group,
@@ -133,7 +138,7 @@ const Proposal = ({
         if (!runningSession) {
           setRunningSession(true);
 
-          const hash = await worker.sha256(proposal.message);
+          const hash = await worker.keccak256(Array.from(encode(proposal.message)));
 
           const stream = new WebSocketStream(
             websocket,

@@ -176,7 +176,7 @@ async function offlineStage(
 async function partialSignature(
   signer: Signer,
   info: SessionInfo,
-  message: string,
+  message: Uint8Array,
   stream: StreamTransport,
   sink: SinkTransport,
 ): Promise<SignMessage> {
@@ -184,7 +184,7 @@ async function partialSignature(
     {
       name: 'SIGN_ROUND_8',
       transition: async (): Promise<[number, Message[]]> => {
-        const partial = await signer.partial(message);
+        const partial = await signer.partial(Array.from(message));
         const round = 8;
         // Broadcast the partial signature
         // to other clients
@@ -238,7 +238,7 @@ async function signMessage(
   sink: SinkTransport,
   info: SessionInfo,
   keyShare: KeyShare,
-  message: string,
+  message: Uint8Array,
 ): Promise<SignMessage> {
   const participants = await getParticipants(info, keyShare, stream, sink);
 
@@ -263,7 +263,7 @@ async function signMessage(
  * @param worker - The worker implementation.
  * @param stream - The stream for sending messages.
  * @param sink - The sink for receiving messages.
- * @param message - The message to be signed.
+ * @param message - The message to be signed; must be a pre-hashed 32 byte array.
  * @param keyShare - The private key share.
  * @param group - The group information.
  * @param partySignup - The party signup information for the session.
@@ -273,7 +273,7 @@ export async function sign(
   worker: EcdsaWorker,
   stream: StreamTransport,
   sink: SinkTransport,
-  message: string,
+  message: Uint8Array,
   keyShare: KeyShare,
   group: GroupInfo,
   partySignup: PartySignup,

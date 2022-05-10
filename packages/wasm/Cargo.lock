@@ -787,7 +787,6 @@ dependencies = [
  "rand 0.6.5",
  "round-based",
  "serde",
- "sha2 0.9.9",
  "sha3 0.10.1",
  "wasm-bindgen",
  "wasm-bindgen-rayon",

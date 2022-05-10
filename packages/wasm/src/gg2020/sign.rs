@@ -14,6 +14,7 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
 use round_based::{Msg, StateMachine};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
+use std::convert::TryInto;
 
 //use crate::{console_log, log};
 
@@ -112,9 +113,10 @@ impl Signer {
     /// Return a partial signature that must be sent to the other
     /// signing participents.
     pub fn partial(&mut self, message: JsValue) -> Result<JsValue, JsError> {
-        let message: String = message.into_serde()?;
+        let message: Vec<u8> = message.into_serde()?;
+        let message: [u8; 32] = message.as_slice().try_into()?;
         let completed_offline_stage = self.inner.pick_output().unwrap()?;
-        let data = BigInt::from_bytes(message.as_bytes());
+        let data = BigInt::from_bytes(&message);
         let (_sign, partial) = SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
         self.completed = Some((completed_offline_stage, data));
