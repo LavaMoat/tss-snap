@@ -107,10 +107,17 @@ export type SessionInfo = {
 
 // Result of signing a message.
 export type SignResult = {
-  r: string;
-  s: string;
+  r: SignValue;
+  s: SignValue;
   recid: number;
 };
+
+export type SignValue = {
+  // For ECDSA should be `secp256k1`.
+  curve: string;
+  // Array of bytes for the value, length will be 32.
+  scalar: number[];
+}
 
 // A signed message with public key and address pre-computed.
 export type SignMessage = {
