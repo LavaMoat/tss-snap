@@ -6,6 +6,11 @@ export type NamedKeyShare = {
   share: KeyShare;
 };
 
+// Application state that can be persisted to disc by the snap backend.
+export type AppState = {
+  keyShares: NamedKeyShare[];
+};
+
 // Message to be signed.
 export type SignMessage = {
   message: string;

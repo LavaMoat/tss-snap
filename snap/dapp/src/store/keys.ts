@@ -41,16 +41,16 @@ export function groupKeys(keyShares: NamedKeyShare[]): KeyList {
 
 // Load key shares and group them by address.
 const loadKeyData = async () => {
-  const keys = await loadStateData();
-  return groupKeys(keys);
+  const { keyShares } = await loadStateData();
+  return groupKeys(keyShares);
 };
 
 export const findKeyShare = async (
   keyAddress: string,
   partyNumber: number
 ): Promise<NamedKeyShare | undefined> => {
-  const keys = await loadStateData();
-  return keys.find((namedKeyShare) => {
+  const { keyShares } = await loadStateData();
+  return keyShares.find((namedKeyShare) => {
     const { share } = namedKeyShare;
     const { address, localKey } = share;
     const { i: number } = localKey;
@@ -66,9 +66,9 @@ export const loadKeys = createAsyncThunk("keys/loadKeys", loadKeyData);
 export const saveKey = createAsyncThunk(
   "keys/saveKeyShare",
   async (keyShare: NamedKeyShare) => {
-    const keys = await loadStateData();
-    keys.push(keyShare);
-    await saveStateData(keys);
+    const appState = await loadStateData();
+    appState.keyShares.push(keyShare);
+    await saveStateData(appState);
     return await loadKeyData();
   }
 );
@@ -81,14 +81,15 @@ export const deleteKey = createAsyncThunk(
   "keys/deleteKeyShare",
   async (deleteRequest: DeleteKeyShare) => {
     const [address, number] = deleteRequest;
-    const keys = await loadStateData();
-    const newKeys = keys.filter((item: NamedKeyShare) => {
+    const appState = await loadStateData();
+    const newKeys = appState.keyShares.filter((item: NamedKeyShare) => {
       const { share } = item;
       const { address: itemAddress, localKey } = share;
       const { i: itemNumber } = localKey;
       return !(address === itemAddress && number === itemNumber);
     });
-    await saveStateData(newKeys);
+    const newState = { ...appState, keyShares: newKeys };
+    await saveStateData(newState);
     return await loadKeyData();
   }
 );
