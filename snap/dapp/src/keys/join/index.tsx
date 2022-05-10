@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 
 import NotFound from "../../not-found";
+import { ListenerCleanup } from "../../websocket-provider";
 
 import Connect from "./connect";
 import Session from "./session";
@@ -76,6 +77,7 @@ export default function Create() {
         Join a key
       </Typography>
       <CreateStepper />
+      <ListenerCleanup />
     </Stack>
   );
 }

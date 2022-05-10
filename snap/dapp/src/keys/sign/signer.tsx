@@ -1,9 +1,9 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
 import { sign } from "@metamask/mpc-client";
 
-import { WebSocketContext, ListenerCleanup } from "../../websocket-provider";
+import { WebSocketContext } from "../../websocket-provider";
 import { sessionSelector, setSignProof } from "../../store/session";
 import { findKeyShare } from "../../store/keys";
 import { WorkerContext } from "../../worker";
@@ -11,7 +11,7 @@ import { WorkerContext } from "../../worker";
 // Helper for signing messages that can be used in the views
 // for creators and other participants that have been invited
 // by the creator.
-export default function Signer() {
+export default function Signer(): null {
   const dispatch = useDispatch();
   const websocket = useContext(WebSocketContext);
   const worker = useContext(WorkerContext);
@@ -64,6 +64,5 @@ export default function Signer() {
       throw new Error("Got sessionLoad event for the wrong session.");
     }
   });
-
-  return <ListenerCleanup />;
+  return null;
 }

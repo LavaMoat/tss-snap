@@ -11,7 +11,7 @@ import { SessionKind } from "@metamask/mpc-client";
 import { encode } from "../../../utils";
 import { SigningType } from "../../../types";
 
-import { WebSocketContext } from "../../../websocket-provider";
+import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
 import { createGroupSession, GroupFormData } from "../../../group-session";
 
 import NotFound from "../../../not-found";
@@ -149,6 +149,7 @@ export default function SignMessage() {
         <SignStepper steps={steps} activeStep={activeStep} />
         {getStepComponent(activeStep, stepProps)}
         <Signer />
+        <ListenerCleanup />
       </Stack>
     </>
   );

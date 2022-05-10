@@ -12,6 +12,7 @@ import {
 
 import NotFound from "../../../not-found";
 import { SigningType } from "../../../types";
+import { ListenerCleanup } from "../../../websocket-provider";
 
 import Connect from "./connect";
 import Approve from "./approve";
@@ -112,6 +113,7 @@ export default function JoinSignSession() {
       </Typography>
       <CreateStepper />
       <Signer />
+      <ListenerCleanup />
     </Stack>
   );
 }
