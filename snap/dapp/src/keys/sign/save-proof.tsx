@@ -15,7 +15,7 @@ export default function SaveProof() {
 
   const saveProof = () => {
     console.log("TODO: save proof", signProof);
-  }
+  };
 
   const heading = creator ? null : (
     <Stack>
@@ -32,7 +32,9 @@ export default function SaveProof() {
     <Stack padding={1} spacing={2} marginTop={2}>
       {heading}
       <Alert severity="success">The {signingType} was signed!</Alert>
-      <Button variant="contained" onClick={saveProof}>Save Proof</Button>
+      <Button variant="contained" onClick={saveProof}>
+        Save Proof
+      </Button>
     </Stack>
   );
 }

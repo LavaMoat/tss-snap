@@ -1,4 +1,10 @@
-import { StreamTransport, SinkTransport } from "@metamask/mpc-client";
+import { KeyShare, StreamTransport, SinkTransport } from "@metamask/mpc-client";
+
+// Key share with a human-friendly label.
+export type NamedKeyShare = {
+  label: string;
+  share: KeyShare;
+};
 
 // Message to be signed.
 export type SignMessage = {

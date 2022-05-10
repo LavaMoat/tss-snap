@@ -1,25 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
-import {
-  encrypt as xchacha20poly1305Encrypt,
-  decrypt as xchacha20poly1305Decrypt,
-} from "@metamask/mpc-snap-wasm";
+import { loadStateData, saveStateData, clearStateData } from "./state";
 
-import { KeyShare } from "@metamask/mpc-client";
-
-import { encode, decode } from "../utils";
-
-import snapId from "../snap-id";
-
-type AeadPack = {
-  nonce: number[];
-  ciphertext: number[];
-};
-
-export type NamedKeyShare = {
-  label: string;
-  share: KeyShare;
-};
+import { NamedKeyShare } from "../types";
 
 export type KeyShareGroup = {
   label: string;
@@ -56,81 +39,7 @@ export function groupKeys(keyShares: NamedKeyShare[]): KeyList {
   return Object.entries(addressGroups);
 }
 
-// Key material returned from `getBip44Entropy_*`.
-type KeyResponse = {
-  key: string;
-};
-
-function decrypt(key: string, value: AeadPack): NamedKeyShare[] {
-  const buffer = xchacha20poly1305Decrypt(key, value);
-  const decoded = decode(new Uint8Array(buffer));
-  return JSON.parse(decoded);
-}
-
-function encrypt(key: string, value: NamedKeyShare[]): AeadPack {
-  const json = JSON.stringify(value);
-  const encoded = encode(json);
-  return xchacha20poly1305Encrypt(key, Array.from(encoded));
-}
-
-async function loadPrivateKey() {
-  const response = await ethereum.request({
-    method: "wallet_invokeSnap",
-    params: [
-      snapId,
-      {
-        method: "getKey",
-      },
-    ],
-  });
-  const key = (response as KeyResponse).key;
-  if (!key) {
-    throw new Error(`private key material is not available, got: ${key}`);
-  }
-  return key;
-}
-
-async function getState() {
-  return await ethereum.request({
-    method: "wallet_invokeSnap",
-    params: [
-      snapId,
-      {
-        method: "getState",
-      },
-    ],
-  });
-}
-
-async function setState(value: AeadPack) {
-  return await ethereum.request({
-    method: "wallet_invokeSnap",
-    params: [
-      snapId,
-      {
-        method: "updateState",
-        params: value,
-      },
-    ],
-  });
-}
-
-const loadStateData = async () => {
-  const state: AeadPack = (await getState()) as AeadPack;
-  if (state !== null) {
-    const key = await loadPrivateKey();
-    return decrypt(key, state);
-  }
-  // Treat no state as zero key shares
-  return [];
-};
-
-const saveStateData = async (keyShares: NamedKeyShare[]) => {
-  const key = await loadPrivateKey();
-  const aeadPack = encrypt(key, keyShares);
-  await setState(aeadPack);
-};
-
+// Load key shares and group them by address.
 const loadKeyData = async () => {
   const keys = await loadStateData();
   return groupKeys(keys);
@@ -151,11 +60,7 @@ export const findKeyShare = async (
 
 export const loadState = createAsyncThunk("keys/loadState", loadStateData);
 export const saveState = createAsyncThunk("keys/saveState", saveStateData);
-export const clearState = createAsyncThunk("keys/clearState", async () => {
-  const key = await loadPrivateKey();
-  const aeadPack = encrypt(key, []);
-  await setState(aeadPack);
-});
+export const clearState = createAsyncThunk("keys/clearState", clearStateData);
 
 export const loadKeys = createAsyncThunk("keys/loadKeys", loadKeyData);
 export const saveKey = createAsyncThunk(

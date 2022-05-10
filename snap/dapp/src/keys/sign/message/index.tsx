@@ -126,15 +126,15 @@ export default function SignMessage() {
     onMessage,
   };
 
-
-  const selectedKeyShare = signProof === null ? (
-    <>
-      <Box sx={{ flexGrow: 1 }} />
-      <Chip
-        label={`Using key share for party #${selectedParty || items[0]}`}
-      />
-    </>
-  ) : null;
+  const selectedKeyShare =
+    signProof === null ? (
+      <>
+        <Box sx={{ flexGrow: 1 }} />
+        <Chip
+          label={`Using key share for party #${selectedParty || items[0]}`}
+        />
+      </>
+    ) : null;
 
   return (
     <>
