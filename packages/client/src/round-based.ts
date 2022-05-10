@@ -90,6 +90,7 @@ export class RoundBased<R> {
 
   async start(): Promise<R> {
     let nextMessages: Message[] = null;
+
     while (this.currentRound < this.totalRounds) {
       nextMessages = await this.nextRound(nextMessages);
     }

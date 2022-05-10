@@ -84,7 +84,7 @@ export class WebSocketSink implements SinkTransport {
       throw new Error('Message is for the wrong session, UUID mismatch');
     }
 
-    // console.log("Received websocket message", message);
+    // console.log("Received websocket message", message, this.expected);
 
     if (this.rounds.get(round) === undefined) {
       this.rounds.set(round, []);

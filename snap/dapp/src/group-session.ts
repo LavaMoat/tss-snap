@@ -24,9 +24,13 @@ async function prepareTransport(
   dispatch: AppDispatch
 ): Promise<void> {
   const stream = new WebSocketStream(websocket, group.uuid, session.uuid, kind);
+  const expected = (kind === SessionKind.KEYGEN)
+    ? group.params.parties - 1
+    : group.params.threshold;
+
   const sink = new WebSocketSink(
     websocket,
-    group.params.parties - 1,
+    expected,
     session.uuid
   );
   dispatch(setTransport({ stream, sink }));

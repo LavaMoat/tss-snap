@@ -50,7 +50,8 @@ export default function Signer(): null {
       );
 
       if (address !== signAddress) {
-        throw new Error("Key share address and signature address do not match");
+        throw new Error(
+          "Key share address and signature address do not match");
       }
 
       console.log("Sign completed", signature, signAddress);

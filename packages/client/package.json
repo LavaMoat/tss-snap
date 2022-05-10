@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "lint": "eslint src --cache --ext js,ts",
-    "fmt": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --ignore-path .gitignore",
+    "fmt": "prettier --write . --no-color",
     "lint:fix": "yarn lint --fix && yarn fmt --write",
     "build": "yarn types && node build.js",
     "types": "tsc --project tsconfig.json"

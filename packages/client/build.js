@@ -5,7 +5,7 @@ const shared = {
   entryPoints: ['src/index.ts'],
   bundle: true,
   external: Object.keys(dependencies),
-}
+};
 
 build({
   ...shared,
@@ -16,4 +16,4 @@ build({
   ...shared,
   outfile: 'dist/index.esm.js',
   format: 'esm',
-})
+});

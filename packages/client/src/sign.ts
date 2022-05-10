@@ -240,7 +240,6 @@ async function signMessage(
   keyShare: KeyShare,
   message: string,
 ): Promise<SignMessage> {
-
   const participants = await getParticipants(info, keyShare, stream, sink);
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
