@@ -117,7 +117,7 @@ export type SignValue = {
   curve: string;
   // Array of bytes for the value, length will be 32.
   scalar: number[];
-}
+};
 
 // A signed message with public key and address pre-computed.
 export type SignMessage = {

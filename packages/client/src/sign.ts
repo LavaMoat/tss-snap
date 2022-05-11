@@ -5,7 +5,7 @@ import {
   RoundBased,
   StreamTransport,
   SinkTransport,
-  onTransition,
+  onTransition as onTransitionLog,
 } from './round-based';
 import {
   Message,
@@ -29,12 +29,14 @@ import {
  * @param keyShare - The key share.
  * @param stream - The stream for sending messages.
  * @param sink - The sink for receiving messages.
+ * @param onTransition - Transition handler.
  */
 async function getParticipants(
   info: SessionInfo,
   keyShare: KeyShare,
   stream: StreamTransport,
   sink: SinkTransport,
+  onTransition: (previousRound: string, current: string) => void,
 ): Promise<number[]> {
   const rounds: Round[] = [
     {
@@ -101,11 +103,13 @@ async function getParticipants(
  * @param signer - The signer implementation.
  * @param stream - The stream for sending messages.
  * @param sink - The sink for receiving messages.
+ * @param onTransition - Transition handler.
  */
 async function offlineStage(
   signer: Signer,
   stream: StreamTransport,
   sink: SinkTransport,
+  onTransition: (previousRound: string, current: string) => void,
 ): Promise<void> {
   const standardTransition = async (
     incoming: Message[],
@@ -172,6 +176,7 @@ async function offlineStage(
  * @param message - The message that will be signed.
  * @param stream - The stream for sending messages.
  * @param sink - The sink for receiving messages.
+ * @param onTransition - Transition handler.
  */
 async function partialSignature(
   signer: Signer,
@@ -179,6 +184,7 @@ async function partialSignature(
   message: Uint8Array,
   stream: StreamTransport,
   sink: SinkTransport,
+  onTransition: (previousRound: string, current: string) => void,
 ): Promise<SignMessage> {
   const rounds: Round[] = [
     {
@@ -230,6 +236,7 @@ async function partialSignature(
  * @param info - The session information.
  * @param keyShare - The private key share.
  * @param message - The message to be signed.
+ * @param onTransition - Transition handler.
  */
 async function signMessage(
   websocket: WebSocketClient,
@@ -239,8 +246,15 @@ async function signMessage(
   info: SessionInfo,
   keyShare: KeyShare,
   message: Uint8Array,
+  onTransition: (previousRound: string, current: string) => void,
 ): Promise<SignMessage> {
-  const participants = await getParticipants(info, keyShare, stream, sink);
+  const participants = await getParticipants(
+    info,
+    keyShare,
+    stream,
+    sink,
+    onTransition,
+  );
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const signer: Signer = await new (worker.Signer as any)(
@@ -249,9 +263,16 @@ async function signMessage(
     keyShare.localKey,
   );
 
-  await offlineStage(signer, stream, sink);
+  await offlineStage(signer, stream, sink, onTransition);
 
-  const signed = await partialSignature(signer, info, message, stream, sink);
+  const signed = await partialSignature(
+    signer,
+    info,
+    message,
+    stream,
+    sink,
+    onTransition,
+  );
   websocket.removeAllListeners('sessionMessage');
   return signed;
 }
@@ -267,6 +288,7 @@ async function signMessage(
  * @param keyShare - The private key share.
  * @param group - The group information.
  * @param partySignup - The party signup information for the session.
+ * @param onTransition - Optional transition handler.
  */
 export async function sign(
   websocket: WebSocketClient,
@@ -277,12 +299,22 @@ export async function sign(
   keyShare: KeyShare,
   group: GroupInfo,
   partySignup: PartySignup,
+  onTransition?: (previousRound: string, current: string) => void,
 ): Promise<SignMessage> {
   const sessionInfo = {
     groupId: group.uuid,
     sessionId: partySignup.uuid,
     parameters: group.params,
     partySignup,
+  };
+
+  const doTransition = (previousRound: string, current: string) => {
+    // Call standard onTransition for logs
+    onTransitionLog(previousRound, current);
+    // Call custom handler for UI progress updates
+    if (onTransition) {
+      onTransition(previousRound, current);
+    }
   };
 
   const signedMessage = await signMessage(
@@ -293,6 +325,7 @@ export async function sign(
     sessionInfo,
     keyShare,
     message,
+    doTransition,
   );
 
   return signedMessage;
