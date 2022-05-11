@@ -1,4 +1,4 @@
-import { KeyShare, StreamTransport, SinkTransport } from "@metamask/mpc-client";
+import { KeyShare, StreamTransport, SinkTransport, SignResult } from "@metamask/mpc-client";
 
 // Key share with a human-friendly label.
 export type NamedKeyShare = {
@@ -6,9 +6,22 @@ export type NamedKeyShare = {
   share: KeyShare;
 };
 
+export type SignProof = {
+  signature: SignResult;
+  address: string;
+  value: SignValue;
+  timestamp: number;
+};
+
+// Maps message signing proofs from key address.
+export type MessageProofs = {
+  [key: string]: SignProof[];
+}
+
 // Application state that can be persisted to disc by the snap backend.
 export type AppState = {
   keyShares: NamedKeyShare[];
+  messageProofs: MessageProofs;
 };
 
 // Message to be signed.

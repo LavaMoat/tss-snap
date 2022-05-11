@@ -11,6 +11,7 @@ import snapId from "../snap-id";
 function getDefaultAppState(): AppState {
   return {
     keyShares: [],
+    messageProofs: {},
   };
 }
 

@@ -67,6 +67,7 @@ export default function Signer(): null {
         signature,
         address: signAddress,
         value,
+        timestamp: Date.now(),
       };
       dispatch(setSignProof(signProof));
     } else {

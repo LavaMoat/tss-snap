@@ -5,6 +5,7 @@ import { Alert, Button, Stack, Typography } from "@mui/material";
 
 import { sessionSelector } from "../../store/session";
 import PublicAddress from "../../components/public-address";
+import { encode, download, toHexString } from "../../utils";
 
 export default function SaveProof() {
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
@@ -14,7 +15,16 @@ export default function SaveProof() {
   console.log("Save proof", signProof);
 
   const saveProof = () => {
-    console.log("TODO: save proof", signProof);
+    console.log("TODO: save proof", address, signProof);
+  };
+
+  const downloadProof = () => {
+    const dt = new Date();
+    dt.setTime(signProof.timestamp);
+    const fileName = `${address}-${toHexString(signProof.value.digest)}-${dt.toISOString()}.json`;
+    const buffer = encode(JSON.stringify(signProof, undefined, 2));
+    console.log("TODO: download proof", fileName);
+    download(fileName, buffer);
   };
 
   const heading = creator ? null : (
@@ -32,9 +42,14 @@ export default function SaveProof() {
     <Stack padding={1} spacing={2} marginTop={2}>
       {heading}
       <Alert severity="success">The {signingType} was signed!</Alert>
-      <Button variant="contained" onClick={saveProof}>
-        Save Proof
-      </Button>
+      <Stack direction="row" spacing={2}>
+        <Button variant="contained" onClick={downloadProof}>
+          Download
+        </Button>
+        <Button variant="contained" onClick={saveProof}>
+          Save Proof
+        </Button>
+      </Stack>
     </Stack>
   );
 }

@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { GroupInfo, Session, SignResult } from "@metamask/mpc-client";
-import { Transport, SignValue, SigningType } from "../types";
+import { GroupInfo, Session } from "@metamask/mpc-client";
+import { Transport, SigningType, SignProof, SignValue } from "../types";
 
 export type SignCandidate = {
   address: string;
@@ -9,12 +9,6 @@ export type SignCandidate = {
   selectedParty: number;
   signingType: SigningType;
   creator: boolean;
-};
-
-export type SignProof = {
-  signature: SignResult;
-  address: string;
-  value: SignValue;
 };
 
 export type SessionState = {
