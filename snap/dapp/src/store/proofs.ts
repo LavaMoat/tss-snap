@@ -4,15 +4,19 @@ import { loadStateData, saveStateData } from "./state";
 import { SignProof } from "../types";
 import { toHexString } from "../utils";
 
-// Load key shares and group them by address.
-const loadMessageProofs = async () => {
+// Load all message proofs grouped by key address.
+const loadProofsData = async () => {
   const { messageProofs } = await loadStateData();
   return messageProofs || {};
 };
 
-export const loadKeys = createAsyncThunk(
-  "proofs/loadProofs",
-  loadMessageProofs
+// Retrieve message proofs for the given address.
+export const getMessageProofs = createAsyncThunk(
+  "proofs/getMessageProofs",
+  async (address: string) => {
+    const messageProofs = await loadProofsData();
+    return messageProofs[address] || [];
+  }
 );
 
 // Type for saving a message proof mapped by key address to the
@@ -24,12 +28,11 @@ export const saveMessageProof = createAsyncThunk(
   async (value: SaveMessageProof) => {
     const [address, proof] = value;
     const appState = await loadStateData();
-
+    appState.messageProofs = appState.messageProofs || {};
     appState.messageProofs[address] = appState.messageProofs[address] || [];
     appState.messageProofs[address].push(proof);
-
     await saveStateData(appState);
-    return await loadMessageProofs();
+    return await loadProofsData();
   }
 );
 
@@ -37,7 +40,7 @@ export const saveMessageProof = createAsyncThunk(
 // address and digest.
 type DeleteMessageProof = [string, Uint8Array];
 
-export const deleteKey = createAsyncThunk(
+export const deleteMessageProof = createAsyncThunk(
   "proofs/deleteMessageProof",
   async (deleteRequest: DeleteMessageProof) => {
     const [address, digest] = deleteRequest;
@@ -55,7 +58,7 @@ export const deleteKey = createAsyncThunk(
     }
 
     await saveStateData(appState);
-    return await loadMessageProofs();
+    return await loadProofsData();
   }
 );
 
@@ -68,6 +71,5 @@ const proofSlice = createSlice({
   reducers: {},
 });
 
-//export const { setKeyShare } = proofSlice.actions;
 export const proofsSelector = (state: { proofs: ProofState }) => state.proofs;
 export default proofSlice.reducer;

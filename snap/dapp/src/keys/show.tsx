@@ -31,6 +31,7 @@ import { chains } from "../utils";
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
+import MessageProofs from './message-proofs';
 
 export default function ShowKey() {
   const navigate = useNavigate();
@@ -195,6 +196,8 @@ export default function ShowKey() {
             );
           })}
         </List>
+
+        <MessageProofs address={address} />
       </Stack>
     </>
   );
