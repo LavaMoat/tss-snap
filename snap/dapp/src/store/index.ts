@@ -3,6 +3,7 @@ import keysReducer from "./keys";
 import sessionReducer from "./session";
 import dialogsReducer from "./dialogs";
 import snackbarsReducer from "./snackbars";
+import workerProgressReducer from "./worker-progress";
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     session: sessionReducer,
     dialogs: dialogsReducer,
     snackbars: snackbarsReducer,
+    progress: workerProgressReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

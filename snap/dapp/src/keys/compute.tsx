@@ -7,10 +7,12 @@ import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
 
 import { setKeyShare } from "../store/keys";
 import { sessionSelector } from "../store/session";
+import { setWorkerProgress } from "../store/worker-progress";
 import { WebSocketContext } from "../websocket-provider";
 import { WorkerContext } from "../worker";
 
 import { StepProps } from "./create";
+import WorkerProgress from "./worker-progress";
 
 export default function Compute(props: StepProps) {
   const { next } = props;
@@ -21,14 +23,21 @@ export default function Compute(props: StepProps) {
   const { group, session, transport } = useSelector(sessionSelector);
 
   useEffect(() => {
-    const startCompute = async () => {
-      console.log("TODO: start the computation, websocket", websocket);
-      console.log("TODO: start the computation, group", group);
-      console.log("TODO: start the computation, session", session);
-      console.log("TODO: start the computation, transport", transport);
+    const totalRounds = 5;
+    let currentRound = 1;
 
+    const startCompute = async () => {
       const onTransition = (previousRound: string, current: string) => {
-        console.log("UI thread onTransition called", current);
+        let message = "";
+        if (previousRound) {
+          message = `Transition from ${previousRound} to ${current}`;
+        } else {
+          message = `Transition to ${current}`;
+        }
+
+        const workerInfo = { message, totalRounds, currentRound };
+        dispatch(setWorkerProgress(workerInfo));
+        currentRound++;
       };
 
       const { stream, sink } = transport;
@@ -41,9 +50,6 @@ export default function Compute(props: StepProps) {
         parameters,
         partySignup,
       };
-
-      console.log("TODO: start the computation, sessionInfo", sessionInfo);
-      console.log("TODO: start the computation, sessionInfo", worker);
 
       const share = await generateKeyShare(
         worker,
@@ -66,19 +72,10 @@ export default function Compute(props: StepProps) {
 
   return (
     <Stack padding={1} spacing={2} marginTop={2}>
-      <Stack>
-        <Typography variant="h4" component="div">
-          {group.label}
-        </Typography>
-      </Stack>
-      <Stack>
-        <Typography variant="body1" component="div">
-          Computing the key share
-        </Typography>
-        <Typography variant="body2" component="div" color="text.secondary">
-          Please be patient, this may take a while...
-        </Typography>
-      </Stack>
+      <Typography variant="h4" component="div">
+        {group.label}
+      </Typography>
+      <WorkerProgress title="Computing the key share" />
     </Stack>
   );
 }
