@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 
@@ -17,8 +17,11 @@ import { createGroupSession, GroupFormData } from "../../../group-session";
 import NotFound from "../../../not-found";
 import PublicAddress from "../../../components/public-address";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
-import { sessionSelector } from "../../../store/session";
-import { setSignCandidate } from "../../../store/session";
+import {
+  sessionSelector,
+  setSignCandidate,
+  clearSign,
+} from "../../../store/session";
 import SignStepper from "../../../components/stepper";
 import KeysLoader from "../../loader";
 
@@ -57,6 +60,11 @@ export default function SignMessage() {
   const { signProof } = useSelector(sessionSelector);
   const [activeStep, setActiveStep] = useState(0);
   const [selectedParty, setSelectedParty] = useState(null);
+
+  useEffect(() => {
+    // Clear any previous signature data
+    dispatch(clearSign());
+  }, []);
 
   if (!loaded) {
     return <KeysLoader />;

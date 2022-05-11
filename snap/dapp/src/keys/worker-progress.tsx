@@ -7,7 +7,7 @@ import { workerProgressSelector } from "../store/worker-progress";
 
 type WorkerProgressProps = {
   title: string;
-}
+};
 
 export default function WorkerProgress(props: WorkerProgressProps) {
   const { title } = props;
@@ -28,7 +28,7 @@ export default function WorkerProgress(props: WorkerProgressProps) {
           <Typography variant="body2" component="div" color="text.secondary">
             {message}
           </Typography>
-          <Box sx={{flexGrow: 1}} />
+          <Box sx={{ flexGrow: 1 }} />
           <Typography variant="body2" component="div" color="text.secondary">
             {currentRound}/{totalRounds}
           </Typography>

@@ -7,8 +7,10 @@ import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
 
 import { setKeyShare } from "../store/keys";
 import { sessionSelector } from "../store/session";
-import { setWorkerProgress } from "../store/worker-progress";
-import { WebSocketContext } from "../websocket-provider";
+import {
+  setWorkerProgress,
+  clearWorkerProgress,
+} from "../store/worker-progress";
 import { WorkerContext } from "../worker";
 
 import { StepProps } from "./create";
@@ -19,7 +21,6 @@ export default function Compute(props: StepProps) {
 
   const dispatch = useDispatch();
   const worker = useContext(WorkerContext);
-  const websocket = useContext(WebSocketContext);
   const { group, session, transport } = useSelector(sessionSelector);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function Compute(props: StepProps) {
       const namedKeyShare = { label, share };
       dispatch(setKeyShare(namedKeyShare));
 
+      dispatch(clearWorkerProgress());
       next();
     };
     startCompute();

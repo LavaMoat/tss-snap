@@ -52,6 +52,10 @@ const sessionSlice = createSlice({
     setSignProof: (state, { payload }: PayloadAction<SignProof>) => {
       state.signProof = payload;
     },
+    clearSign: (state) => {
+      state.signCandidate = null;
+      state.signProof = null;
+    },
   },
 });
 
@@ -61,6 +65,7 @@ export const {
   setTransport,
   setSignCandidate,
   setSignProof,
+  clearSign,
 } = sessionSlice.actions;
 export const sessionSelector = (state: { session: SessionState }) =>
   state.session;

@@ -6,6 +6,7 @@ import { sign } from "@metamask/mpc-client";
 import { WebSocketContext } from "../../websocket-provider";
 import { sessionSelector, setSignProof } from "../../store/session";
 import { findKeyShare } from "../../store/keys";
+import { setWorkerProgress } from "../../store/worker-progress";
 import { WorkerContext } from "../../worker";
 
 // Helper for signing messages that can be used in the views
@@ -30,6 +31,22 @@ export default function Signer(): null {
       const namedKeyShare = await findKeyShare(address, partySignup.number);
       const { share: keyShare } = namedKeyShare;
 
+      const totalRounds = 10;
+      let currentRound = 1;
+
+      const onTransition = (previousRound: string, current: string) => {
+        let message = "";
+        if (previousRound) {
+          message = `Transition from ${previousRound} to ${current}`;
+        } else {
+          message = `Transition to ${current}`;
+        }
+
+        const workerInfo = { message, totalRounds, currentRound };
+        dispatch(setWorkerProgress(workerInfo));
+        currentRound++;
+      };
+
       const { signature, address: signAddress } = await sign(
         websocket,
         worker,
@@ -38,7 +55,8 @@ export default function Signer(): null {
         digest,
         keyShare,
         group,
-        partySignup
+        partySignup,
+        onTransition
       );
 
       if (address !== signAddress) {

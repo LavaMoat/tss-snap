@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import {
@@ -13,6 +14,7 @@ import {
 import NotFound from "../../../not-found";
 import { SigningType } from "../../../types";
 import { ListenerCleanup } from "../../../websocket-provider";
+import { clearSign } from "../../../store/session";
 
 import Connect from "./connect";
 import Approve from "./approve";
@@ -92,7 +94,13 @@ function CreateStepper() {
 }
 
 export default function JoinSignSession() {
+  const dispatch = useDispatch();
   const { signingType, groupId, sessionId } = useParams();
+
+  useEffect(() => {
+    // Clear any previous signature data
+    dispatch(clearSign());
+  }, []);
 
   if (
     signingType !== SigningType.MESSAGE &&
