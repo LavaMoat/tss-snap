@@ -55,8 +55,6 @@ export default function Compute(props: ComputeProps) {
     </Stack>
   );
 
-  console.log("Got progress message", message);
-
   const indicator =
     message === "" ? (
       <WaitForApproval />

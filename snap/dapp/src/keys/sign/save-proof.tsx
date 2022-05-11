@@ -1,29 +1,31 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 import { Alert, Button, Stack, Typography } from "@mui/material";
 
 import { sessionSelector } from "../../store/session";
+import { saveMessageProof } from "../../store/proofs";
 import PublicAddress from "../../components/public-address";
 import { encode, download, toHexString } from "../../utils";
 
 export default function SaveProof() {
+  const dispatch = useDispatch();
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
   const { label } = group;
 
-  console.log("Save proof", signProof);
-
   const saveProof = () => {
     console.log("TODO: save proof", address, signProof);
+    dispatch(saveMessageProof([address, signProof]));
   };
 
   const downloadProof = () => {
     const dt = new Date();
     dt.setTime(signProof.timestamp);
-    const fileName = `${address}-${toHexString(signProof.value.digest)}-${dt.toISOString()}.json`;
+    const fileName = `${address}-${toHexString(
+      signProof.value.digest
+    )}-${dt.toISOString()}.json`;
     const buffer = encode(JSON.stringify(signProof, undefined, 2));
-    console.log("TODO: download proof", fileName);
     download(fileName, buffer);
   };
 
