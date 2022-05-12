@@ -13,17 +13,17 @@ import {
   Typography,
 } from "@mui/material";
 
-import { DeleteRequest } from "./index";
+import { DeleteKeyShare } from "./index";
 
-interface ConfirmDeleteSecretProps {
+interface ConfirmDeleteKeyShareProps {
   open: boolean;
-  request: DeleteRequest;
+  request: DeleteKeyShare;
   handleCancel: () => void;
-  handleOk: (result: DeleteRequest) => void;
+  handleOk: (result: DeleteKeyShare) => void;
 }
 
-export default function ConfirmDeleteSecretDialog(
-  props: ConfirmDeleteSecretProps
+export default function ConfirmDeleteKeyShareDialog(
+  props: ConfirmDeleteKeyShareProps
 ) {
   const { open, request, handleCancel, handleOk } = props;
   const [address, number] = request;

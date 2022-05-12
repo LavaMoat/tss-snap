@@ -25,7 +25,11 @@ export default function Snackbars() {
   };
 
   return (
-    <Snackbar open={open} autoHideDuration={4000} onClose={closeSnackbar}>
+    <Snackbar
+      open={open}
+      autoHideDuration={4000}
+      onClose={closeSnackbar}
+      anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}>
       <Alert onClose={closeSnackbar} severity={snackbar.severity}>
         {snackbar.message}
       </Alert>

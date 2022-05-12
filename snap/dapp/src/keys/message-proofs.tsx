@@ -14,9 +14,12 @@ import { SignProof, SignMessage } from "../types";
 import { encode, download, toHexString } from "../utils";
 import {
   loadMessageProofs,
-  deleteMessageProof,
   proofsSelector,
 } from "../store/proofs";
+import {
+  setDialogVisible,
+  CONFIRM_DELETE_MESSAGE_PROOF,
+} from "../store/dialogs";
 
 type MessageProofProps = {
   address: string;
@@ -46,7 +49,13 @@ export default function MessageProofs(props: MessageProofProps) {
   };
 
   const onDeleteMessageProof = (proof: SignProof) => {
-    dispatch(deleteMessageProof([address, proof.value.digest]));
+    dispatch(
+      setDialogVisible([
+        CONFIRM_DELETE_MESSAGE_PROOF,
+        true,
+        [address, proof],
+      ])
+    );
   };
 
   if (items.length === 0) {

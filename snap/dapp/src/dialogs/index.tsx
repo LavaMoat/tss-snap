@@ -9,24 +9,28 @@ import {
   setDialogVisible,
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
+  CONFIRM_DELETE_MESSAGE_PROOF,
 } from "../store/dialogs";
 
 import { deleteKey, findKeyShare } from "../store/keys";
+import { deleteMessageProof } from "../store/proofs";
 import { setSnackbar } from "../store/snackbars";
 import { encode, download } from "../utils";
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
+import ConfirmDeleteMessageProofDialog from "./confirm-delete-message-proof";
 import ExportKeyStoreDialog from "./export-keystore";
 
-export type DeleteRequest = [string, number, number];
+export type DeleteKeyShare = [string, number, number];
 export type ExportKeyStore = [string, number, number];
+export type DeleteMessageProof = [string, SignProof];
 
 export default function Dialogs() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { dialogs } = useSelector(dialogsSelector);
 
-  const onDeleteKeyShare = async (result: DeleteRequest) => {
+  const onDeleteKeyShare = async (result: DeleteKeyShare) => {
     cancelDialog(CONFIRM_DELETE_KEY_SHARE);
     const [address, number, length] = result;
 
@@ -67,6 +71,18 @@ export default function Dialogs() {
     cancelDialog(EXPORT_KEY_STORE);
   };
 
+  const onDeleteMessageProof = async (result: DeleteMessageProof) => {
+    const [address, proof] = result;
+    await dispatch(deleteMessageProof([address, proof.value.digest]));
+    dispatch(
+      setSnackbar({
+        message: "Message proof deleted",
+        severity: "success",
+      })
+    );
+    cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF);
+  }
+
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
   };
@@ -77,7 +93,7 @@ export default function Dialogs() {
         open={dialogs[CONFIRM_DELETE_KEY_SHARE][0] || false}
         handleCancel={() => cancelDialog(CONFIRM_DELETE_KEY_SHARE)}
         handleOk={onDeleteKeyShare}
-        request={(dialogs[CONFIRM_DELETE_KEY_SHARE][1] || []) as DeleteRequest}
+        request={(dialogs[CONFIRM_DELETE_KEY_SHARE][1] || []) as DeleteKeyShare}
       />
 
       <ExportKeyStoreDialog
@@ -86,6 +102,14 @@ export default function Dialogs() {
         handleOk={onExportKeyStore}
         request={(dialogs[EXPORT_KEY_STORE][1] || []) as ExportKeyStore}
       />
+
+      <ConfirmDeleteMessageProofDialog
+        open={dialogs[CONFIRM_DELETE_MESSAGE_PROOF][0] || false}
+        handleCancel={() => cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF)}
+        handleOk={onDeleteMessageProof}
+        request={(dialogs[CONFIRM_DELETE_MESSAGE_PROOF][1] || []) as DeleteMessageProof}
+      />
+
     </>
   );
 }
