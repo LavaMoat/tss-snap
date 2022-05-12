@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-
 import {
   ButtonGroup,
   Button,
@@ -9,6 +8,7 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
+import { formatDistanceToNow } from "date-fns";
 
 import { SignProof, SignMessage } from "../types";
 import { encode, download, toHexString } from "../utils";
@@ -59,9 +59,15 @@ export default function MessageProofs(props: MessageProofProps) {
       subheader={<ListSubheader component="div">Proofs</ListSubheader>}
     >
       {items.map((proof: SignProof, index: number) => {
+        const formatDateDistance = () => {
+          const dt = new Date();
+          dt.setTime(proof.timestamp);
+          return formatDistanceToNow(dt);
+        };
+
         return (
           <ListItem key={index}>
-            <ListItemText secondary={toHexString(proof.value.digest)}>
+            <ListItemText secondary={`Approved ${formatDateDistance()} ago`}>
               {(proof.value as SignMessage).message}
             </ListItemText>
             <ButtonGroup

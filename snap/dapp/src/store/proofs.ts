@@ -41,6 +41,8 @@ export const deleteMessageProof = createAsyncThunk(
   async (deleteRequest: DeleteMessageProof): Promise<MessageProofs> => {
     const [address, digest] = deleteRequest;
     const appState = await loadStateData();
+    appState.messageProofs = appState.messageProofs || {};
+
     const messageProofs = appState.messageProofs[address];
     if (messageProofs) {
       // Compare as strings as they are Uint8Arrays and we
@@ -48,7 +50,7 @@ export const deleteMessageProof = createAsyncThunk(
       const hash = toHexString(digest);
       appState.messageProofs[address] = messageProofs.filter(
         (proof: SignProof) => {
-          hash !== toHexString(proof.value.digest);
+          return hash !== toHexString(proof.value.digest);
         }
       );
     }

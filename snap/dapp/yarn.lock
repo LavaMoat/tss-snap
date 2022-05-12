@@ -1533,9 +1533,9 @@
   integrity sha512-YtIl4e1VzqwwHGafuLIVPqbcWWWqQ0Ezo8/Ci5m5OGllqE2oTTx9iVHdUmXNkgCVD37SBfwn/fm/S1IGkM8BQA==
 
 "@metamask/mpc-client@file:../../packages/client":
-  version "1.0.0"
+  version "1.0.1"
   dependencies:
-    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@metamask-mpc-client-1.0.0-b6d5d18f-57dd-49ae-b4f1-f2643484c4bc-1649918259919/node_modules/@metamask/wasm/pkg"
+    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@metamask-mpc-client-1.0.1-997d4395-f45f-4851-a9a4-a305b458cf21-1652324713153/node_modules/@metamask/wasm/pkg"
     comlink "^4.3.1"
     events "^3.3.0"
 
@@ -3638,6 +3638,11 @@ dashdash@^1.12.0:
   integrity sha1-hTz6D3y+L+1d4gMmuN1YEDX24vA=
   dependencies:
     assert-plus "^1.0.0"
+
+date-fns@^2.28.0:
+  version "2.28.0"
+  resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-2.28.0.tgz#9570d656f5fc13143e50c975a3b6bbeb46cd08b2"
+  integrity sha512-8d35hViGYx/QH0icHYCeLmsLmMUheMmTyV9Fcm6gvNwdw31yXXH+O85sOBJ+OLnLQMKZowvpKb6FgMIQjcpvQw==
 
 debug@^4.1.0, debug@^4.1.1, debug@^4.3.2:
   version "4.3.4"
