@@ -13,8 +13,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
 
 use round_based::{Msg, StateMachine};
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
 use std::convert::TryInto;
+use wasm_bindgen::prelude::*;
 
 //use crate::{console_log, log};
 

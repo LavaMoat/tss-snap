@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
 import {
   ButtonGroup,
@@ -10,26 +10,30 @@ import {
   ListItemText,
 } from "@mui/material";
 
-import { SignProof, SignMessage } from '../types';
-import { encode, download, toHexString } from '../utils';
-import { getMessageProofs } from '../store/proofs';
+import { SignProof, SignMessage } from "../types";
+import { encode, download, toHexString } from "../utils";
+import {
+  loadMessageProofs,
+  deleteMessageProof,
+  proofsSelector,
+} from "../store/proofs";
 
 type MessageProofProps = {
   address: string;
-}
+};
 
 export default function MessageProofs(props: MessageProofProps) {
   const dispatch = useDispatch();
   const { address } = props;
-  const [items, setItems] = useState<SignProof[]>([]);
+  const { messages } = useSelector(proofsSelector);
+  const items: SignProof[] = messages[address] || [];
 
   useEffect(() => {
-    const loadMessageProofs = async () => {
-      const proofs = await dispatch(getMessageProofs(address));
-      setItems(proofs.payload);
-    }
-    loadMessageProofs();
-  }, [address]);
+    const getMessageProofs = async () => {
+      await dispatch(loadMessageProofs());
+    };
+    getMessageProofs();
+  }, []);
 
   const onExportMessageProof = (proof: SignProof) => {
     const dt = new Date();
@@ -39,10 +43,14 @@ export default function MessageProofs(props: MessageProofProps) {
     )}-${dt.toISOString()}.json`;
     const buffer = encode(JSON.stringify(proof, undefined, 2));
     download(fileName, buffer);
-  }
+  };
 
   const onDeleteMessageProof = (proof: SignProof) => {
-    console.log("Delete message proof", proof);
+    dispatch(deleteMessageProof([address, proof.value.digest]));
+  };
+
+  if (items.length === 0) {
+    return null;
   }
 
   return (
@@ -61,19 +69,10 @@ export default function MessageProofs(props: MessageProofProps) {
               size="small"
               aria-label="message proof actions"
             >
-              <Button
-                onClick={() =>
-                  onExportMessageProof(proof)
-                }
-              >
+              <Button onClick={() => onExportMessageProof(proof)}>
                 Export
               </Button>
-              <Button
-                color="error"
-                onClick={() =>
-                  onDeleteMessageProof(proof)
-                }
-              >
+              <Button color="error" onClick={() => onDeleteMessageProof(proof)}>
                 Delete
               </Button>
             </ButtonGroup>
@@ -81,5 +80,5 @@ export default function MessageProofs(props: MessageProofProps) {
         );
       })}
     </List>
-  )
+  );
 }

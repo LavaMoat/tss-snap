@@ -138,7 +138,9 @@ const Proposal = ({
         if (!runningSession) {
           setRunningSession(true);
 
-          const hash = await worker.keccak256(Array.from(encode(proposal.message)));
+          const hash = await worker.keccak256(
+            Array.from(encode(proposal.message))
+          );
 
           const stream = new WebSocketStream(
             websocket,

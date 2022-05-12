@@ -1,20 +1,34 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import { Alert, Button, Stack, Typography } from "@mui/material";
 
 import { sessionSelector } from "../../store/session";
 import { saveMessageProof } from "../../store/proofs";
+import { setSnackbar } from "../../store/snackbars";
 import PublicAddress from "../../components/public-address";
 
 export default function SaveProof() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
   const { label } = group;
 
   const saveProof = () => {
-    dispatch(saveMessageProof([address, signProof]));
+    try {
+      dispatch(saveMessageProof([address, signProof]));
+      navigate(`/keys/${address}`);
+    } catch (e) {
+      console.error(e);
+      dispatch(
+        setSnackbar({
+          message: `Could not save message proof: ${e.message || ""}`,
+          severity: "error",
+        })
+      );
+    }
   };
 
   const heading = creator ? null : (

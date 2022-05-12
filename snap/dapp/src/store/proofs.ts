@@ -1,38 +1,34 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 import { loadStateData, saveStateData } from "./state";
-import { SignProof } from "../types";
+import { MessageProofs, SignProof } from "../types";
 import { toHexString } from "../utils";
 
 // Load all message proofs grouped by key address.
-const loadProofsData = async () => {
+const loadProofsData = async (): Promise<MessageProofs> => {
   const { messageProofs } = await loadStateData();
   return messageProofs || {};
 };
-
-// Retrieve message proofs for the given address.
-export const getMessageProofs = createAsyncThunk(
-  "proofs/getMessageProofs",
-  async (address: string) => {
-    const messageProofs = await loadProofsData();
-    return messageProofs[address] || [];
-  }
-);
 
 // Type for saving a message proof mapped by key address to the
 // message signing proof.
 type SaveMessageProof = [string, SignProof];
 
+export const loadMessageProofs = createAsyncThunk(
+  "proofs/loadMessageProofs",
+  loadProofsData
+);
+
 export const saveMessageProof = createAsyncThunk(
   "proofs/saveMessageProof",
-  async (value: SaveMessageProof) => {
+  async (value: SaveMessageProof): Promise<MessageProofs> => {
     const [address, proof] = value;
     const appState = await loadStateData();
     appState.messageProofs = appState.messageProofs || {};
     appState.messageProofs[address] = appState.messageProofs[address] || [];
     appState.messageProofs[address].push(proof);
     await saveStateData(appState);
-    return await loadProofsData();
+    return loadProofsData();
   }
 );
 
@@ -42,7 +38,7 @@ type DeleteMessageProof = [string, Uint8Array];
 
 export const deleteMessageProof = createAsyncThunk(
   "proofs/deleteMessageProof",
-  async (deleteRequest: DeleteMessageProof) => {
+  async (deleteRequest: DeleteMessageProof): Promise<MessageProofs> => {
     const [address, digest] = deleteRequest;
     const appState = await loadStateData();
     const messageProofs = appState.messageProofs[address];
@@ -56,19 +52,35 @@ export const deleteMessageProof = createAsyncThunk(
         }
       );
     }
-
     await saveStateData(appState);
-    return await loadProofsData();
+    return loadProofsData();
   }
 );
 
-export type ProofState = null;
-const initialState: ProofState = null;
+export type ProofState = {
+  messages: MessageProofs;
+};
+
+const initialState: ProofState = {
+  messages: {},
+};
+
+function updateMessages(
+  state: ProofState,
+  action: PayloadAction<MessageProofs>
+) {
+  state.messages = action.payload;
+}
 
 const proofSlice = createSlice({
   name: "proofs",
   initialState,
   reducers: {},
+  extraReducers: (builder) => {
+    builder.addCase(loadMessageProofs.fulfilled, updateMessages);
+    builder.addCase(saveMessageProof.fulfilled, updateMessages);
+    builder.addCase(deleteMessageProof.fulfilled, updateMessages);
+  },
 });
 
 export const proofsSelector = (state: { proofs: ProofState }) => state.proofs;
