@@ -15,7 +15,6 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 import { DeleteMessageProof } from "./index";
-import { toHexString } from '../utils';
 import { SignMessage } from '../types';
 
 interface ConfirmDeleteMessageProofProps {

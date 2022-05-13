@@ -16,6 +16,7 @@ import { deleteKey, findKeyShare } from "../store/keys";
 import { deleteMessageProof } from "../store/proofs";
 import { setSnackbar } from "../store/snackbars";
 import { encode, download } from "../utils";
+import { SignProof } from "../types";
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 import ConfirmDeleteMessageProofDialog from "./confirm-delete-message-proof";
