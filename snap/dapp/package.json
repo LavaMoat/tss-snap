@@ -1,0 +1,57 @@
+{
+  "name": "@metamask/mpc-snap",
+  "version": "0.1.0",
+  "description": "Snap for threshold signatures.",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
+  },
+  "license": "MIT",
+  "files": [
+    "bundle.js",
+    "images/",
+    "snap.manifest.json"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist .parcel-cache && mkdir dist",
+    "build:snap": "yarn clean && mm-snap build -s snap.js -d . && yarn build:assets",
+    "build:assets": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
+    "build": "yarn build:snap && parcel build src/index.html",
+    "types": "tsc --noEmit --project tsconfig.json",
+    "fmt": "prettier --write . --no-color",
+    "lint": "eslint src",
+    "start": "yarn build:snap && parcel src/index.html --port 7070"
+  },
+  "devDependencies": {
+    "@metamask/snaps-cli": "^0.10.7",
+    "@metamask/types": "^1.1.0",
+    "@types/react": "^18.0.1",
+    "@types/react-dom": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "eslint": "^8.10.0",
+    "eslint-plugin-react": "^7.29.3",
+    "parcel": "^2.4.1",
+    "prettier": "^2.6.2",
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.8.2",
+    "@emotion/styled": "^11.8.1",
+    "@metamask/detect-provider": "^1.2.0",
+    "@metamask/mpc-client": "file:../../packages/client",
+    "@metamask/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
+    "@metamask/mpc-snap-wasm": "file:../wasm/pkg",
+    "@mui/icons-material": "^5.5.1",
+    "@mui/material": "^5.5.3",
+    "@reduxjs/toolkit": "^1.8.1",
+    "comlink": "^4.3.1",
+    "date-fns": "^2.28.0",
+    "ethers": "^5.6.3",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-redux": "^7.2.8",
+    "react-router-dom": "^6.3.0"
+  }
+}

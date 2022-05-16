@@ -16,11 +16,12 @@ cargo install --version 0.10.2 wasm-pack
 
 ## Structure
 
-* `client`: Browser web application.
+* `cli`: Command line interface for the server.
+* `demo`: Browser web application.
 * `getrandom`: Hack for webassembly compilation (see [getrandom notes](#getrandom)).
 * `library`: Websocket server library.
-* `server`: Command line interface for the server.
-* `wasm`: Webassembly bindings to [multi-party-ecdsa][].
+* `snap`: Experimental snap for MetaMask.
+* `packages`: Javascript packages and webassembly bindings to [multi-party-ecdsa][].
 
 ## Setup
 
@@ -34,18 +35,28 @@ make setup
 # Start the server on ws://localhost:3030
 make server
 # Start the client on http://localhost:8080
-make client
+make demo
 ```
 
 Now visit `http://localhost:8080`.
 
 ## Development
 
-During development you should link the WASM module:
+During development you should link the WASM module and Javascript client package:
 
 ```
-(cd wasm/pkg && yarn link)
-(cd client && yarn link ecdsa-wasm)
+(cd packages/wasm/pkg && yarn link)
+(cd demo && yarn link @metamask/mpc-ecdsa-wasm)
+
+(cd packages/client && yarn link)
+(cd demo && yarn link @metamask/mpc-client)
+```
+
+To work on the snap there are some additional webassembly utilities used for encrypting and decrypting key shares:
+
+```
+(cd snap/wasm/pkg && yarn link)
+(cd snap/dapp && yarn link @metamask/mpc-snap-wasm)
 ```
 
 ## Test
@@ -62,16 +73,16 @@ If you want to see the tests execute in a browser run `make test-headed`.
 To hack on the code whilst running the tests open several terminal sessions:
 
 ```
-cd server && cargo run
-cd client && yarn start
-cd client && TEST_URL=http://localhost:8080 yarn test
+cd cli && cargo run
+cd demo && yarn start
+cd demo && TEST_URL=http://localhost:8080 yarn test
 ```
 
 Networking is racy and we have fixed quite a few race conditions so to it is a good idea to run the tests lots of times:
 
 ```
 make test-server                # start the backend server
-(cd client && ./test.sh)        # run the tests 100 times
+(cd demo && ./test.sh)        # run the tests 100 times
 ```
 
 ## Docker

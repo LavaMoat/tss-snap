@@ -4,7 +4,7 @@ on: [pull_request]
 
 env:
   RUST_LOG: "0"
-  WORKING_DIRECTORY: ./wasm
+  WORKING_DIRECTORY: ./packages/wasm
 
 jobs:
   fmt:

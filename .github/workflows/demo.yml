@@ -1,0 +1,38 @@
+name: Demo
+
+on: [pull_request]
+
+env:
+  WORKING_DIRECTORY: ./demo
+  WASM_DIRECTORY: ./packages/wasm
+
+jobs:
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rust-src
+          target: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.3.0
+        with:
+          version: 'v0.10.1'
+      - name: Run wasm-pack
+        working-directory: ${{env.WASM_DIRECTORY}}
+        run: wasm-pack build --target web
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: yarn install
+      - name: Run prettier check
+        working-directory: ${{env.WORKING_DIRECTORY}}
+        run: npx prettier . --check

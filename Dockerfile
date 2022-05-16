@@ -20,9 +20,9 @@ ENV PATH=/usr/local/cargo/bin:$PATH
 
 # SERVER
 COPY getrandom getrandom
-COPY server server
+COPY cli cli
 RUN rustup override set nightly-2021-08-12
-RUN cargo install --path ./server
+RUN cargo install --path ./cli
 RUN cargo install --version 0.10.2 wasm-pack
 RUN mv ~/.cargo/bin/* /usr/bin
 RUN mpc-websocket --version
@@ -36,12 +36,12 @@ RUN cd wasm && wasm-pack build --target web;
 # CLIENT
 FROM node:14 AS client
 WORKDIR /usr/app
-COPY client client
+COPY demo demo
 COPY --from=builder /usr/app/wasm /usr/app/wasm
-RUN cd client && yarn install && yarn build
+RUN cd demo && yarn install && yarn build
 
 FROM debian:bullseye AS runner
 WORKDIR /usr/app
 COPY --from=builder /usr/bin/mpc-websocket /usr/bin/mpc-websocket
-COPY --from=client /usr/app/client/dist /usr/app/client/dist
-CMD mpc-websocket --bind 0.0.0.0:8080 client/dist
+COPY --from=client /usr/app/demo/dist /usr/app/demo/dist
+CMD mpc-websocket --bind 0.0.0.0:8080 demo/dist

@@ -1,6 +1,6 @@
 [package]
 name = "mpc-websocket"
-version = "0.3.2"
+version = "0.3.6"
 edition = "2021"
 license = "MIT"
 description = "Websocket server library for MPC sessions"

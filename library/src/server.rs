@@ -8,6 +8,7 @@ use std::sync::{
 
 use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -136,6 +137,16 @@ pub struct Session {
     pub uuid: Uuid,
     /// Kind of the session.
     pub kind: SessionKind,
+    /// Public value associated with the session.
+    ///
+    /// The owner of a session will assign this when
+    /// the session is created and other participants
+    /// in the session can read this value.
+    ///
+    /// This can be used to assign public data like the
+    /// message or transaction that will be signed during
+    /// a signing session.
+    pub value: Option<Value>,
 
     /// Map party number to connection identifier
     #[serde(skip)]
@@ -154,17 +165,19 @@ impl Default for Session {
             kind: Default::default(),
             party_signups: Default::default(),
             finished: Default::default(),
+            value: None,
         }
     }
 }
 
-impl From<SessionKind> for Session {
-    fn from(kind: SessionKind) -> Session {
+impl From<(SessionKind, Option<Value>)> for Session {
+    fn from(value: (SessionKind, Option<Value>)) -> Session {
         Self {
             uuid: Uuid::new_v4(),
-            kind,
+            kind: value.0,
             party_signups: Default::default(),
             finished: Default::default(),
+            value: value.1,
         }
     }
 }
@@ -289,7 +302,7 @@ impl Server {
     pub async fn start(
         path: &'static str,
         addr: impl Into<SocketAddr>,
-        static_files: Option<PathBuf>,
+        static_files: PathBuf,
     ) -> Result<()> {
         // Filter traces based on the RUST_LOG env var.
         let filter = std::env::var("RUST_LOG").unwrap_or_else(|_| {
@@ -314,21 +327,6 @@ impl Server {
             groups: Default::default(),
         }));
         let state = warp::any().map(move || state.clone());
-
-        let static_files = if let Some(static_files) = static_files {
-            if static_files.is_absolute() {
-                static_files
-            } else {
-                let cwd = std::env::current_dir()?;
-                cwd.join(static_files)
-            }
-        } else {
-            let mut static_files = std::env::current_dir()?;
-            static_files.pop();
-            static_files.push("client");
-            static_files.push("dist");
-            static_files
-        };
 
         if !static_files.is_dir() {
             return Err(ServerError::NotDirectory(static_files));

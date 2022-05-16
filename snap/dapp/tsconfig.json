@@ -1,0 +1,17 @@
+{
+  "includes": ["src/**/.tsx?"],
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "esnext",
+    "target": "esnext",
+    "lib": ["esnext", "webworker", "dom"],
+    "jsx": "react",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "downlevelIteration": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node"
+  },
+  "exclude": ["node_modules"]
+}

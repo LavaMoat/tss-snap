@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "proposedName": "Threshold signatures",
+  "description": "Snap for signing ECDSA transactions using threshold signatures.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
+  },
+  "source": {
+    "shasum": "9Q9xaj130gB/o4JTEPk/7WBEzbLtDb0kgpYGArAtV/k=",
+    "location": {
+      "npm": {
+        "filePath": "bundle.js",
+        "iconPath": "images/icon.svg",
+        "packageName": "@metamask/mpc-snap",
+        "registry": "https://registry.npmjs.org/"
+      }
+    }
+  },
+  "initialPermissions": {
+    "snap_manageState": {},
+    "snap_getBip44Entropy_60": {}
+  },
+  "manifestVersion": "0.1"
+}

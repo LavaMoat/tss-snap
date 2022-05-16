@@ -1,43 +1,55 @@
 wasm:
-	@cd wasm && wasm-pack build --target web
+	@cd packages/wasm && wasm-pack build --target web --scope metamask
+
+snap-wasm:
+	@cd snap/wasm && wasm-pack build --target web --scope metamask
 
 dist: wasm
-	@cd client && yarn build
+	@cd demo && yarn build
 
 dist-dev: wasm
-	@cd client && yarn build:dev
+	@cd demo && yarn build:dev
 
-setup: wasm
-	@cd client && yarn install && npx playwright install
+module:
+	@cd module && yarn build
+
+setup: wasm snap-wasm module
+	@cd demo && yarn install && npx playwright install
+	@cd module && yarn install
+	@cd snap/rpc && yarn install
+	@cd snap/ui && yarn install
 
 build:
-	@cd server && cargo build
+	@cd cli && cargo build
 
 release: dist
-	@cd server && cargo build --release
+	@cd cli && cargo build --release
 
 server: dist
-	@cd server && cargo run
+	@cd cli && cargo run
 
-client:
-	@cd client && yarn start
+demo:
+	@cd demo && yarn start
 
 test-server: dist-dev
-	@cd server && cargo run
+	@cd cli && cargo run
 
 test:
-	@cd client && yarn test
+	@cd demo && yarn test
 
 test-headed:
-	@cd client && yarn test-headed
+	@cd demo && yarn test-headed
 
 lint:
-	@cd client && yarn lint
+	@cd demo && yarn lint
+	@cd packages/client && yarn lint
+	@cd snap/dapp  && yarn lint
 
 fmt: lint
-	@cd client && yarn prettier
+	@cd demo && yarn fmt
 	@cd library && cargo fmt
-	@cd server && cargo fmt
-	@cd wasm && cargo fmt
+	@cd cli && cargo fmt
+	@cd packages/wasm && cargo fmt
+	@cd snap/wasm && cargo fmt
 
-.PHONY: wasm dist dist-dev setup build release server client test lint fmt
+.PHONY: wasm snap-wasm dist dist-dev module setup build release server demo test lint fmt
