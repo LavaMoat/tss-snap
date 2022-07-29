@@ -1,6 +1,7 @@
 import { createLibp2p, Libp2pNode } from 'libp2p'
 import { WebSockets } from '@libp2p/websockets'
 import { WebRTCStar } from '@libp2p/webrtc-star'
+import { peerIdFromString } from '@libp2p/peer-id'
 import { Noise } from '@chainsafe/libp2p-noise'
 import { Mplex } from '@libp2p/mplex'
 import { Bootstrap } from '@libp2p/bootstrap'
@@ -40,9 +41,17 @@ async function makeHost(listen?: string[]): Libp2pNode {
   })
 
   // Listen for new connections to peers
-  host.connectionManager.addEventListener('peer:connect', (evt) => {
+  host.connectionManager.addEventListener('peer:connect', async (evt) => {
     const connection = evt.detail
-    console.log(`Connected to ${connection.remotePeer.toString()}`)
+    const { remotePeer, remoteAddr } = connection;
+
+    console.log(connection);
+
+    const peerId = peerIdFromString(remotePeer.toString())
+    await host.peerStore.addressBook.set(peerId, [remoteAddr]);
+    await host.dial(peerId);
+
+    console.log(`Connected to ${remotePeer.toString()}`)
   })
 
   // Listen for peers disconnecting
@@ -59,18 +68,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   await host.start()
 
   console.log(host);
-
   console.log(`host id is ${host.peerId.toString()}`)
 
   const pubsub = new GossipSub();
   await pubsub.init(host.components);
   await pubsub.start()
+
+  pubsub.subscribe(topic)
+
   /*
-  pubsub.on(topic, (msg) => {
-    console.log(`${id} received: ${toString(msg.data)}`)
+  pubsub.addEventListener(topic, (msg) => {
+    console.log(`received: ${toString(msg.data)}`)
   })
   */
-  pubsub.subscribe(topic)
 
   setInterval(async () => {
     const value = new TextEncoder().encode("test message");

@@ -457,7 +457,7 @@
     protons-runtime "^1.0.4"
     uint8arrays "^3.0.0"
 
-"@libp2p/peer-id@^1.0.0", "@libp2p/peer-id@^1.1.0", "@libp2p/peer-id@^1.1.10", "@libp2p/peer-id@^1.1.13", "@libp2p/peer-id@^1.1.8", "@libp2p/peer-id@^1.1.9":
+"@libp2p/peer-id@^1.0.0", "@libp2p/peer-id@^1.1.0", "@libp2p/peer-id@^1.1.10", "@libp2p/peer-id@^1.1.13", "@libp2p/peer-id@^1.1.15", "@libp2p/peer-id@^1.1.8", "@libp2p/peer-id@^1.1.9":
   version "1.1.15"
   resolved "https://registry.yarnpkg.com/@libp2p/peer-id/-/peer-id-1.1.15.tgz#5c005ab4cb3f933977d0ec18a7d67071136cbed6"
   integrity sha512-Y33JLEfsLmLUjuC2nhQ2lBXP6PIsR892gSsNy4Vd7oILkuRhjPouIojP9BbME0m9bhVbAws+Zh9NBKtp7UH7wA==
