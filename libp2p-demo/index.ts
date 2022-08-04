@@ -1,5 +1,4 @@
 import { createLibp2p, Libp2pNode } from 'libp2p'
-import { WebSockets } from '@libp2p/websockets'
 import { WebRTCStar } from '@libp2p/webrtc-star'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { Noise } from '@chainsafe/libp2p-noise'
@@ -24,7 +23,6 @@ async function makeHost(listen?: string[]): Libp2pNode {
       ]
     },
     transports: [
-      new WebSockets(),
       webRtcStar
     ],
     connectionEncryption: [new Noise()],
@@ -32,7 +30,32 @@ async function makeHost(listen?: string[]): Libp2pNode {
     peerDiscovery: [
       webRtcStar.discovery,
     ],
-    pubsub: new GossipSub({emitSelf: true}),
+    connectionManager: {
+      maxParallelDials: 150, // 150 total parallel multiaddr dials
+      maxDialsPerPeer: 4, // Allow 4 multiaddrs to be dialed per peer in parallel
+      dialTimeout: 10e3, // 10 second dial timeout per peer dial
+      autoDial: true
+    },
+    nat: {
+      enabled: false
+    },
+    pubsub: new GossipSub({emitSelf: false}),
+    /*
+    config: {
+    transport: {
+      [transportKey]: {
+        listenerOptions: {
+          config: {
+            iceServers: [
+              {"urls": ["turn:YOUR.TURN.SERVER:3478"], "username": "YOUR.USER", "credential": "YOUR.PASSWORD"},
+              {"urls": ["stun:YOUR.STUN.SERVER:3478"], "username": "", "credential": ""}]
+          }
+        }
+      }
+    }
+    */
+  //}
+
   })
 
   // Listen for new peers
@@ -46,11 +69,17 @@ async function makeHost(listen?: string[]): Libp2pNode {
     const connection = evt.detail
     const { remotePeer, remoteAddr } = connection;
 
-    console.log(connection);
+    console.log('connect', connection);
+
     const peerId = peerIdFromString(remotePeer.toString())
     await host.peerStore.addressBook.set(peerId, [remoteAddr]);
-    await host.dial(peerId);
+    const conn = await host.dial(peerId);
 
+    console.log('conn', conn)
+
+    const stream = await conn.newStream(["/pubsub/1.0.0"]);
+
+    console.log('stream', stream)
     console.log(`Connected to ${remotePeer.toString()}`)
   })
 
@@ -80,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   host.pubsub.subscribe(topic)
 
+  /*
   setInterval(async () => {
 
     console.log(host.pubsub.started)
@@ -90,5 +120,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const amount = await host.pubsub.publish(topic, value)
     console.log("published to ", amount);
   }, 1000)
+  */
 
 })

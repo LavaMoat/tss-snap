@@ -15,7 +15,6 @@
     "@libp2p/mplex": "^4.0.2",
     "@libp2p/peer-id": "^1.1.15",
     "@libp2p/webrtc-star": "^3.0.0",
-    "@libp2p/websockets": "^3.0.0",
     "libp2p": "^0.37.3",
     "uint8arrays": "^3.0.0"
   },
