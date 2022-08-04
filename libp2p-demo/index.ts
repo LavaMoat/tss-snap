@@ -32,6 +32,7 @@ async function makeHost(listen?: string[]): Libp2pNode {
     peerDiscovery: [
       webRtcStar.discovery,
     ],
+    pubsub: new GossipSub({emitSelf: true}),
   })
 
   // Listen for new peers
@@ -46,7 +47,6 @@ async function makeHost(listen?: string[]): Libp2pNode {
     const { remotePeer, remoteAddr } = connection;
 
     console.log(connection);
-
     const peerId = peerIdFromString(remotePeer.toString())
     await host.peerStore.addressBook.set(peerId, [remoteAddr]);
     await host.dial(peerId);
@@ -70,21 +70,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log(host);
   console.log(`host id is ${host.peerId.toString()}`)
 
-  const pubsub = new GossipSub();
-  await pubsub.init(host.components);
-  await pubsub.start()
-
-  pubsub.subscribe(topic)
-
-  /*
-  pubsub.addEventListener(topic, (msg) => {
-    console.log(`received: ${toString(msg.data)}`)
+  host.pubsub.addEventListener('message', (evt) => {
+    const connection = evt.detail;
+    const { data } = connection;
+    const value = new TextDecoder().decode(data);
+    console.log("got incoming gossip message", evt);
+    console.log("got incoming gossip message", value);
   })
-  */
+
+  host.pubsub.subscribe(topic)
 
   setInterval(async () => {
+
+    console.log(host.pubsub.started)
+    console.log(host.pubsub.getPeers())
+    console.log(host.pubsub.getSubscribers(topic))
+
     const value = new TextEncoder().encode("test message");
-    await pubsub.publish(topic, value)
+    const amount = await host.pubsub.publish(topic, value)
+    console.log("published to ", amount);
   }, 1000)
 
 })
