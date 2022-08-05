@@ -14,10 +14,15 @@
     "@libp2p/bootstrap": "^2.0.0",
     "@libp2p/mplex": "^4.0.2",
     "@libp2p/peer-id": "^1.1.15",
+    "@libp2p/webrtc-peer": "^2.0.0",
     "@libp2p/webrtc-star": "^3.0.0",
     "@libp2p/websockets": "^3.0.1",
+    "@multiformats/multiaddr": "^10.3.3",
+    "it-pipe": "^2.0.3",
     "libp2p": "^0.37.3",
     "node-turn": "^0.0.6",
+    "pull-stream": "^3.6.14",
+    "streaming-iterables": "^7.0.4",
     "uint8arrays": "^3.0.0"
   },
   "devDependencies": {

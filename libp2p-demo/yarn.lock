@@ -722,7 +722,7 @@
   dependencies:
     "@multiformats/multiaddr" "^10.1.1"
 
-"@multiformats/multiaddr@^10.1.1", "@multiformats/multiaddr@^10.1.5", "@multiformats/multiaddr@^10.1.7", "@multiformats/multiaddr@^10.1.8", "@multiformats/multiaddr@^10.2.0":
+"@multiformats/multiaddr@^10.1.1", "@multiformats/multiaddr@^10.1.5", "@multiformats/multiaddr@^10.1.7", "@multiformats/multiaddr@^10.1.8", "@multiformats/multiaddr@^10.2.0", "@multiformats/multiaddr@^10.3.3":
   version "10.3.3"
   resolved "https://registry.yarnpkg.com/@multiformats/multiaddr/-/multiaddr-10.3.3.tgz#f0828d5c456427306e33d59ac69e401299d55760"
   integrity sha512-+LX9RovG7DJsANb+U6VchV/tApcdJzeafbi5+MPUam90oL91BbEh6ozNZOz4Qf5ZEeilexc12oomatmODJh1/w==
@@ -1848,6 +1848,11 @@ protons-runtime@^1.0.3, protons-runtime@^1.0.4:
     uint8arraylist "^1.4.0"
     uint8arrays "^3.0.0"
 
+pull-stream@^3.6.14:
+  version "3.6.14"
+  resolved "https://registry.yarnpkg.com/pull-stream/-/pull-stream-3.6.14.tgz#529dbd5b86131f4a5ed636fdf7f6af00781357ee"
+  integrity sha512-KIqdvpqHHaTUA2mCYcLG1ibEbu/LCKoJZsBWyv9lSYtPkJPBq8m3Hxa103xHi6D2thj5YXa0TqK3L3GUkwgnew==
+
 readable-stream@^3.4.0:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.6.0.tgz#337bbda3adc0706bd3e024426a286d4b4b2c9198"
@@ -1979,6 +1984,11 @@ sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==
+
+streaming-iterables@^7.0.4:
+  version "7.0.4"
+  resolved "https://registry.yarnpkg.com/streaming-iterables/-/streaming-iterables-7.0.4.tgz#35fe0ed2cfd06ee49fd7e53a97dd23d28278a823"
+  integrity sha512-WdXhIuH/Ha03taV24IFjZPKCuNCrmirdWduTxxxmAHKFza7LcoEuH8ySWV9LRu6FvuEsLY6SlXa3a5Jql3iKJw==
 
 streamroller@^2.2.4:
   version "2.2.4"
