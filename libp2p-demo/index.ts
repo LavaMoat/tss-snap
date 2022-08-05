@@ -14,8 +14,6 @@ import { toString } from 'uint8arrays/to-string'
 import { pipe } from 'it-pipe'
 //import { consume } from 'streaming-iterables'
 
-//import { pull } from 'pull-stream'
-
 const topic = 'broadcast'
 const protocol = "/pubsub/1.0.0"
 
@@ -57,7 +55,7 @@ async function makeHost(): Libp2pNode {
       enabled: false
     },
     */
-    //pubsub: new GossipSub({emitSelf: false}),
+    pubsub: new GossipSub({emitSelf: false}),
 
     /*
     config: {
@@ -217,7 +215,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log(host);
   console.log(`host id is ${host.peerId.toString()}`)
 
-  /*
   host.pubsub.addEventListener('message', (evt) => {
     const connection = evt.detail;
     const { data } = connection;
@@ -227,7 +224,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   })
 
   host.pubsub.subscribe(topic)
-  */
 
   /*
   setInterval(async () => {

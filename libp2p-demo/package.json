@@ -21,7 +21,6 @@
     "it-pipe": "^2.0.3",
     "libp2p": "^0.37.3",
     "node-turn": "^0.0.6",
-    "pull-stream": "^3.6.14",
     "streaming-iterables": "^7.0.4",
     "uint8arrays": "^3.0.0"
   },
