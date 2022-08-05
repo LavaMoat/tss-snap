@@ -1,4 +1,5 @@
 import { createLibp2p, Libp2pNode } from 'libp2p'
+import { WebSockets } from '@libp2p/websockets'
 import { WebRTCStar } from '@libp2p/webrtc-star'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { Noise } from '@chainsafe/libp2p-noise'
@@ -11,18 +12,23 @@ import { toString } from 'uint8arrays/to-string'
 
 const topic = 'broadcast'
 
-async function makeHost(listen?: string[]): Libp2pNode {
+async function makeHost(): Libp2pNode {
+  const transportKey = WebRTCStar.prototype[Symbol.toStringTag];
+
+  console.log(transportKey);
+
   const webRtcStar = new WebRTCStar()
 
   const host = await createLibp2p({
     addresses: {
-      listen: listen || [
+      listen: [
         //'/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
         //'/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
-        '/dns4/127.0.0.1/tcp/9090/ws/p2p-webrtc-star',
+        '/ip4/127.0.0.1/tcp/9090/ws/p2p-webrtc-star',
       ]
     },
     transports: [
+      new WebSockets(),
       webRtcStar
     ],
     connectionEncryption: [new Noise()],
@@ -36,44 +42,71 @@ async function makeHost(listen?: string[]): Libp2pNode {
       dialTimeout: 10e3, // 10 second dial timeout per peer dial
       autoDial: true
     },
+    /*
     nat: {
       enabled: false
     },
+    */
     pubsub: new GossipSub({emitSelf: false}),
+
     /*
     config: {
-    transport: {
-      [transportKey]: {
-        listenerOptions: {
-          config: {
-            iceServers: [
-              {"urls": ["turn:YOUR.TURN.SERVER:3478"], "username": "YOUR.USER", "credential": "YOUR.PASSWORD"},
-              {"urls": ["stun:YOUR.STUN.SERVER:3478"], "username": "", "credential": ""}]
+      transport: {
+        [transportKey]: {
+          listenerOptions: {
+            config: {
+              iceServers: [
+                { 'urls': 'stun:stun.l.google.com:19302' },
+                {
+                  "urls": ["turn:127.0.0.1:3478"],
+                  "username": "test",
+                  "credential": "password"
+                },
+              ]
+            }
           }
         }
       }
     }
     */
-  //}
 
   })
 
   // Listen for new peers
-  host.addEventListener('peer:discovery', (evt) => {
+  host.addEventListener('peer:discovery', async (evt) => {
     const peer = evt.detail
-    //console.log(`Found peer ${peer.id.toString()}`)
-  })
+    console.log(`Peer discovery ${peer.id.toString()}`)
+    console.log(peer)
+    console.log(peer.multiaddrs.toString())
 
-  // Listen for new connections to peers
-  host.connectionManager.addEventListener('peer:connect', async (evt) => {
-    const connection = evt.detail
-    const { remotePeer, remoteAddr } = connection;
+    /*
+    const { remotePeer, remoteAddr } = peer;
 
-    console.log('connect', connection);
+    console.log("remoteAddr", remoteAddr.toString());
 
     const peerId = peerIdFromString(remotePeer.toString())
-    await host.peerStore.addressBook.set(peerId, [remoteAddr]);
-    const conn = await host.dial(peerId);
+    */
+
+    //console.log('connect', peerId.toString());
+
+    //console.log(host.dial.toString())
+    //
+    /*
+
+        peerConnectionConfig: {
+          iceServers: [
+            { 'urls': 'stun:stun.l.google.com:19302' },
+            {
+              "urls": ["turn:127.0.0.1:3478"],
+              "username": "test",
+              "credential": "password"
+            },
+          ]
+        }
+    */
+
+    await host.peerStore.addressBook.set(peer.id, peer.multiaddrs);
+    const conn = await host.dial(peer.id);
 
     console.log('conn', conn)
 
@@ -81,6 +114,11 @@ async function makeHost(listen?: string[]): Libp2pNode {
 
     console.log('stream', stream)
     console.log(`Connected to ${remotePeer.toString()}`)
+  })
+
+  // Listen for new connections to peers
+  host.connectionManager.addEventListener('peer:connect', async (evt) => {
+    const connection = evt.detail
   })
 
   // Listen for peers disconnecting
