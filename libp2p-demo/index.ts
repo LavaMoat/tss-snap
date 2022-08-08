@@ -20,7 +20,7 @@ const protocol = "/pubsub/1.0.0"
 async function makeHost(): Libp2pNode {
   const transportKey = WebRTCStar.prototype[Symbol.toStringTag];
 
-  console.log(transportKey);
+  //console.log(transportKey);
 
   const webRtcStar = new WebRTCStar()
 
@@ -84,7 +84,7 @@ async function makeHost(): Libp2pNode {
   host.addEventListener('peer:discovery', async (evt) => {
     const peer = evt.detail
     console.log(`Peer discovery ${peer.id.toString()}`)
-    console.log(peer)
+    //console.log(peer)
 
     const stream = await host.dialProtocol(peer.id, [protocol]);
 

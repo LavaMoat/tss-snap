@@ -19,7 +19,7 @@
     "@libp2p/websockets": "^3.0.1",
     "@multiformats/multiaddr": "^10.3.3",
     "it-pipe": "^2.0.3",
-    "libp2p": "^0.37.3",
+    "libp2p": "0.37.3-05e8e7e",
     "node-turn": "^0.0.6",
     "streaming-iterables": "^7.0.4",
     "uint8arrays": "^3.0.0"
