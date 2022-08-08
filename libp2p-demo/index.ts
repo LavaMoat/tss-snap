@@ -12,7 +12,7 @@ import { fromString } from 'uint8arrays/from-string'
 import { toString } from 'uint8arrays/to-string'
 
 import { pipe } from 'it-pipe'
-//import { consume } from 'streaming-iterables'
+import map from 'it-map'
 
 const topic = 'broadcast'
 const protocol = "/pubsub/1.0.0"
@@ -107,7 +107,7 @@ async function makeHost(): Libp2pNode {
         // For each chunk of data
         for await (const data of source) {
           // Output the data
-          console.log('received echo:', uint8ArrayToString(data))
+          console.log('Received reply:', uint8ArrayToString(data))
         }
       }
     )
@@ -206,6 +206,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const handleProtocol = async ({ connection, stream }) => {
     console.log("handleProtocol called")
+
+    pipe(
+      // Read from the stream (the source)
+      stream.source,
+      // Turn buffers into strings
+      (source) => map(source, (buf) => toString(buf.subarray())),
+      // Sink function
+      async function (source) {
+        // For each chunk of data
+        for await (const msg of source) {
+          // Output the data as a utf8 string
+          console.log('> ' + msg.toString().replace('\n', ''))
+        }
+      }
+    )
+
   }
 
   await host.handle([protocol], handleProtocol)
@@ -215,6 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log(host);
   console.log(`host id is ${host.peerId.toString()}`)
 
+  /*
   host.pubsub.addEventListener('message', (evt) => {
     const connection = evt.detail;
     const { data } = connection;
@@ -225,7 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   host.pubsub.subscribe(topic)
 
-  /*
   setInterval(async () => {
 
     console.log(host.pubsub.started)
@@ -235,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const value = new TextEncoder().encode("test message");
     const amount = await host.pubsub.publish(topic, value)
     console.log("published to ", amount);
-  }, 1000)
+  }, 10000)
   */
 
 })

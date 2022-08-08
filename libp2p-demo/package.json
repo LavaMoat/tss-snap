@@ -18,6 +18,7 @@
     "@libp2p/webrtc-star": "^3.0.0",
     "@libp2p/websockets": "^3.0.1",
     "@multiformats/multiaddr": "^10.3.3",
+    "it-map": "^1.0.6",
     "it-pipe": "^2.0.3",
     "libp2p": "0.37.3-05e8e7e",
     "node-turn": "^0.0.6",
