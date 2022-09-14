@@ -27,6 +27,8 @@ cargo install --version 0.10.2 wasm-pack
 
 ```
 make setup
+cd packages/client && yarn build && yarn link && cd ../..
+cd demo && yarn link @metamask/mpc-client && cd ..
 ```
 
 ## Serve
