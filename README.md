@@ -196,3 +196,18 @@ crypto.getRandomValues = function (buffer) {
 [multi-party-ecdsa]: https://github.com/ZenGo-X/multi-party-ecdsa
 [playwright]: https://playwright.dev/
 [JSON-RPC]: https://www.jsonrpc.org/specification
+
+### clang
+
+On MacOS, you might come across an error saying `"clang" did not execute successfully (status code exist status: 1).`
+
+To fix this, make sure to install clang using homebrew, e.g. `brew install llvm` (the `llvm` bottle includes `clang` by default)
+
+Running `which clang` should output `<HOMEBREW_PREFIX>/opt/llvm/bin/clang` and running `clang --version` should output something like this:
+
+```bash
+Homebrew clang version 14.0.6
+Target: arm64-apple-darwin21.4.0
+Thread model: posix
+InstalledDir: <HOMEBREW_PREFIX>/opt/llvm/bin
+```
