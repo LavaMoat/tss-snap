@@ -15,9 +15,10 @@ module:
 
 setup: wasm snap-wasm module
 	@cd demo && yarn install && npx playwright install
-	@cd module && yarn install
-	@cd snap/rpc && yarn install
-	@cd snap/ui && yarn install
+	@cd packages/wasm/pkg && yarn install
+	@cd packages/client && yarn install
+	@cd snap/dapp && yarn install
+	@cd snap/wasm/pkg && yarn install
 
 build:
 	@cd cli && cargo build
@@ -52,4 +53,4 @@ fmt: lint
 	@cd packages/wasm && cargo fmt
 	@cd snap/wasm && cargo fmt
 
-.PHONY: wasm snap-wasm dist dist-dev module setup build release server demo test lint fmt
+.PHONY: wasm snap-wasm dist dist-dev setup build release server demo test lint fmt
