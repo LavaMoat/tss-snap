@@ -211,3 +211,14 @@ Target: arm64-apple-darwin21.4.0
 Thread model: posix
 InstalledDir: <HOMEBREW_PREFIX>/opt/llvm/bin
 ```
+
+Note: you may also need to add the following to `.zshrc` or `.bash_profile`, so the packages resolve correctly:
+
+```bash
+BREW_PREFIX=$(brew --prefix)
+# use custom LLVM
+export PATH="$BREW_PREFIX/opt/llvm/bin:$PATH"
+# hack for building WASM via Rust on M1 chips
+export CC=$BREW_PREFIX/opt/llvm/bin/clang
+export AR=$BREW_PREFIX/opt/llvm/bin/llvm-ar
+```
