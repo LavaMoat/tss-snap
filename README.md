@@ -18,7 +18,9 @@ Note: when you run the command in the project directory, you may run into an err
 
 This is because `rust-toolchain` specifies an overriding cargo version of `nightly-2021-08-12`.
 
-To fix this, run `cargo install --version 0.10.2 wasm-pack` again outside the current directory. Installation was successful usgin cargo `cargo 1.65.0-nightly (4ed54cecc 2022-08-27)`.
+To fix this, run `cargo install --version 0.10.2 wasm-pack` again outside the current directory. 
+
+Note: installation was successful using `cargo 1.65.0-nightly (4ed54cecc 2022-08-27)`.
 
 ## Structure
 
