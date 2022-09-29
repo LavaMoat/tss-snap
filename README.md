@@ -206,3 +206,29 @@ crypto.getRandomValues = function (buffer) {
 [multi-party-ecdsa]: https://github.com/ZenGo-X/multi-party-ecdsa
 [playwright]: https://playwright.dev/
 [JSON-RPC]: https://www.jsonrpc.org/specification
+
+### clang
+
+On MacOS, you might come across an error saying `"clang" did not execute successfully (status code exist status: 1).`
+
+To fix this, make sure to install clang using homebrew, e.g. `brew install llvm` (the `llvm` bottle includes `clang` by default)
+
+Running `which clang` should output `<HOMEBREW_PREFIX>/opt/llvm/bin/clang` and running `clang --version` should output something like this:
+
+```bash
+Homebrew clang version 14.0.6
+Target: arm64-apple-darwin21.4.0
+Thread model: posix
+InstalledDir: <HOMEBREW_PREFIX>/opt/llvm/bin
+```
+
+Note: you may also need to add the following to `.zshrc` or `.bash_profile`, so the packages resolve correctly:
+
+```bash
+BREW_PREFIX=$(brew --prefix)
+# use custom LLVM
+export PATH="$BREW_PREFIX/opt/llvm/bin:$PATH"
+# hack for building WASM via Rust on M1 chips
+export CC=$BREW_PREFIX/opt/llvm/bin/clang
+export AR=$BREW_PREFIX/opt/llvm/bin/llvm-ar
+```
