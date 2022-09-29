@@ -10,10 +10,7 @@ dist: wasm
 dist-dev: wasm
 	@cd demo && yarn build:dev
 
-module:
-	@cd module && yarn build
-
-setup: wasm snap-wasm module
+setup: wasm snap-wasm
 	@cd demo && yarn install && npx playwright install
 	@cd packages/wasm/pkg && yarn install
 	@cd packages/client && yarn install
