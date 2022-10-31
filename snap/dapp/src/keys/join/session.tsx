@@ -7,6 +7,7 @@ import { SessionKind } from "@metamask/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
 import { joinGroupSessionWithSignup } from "../../group-session";
+import { setSnackbar } from "../../store/snackbars";
 
 import { StepProps } from "./index";
 
