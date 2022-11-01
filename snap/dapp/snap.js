@@ -10,7 +10,7 @@ export const onRpcRequest = ({ origin, request }) => {
     case "updateState":
       return wallet.request({
         method: "snap_manageState",
-        params: ["update", requestObject.params],
+        params: ["update", request.params],
       });
     case "clearState":
       return wallet.request({
