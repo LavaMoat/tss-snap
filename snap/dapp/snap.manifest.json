@@ -1,13 +1,13 @@
 {
   "version": "0.1.0",
-  "proposedName": "Threshold signatures",
   "description": "Snap for signing ECDSA transactions using threshold signatures.",
+  "proposedName": "Threshold signatures",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
+    "url": "https://github.com/LavaMoat/demo-gg20-wasm.git"
   },
   "source": {
-    "shasum": "hchx+sdrUVvofyCXEXnyXOCLFwyFD0OaTGct8PQ1+54=",
+    "shasum": "Sl5GF5k1D3u0vyIR1oFzGIIubTvAr1R4rfibpMZatWQ=",
     "location": {
       "npm": {
         "filePath": "bundle.js",
@@ -18,8 +18,7 @@
     }
   },
   "initialPermissions": {
-    "snap_manageState": {},
-    "eth_requestAccounts": {}
+    "snap_manageState": {}
   },
   "manifestVersion": "0.1"
 }

@@ -1,7 +1,7 @@
-wallet.registerRpcMessageHandler(async (originString, requestObject) => {
+export const onRpcRequest = ({ origin, request }) => {
   console.log("Snap running...");
 
-  switch (requestObject.method) {
+  switch (request.method) {
     case "getState":
       return wallet.request({
         method: "snap_manageState",
@@ -20,4 +20,4 @@ wallet.registerRpcMessageHandler(async (originString, requestObject) => {
     default:
       throw new Error("Method not found.");
   }
-});
+}
