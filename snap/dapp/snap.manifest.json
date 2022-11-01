@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "description": "Snap for signing ECDSA transactions using threshold signatures.",
-  "proposedName": "Threshold signatures",
+  "description": "Snap using threshold signatures to sign messages and transactions.",
+  "proposedName": "Threshold Signatures",
   "repository": {
     "type": "git",
     "url": "https://github.com/LavaMoat/demo-gg20-wasm.git"
