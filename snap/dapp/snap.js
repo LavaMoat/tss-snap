@@ -1,11 +1,7 @@
-wallet.registerRpcMessageHandler(async (originString, requestObject) => {
+export const onRpcRequest = ({ origin, request }) => {
   console.log("Snap running...");
 
-  switch (requestObject.method) {
-    case "getKey":
-      return wallet.request({
-        method: "snap_getBip44Entropy_60",
-      });
+  switch (request.method) {
     case "getState":
       return wallet.request({
         method: "snap_manageState",
@@ -14,7 +10,7 @@ wallet.registerRpcMessageHandler(async (originString, requestObject) => {
     case "updateState":
       return wallet.request({
         method: "snap_manageState",
-        params: ["update", requestObject.params],
+        params: ["update", request.params],
       });
     case "clearState":
       return wallet.request({
@@ -24,4 +20,4 @@ wallet.registerRpcMessageHandler(async (originString, requestObject) => {
     default:
       throw new Error("Method not found.");
   }
-});
+}

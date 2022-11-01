@@ -5,7 +5,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/LavaMoat/ecdsa-wasm.git"
+    "url": "https://github.com/LavaMoat/demo-gg20-wasm.git"
   },
   "license": "MIT",
   "files": [
@@ -24,7 +24,7 @@
     "start": "yarn build:snap && parcel src/index.html --port 7070"
   },
   "devDependencies": {
-    "@metamask/snaps-cli": "^0.10.7",
+    "@metamask/snaps-cli": "0.22.3",
     "@metamask/types": "^1.1.0",
     "@types/react": "^18.0.1",
     "@types/react-dom": "^18.0.0",

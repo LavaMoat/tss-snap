@@ -14,7 +14,7 @@ type RpcRequest = {
 
 type SnapEthereum = {
   request: (req: RpcRequest) => Promise<unknown>;
-  on: (event: string, listener: () => void) => void;
+  on: (event: string, listener: (arg: any) => void) => void;
 };
 
 declare global {
