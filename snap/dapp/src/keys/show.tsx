@@ -32,6 +32,7 @@ import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
 import MessageProofs from "./message-proofs";
+import SelectedChain from './selected-chain';
 
 export default function ShowKey() {
   const navigate = useNavigate();
@@ -136,9 +137,7 @@ export default function ShowKey() {
         </Stack>
         <Stack direction="row">
           <Stack direction="row" spacing={1}>
-            <Box>
-              <Chip label={chainName} color="secondary" />
-            </Box>
+            <SelectedChain chainName={chainName} />
             <Box>
               <Chip label={sharesLabel} />
             </Box>

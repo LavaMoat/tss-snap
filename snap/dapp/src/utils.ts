@@ -47,6 +47,7 @@ export const chains: Dictionary<string> = {
   "0x4": "Rinkeby",
   "0x5": "Goerli",
   "0x2a": "Kovan",
+  "0xaa36a7": "Sepolia",
 };
 
 export function getDroppedFiles(e: React.DragEvent<HTMLElement>): File[] {
