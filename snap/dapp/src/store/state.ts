@@ -42,9 +42,7 @@ async function setState(value: AppState) {
 }
 
 export async function loadStateData(): Promise<AppState> {
-  console.log("Loading state data...");
   const state: AppState = (await getState()) as AppState;
-  console.log("Loaded state data...");
   if (state !== null) {
     return state;
   }
