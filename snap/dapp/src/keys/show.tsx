@@ -32,7 +32,7 @@ import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
 import MessageProofs from "./message-proofs";
-import SelectedChain from './selected-chain';
+import SelectedChain from "./selected-chain";
 
 export default function ShowKey() {
   const navigate = useNavigate();

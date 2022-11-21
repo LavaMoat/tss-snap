@@ -82,7 +82,7 @@ export default function Dialogs() {
       })
     );
     cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF);
-  }
+  };
 
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
@@ -108,9 +108,10 @@ export default function Dialogs() {
         open={dialogs[CONFIRM_DELETE_MESSAGE_PROOF][0] || false}
         handleCancel={() => cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF)}
         handleOk={onDeleteMessageProof}
-        request={(dialogs[CONFIRM_DELETE_MESSAGE_PROOF][1] || []) as DeleteMessageProof}
+        request={
+          (dialogs[CONFIRM_DELETE_MESSAGE_PROOF][1] || []) as DeleteMessageProof
+        }
       />
-
     </>
   );
 }

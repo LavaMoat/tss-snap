@@ -87,7 +87,6 @@ function SessionConnect(props: SessionConnectProps) {
           })
         );
       }
-
     }, 1000);
   }, []);
 

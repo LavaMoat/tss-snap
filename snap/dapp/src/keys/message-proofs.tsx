@@ -12,10 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 
 import { SignProof, SignMessage } from "../types";
 import { encode, download, toHexString } from "../utils";
-import {
-  loadMessageProofs,
-  proofsSelector,
-} from "../store/proofs";
+import { loadMessageProofs, proofsSelector } from "../store/proofs";
 import {
   setDialogVisible,
   CONFIRM_DELETE_MESSAGE_PROOF,
@@ -50,11 +47,7 @@ export default function MessageProofs(props: MessageProofProps) {
 
   const onDeleteMessageProof = (proof: SignProof) => {
     dispatch(
-      setDialogVisible([
-        CONFIRM_DELETE_MESSAGE_PROOF,
-        true,
-        [address, proof],
-      ])
+      setDialogVisible([CONFIRM_DELETE_MESSAGE_PROOF, true, [address, proof]])
     );
   };
 

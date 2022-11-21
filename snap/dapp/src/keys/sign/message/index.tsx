@@ -17,7 +17,7 @@ import { createGroupSession, GroupFormData } from "../../../group-session";
 import NotFound from "../../../not-found";
 import PublicAddress from "../../../components/public-address";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
-import { setSnackbar } from '../../../store/snackbars';
+import { setSnackbar } from "../../../store/snackbars";
 import {
   sessionSelector,
   setSignCandidate,

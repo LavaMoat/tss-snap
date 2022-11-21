@@ -57,7 +57,6 @@ export default function Compute(props: StepProps) {
           })
         );
       }
-
     }, 1000);
   }, []);
 

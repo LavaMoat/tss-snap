@@ -1,20 +1,36 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { Box, Button, Chip, Breadcrumbs, Link, Stack, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  Breadcrumbs,
+  Link,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 
-import NotFound from "../../not-found";
-import PublicAddress from "../../components/public-address";
-import { keysSelector } from "../../store/keys";
-import { sessionSelector } from "../../store/session";
-import {chains} from '../../utils';
+import NotFound from "../../../not-found";
+import PublicAddress from "../../../components/public-address";
+import { keysSelector, KeyShareGroup } from "../../../store/keys";
+import { sessionSelector } from "../../../store/session";
+import { chains } from "../../../utils";
 
-import SelectedChain from '../selected-chain';
+import SelectedChain from "../../selected-chain";
 
-import { utils, UnsignedTransaction, BigNumber } from 'ethers';
+import { utils, UnsignedTransaction, BigNumber } from "ethers";
 
-function TransactionForm({chain, gasPrice, transactionCount}) {
+type TransactionFormProps = {
+  chain: string;
+  gasPrice: string;
+  transactionCount: string;
+};
+
+function TransactionForm(props: TransactionFormProps) {
+  const { chain, gasPrice, transactionCount } = props;
   const [address, setAddress] = useState("");
   const [addressError, setAddressError] = useState(false);
 
@@ -42,13 +58,13 @@ function TransactionForm({chain, gasPrice, transactionCount}) {
         // NOTE: Must do some conversion so that
         // NOTE: RLP encoding works as expected, otherwise
         // NOTE: some values are not detected as BytesLike
-        const chainId = BigNumber.from(chain)
-        const nonce = BigNumber.from(transactionCount)
+        const chainId = BigNumber.from(chain);
+        const nonce = BigNumber.from(transactionCount);
         //const maxFeePerGas = "";
         //const maxPriorityFeePerGas = "";
 
         const transaction: UnsignedTransaction = {
-          nonce: nonce.toHexString(),
+          nonce: nonce.toNumber(),
           to,
           value,
           gasPrice,
@@ -56,7 +72,7 @@ function TransactionForm({chain, gasPrice, transactionCount}) {
           data,
           //maxFeePerGas,
           //maxPriorityFeePerGas,
-          chainId: chainId.toHexString(),
+          chainId: chainId.toNumber(),
         };
 
         console.log("tx", transaction);
@@ -66,28 +82,26 @@ function TransactionForm({chain, gasPrice, transactionCount}) {
           transaction.gasPrice,
           transaction.gasLimit,
           transaction.to,
-          transaction.value.toHexString(),
+          (transaction.value as BigNumber).toHexString(),
           transaction.data,
           transaction.chainId,
-          '0x00',
-          '0x00'
+          "0x00",
+          "0x00",
         ];
 
         console.log("params", txParams);
 
         const rawTransaction = utils.RLP.encode(txParams);
-        console.log(rawTransaction.toString('hex'));
+        console.log(rawTransaction.toString());
 
         const transactionHash = utils.keccak256(rawTransaction);
-        console.log(transactionHash.toString('hex'));
-
+        console.log(transactionHash.toString());
       } catch (e) {
-        setAmountError(true)
+        setAmountError(true);
       }
     } catch (e) {
-      setAddressError(true)
+      setAddressError(true);
     }
-
   };
 
   /*
@@ -100,7 +114,6 @@ function TransactionForm({chain, gasPrice, transactionCount}) {
           </Typography>
         </Stack>
   */
-
 
   return (
     <form id="transaction" onSubmit={onSubmit} noValidate>
@@ -129,7 +142,6 @@ function TransactionForm({chain, gasPrice, transactionCount}) {
         <Button variant="contained" type="submit" form="transaction">
           Next
         </Button>
-
       </Stack>
     </form>
   );
@@ -162,13 +174,13 @@ export default function SignTransaction() {
       const gasPrice = (await ethereum.request({
         method: "eth_gasPrice",
       })) as string;
-      setGasPrice(gasPrice)
+      setGasPrice(gasPrice);
 
       const transactionCount = (await ethereum.request({
         method: "eth_getTransactionCount",
         params: [address, "latest"],
       })) as string;
-      setTransactionCount(transactionCount)
+      setTransactionCount(transactionCount);
 
       const result = (await ethereum.request({
         method: "eth_getBalance",
@@ -230,20 +242,16 @@ export default function SignTransaction() {
           {selectedKeyShare}
         </Stack>
 
-        <Stack
-          direction="row"
-          alignItems="center">
-
-          <Box sx={{flexGrow: 1}}>{utils.formatEther(balance)} ETH</Box>
+        <Stack direction="row" alignItems="center">
+          <Box sx={{ flexGrow: 1 }}>{utils.formatEther(balance)} ETH</Box>
           <SelectedChain chainName={chainName} />
-
         </Stack>
 
         <TransactionForm
           chain={chain}
           gasPrice={gasPrice}
-          transactionCount={transactionCount} />
-
+          transactionCount={transactionCount}
+        />
       </Stack>
     </>
   );
