@@ -179,7 +179,7 @@ export default function SignMessage() {
             <Link underline="hover" color="inherit" href={"#/keys/" + address}>
               {label}
             </Link>
-            <Typography color="text.primary">Sign Message</Typography>
+            <Typography color="text.primary">Sign Transaction</Typography>
           </Breadcrumbs>
           <Typography variant="h3" component="div">
             {label}
