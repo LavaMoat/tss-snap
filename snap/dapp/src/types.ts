@@ -46,6 +46,8 @@ export enum SigningType {
 export type SignTransaction = {
   transaction: UnsignedTransaction,
   digest: Uint8Array;
+  // RLP encoded bytes of the transaction
+  bytes: Uint8Array,
 };
 
 export type SignValue = SignMessage | SignTransaction;

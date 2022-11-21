@@ -1,195 +1,80 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
-import {
-  Box,
-  Button,
-  Chip,
-  Breadcrumbs,
-  Link,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
+
+import { SessionKind } from "@metamask/mpc-client";
+
+import { encode, fromHexString } from "../../../utils";
+import { SigningType, SignTransaction } from "../../../types";
+
+import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
+import { createGroupSession, GroupFormData } from "../../../group-session";
 
 import NotFound from "../../../not-found";
 import PublicAddress from "../../../components/public-address";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
-import { sessionSelector } from "../../../store/session";
-import { chains } from "../../../utils";
+import { setSnackbar } from "../../../store/snackbars";
+import {
+  sessionSelector,
+  setSignCandidate,
+  clearSign,
+} from "../../../store/session";
+import SignStepper from "../../../components/stepper";
+import KeysLoader from "../../loader";
 
-import SelectedChain from "../../selected-chain";
+import CreateTransaction from "./create-transaction";
 
-import { utils, UnsignedTransaction, BigNumber } from "ethers";
+/*
+import InvitePeople from "./invite-people";
+import Compute from "../compute";
+import SaveProof from "../save-proof";
+*/
 
-type TransactionFormProps = {
-  chain: string;
-  gasPrice: string;
-  transactionCount: string;
+import Signer from "../signer";
+
+import { ChooseKeyShareProps } from "../choose-key-share";
+
+import { utils } from "ethers";
+
+const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
+
+const getStepComponent = (activeStep: number, props: SignTransactionProps) => {
+  const stepComponents = [
+    <CreateTransaction key={0} {...props} />,
+    /*
+    <InvitePeople key={1} {...props} />,
+    <Compute key={2} {...props} />,
+    <SaveProof key={3} {...props} />,
+    */
+  ];
+  return stepComponents[activeStep];
 };
 
-function TransactionForm(props: TransactionFormProps) {
-  const { chain, gasPrice, transactionCount } = props;
-  const [address, setAddress] = useState("");
-  const [addressError, setAddressError] = useState(false);
+export type SignTransactionProps = {
+  next: () => void;
+  onTransaction: (tx: SignTransaction) => void;
+} & ChooseKeyShareProps;
 
-  const [amount, setAmount] = useState("");
-  const [amountError, setAmountError] = useState(false);
+export default function SignMessage() {
+  const dispatch = useDispatch();
+  const websocket = useContext(WebSocketContext);
 
-  const onAddressChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setAddress(e.target.value);
-
-  const onAmountChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setAmount(e.target.value);
-
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setAddressError(false);
-    setAmountError(false);
-
-    try {
-      const to = utils.getAddress(address);
-      try {
-        const value = utils.parseUnits(amount);
-
-        const gasLimit = "0x30d400";
-        const data = "0x00";
-        // NOTE: Must do some conversion so that
-        // NOTE: RLP encoding works as expected, otherwise
-        // NOTE: some values are not detected as BytesLike
-        const chainId = BigNumber.from(chain);
-        const nonce = BigNumber.from(transactionCount);
-        //const maxFeePerGas = "";
-        //const maxPriorityFeePerGas = "";
-
-        const transaction: UnsignedTransaction = {
-          nonce: nonce.toNumber(),
-          to,
-          value,
-          gasPrice,
-          gasLimit,
-          data,
-          //maxFeePerGas,
-          //maxPriorityFeePerGas,
-          chainId: chainId.toNumber(),
-        };
-
-        console.log("tx", transaction);
-
-        const txParams = [
-          transaction.nonce,
-          transaction.gasPrice,
-          transaction.gasLimit,
-          transaction.to,
-          (transaction.value as BigNumber).toHexString(),
-          transaction.data,
-          transaction.chainId,
-          "0x00",
-          "0x00",
-        ];
-
-        console.log("params", txParams);
-
-        const rawTransaction = utils.RLP.encode(txParams);
-        console.log(rawTransaction.toString());
-
-        const transactionHash = utils.keccak256(rawTransaction);
-        console.log(transactionHash.toString());
-      } catch (e) {
-        setAmountError(true);
-      }
-    } catch (e) {
-      setAddressError(true);
-    }
-  };
-
-  /*
-        <Stack marginBottom={1}>
-          <Typography variant="body1" component="div">
-            Enter the address to send to.
-          </Typography>
-          <Typography variant="body2" component="div" color="text.secondary">
-            Should be a valid public address starting with 0x.
-          </Typography>
-        </Stack>
-  */
-
-  return (
-    <form id="transaction" onSubmit={onSubmit} noValidate>
-      <Stack spacing={2}>
-        <TextField
-          label="Address"
-          autoFocus
-          autoComplete="off"
-          onChange={onAddressChange}
-          value={address}
-          error={addressError}
-          variant="outlined"
-          placeholder="Enter the address for the recipient"
-        />
-
-        <TextField
-          label="Amount"
-          autoComplete="off"
-          onChange={onAmountChange}
-          value={amount}
-          error={amountError}
-          variant="outlined"
-          placeholder="Amount of ETH to send"
-        />
-
-        <Button variant="contained" type="submit" form="transaction">
-          Next
-        </Button>
-      </Stack>
-    </form>
-  );
-}
-
-export default function SignTransaction() {
   const { address } = useParams();
-  const { keyShares } = useSelector(keysSelector);
+  const { keyShares, loaded } = useSelector(keysSelector);
   const { signProof } = useSelector(sessionSelector);
+  const [activeStep, setActiveStep] = useState(0);
   const [selectedParty, setSelectedParty] = useState(null);
 
-  const [balance, setBalance] = useState("0x0");
-  const [gasPrice, setGasPrice] = useState("0x0");
-  const [transactionCount, setTransactionCount] = useState("0x0");
-  const [chain, setChain] = useState<string>(null);
-
   useEffect(() => {
-    ethereum.on("chainChanged", handleChainChanged);
+    // Clear any previous signature data
+    dispatch(clearSign());
+  }, []);
 
-    function handleChainChanged(chainId: string) {
-      setChain(chainId);
-    }
-
-    const getBalance = async () => {
-      const chainId = (await ethereum.request({
-        method: "eth_chainId",
-      })) as string;
-      setChain(chainId);
-
-      const gasPrice = (await ethereum.request({
-        method: "eth_gasPrice",
-      })) as string;
-      setGasPrice(gasPrice);
-
-      const transactionCount = (await ethereum.request({
-        method: "eth_getTransactionCount",
-        params: [address, "latest"],
-      })) as string;
-      setTransactionCount(transactionCount);
-
-      const result = (await ethereum.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      })) as string;
-      setBalance(result);
-    };
-    getBalance();
-  }, [address]);
+  if (!loaded) {
+    return <KeysLoader />;
+  }
 
   const keyShare = keyShares.find((item) => {
     const [keyAddress] = item;
@@ -200,14 +85,78 @@ export default function SignTransaction() {
     return <NotFound />;
   }
 
-  if (!chain) {
-    return null;
-  }
-
-  const chainName = chains[chain] as string;
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
 
   const keyShareGroup: KeyShareGroup = keyShare[1];
   const { label, threshold, parties, items } = keyShareGroup;
+
+  if (items.length === 0) {
+    throw new Error("Invalid key share, no items found");
+  }
+
+  const onShareChange = (n: number) => {
+    setSelectedParty(n);
+  };
+
+  const onTransaction = async (signValue: SignTransaction) => {
+
+    console.log("Prepare transaction: ", signValue);
+
+    /*
+    // NOTE: Handle the quirky 0x prefixed string keccack256 implementation
+    const digest =
+      fromHexString(utils.keccak256(
+        Array.from(encode(message))).substring(2));
+
+    const formData: GroupFormData = [label, { parties, threshold }];
+
+    const signValue = { message, digest };
+
+    try {
+      // Create the remote server group and session and store
+      // the information in the redux state before proceeding to
+      // the next view
+      await createGroupSession(
+        SessionKind.SIGN,
+        formData,
+        websocket,
+        dispatch,
+        selectedParty || items[0],
+        signValue
+      );
+
+      // Store the sign candidate state
+      const signCandidate = {
+        address,
+        selectedParty: selectedParty || items[0],
+        value: signValue,
+        signingType: SigningType.MESSAGE,
+        creator: true,
+      };
+      dispatch(setSignCandidate(signCandidate));
+
+      handleNext();
+    } catch (e) {
+      console.error(e);
+      dispatch(
+        setSnackbar({
+          message: e.message || "",
+          severity: "error",
+        })
+      );
+    }
+    */
+  };
+
+  const stepProps = {
+    next: handleNext,
+    keyShare: keyShareGroup,
+    selectedParty: selectedParty || items[0],
+    onShareChange,
+    onTransaction,
+  };
 
   const selectedKeyShare =
     signProof === null ? (
@@ -230,28 +179,20 @@ export default function SignTransaction() {
             <Link underline="hover" color="inherit" href={"#/keys/" + address}>
               {label}
             </Link>
-            <Typography color="text.primary">Sign Transaction</Typography>
+            <Typography color="text.primary">Sign Message</Typography>
           </Breadcrumbs>
           <Typography variant="h3" component="div">
             {label}
           </Typography>
         </Stack>
-
         <Stack direction="row" alignItems="center">
           <PublicAddress address={address} abbreviate />
           {selectedKeyShare}
         </Stack>
-
-        <Stack direction="row" alignItems="center">
-          <Box sx={{ flexGrow: 1 }}>{utils.formatEther(balance)} ETH</Box>
-          <SelectedChain chainName={chainName} />
-        </Stack>
-
-        <TransactionForm
-          chain={chain}
-          gasPrice={gasPrice}
-          transactionCount={transactionCount}
-        />
+        <SignStepper steps={steps} activeStep={activeStep} />
+        {getStepComponent(activeStep, stepProps)}
+        <Signer />
+        <ListenerCleanup />
       </Stack>
     </>
   );
