@@ -11,6 +11,7 @@ type SignMessageViewProps = {
 
 export default function SignMessageView(props: SignMessageViewProps) {
   const { message, digest } = props;
+
   return (
     <Paper variant="outlined">
       <Stack padding={2} spacing={2}>

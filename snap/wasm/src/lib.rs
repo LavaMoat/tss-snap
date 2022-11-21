@@ -1,7 +1,6 @@
 //! Webassembly utilities for the threshold signatures snap.
 #![deny(missing_docs)]
 use serde::{Deserialize, Serialize};
-use sha3::{Digest, Keccak256};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
@@ -77,12 +76,4 @@ pub fn import_key_store(
     let json_data = decrypt(&key_store, &passphrase)?;
     let key_share: NamedKeyShare = serde_json::from_slice(&json_data)?;
     Ok(JsValue::from_serde(&key_share)?)
-}
-
-/// Compute the Keccak256 hash of a value.
-#[wasm_bindgen]
-pub fn keccak256(message: JsValue) -> Result<JsValue, JsError> {
-    let message: Vec<u8> = message.into_serde()?;
-    let digest = Keccak256::digest(&message).to_vec();
-    Ok(JsValue::from_serde(&digest)?)
 }

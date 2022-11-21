@@ -4,11 +4,9 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
-import { keccak256 } from "@metamask/mpc-snap-wasm";
-
 import { SessionKind } from "@metamask/mpc-client";
 
-import { encode } from "../../../utils";
+import { encode, fromHexString } from "../../../utils";
 import { SigningType } from "../../../types";
 
 import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
@@ -34,6 +32,8 @@ import SaveProof from "../save-proof";
 import Signer from "../signer";
 
 import { ChooseKeyShareProps } from "../choose-key-share";
+
+import { utils } from "ethers";
 
 const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
 
@@ -96,11 +96,17 @@ export default function SignMessage() {
   };
 
   const onMessage = async (message: string) => {
-    const digest = await keccak256(Array.from(encode(message)));
+
+    // NOTE: Handle the quirky 0x prefixed string keccack256 implementation
+    const digest =
+      fromHexString(utils.keccak256(
+        Array.from(encode(message))).substring(2));
 
     const formData: GroupFormData = [label, { parties, threshold }];
 
-    const signValue = { message, digest };
+    // NOTE: must be an array for JSON serialization otherwise
+    // NOTE: Uint8Array is converted to an object which is problematic
+    const signValue = { message, digest: Array.from(digest) };
 
     try {
       // Create the remote server group and session and store
