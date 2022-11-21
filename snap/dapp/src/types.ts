@@ -5,6 +5,8 @@ import {
   SignResult,
 } from "@metamask/mpc-client";
 
+import { UnsignedTransaction } from "ethers";
+
 // Key share with a human-friendly label.
 export type NamedKeyShare = {
   label: string;
@@ -42,7 +44,7 @@ export enum SigningType {
 
 // TODO: type for signing transactions
 export type SignTransaction = {
-  // TODO: store the transaction information
+  transaction: UnsignedTransaction,
   digest: Uint8Array;
 };
 

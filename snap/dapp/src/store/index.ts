@@ -19,7 +19,10 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types
-        ignoredActions: ["session/setTransport", "session/setSignCandidate"],
+        ignoredActions: [
+          "session/setTransport",
+          "session/setSignCandidate",
+          "session/setSignProof"],
         // Ignore these field paths in all actions
         ignoredActionPaths: [],
         // Ignore these paths in the state

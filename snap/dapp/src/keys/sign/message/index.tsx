@@ -104,9 +104,7 @@ export default function SignMessage() {
 
     const formData: GroupFormData = [label, { parties, threshold }];
 
-    // NOTE: must be an array for JSON serialization otherwise
-    // NOTE: Uint8Array is converted to an object which is problematic
-    const signValue = { message, digest: Array.from(digest) };
+    const signValue = { message, digest };
 
     try {
       // Create the remote server group and session and store
