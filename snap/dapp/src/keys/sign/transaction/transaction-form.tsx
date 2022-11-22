@@ -97,7 +97,7 @@ export default function TransactionForm(props: TransactionFormProps) {
         props.onTransaction({
           transaction,
           digest,
-          bytes: utils.arrayify(rawTransaction)});
+        });
 
       } catch (e) {
         console.error(e)
