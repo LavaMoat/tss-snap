@@ -56,7 +56,7 @@ export async function createGroupSession(
   // NOTE: must be an array for JSON serialization otherwise
   // NOTE: Uint8Array is converted to an object which is problematic
   // NOTE: when recipients receive the value
-  const value = {...signValue, digest: Array.from(signValue.digest)}
+  const value = { ...signValue, digest: Array.from(signValue.digest) };
 
   let session = await websocket.rpc({
     method: "Session.create",

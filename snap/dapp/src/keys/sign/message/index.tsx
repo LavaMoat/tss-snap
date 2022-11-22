@@ -25,11 +25,12 @@ import SignStepper from "../../../components/stepper";
 import KeysLoader from "../../loader";
 
 import CreateMessage from "./create-message";
-import InvitePeople from "./invite-people";
+import InvitePeople from "../invite-people";
 import Compute from "../compute";
 import SaveProof from "../save-proof";
 
 import Signer from "../signer";
+import { StepProps } from "../";
 
 import { ChooseKeyShareProps } from "../choose-key-share";
 
@@ -40,7 +41,7 @@ const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
 const getStepComponent = (activeStep: number, props: SignMessageProps) => {
   const stepComponents = [
     <CreateMessage key={0} {...props} />,
-    <InvitePeople key={1} {...props} />,
+    <InvitePeople key={1} {...props} kind={SigningType.MESSAGE} />,
     <Compute key={2} {...props} />,
     <SaveProof key={3} {...props} />,
   ];
@@ -48,9 +49,9 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
 };
 
 export type SignMessageProps = {
-  next: () => void;
   onMessage: (message: string) => void;
-} & ChooseKeyShareProps;
+} & StepProps &
+  ChooseKeyShareProps;
 
 export default function SignMessage() {
   const dispatch = useDispatch();
@@ -96,11 +97,10 @@ export default function SignMessage() {
   };
 
   const onMessage = async (message: string) => {
-
     // NOTE: Handle the quirky 0x prefixed string keccack256 implementation
-    const digest =
-      fromHexString(utils.keccak256(
-        Array.from(encode(message))).substring(2));
+    const digest = fromHexString(
+      utils.keccak256(Array.from(encode(message))).substring(2)
+    );
 
     const formData: GroupFormData = [label, { parties, threshold }];
 

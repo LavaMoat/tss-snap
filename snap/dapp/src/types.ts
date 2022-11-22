@@ -44,7 +44,7 @@ export enum SigningType {
 
 // Type for signing transactions
 export type SignTransaction = {
-  transaction: UnsignedTransaction,
+  transaction: UnsignedTransaction;
   digest: Uint8Array;
 };
 

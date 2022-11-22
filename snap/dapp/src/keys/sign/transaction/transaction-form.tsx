@@ -1,15 +1,11 @@
 import React, { useState } from "react";
 
-import {
-  Button,
-  Stack,
-  TextField,
-} from "@mui/material";
+import { Button, Stack, TextField } from "@mui/material";
 
 import { utils, UnsignedTransaction, BigNumber } from "ethers";
 
-import { fromHexString } from '../../../utils';
-import { SignTransaction } from '../../../types';
+import { fromHexString } from "../../../utils";
+import { SignTransaction } from "../../../types";
 
 type TransactionFormProps = {
   chain: string;
@@ -66,7 +62,7 @@ export default function TransactionForm(props: TransactionFormProps) {
         };
 
         console.log("tx", transaction);
-        console.log((transaction.value as BigNumber).toHexString())
+        console.log((transaction.value as BigNumber).toHexString());
 
         const txParams = [
           nonce.toHexString(),
@@ -91,16 +87,14 @@ export default function TransactionForm(props: TransactionFormProps) {
 
         // NOTE: Handle the quirky 0x prefixed string
         // NOTE: keccak256 implementation
-        const digest =
-          fromHexString(transactionHash.substring(2));
+        const digest = fromHexString(transactionHash.substring(2));
 
         props.onTransaction({
           transaction,
           digest,
         });
-
       } catch (e) {
-        console.error(e)
+        console.error(e);
         setAmountError(true);
       }
     } catch (e) {

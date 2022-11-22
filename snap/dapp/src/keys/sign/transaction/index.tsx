@@ -24,13 +24,12 @@ import {
 import SignStepper from "../../../components/stepper";
 import KeysLoader from "../../loader";
 
+import { StepProps } from "../";
 import CreateTransaction from "./create-transaction";
 
-/*
-import InvitePeople from "./invite-people";
+import InvitePeople from "../invite-people";
 import Compute from "../compute";
 import SaveProof from "../save-proof";
-*/
 
 import Signer from "../signer";
 
@@ -38,24 +37,22 @@ import { ChooseKeyShareProps } from "../choose-key-share";
 
 import { utils } from "ethers";
 
-const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
+const steps = ["Create transaction", "Invite people", "Compute", "Save Proof"];
 
 const getStepComponent = (activeStep: number, props: SignTransactionProps) => {
   const stepComponents = [
     <CreateTransaction key={0} {...props} />,
-    /*
-    <InvitePeople key={1} {...props} />,
+    <InvitePeople key={1} {...props} kind={SigningType.TRANSACTION} />,
     <Compute key={2} {...props} />,
     <SaveProof key={3} {...props} />,
-    */
   ];
   return stepComponents[activeStep];
 };
 
 export type SignTransactionProps = {
-  next: () => void;
   onTransaction: (tx: SignTransaction) => void;
-} & ChooseKeyShareProps;
+} & StepProps &
+  ChooseKeyShareProps;
 
 export default function SignMessage() {
   const dispatch = useDispatch();
@@ -101,7 +98,6 @@ export default function SignMessage() {
   };
 
   const onTransaction = async (signValue: SignTransaction) => {
-
     console.log("Prepare transaction: ", signValue);
 
     /*

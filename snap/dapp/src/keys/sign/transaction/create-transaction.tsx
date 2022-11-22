@@ -2,10 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import {
-  Box,
-  Stack,
-} from "@mui/material";
+import { Box, Stack } from "@mui/material";
 
 import NotFound from "../../../not-found";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
@@ -17,9 +14,9 @@ import SelectedChain from "../../selected-chain";
 import ChooseKeyShare from "../choose-key-share";
 
 import { SignTransactionProps } from "./index";
-import TransactionForm from './transaction-form';
+import TransactionForm from "./transaction-form";
 
-import { utils } from 'ethers';
+import { utils } from "ethers";
 
 export default function CreateTransaction(props: SignTransactionProps) {
   const { address } = useParams();
@@ -87,7 +84,9 @@ export default function CreateTransaction(props: SignTransactionProps) {
     <>
       <Stack spacing={2}>
         <Stack direction="row" alignItems="center">
-          <Box sx={{ flexGrow: 1 }}>Balance: {utils.formatEther(balance)} ETH</Box>
+          <Box sx={{ flexGrow: 1 }}>
+            Balance: {utils.formatEther(balance)} ETH
+          </Box>
           <SelectedChain chainName={chainName} />
         </Stack>
 
