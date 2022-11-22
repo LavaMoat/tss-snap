@@ -33,73 +33,67 @@ export default function TransactionForm(props: TransactionFormProps) {
     setAddressError(false);
     setAmountError(false);
 
+    let to, value;
     try {
-      const to = utils.getAddress(address);
+      to = utils.getAddress(address);
       try {
-        const value = utils.parseUnits(amount);
-
-        const gasLimit = "0x30d400";
-        const data = "0x00";
-        // NOTE: Must do some conversion so that
-        // NOTE: RLP encoding works as expected, otherwise
-        // NOTE: some values are not detected as BytesLike
-        const chainId = BigNumber.from(chain);
-        const nonce = BigNumber.from(transactionCount);
-        const gasPriceValue = BigNumber.from(gasPrice);
-        //const maxFeePerGas = "";
-        //const maxPriorityFeePerGas = "";
-
-        const transaction: UnsignedTransaction = {
-          nonce: nonce.toNumber(),
-          to,
-          value,
-          gasPrice,
-          gasLimit,
-          data,
-          //maxFeePerGas,
-          //maxPriorityFeePerGas,
-          chainId: chainId.toNumber(),
-        };
-
-        console.log("tx", transaction);
-        console.log((transaction.value as BigNumber).toHexString());
-
-        const txParams = [
-          nonce.toHexString(),
-          gasPriceValue.toHexString(),
-          transaction.gasLimit,
-          transaction.to,
-          (transaction.value as BigNumber).toHexString(),
-          transaction.data,
-          chainId.toHexString(),
-          "0x00",
-          "0x00",
-        ];
-
-        console.log("params", txParams);
-
-        const rawTransaction = utils.RLP.encode(txParams);
-        //console.log(rawTransaction)
-        //console.log(rawTransaction.toString());
-
-        const transactionHash = utils.keccak256(rawTransaction);
-        console.log(transactionHash.toString());
-
-        // NOTE: Handle the quirky 0x prefixed string
-        // NOTE: keccak256 implementation
-        const digest = fromHexString(transactionHash.substring(2));
-
-        props.onTransaction({
-          transaction,
-          digest,
-        });
+        value = utils.parseUnits(amount);
       } catch (e) {
-        console.error(e);
         setAmountError(true);
+        return;
       }
     } catch (e) {
       setAddressError(true);
+      return;
     }
+
+    const gasLimit = "0x30d400";
+    const data = "0x00";
+    // NOTE: Must do some conversion so that
+    // NOTE: RLP encoding works as expected, otherwise
+    // NOTE: some values are not detected as BytesLike
+    const chainId = BigNumber.from(chain);
+    const nonce = BigNumber.from(transactionCount);
+    const gasPriceValue = BigNumber.from(gasPrice);
+    //const maxFeePerGas = "";
+    //const maxPriorityFeePerGas = "";
+
+    const transaction: UnsignedTransaction = {
+      nonce: nonce.toNumber(),
+      to,
+      value,
+      gasPrice,
+      gasLimit,
+      data,
+      //maxFeePerGas,
+      //maxPriorityFeePerGas,
+      chainId: chainId.toNumber(),
+    };
+
+    const txParams = [
+      nonce.toHexString(),
+      gasPriceValue.toHexString(),
+      transaction.gasLimit,
+      transaction.to,
+      (transaction.value as BigNumber).toHexString(),
+      transaction.data,
+      chainId.toHexString(),
+      "0x00",
+      "0x00",
+    ];
+
+    const rawTransaction = utils.RLP.encode(txParams);
+    const transactionHash = utils.keccak256(rawTransaction);
+
+    // NOTE: Handle the quirky 0x prefixed string
+    // NOTE: keccak256 implementation
+    const digest = fromHexString(transactionHash.substring(2));
+
+    props.onTransaction({
+      transaction,
+      digest,
+    });
+
   };
 
   /*
