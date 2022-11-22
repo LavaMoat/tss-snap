@@ -1,3 +1,5 @@
+import { BigNumber } from "ethers";
+
 export const copyToClipboard = async (text: string) => {
   await window.navigator.clipboard.writeText(text);
 };
@@ -41,14 +43,18 @@ export type Dictionary<T> = {
   [key: string]: T;
 };
 
-export const chains: Dictionary<string> = {
-  "0x1": "Mainnet",
-  "0x3": "Ropsten",
-  "0x4": "Rinkeby",
-  "0x5": "Goerli",
+const chains: Dictionary<string> = {
+  "0x01": "Mainnet",
+  "0x03": "Ropsten",
+  "0x04": "Rinkeby",
+  "0x05": "Goerli",
   "0x2a": "Kovan",
   "0xaa36a7": "Sepolia",
 };
+
+export function getChainName(value: string | number): string {
+  return chains[BigNumber.from(value).toHexString()];
+}
 
 export function getDroppedFiles(e: React.DragEvent<HTMLElement>): File[] {
   const files = [];

@@ -6,9 +6,10 @@ import { Stack } from "@mui/material";
 
 import { StepProps } from "./";
 import { sessionSelector } from "../../store/session";
-import { SigningType, SignMessage } from "../../types";
+import { SigningType, SignMessage, SignTransaction } from "../../types";
 import InviteCard, { inviteHref } from "../invite-card";
 import SignMessageView from "./message-view";
+import SignTransactionView from "./transaction-view";
 import Approval from "./approval";
 
 type InvitePeopleProps = {
@@ -19,7 +20,6 @@ export default function InvitePeople(props: InvitePeopleProps) {
   const { address } = useParams();
   const { next } = props;
   const { group, session, signCandidate } = useSelector(sessionSelector);
-  const { message, digest } = signCandidate.value as SignMessage;
 
   const kind = props.kind == SigningType.MESSAGE ? "message" : "transaction";
 
@@ -30,12 +30,15 @@ export default function InvitePeople(props: InvitePeopleProps) {
     .fill("")
     .map(() => href);
 
-  const view =
-    props.kind == SigningType.MESSAGE ? (
-      <SignMessageView message={message} digest={digest} />
-    ) : (
-      <p>TX</p>
-    );
+  let view;
+
+  if (props.kind == SigningType.MESSAGE) {
+    const { message, digest } = signCandidate.value as SignMessage;
+    view = <SignMessageView message={message} digest={digest} />;
+  } else {
+    const { transaction, digest } = signCandidate.value as SignTransaction;
+    view = <SignTransactionView transaction={transaction} digest={digest} />;
+  }
 
   return (
     <Stack spacing={4}>

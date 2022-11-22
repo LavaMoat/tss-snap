@@ -7,7 +7,7 @@ import { Box, Stack } from "@mui/material";
 import NotFound from "../../../not-found";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
 //import { sessionSelector } from "../../../store/session";
-import { chains } from "../../../utils";
+import { getChainName } from "../../../utils";
 
 import SelectedChain from "../../selected-chain";
 
@@ -75,7 +75,11 @@ export default function CreateTransaction(props: SignTransactionProps) {
     return null;
   }
 
-  const chainName = chains[chain] as string;
+  const chainName = getChainName(chain);
+
+  //console.log(chain);
+  //console.log(BigNumber.from(chain).toHexString());
+  //console.log(chainName);
 
   const keyShareGroup: KeyShareGroup = keyShare[1];
   //const { threshold, parties, items } = keyShareGroup;

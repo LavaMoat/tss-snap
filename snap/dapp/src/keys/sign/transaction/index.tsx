@@ -2,14 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 
-import {
-  Box,
-  Chip,
-  Breadcrumbs,
-  Link,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
 import { SessionKind } from "@metamask/mpc-client";
 

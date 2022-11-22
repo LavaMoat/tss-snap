@@ -26,7 +26,7 @@ import {
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
 } from "../store/dialogs";
-import { chains } from "../utils";
+import { getChainName } from "../utils";
 
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
@@ -119,7 +119,7 @@ export default function ShowKey() {
     return null;
   }
 
-  const chainName = chains[chain] as string;
+  const chainName = getChainName(chain);
   return (
     <>
       <Stack spacing={2}>

@@ -93,7 +93,6 @@ export default function TransactionForm(props: TransactionFormProps) {
       transaction,
       digest,
     });
-
   };
 
   /*
