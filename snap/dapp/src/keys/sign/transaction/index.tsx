@@ -2,11 +2,17 @@ import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 
-import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Chip,
+  Breadcrumbs,
+  Link,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 import { SessionKind } from "@metamask/mpc-client";
 
-import { encode, fromHexString } from "../../../utils";
 import { SigningType, SignTransaction } from "../../../types";
 
 import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
@@ -34,8 +40,6 @@ import SaveProof from "../save-proof";
 import Signer from "../signer";
 
 import { ChooseKeyShareProps } from "../choose-key-share";
-
-import { utils } from "ethers";
 
 const steps = ["Create transaction", "Invite people", "Compute", "Save Proof"];
 
@@ -98,17 +102,7 @@ export default function SignMessage() {
   };
 
   const onTransaction = async (signValue: SignTransaction) => {
-    console.log("Prepare transaction: ", signValue);
-
-    /*
-    // NOTE: Handle the quirky 0x prefixed string keccack256 implementation
-    const digest =
-      fromHexString(utils.keccak256(
-        Array.from(encode(message))).substring(2));
-
     const formData: GroupFormData = [label, { parties, threshold }];
-
-    const signValue = { message, digest };
 
     try {
       // Create the remote server group and session and store
@@ -128,7 +122,7 @@ export default function SignMessage() {
         address,
         selectedParty: selectedParty || items[0],
         value: signValue,
-        signingType: SigningType.MESSAGE,
+        signingType: SigningType.TRANSACTION,
         creator: true,
       };
       dispatch(setSignCandidate(signCandidate));
@@ -143,7 +137,6 @@ export default function SignMessage() {
         })
       );
     }
-    */
   };
 
   const stepProps = {
