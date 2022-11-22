@@ -18,11 +18,11 @@ import { clearSign } from "../../../store/session";
 
 import Connect from "./connect";
 import Approve from "./approve";
+import Finish from "./finish";
 import Compute from "../compute";
-import SaveProof from "../save-proof";
 import Signer from "../signer";
 
-const steps = ["Connect", "Approve", "Compute", "Save Proof"];
+const steps = ["Connect", "Approve", "Compute", "Finish"];
 
 export type StepProps = {
   next: () => void;
@@ -37,7 +37,7 @@ const getStepComponent = (activeStep: number, props: StepProps) => {
     <Connect key={0} {...props} />,
     <Approve key={1} {...props} />,
     <Compute key={2} {...props} />,
-    <SaveProof key={3} {...props} />,
+    <Finish key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };

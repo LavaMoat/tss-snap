@@ -28,20 +28,20 @@ import CreateTransaction from "./create-transaction";
 
 import InvitePeople from "../invite-people";
 import Compute from "../compute";
-import SaveProof from "../save-proof";
+import SendTransaction from "../send-transaction";
 
 import Signer from "../signer";
 
 import { ChooseKeyShareProps } from "../choose-key-share";
 
-const steps = ["Create transaction", "Invite people", "Compute", "Save Proof"];
+const steps = ["Create transaction", "Invite people", "Compute", "Send Transaction"];
 
 const getStepComponent = (activeStep: number, props: SignTransactionProps) => {
   const stepComponents = [
     <CreateTransaction key={0} {...props} />,
     <InvitePeople key={1} {...props} kind={SigningType.TRANSACTION} />,
     <Compute key={2} {...props} />,
-    <SaveProof key={3} {...props} />,
+    <SendTransaction key={3} {...props} />,
   ];
   return stepComponents[activeStep];
 };

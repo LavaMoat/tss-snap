@@ -11,12 +11,13 @@ import { setSnackbar } from "../../../store/snackbars";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
 
 import { setGroup, setSession, setSignCandidate } from "../../../store/session";
-import { SignValue, SignMessage, SigningType } from "../../../types";
+import { SignValue, SignMessage, SignTransaction, SigningType } from "../../../types";
 
 import NotFound from "../../../not-found";
 import KeysLoader from "../../loader";
 import Approval from "../approval";
 import SignMessageView from "../message-view";
+import SignTransactionView from "../transaction-view";
 import ChooseKeyShare from "../choose-key-share";
 import PublicAddress from "../../../components/public-address";
 
@@ -99,7 +100,10 @@ function SessionConnect(props: SessionConnectProps) {
           digest={value.digest}
         />
       ) : (
-        <p>TODO: show transaction preview</p>
+        <SignTransactionView
+          transaction={(value as SignTransaction).transaction}
+          digest={value.digest}
+        />
       );
   }
 
