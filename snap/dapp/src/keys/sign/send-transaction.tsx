@@ -43,7 +43,7 @@ export default function SendTransaction() {
     v: v,
   };
 
-  const sendTransaction = () => {
+  const sendTransaction = async () => {
 
     /*
     const gasPriceValue = BigNumber.from(transaction.gasPrice);
@@ -66,6 +66,13 @@ export default function SendTransaction() {
 
     const parsed = utils.parseTransaction(tx);
     console.log('parsed...', parsed);
+
+    const result = (await ethereum.request({
+      method: "eth_sendRawTransaction",
+      params: [tx],
+    })) as string;
+
+    console.log('result', result);
   }
 
   /*
