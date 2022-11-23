@@ -7,7 +7,11 @@ import { Alert, Button, Stack, Typography } from "@mui/material";
 import { sessionSelector } from "../../store/session";
 import { saveMessageProof } from "../../store/proofs";
 import { setSnackbar } from "../../store/snackbars";
+import { SignTransaction } from "../../types";
 import PublicAddress from "../../components/public-address";
+import SignTransactionView from './transaction-view';
+
+import { utils, BigNumber } from 'ethers';
 
 export default function SendTransaction() {
   const dispatch = useDispatch();
@@ -15,6 +19,46 @@ export default function SendTransaction() {
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
   const { label } = group;
+
+  const navigateKeys = () => navigate(`/keys/${address}`);
+
+  const { transaction, digest } = signCandidate.value as SignTransaction;
+
+  const r = BigNumber.from(signProof.signature.r.scalar);
+  const s = BigNumber.from(signProof.signature.s.scalar);
+  const v = signProof.signature.recid;
+  //const v = 27 + signProof.signature.recid + transaction.chainId;
+
+  console.log(signProof);
+  console.log("r", r.toHexString());
+  console.log("s", s.toHexString());
+  console.log("v", v);
+
+  const signedTransaction = {
+    ...transaction,
+    hash: digest,
+    from: address,
+    r: r.toHexString(),
+    s: s.toHexString(),
+    v: v,
+  };
+
+  const sendTransaction = () => {
+    //const tx = utils.RLP.encode(signedTransaction);
+    //console.log(tx);
+
+    const signature = {
+      r: r.toHexString(),
+      s: s.toHexString(),
+      v: v,
+    };
+
+    const tx = utils.serializeTransaction(transaction, signature);
+    console.log(tx);
+
+    const parsed = utils.parseTransaction(tx);
+    console.log('parsed...', parsed);
+  }
 
   /*
   const saveProof = () => {
@@ -51,11 +95,24 @@ export default function SendTransaction() {
       </Button>
   */
 
+  const action = creator
+    ? (<>
+        <SignTransactionView transaction={transaction} digest={digest} />
+        <Button variant="contained" onClick={sendTransaction}>Make Transaction</Button>
+      </>)
+    : (<>
+        <Typography variant="body1" component="div">
+          The creator of the transaction will submit it to the blockchain.
+        </Typography>
+        <Button variant="contained" onClick={navigateKeys}>Done</Button>
+      </>);
+
+
   return (
     <Stack padding={1} spacing={2} marginTop={2}>
       {heading}
       <Alert severity="success">The {signingType} was signed!</Alert>
-      <p>TODO: allow creator to submit signed transaction!</p>
+      {action}
     </Stack>
   );
 }
