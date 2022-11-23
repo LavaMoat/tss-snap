@@ -24,10 +24,10 @@ export default function SendTransaction() {
 
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
-  const r = BigNumber.from(signProof.signature.r.scalar);
-  const s = BigNumber.from(signProof.signature.s.scalar);
-  const v = signProof.signature.recid;
-  //const v = 27 + signProof.signature.recid + transaction.chainId;
+  const r = BigNumber.from(Uint8Array.from(signProof.signature.r.scalar));
+  const s = BigNumber.from(Uint8Array.from(signProof.signature.s.scalar));
+  //const v = signProof.signature.recid;
+  const v = signProof.signature.recid + (transaction.chainId * 2) + 35;
 
   console.log(signProof);
   console.log("r", r.toHexString());
@@ -44,8 +44,16 @@ export default function SendTransaction() {
   };
 
   const sendTransaction = () => {
-    //const tx = utils.RLP.encode(signedTransaction);
-    //console.log(tx);
+
+    /*
+    const gasPriceValue = BigNumber.from(transaction.gasPrice);
+    const txParams = [
+      transaction.nonce.toHexString(),
+    ];
+
+    const tx = utils.RLP.encode(txParams);
+    console.log(tx);
+    */
 
     const signature = {
       r: r.toHexString(),
