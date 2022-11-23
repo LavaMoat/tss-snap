@@ -50,6 +50,7 @@ const chains: Dictionary<string> = {
   "0x05": "Goerli",
   "0x2a": "Kovan",
   "0xaa36a7": "Sepolia",
+  "0x0539": "Localhost 8545",
 };
 
 export function getChainName(value: string | number): string {

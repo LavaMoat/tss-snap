@@ -120,6 +120,7 @@ export default function ShowKey() {
   }
 
   const chainName = getChainName(chain);
+
   return (
     <>
       <Stack spacing={2}>
