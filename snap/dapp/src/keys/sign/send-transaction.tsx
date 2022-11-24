@@ -5,14 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { Alert, Button, Stack, Typography } from "@mui/material";
 
 import { sessionSelector } from "../../store/session";
-import { saveMessageProof } from "../../store/proofs";
+//import { saveMessageProof } from "../../store/proofs";
 import { setSnackbar } from "../../store/snackbars";
 import { SignTransaction } from "../../types";
 import { fromHexString } from "../../utils";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
-import { utils, BigNumber } from 'ethers';
+import { BigNumber } from 'ethers';
 
 import { prepareSignedTransaction} from "@metamask/mpc-snap-wasm";
 
@@ -27,53 +27,9 @@ export default function SendTransaction() {
 
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
-  /*
-  const r = BigNumber.from(Uint8Array.from(signProof.signature.r.scalar));
-  const s = BigNumber.from(Uint8Array.from(signProof.signature.s.scalar));
-  //const v = signProof.signature.recid;
-  const v = signProof.signature.recid + (transaction.chainId * 2) + 35;
-
-  console.log(signProof);
-  console.log("r", r.toHexString());
-  console.log("s", s.toHexString());
-  console.log("v", v);
-
-  const signedTransaction = {
-    ...transaction,
-    hash: digest,
-    from: address,
-    r: r.toHexString(),
-    s: s.toHexString(),
-    v: v,
-  };
-  */
-
   const sendTransaction = async () => {
-
-    /*
-    const gasPriceValue = BigNumber.from(transaction.gasPrice);
-    const txParams = [
-      transaction.nonce.toHexString(),
-    ];
-
-    const tx = utils.RLP.encode(txParams);
-    console.log(tx);
-    */
-
-    /*
-    const signature = {
-      r: r.toHexString(),
-      s: s.toHexString(),
-      v: v,
-    };
-
-    const tx = utils.serializeTransaction(transaction, signature);
-    console.log(tx);
-    */
-
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
-
     const tx = await prepareSignedTransaction(
       BigInt(transaction.nonce),
       BigInt(transaction.chainId),
@@ -83,35 +39,30 @@ export default function SendTransaction() {
       signProof.signature,
     );
 
+    /*
     console.log("tx", tx);
-
     const parsed = utils.parseTransaction(tx);
     console.log('parsed...', parsed);
+    */
 
-    const result = (await ethereum.request({
-      method: "eth_sendRawTransaction",
-      params: [tx],
-    })) as string;
-
-    console.log('result', result);
-  }
-
-  /*
-  const saveProof = () => {
     try {
-      dispatch(saveMessageProof([address, signProof]));
-      navigate(`/keys/${address}`);
+      const result = (await ethereum.request({
+        method: "eth_sendRawTransaction",
+        params: [tx],
+      })) as string;
+
+      console.log('result', result);
+      // FIXME: handle the result and navigate
+
     } catch (e) {
-      console.error(e);
       dispatch(
         setSnackbar({
-          message: `Could not save message proof: ${e.message || ""}`,
+          message: e.message || "Failed to make transaction",
           severity: "error",
         })
       );
     }
-  };
-  */
+  }
 
   const heading = creator ? null : (
     <Stack>
@@ -123,13 +74,6 @@ export default function SendTransaction() {
       </Stack>
     </Stack>
   );
-
-
-  /*
-      <Button variant="contained" onClick={saveProof}>
-        Save Proof
-      </Button>
-  */
 
   const action = creator
     ? (<>

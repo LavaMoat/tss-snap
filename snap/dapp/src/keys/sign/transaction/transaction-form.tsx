@@ -52,15 +52,16 @@ export default function TransactionForm(props: TransactionFormProps) {
 
     const gasLimit = "0x30d400";
     const data = "0x00";
+
     // NOTE: Must do some conversion so that
     // NOTE: RLP encoding works as expected, otherwise
     // NOTE: some values are not detected as BytesLike
     const chainId = BigNumber.from(chain);
     const nonce = BigNumber.from(transactionCount);
-    const gasPriceValue = BigNumber.from(gasPrice);
-    //const maxFeePerGas = "";
-    //const maxPriorityFeePerGas = "";
 
+    // NOTE: This transaction is only used to store state
+    // NOTE: for UI display purposes; building of transactions
+    // NOTE: RLP encoding, hashing etc. is done in webassembly
     const transaction: UnsignedTransaction = {
       nonce: nonce.toNumber(),
       to,
@@ -73,27 +74,8 @@ export default function TransactionForm(props: TransactionFormProps) {
       chainId: chainId.toNumber(),
     };
 
-    /*
-    const txParams = [
-      nonce.toHexString(),
-      gasPriceValue.toHexString(),
-      transaction.gasLimit,
-      transaction.to,
-      (transaction.value as BigNumber).toHexString(),
-      transaction.data,
-      chainId.toHexString(),
-      "0x00",
-      "0x00",
-    ];
-
-    const rawTransaction = utils.RLP.encode(txParams);
-    const transactionHash = utils.keccak256(rawTransaction);
-
-    // NOTE: Handle the quirky 0x prefixed string
-    // NOTE: keccak256 implementation
-    const digest = fromHexString(transactionHash.substring(2));
-    */
-
+    // Call out to webassembly to prepare a transaction
+    // and get the transaction hash
     const digest = await prepareUnsignedTransaction(
       BigInt(transaction.nonce),
       BigInt(transaction.chainId),

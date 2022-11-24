@@ -6,14 +6,13 @@ use wasm_bindgen::prelude::*;
 
 use curv::elliptic::curves::secp256_k1::Secp256k1;
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
-    state_machine::keygen::LocalKey,
-    party_i::{SignatureRecid},
+    party_i::SignatureRecid, state_machine::keygen::LocalKey,
 };
 
 use web3_signature::Signature;
 use web3_transaction::{
     eip1559::Eip1559TransactionRequest,
-    types::{U256, Address},
+    types::{Address, U256},
     TypedTransaction,
 };
 
@@ -107,13 +106,7 @@ pub fn prepare_unsigned_transaction(
     from: JsValue,
     to: JsValue,
 ) -> Result<JsValue, JsError> {
-    let tx = get_typed_transaction(
-        nonce,
-        chain_id,
-        value,
-        from,
-        to,
-    )?;
+    let tx = get_typed_transaction(nonce, chain_id, value, from, to)?;
 
     let sighash = tx.sighash();
 
@@ -133,14 +126,7 @@ pub fn prepare_signed_transaction(
     to: JsValue,
     signature: JsValue,
 ) -> Result<JsValue, JsError> {
-
-    let tx = get_typed_transaction(
-        nonce,
-        chain_id,
-        value,
-        from,
-        to,
-    )?;
+    let tx = get_typed_transaction(nonce, chain_id, value, from, to)?;
 
     /*
     let from: Vec<u8> = from.into_serde()?;
