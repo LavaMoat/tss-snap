@@ -723,6 +723,7 @@ dependencies = [
  "getrandom 0.1.16",
  "hex",
  "kzen-paillier",
+ "log",
  "mpc-ecdsa-getrandom-hack",
  "multi-party-ecdsa",
  "rand 0.6.5",
@@ -732,6 +733,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-rayon",
  "wasm-bindgen-test",
+ "wasm-logger",
 ]
 
 [[package]]
@@ -1461,6 +1463,17 @@ checksum = "d0e560d44db5e73b69a9757a15512fe7e1ef93ed2061c928871a4025798293dd"
 dependencies = [
  "proc-macro2",
  "quote",
+]
+
+[[package]]
+name = "wasm-logger"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "074649a66bb306c8f2068c9016395fa65d8e08d2affcbf95acf3c24c3ab19718"
+dependencies = [
+ "log",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

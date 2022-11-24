@@ -147,6 +147,8 @@ impl Signer {
             public_key,
         };
 
+        log::info!("{:#?}", result);
+
         Ok(JsValue::from_serde(&result)?)
     }
 }

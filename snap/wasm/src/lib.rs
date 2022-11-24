@@ -21,6 +21,14 @@ macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
+#[doc(hidden)]
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
+    wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
+    //console_log!("WASM: module started {:?}", std::thread::current().id());
+}
+
 /// Key share with a human-friendly label.
 #[derive(Serialize, Deserialize)]
 pub struct NamedKeyShare {

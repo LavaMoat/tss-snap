@@ -16,6 +16,7 @@ async function fundAccount(privateKey, to, amount) {
 }
 
 // Private key from Ganache, usually at index zero
+const from = "0xD928Bb02420d5b4E50AdFD3ca9567d60C6590550";
 const privateKey = "0xf64abc91d673bcf100c3cf2bc42507df566d36a18189ae41c377c55ee26a44fd";
 
 // Address we want to fund - the MPC address
