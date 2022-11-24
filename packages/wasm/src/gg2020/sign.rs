@@ -134,7 +134,8 @@ impl Signer {
             .ok_or_else(|| JsError::new(ERR_COMPLETED_OFFLINE_STAGE))?;
         let pk = completed_offline_stage.public_key().clone();
 
-        let (sign, _partial) = SignManual::new(data.clone(), completed_offline_stage.clone())?;
+        let (sign, _partial) = SignManual::new(
+            data.clone(), completed_offline_stage.clone())?;
 
         let signature = sign.complete(&partials)?;
         verify(&signature, &pk, &data)
