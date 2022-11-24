@@ -8,10 +8,13 @@ import { sessionSelector } from "../../store/session";
 import { saveMessageProof } from "../../store/proofs";
 import { setSnackbar } from "../../store/snackbars";
 import { SignTransaction } from "../../types";
+import { fromHexString } from "../../utils";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
 import { utils, BigNumber } from 'ethers';
+
+import { prepareTransaction} from "@metamask/mpc-snap-wasm";
 
 export default function SendTransaction() {
   const dispatch = useDispatch();
@@ -24,6 +27,7 @@ export default function SendTransaction() {
 
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
+  /*
   const r = BigNumber.from(Uint8Array.from(signProof.signature.r.scalar));
   const s = BigNumber.from(Uint8Array.from(signProof.signature.s.scalar));
   //const v = signProof.signature.recid;
@@ -42,6 +46,7 @@ export default function SendTransaction() {
     s: s.toHexString(),
     v: v,
   };
+  */
 
   const sendTransaction = async () => {
 
@@ -55,6 +60,7 @@ export default function SendTransaction() {
     console.log(tx);
     */
 
+    /*
     const signature = {
       r: r.toHexString(),
       s: s.toHexString(),
@@ -63,16 +69,33 @@ export default function SendTransaction() {
 
     const tx = utils.serializeTransaction(transaction, signature);
     console.log(tx);
+    */
+
+    const from = Array.from(fromHexString(address.substring(2)));
+    const to = Array.from(fromHexString(transaction.to.substring(2)));
+
+    const tx = await prepareTransaction(
+      BigInt(transaction.nonce),
+      BigInt(transaction.chainId),
+      BigInt(1000), // FIXME
+      from,
+      to,
+      signProof.signature,
+    );
+
+    console.log("tx", tx);
 
     const parsed = utils.parseTransaction(tx);
     console.log('parsed...', parsed);
 
+    /*
     const result = (await ethereum.request({
       method: "eth_sendRawTransaction",
       params: [tx],
     })) as string;
 
     console.log('result', result);
+    */
   }
 
   /*

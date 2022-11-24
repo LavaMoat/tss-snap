@@ -12,6 +12,8 @@ crate-type = ["cdylib", "rlib"]
 console_error_panic_hook = "0.1.6"
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
 web3-keystore = "0.4"
+web3-transaction = {path = "../../../../web3/transaction"}
+web3-signature = {path = "../../../../web3/signature"}
 rand = "0.8"
 getrandom = {version = "0.2", features = ["js"]}
 serde = {version = "1", features = ["derive"]}
@@ -20,6 +22,7 @@ thiserror = "1"
 curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
 log = "0.4"
 wasm-logger = "0.2"
+hex = "0.4"
 
 [dependencies.paillier]
 version = "0.4.2"

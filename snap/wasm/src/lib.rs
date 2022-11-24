@@ -5,7 +5,17 @@ use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
 use curv::elliptic::curves::secp256_k1::Secp256k1;
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::LocalKey;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
+    state_machine::keygen::LocalKey,
+    party_i::{SignatureRecid},
+};
+
+use web3_signature::Signature;
+use web3_transaction::{
+    eip1559::Eip1559TransactionRequest,
+    types::{U256, Address},
+    TypedTransaction,
+};
 
 extern crate wasm_bindgen;
 
@@ -84,4 +94,67 @@ pub fn import_key_store(
     let json_data = decrypt(&key_store, &passphrase)?;
     let key_share: NamedKeyShare = serde_json::from_slice(&json_data)?;
     Ok(JsValue::from_serde(&key_share)?)
+}
+
+/// Prepare a transaction.
+#[wasm_bindgen(js_name = "prepareTransaction")]
+pub fn prepare_transaction(
+    nonce: u64,
+    chain_id: u64,
+    value: u64,
+    from: JsValue,
+    to: JsValue,
+    signature: JsValue,
+) -> Result<JsValue, JsError> {
+
+    let from: Vec<u8> = from.into_serde()?;
+    let from = Address::from_slice(&from);
+
+    let to: Vec<u8> = to.into_serde()?;
+    let to = Address::from_slice(&to);
+
+    let signature: SignatureRecid = signature.into_serde()?;
+
+    log::info!("{:#?}", signature);
+
+    // NOTE: must use an Eip1559 transaction
+    // NOTE: otherwise ganache/ethers fails to
+    // NOTE: parse the correct chain id!
+    let tx: TypedTransaction = Eip1559TransactionRequest::new()
+        .from(from)
+        .to(to)
+        .value(value)
+        .max_fee_per_gas(800_000_000u64)
+        .max_priority_fee_per_gas(22_000_000u64)
+        .gas(21_000u64)
+        //.gas_price(22_000_000_000u64)
+        //.chain_id(1337u64)
+        .chain_id(chain_id)
+        .nonce(nonce)
+        .into();
+
+    let sighash = tx.sighash();
+
+    let r = signature.r.to_bytes().as_ref().to_vec();
+    let s = signature.s.to_bytes().as_ref().to_vec();
+    let v = signature.recid as u64;
+
+    log::info!("M {}", hex::encode(&sighash));
+    log::info!("R {}", hex::encode(&r));
+    log::info!("S {}", hex::encode(&s));
+    log::info!("V {}", signature.recid);
+
+    let signature = Signature {
+        r: U256::from_big_endian(&r),
+        s: U256::from_big_endian(&s),
+        v,
+    }
+    .into_eip155(chain_id);
+
+    let bytes = tx.rlp_signed(&signature);
+    let encoded = format!("0x{}", hex::encode(&bytes.0));
+
+    log::info!("{}", &encoded);
+
+    Ok(JsValue::from_serde(&encoded)?)
 }
