@@ -96,9 +96,36 @@ pub fn import_key_store(
     Ok(JsValue::from_serde(&key_share)?)
 }
 
-/// Prepare a transaction.
-#[wasm_bindgen(js_name = "prepareTransaction")]
-pub fn prepare_transaction(
+/// Prepare an unsigned transaction.
+///
+/// Returns the transaction hash as bytes.
+#[wasm_bindgen(js_name = "prepareUnsignedTransaction")]
+pub fn prepare_unsigned_transaction(
+    nonce: u64,
+    chain_id: u64,
+    value: u64,
+    from: JsValue,
+    to: JsValue,
+) -> Result<JsValue, JsError> {
+    let tx = get_typed_transaction(
+        nonce,
+        chain_id,
+        value,
+        from,
+        to,
+    )?;
+
+    let sighash = tx.sighash();
+
+    Ok(JsValue::from_serde(&sighash)?)
+}
+
+/// Prepare a signed transaction.
+///
+/// Returns the hex-encoded raw transaction suitable for
+/// a call to eth_sendRawTransaction().
+#[wasm_bindgen(js_name = "prepareSignedTransaction")]
+pub fn prepare_signed_transaction(
     nonce: u64,
     chain_id: u64,
     value: u64,
@@ -107,15 +134,20 @@ pub fn prepare_transaction(
     signature: JsValue,
 ) -> Result<JsValue, JsError> {
 
+    let tx = get_typed_transaction(
+        nonce,
+        chain_id,
+        value,
+        from,
+        to,
+    )?;
+
+    /*
     let from: Vec<u8> = from.into_serde()?;
     let from = Address::from_slice(&from);
 
     let to: Vec<u8> = to.into_serde()?;
     let to = Address::from_slice(&to);
-
-    let signature: SignatureRecid = signature.into_serde()?;
-
-    log::info!("{:#?}", signature);
 
     // NOTE: must use an Eip1559 transaction
     // NOTE: otherwise ganache/ethers fails to
@@ -124,16 +156,21 @@ pub fn prepare_transaction(
         .from(from)
         .to(to)
         .value(value)
-        //.max_fee_per_gas(800_000_000u64)
-        //.max_priority_fee_per_gas(22_000_000u64)
-        //.gas(21_000u64)
+        .max_fee_per_gas(800_000_000u64)
+        .max_priority_fee_per_gas(22_000_000u64)
+        .gas(21_000u64)
         //.gas_price(22_000_000_000u64)
         //.chain_id(1337u64)
         .chain_id(chain_id)
         .nonce(nonce)
         .into();
+    */
 
     let sighash = tx.sighash();
+
+    let signature: SignatureRecid = signature.into_serde()?;
+
+    log::info!("{:#?}", signature);
 
     let r = signature.r.to_bytes().as_ref().to_vec();
     let s = signature.s.to_bytes().as_ref().to_vec();
@@ -157,4 +194,36 @@ pub fn prepare_transaction(
     log::info!("{}", &encoded);
 
     Ok(JsValue::from_serde(&encoded)?)
+}
+
+/// Helper to build a transaction.
+pub fn get_typed_transaction(
+    nonce: u64,
+    chain_id: u64,
+    value: u64,
+    from: JsValue,
+    to: JsValue,
+) -> Result<TypedTransaction, JsError> {
+    let from: Vec<u8> = from.into_serde()?;
+    let from = Address::from_slice(&from);
+
+    let to: Vec<u8> = to.into_serde()?;
+    let to = Address::from_slice(&to);
+
+    // NOTE: must use an Eip1559 transaction
+    // NOTE: otherwise ganache/ethers fails to
+    // NOTE: parse the correct chain id!
+    let tx: TypedTransaction = Eip1559TransactionRequest::new()
+        .from(from)
+        .to(to)
+        .value(value)
+        .max_fee_per_gas(800_000_000u64)
+        .max_priority_fee_per_gas(22_000_000u64)
+        .gas(21_000u64)
+        //.gas_price(22_000_000_000u64)
+        //.chain_id(1337u64)
+        .chain_id(chain_id)
+        .nonce(nonce)
+        .into();
+    Ok(tx)
 }

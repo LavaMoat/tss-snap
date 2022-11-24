@@ -7,6 +7,9 @@ import { utils, UnsignedTransaction, BigNumber } from "ethers";
 import { fromHexString } from "../../../utils";
 import { SignTransaction } from "../../../types";
 
+
+import { prepareUnsignedTransaction} from "@metamask/mpc-snap-wasm";
+
 type TransactionFormProps = {
   chain: string;
   gasPrice: string;
@@ -28,7 +31,7 @@ export default function TransactionForm(props: TransactionFormProps) {
   const onAmountChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setAmount(e.target.value);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAddressError(false);
     setAmountError(false);
@@ -70,6 +73,7 @@ export default function TransactionForm(props: TransactionFormProps) {
       chainId: chainId.toNumber(),
     };
 
+    /*
     const txParams = [
       nonce.toHexString(),
       gasPriceValue.toHexString(),
@@ -88,10 +92,19 @@ export default function TransactionForm(props: TransactionFormProps) {
     // NOTE: Handle the quirky 0x prefixed string
     // NOTE: keccak256 implementation
     const digest = fromHexString(transactionHash.substring(2));
+    */
+
+    const digest = await prepareUnsignedTransaction(
+      BigInt(transaction.nonce),
+      BigInt(transaction.chainId),
+      BigNumber.from(transaction.value).toBigInt(),
+      Array.from(fromHexString(address.substring(2))),
+      Array.from(fromHexString(transaction.to.substring(2))),
+    );
 
     props.onTransaction({
       transaction,
-      digest,
+      digest: fromHexString(digest.substring(2)),
     });
   };
 

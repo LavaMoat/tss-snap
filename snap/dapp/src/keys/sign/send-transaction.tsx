@@ -14,7 +14,7 @@ import SignTransactionView from './transaction-view';
 
 import { utils, BigNumber } from 'ethers';
 
-import { prepareTransaction} from "@metamask/mpc-snap-wasm";
+import { prepareSignedTransaction} from "@metamask/mpc-snap-wasm";
 
 export default function SendTransaction() {
   const dispatch = useDispatch();
@@ -74,10 +74,10 @@ export default function SendTransaction() {
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
 
-    const tx = await prepareTransaction(
+    const tx = await prepareSignedTransaction(
       BigInt(transaction.nonce),
       BigInt(transaction.chainId),
-      BigInt(1000), // FIXME
+      BigNumber.from(transaction.value).toBigInt(),
       from,
       to,
       signProof.signature,
@@ -88,14 +88,12 @@ export default function SendTransaction() {
     const parsed = utils.parseTransaction(tx);
     console.log('parsed...', parsed);
 
-    /*
     const result = (await ethereum.request({
       method: "eth_sendRawTransaction",
       params: [tx],
     })) as string;
 
     console.log('result', result);
-    */
   }
 
   /*
