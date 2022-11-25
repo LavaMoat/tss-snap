@@ -15,7 +15,7 @@ import { encode, download } from "../utils";
 import { loadTransactionReceipts, receiptsSelector } from "../store/receipts";
 import {
   setDialogVisible,
-  CONFIRM_DELETE_MESSAGE_PROOF,
+  CONFIRM_DELETE_TX_RECEIPT,
 } from "../store/dialogs";
 
 type TransactionReceiptsProps = {
@@ -44,26 +44,14 @@ export default function TransactionReceipts(props: TransactionReceiptsProps) {
   };
 
   const onDeleteTransactionReceipt = (receipt: SignTxReceipt) => {
-    /*
     dispatch(
-      setDialogVisible([CONFIRM_DELETE_MESSAGE_PROOF, true, [address, receipt]])
+      setDialogVisible([CONFIRM_DELETE_TX_RECEIPT, true, [address, receipt]])
     );
-    */
   };
 
   if (items.length === 0) {
     return null;
   }
-
-  /*
-  */
-
-
-  /*
-            <ListItemText secondary={`Approved ${formatDateDistance()} ago`}>
-              {(proof.value as SignMessage).message}
-            </ListItemText>
-  */
 
   return (
     <List

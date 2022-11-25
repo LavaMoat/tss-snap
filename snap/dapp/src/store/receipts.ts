@@ -34,26 +34,22 @@ export const saveTransactionReceipt = createAsyncThunk(
   }
 );
 
-/*
 // Request used to delete a transaction receipt using it's
 // address and digest.
-type DeleteTransactionReceipt = [string, Uint8Array];
+type DeleteTransactionReceipt = [string, string];
 
 export const deleteTransactionReceipt = createAsyncThunk(
   "receipts/deleteTransactionReceipt",
   async (deleteRequest: DeleteTransactionReceipt): Promise<TransactionReceipts> => {
-    const [address, digest] = deleteRequest;
+    const [address, hash] = deleteRequest;
     const appState = await loadStateData();
     appState.transactionReceipts = appState.transactionReceipts || {};
 
     const transactionReceipts = appState.transactionReceipts[address];
     if (transactionReceipts) {
-      // Compare as strings as they are Uint8Arrays and we
-      // need to check the values are equal
-      const hash = toHexString(digest);
       appState.transactionReceipts[address] = transactionReceipts.filter(
         (receipt: TransactionReceipt) => {
-          return hash !== toHexString(receipt.value.digest);
+          return hash !== receipt.value.transactionHash;
         }
       );
     }
@@ -61,7 +57,6 @@ export const deleteTransactionReceipt = createAsyncThunk(
     return loadReceiptsData();
   }
 );
-*/
 
 export type ReceiptState = {
   transactions: TransactionReceipts;
@@ -85,7 +80,7 @@ const receiptSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(loadTransactionReceipts.fulfilled, updateTransactions);
     builder.addCase(saveTransactionReceipt.fulfilled, updateTransactions);
-    //builder.addCase(deleteTransactionReceipt.fulfilled, updateTransactions);
+    builder.addCase(deleteTransactionReceipt.fulfilled, updateTransactions);
   },
 });
 
