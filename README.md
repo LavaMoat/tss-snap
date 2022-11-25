@@ -106,16 +106,16 @@ docker run -p 3030:8080 -it tss-ac
 
 Now you can view the demo at `http://localhost:3030`.
 
-The docker file is designed for `x86_64`, if you need to build for ARM architectures like the M1, replace this line:
-
-```
-RUN rustup component add rust-src --toolchain nightly-2021-08-12-x86_64-unknown-linux-gnu;
-```
-
-With the `aarch64` architecture:
+The docker file is designed for `aarch64` (M1 chips), if you need to build for x86_64 architecture, replace this line:
 
 ```
 RUN rustup component add rust-src --toolchain nightly-2021-08-12-aarch64-unknown-linux-gnu;
+```
+
+With the `x86_64` architecture:
+
+```
+RUN rustup component add rust-src --toolchain nightly-2021-08-12-x86_64-unknown-linux-gnu;
 ```
 
 ## API Documentation
