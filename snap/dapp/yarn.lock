@@ -1470,23 +1470,26 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+"@lavamoat/mpc-client@file:../../packages/client":
+  version "1.0.1"
+  dependencies:
+    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@lavamoat-mpc-client-1.0.1-db8ab629-fe89-4b09-a13f-97b326c9d077-1669367334609/node_modules/@lavamoat/wasm/pkg"
+    comlink "^4.3.1"
+    events "^3.3.0"
+
+"@lavamoat/mpc-ecdsa-wasm@file:../../packages/wasm/pkg":
+  version "0.2.0"
+
+"@lavamoat/mpc-snap-wasm@file:../wasm/pkg":
+  version "0.1.0"
+
 "@metamask/detect-provider@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@metamask/detect-provider/-/detect-provider-1.2.0.tgz#3667a7531f2a682e3c3a43eaf3a1958bdb42a696"
   integrity sha512-ocA76vt+8D0thgXZ7LxFPyqw3H7988qblgzddTDA6B8a/yU0uKV42QR/DhA+Jh11rJjxW0jKvwb5htA6krNZDQ==
 
-"@metamask/mpc-client@file:../../packages/client":
-  version "1.0.1"
-  dependencies:
-    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@metamask-mpc-client-1.0.1-d2791858-53bd-4c50-9460-6bf46ce5c3df-1669182124881/node_modules/@metamask/wasm/pkg"
-    comlink "^4.3.1"
-    events "^3.3.0"
-
 "@metamask/mpc-ecdsa-wasm@file:../../packages/wasm/pkg":
   version "0.2.0"
-
-"@metamask/mpc-snap-wasm@file:../wasm/pkg":
-  version "0.1.0"
 
 "@metamask/object-multiplex@^1.1.0":
   version "1.2.0"
@@ -2438,10 +2441,10 @@
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.5.tgz#5f19d2b85a98e9558036f6a3cacc8819420f05cf"
   integrity sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==
 
-"@types/react-dom@^18.0.0":
-  version "18.0.0"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.0.0.tgz#b13f8d098e4b0c45df4f1ed123833143b0c71141"
-  integrity sha512-49897Y0UiCGmxZqpC8Blrf6meL8QUla6eb+BBhn69dTXlmuOlzkfr7HHY/O8J25e1lTUMs+YYxSlVDAaGHCOLg==
+"@types/react-dom@^18.0.9":
+  version "18.0.9"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.0.9.tgz#ffee5e4bfc2a2f8774b15496474f8e7fe8d0b504"
+  integrity sha512-qnVvHxASt/H7i+XG1U1xMiY5t+IHcPGUK7TDMDzom08xa7e86eCeKOiLZezwCKVxJn6NEiiy2ekgX8aQssjIKg==
   dependencies:
     "@types/react" "*"
 
@@ -2469,10 +2472,19 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@^18.0.1":
+"@types/react@*":
   version "18.0.1"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-18.0.1.tgz#1b2e02fb7613212518733946e49fb963dfc66e19"
   integrity sha512-VnWlrVgG0dYt+NqlfMI0yUYb8Rdl4XUROyH+c6gq/iFCiZ805Vi//26UW38DHnxQkbDhnrIWTBiy6oKZqL11cw==
+  dependencies:
+    "@types/prop-types" "*"
+    "@types/scheduler" "*"
+    csstype "^3.0.2"
+
+"@types/react@^18.0.25":
+  version "18.0.25"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-18.0.25.tgz#8b1dcd7e56fe7315535a4af25435e0bb55c8ae44"
+  integrity sha512-xD6c0KDT4m7n9uD4ZHi02lzskaiqcBxf4zi+tXZY98a04wvc0hi/TcCPC2FOESZi51Nd7tlUeOJY8RofL799/g==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"
