@@ -7,6 +7,7 @@ function getDefaultAppState(): AppState {
   return {
     keyShares: [],
     messageProofs: {},
+    transactionReceipts: {},
   };
 }
 

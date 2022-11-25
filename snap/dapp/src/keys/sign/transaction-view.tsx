@@ -5,12 +5,13 @@ import { toHexString, getChainName } from "../../utils";
 import { utils, UnsignedTransaction } from "ethers";
 
 type SignTransactionViewProps = {
+  isSigned?: boolean,
   transaction: UnsignedTransaction;
   digest: Uint8Array;
 };
 
 export default function SignMessageView(props: SignTransactionViewProps) {
-  const { transaction, digest } = props;
+  const { transaction, digest, isSigned } = props;
 
   //console.log(transaction);
 
@@ -25,7 +26,7 @@ export default function SignMessageView(props: SignTransactionViewProps) {
       <Stack padding={2} spacing={2}>
         <Stack direction="row">
           <Typography variant="subtitle1" component="div">
-            Transaction to sign
+            Transaction to {isSigned ? 'send' : 'sign'}
           </Typography>
         </Stack>
 

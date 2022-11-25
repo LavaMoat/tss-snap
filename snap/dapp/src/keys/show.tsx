@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-
-import { utils } from "ethers";
 
 import {
   Box,
@@ -26,11 +24,11 @@ import {
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
 } from "../store/dialogs";
-import { getChainName } from "../utils";
 
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
+import TransactionReceipts from "./transaction-receipts";
 import MessageProofs from "./message-proofs";
 import BalanceChain from "./balance-chain";
 
@@ -90,15 +88,6 @@ export default function ShowKey() {
   const sharesLabel = `${items.length} share(s) in a ${
     threshold + 1
   } of ${parties}`;
-
-  /*
-  let etherscanProvider = new ethers.providers.EtherscanProvider();
-  etherscanProvider.getHistory(address).then((history) => {
-      history.forEach((tx) => {
-          console.log(tx);
-      })
-  });
-  */
 
   return (
     <>
@@ -173,6 +162,7 @@ export default function ShowKey() {
           })}
         </List>
 
+        <TransactionReceipts address={address} />
         <MessageProofs address={address} />
       </Stack>
     </>

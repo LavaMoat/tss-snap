@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import keysReducer from "./keys";
 import proofsReducer from "./proofs";
+import receiptsReducer from "./receipts";
 import sessionReducer from "./session";
 import dialogsReducer from "./dialogs";
 import snackbarsReducer from "./snackbars";
@@ -10,6 +11,7 @@ const store = configureStore({
   reducer: {
     keys: keysReducer,
     proofs: proofsReducer,
+    receipts: receiptsReducer,
     session: sessionReducer,
     dialogs: dialogsReducer,
     snackbars: snackbarsReducer,
@@ -23,11 +25,15 @@ const store = configureStore({
           "session/setTransport",
           "session/setSignCandidate",
           "session/setSignProof",
+
+          "receipts/saveTransactionReceipt/pending",
+          "receipts/saveTransactionReceipt/fulfilled",
+          "receipts/saveTransactionReceipt/rejected",
         ],
         // Ignore these field paths in all actions
         ignoredActionPaths: [],
         // Ignore these paths in the state
-        ignoredPaths: ["session"],
+        ignoredPaths: ["session", "receipts"],
       },
     }),
 });

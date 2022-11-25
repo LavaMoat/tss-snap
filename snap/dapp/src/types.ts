@@ -6,6 +6,7 @@ import {
 } from "@metamask/mpc-client";
 
 import { UnsignedTransaction } from "ethers";
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 // Key share with a human-friendly label.
 export type NamedKeyShare = {
@@ -20,15 +21,29 @@ export type SignProof = {
   timestamp: number;
 };
 
+export type SignTxReceipt = {
+  signature: SignResult;
+  address: string;
+  amount: string,
+  value: TransactionReceipt;
+  timestamp: number;
+};
+
 // Maps message signing proofs from key address.
 export type MessageProofs = {
   [key: string]: SignProof[];
+};
+
+// Maps transaction receipts from key address.
+export type TransactionReceipts = {
+  [key: string]: SignTxReceipt[];
 };
 
 // Application state that can be persisted to disc by the snap backend.
 export type AppState = {
   keyShares: NamedKeyShare[];
   messageProofs: MessageProofs;
+  transactionReceipts: TransactionReceipts;
 };
 
 // Message to be signed.

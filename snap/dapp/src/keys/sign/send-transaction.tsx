@@ -1,49 +1,45 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { Alert, Button, Stack, Typography } from "@mui/material";
 
 import { sessionSelector } from "../../store/session";
-//import { saveMessageProof } from "../../store/proofs";
+import { saveTransactionReceipt } from "../../store/receipts";
 import { setSnackbar } from "../../store/snackbars";
 import { SignTransaction } from "../../types";
 import { fromHexString } from "../../utils";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
-import { BigNumber, providers } from 'ethers';
+import { BigNumber, providers, utils } from 'ethers';
 
 import { prepareSignedTransaction} from "@metamask/mpc-snap-wasm";
 
 export default function SendTransaction() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [disabled, setDisabled] = useState(false);
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
   const { label } = group;
 
   const navigateKeys = () => navigate(`/keys/${address}`);
-
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
   const sendTransaction = async () => {
+    setDisabled(true);
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
+    const amount = BigNumber.from(transaction.value).toBigInt();
     const tx = await prepareSignedTransaction(
       BigInt(transaction.nonce),
       BigInt(transaction.chainId),
-      BigNumber.from(transaction.value).toBigInt(),
+      amount,
       from,
       to,
       signProof.signature,
     );
-
-    /*
-    console.log("tx", tx);
-    const parsed = utils.parseTransaction(tx);
-    console.log('parsed...', parsed);
-    */
 
     try {
       const txHash = (await ethereum.request({
@@ -51,16 +47,28 @@ export default function SendTransaction() {
         params: [tx],
       })) as string;
 
-      console.log('tx hash', txHash);
-      console.log("Waiting for transaction...");
-
+      // TODO: switch to InfuraProvider for chains other than Ganache
       const provider = new providers.JsonRpcProvider();
       const txReceipt = await provider.waitForTransaction(txHash);
-      console.log('txReceipt', txReceipt);
+      const signTxReceipt = {
+        ...signProof,
+        amount: utils.formatEther(transaction.value),
+        // NOTE: we want the settled timestamp not the signed timestamp
+        timestamp: Date.now(),
+        value: txReceipt,
+      };
 
-      // FIXME: handle the result and navigate
-
+      await dispatch(saveTransactionReceipt([address, signTxReceipt]));
+      dispatch(
+        setSnackbar({
+          message: `Transaction completed`,
+          severity: "success",
+        })
+      );
+      navigate(`/keys/${address}`);
     } catch (e) {
+      console.error(e);
+      setDisabled(false);
       dispatch(
         setSnackbar({
           message: e.message || "Failed to make transaction",
@@ -83,8 +91,11 @@ export default function SendTransaction() {
 
   const action = creator
     ? (<>
-        <SignTransactionView transaction={transaction} digest={digest} />
-        <Button variant="contained" onClick={sendTransaction}>Make Transaction</Button>
+        <SignTransactionView isSigned={true} transaction={transaction} digest={digest} />
+        <Button
+          disabled={disabled}
+          variant="contained"
+          onClick={sendTransaction}>Make Transaction</Button>
       </>)
     : (<>
         <Typography variant="body1" component="div">
