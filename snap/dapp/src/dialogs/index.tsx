@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { exportKeyStore } from "@metamask/mpc-snap-wasm";
+import { exportKeyStore } from "@lavamoat/mpc-snap-wasm";
 
 import {
   dialogsSelector,

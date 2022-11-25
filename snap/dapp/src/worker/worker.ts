@@ -2,7 +2,7 @@ import init, {
   initThreadPool,
   KeyGenerator,
   Signer,
-} from "@metamask/mpc-ecdsa-wasm";
+} from "@lavamoat/mpc-ecdsa-wasm";
 import * as Comlink from "comlink";
 
 // Temporary hack for getRandomValues() error

@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { Stack, Typography } from "@mui/material";
 
-import { SessionInfo, generateKeyShare } from "@metamask/mpc-client";
+import { SessionInfo, generateKeyShare } from "@lavamoat/mpc-client";
 
 import { setKeyShare } from "../store/keys";
 import { sessionSelector } from "../store/session";

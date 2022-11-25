@@ -12,7 +12,7 @@
       "npm": {
         "filePath": "bundle.js",
         "iconPath": "images/icon.svg",
-        "packageName": "@metamask/mpc-snap",
+        "packageName": "@lavamoat/tss-snap",
         "registry": "https://registry.npmjs.org/"
       }
     }

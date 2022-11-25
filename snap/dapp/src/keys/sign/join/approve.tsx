@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Box, Chip, Stack, Typography, CircularProgress } from "@mui/material";
 
-import { SessionKind, GroupInfo, Session } from "@metamask/mpc-client";
+import { SessionKind, GroupInfo, Session } from "@lavamoat/mpc-client";
 
 import { WebSocketContext } from "../../../websocket-provider";
 import { joinGroupSession, loadPartyNumber } from "../../../group-session";

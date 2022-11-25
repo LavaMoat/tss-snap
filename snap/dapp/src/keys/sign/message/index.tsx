@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
-import { SessionKind } from "@metamask/mpc-client";
+import { SessionKind } from "@lavamoat/mpc-client";
 
 import { fromHexString } from "../../../utils";
 import { SigningType } from "../../../types";

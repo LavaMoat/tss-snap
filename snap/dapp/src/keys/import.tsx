@@ -15,7 +15,7 @@ import {
   Paper,
 } from "@mui/material";
 
-import { importKeyStore } from "@metamask/mpc-snap-wasm";
+import { importKeyStore } from "@lavamoat/mpc-snap-wasm";
 
 import FileUploadReader from "../components/file-upload-reader";
 import PublicAddress from "../components/public-address";

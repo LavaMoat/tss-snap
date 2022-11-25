@@ -8,7 +8,7 @@ import { fromHexString } from "../../../utils";
 import { SignTransaction } from "../../../types";
 
 
-import { prepareUnsignedTransaction} from "@metamask/mpc-snap-wasm";
+import { prepareUnsignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
 type TransactionFormProps = {
   chain: string;

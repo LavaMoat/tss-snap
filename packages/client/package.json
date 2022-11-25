@@ -1,5 +1,5 @@
 {
-  "name": "@metamask/mpc-client",
+  "name": "@lavamoat/mpc-client",
   "version": "1.0.1",
   "description": "Threshold signatures multi-party compute client library",
   "module": "dist/index.esm.js",

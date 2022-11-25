@@ -7,7 +7,7 @@ import {
   WebSocketStream,
   GroupInfo,
   Session,
-} from "@metamask/mpc-client";
+} from "@lavamoat/mpc-client";
 
 import { AppDispatch } from "./store";
 import { setGroup, setSession, setTransport } from "./store/session";

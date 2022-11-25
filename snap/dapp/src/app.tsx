@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import init from "@metamask/mpc-snap-wasm";
+import init from "@lavamoat/mpc-snap-wasm";
 
 import { Routes, Route } from "react-router-dom";
 import detectEthereumProvider from "@metamask/detect-provider";

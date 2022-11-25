@@ -14,7 +14,7 @@ import SignTransactionView from './transaction-view';
 
 import { BigNumber, providers, utils } from 'ethers';
 
-import { prepareSignedTransaction} from "@metamask/mpc-snap-wasm";
+import { prepareSignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
 export default function SendTransaction() {
   const dispatch = useDispatch();

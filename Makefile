@@ -1,8 +1,8 @@
 wasm:
-	@cd packages/wasm && wasm-pack build --target web --scope metamask
+	@cd packages/wasm && wasm-pack build --target web --scope lavamoat
 
 snap-wasm:
-	@cd snap/wasm && wasm-pack build --target web --scope metamask
+	@cd snap/wasm && wasm-pack build --target web --scope lavamoat
 
 dist: wasm
 	@cd demo && yarn build
