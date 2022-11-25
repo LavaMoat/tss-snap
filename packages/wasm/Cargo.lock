@@ -710,6 +710,8 @@ dependencies = [
 [[package]]
 name = "mpc-ecdsa-getrandom-hack"
 version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3b9823566d7be5ce1dbee68d07d92eb9575b43b91f44f986335e86ea1fa953b"
 dependencies = [
  "getrandom 0.2.5",
 ]
