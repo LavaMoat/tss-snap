@@ -53,6 +53,7 @@ export default function SendTransaction() {
       const signTxReceipt = {
         ...signProof,
         amount: utils.formatEther(transaction.value),
+        tx: signCandidate.value as SignTransaction,
         // NOTE: we want the settled timestamp not the signed timestamp
         timestamp: Date.now(),
         value: txReceipt,

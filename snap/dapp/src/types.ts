@@ -25,6 +25,7 @@ export type SignTxReceipt = {
   signature: SignResult;
   address: string;
   amount: string,
+  tx: SignTransaction,
   value: TransactionReceipt;
   timestamp: number;
 };
