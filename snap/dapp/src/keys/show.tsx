@@ -32,37 +32,13 @@ import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
 import MessageProofs from "./message-proofs";
-import SelectedChain from "./selected-chain";
+import BalanceChain from "./balance-chain";
 
 export default function ShowKey() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { address } = useParams();
   const { keyShares, loaded } = useSelector(keysSelector);
-  const [balance, setBalance] = useState("0x0");
-  const [chain, setChain] = useState<string>(null);
-
-  useEffect(() => {
-    ethereum.on("chainChanged", handleChainChanged);
-
-    function handleChainChanged(chainId: string) {
-      setChain(chainId);
-    }
-
-    const getBalance = async () => {
-      const chainId = (await ethereum.request({
-        method: "eth_chainId",
-      })) as string;
-      setChain(chainId);
-
-      const result = (await ethereum.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      })) as string;
-      setBalance(result);
-    };
-    getBalance();
-  }, [address]);
 
   if (!loaded) {
     return <KeysLoader />;
@@ -115,12 +91,6 @@ export default function ShowKey() {
     threshold + 1
   } of ${parties}`;
 
-  if (!chain) {
-    return null;
-  }
-
-  const chainName = getChainName(chain);
-
   return (
     <>
       <Stack spacing={2}>
@@ -138,7 +108,6 @@ export default function ShowKey() {
         </Stack>
         <Stack direction="row">
           <Stack direction="row" spacing={1}>
-            <SelectedChain chainName={chainName} />
             <Box>
               <Chip label={sharesLabel} />
             </Box>
@@ -154,10 +123,8 @@ export default function ShowKey() {
         <PublicAddress address={address} />
 
         <Paper variant="outlined">
-          <Stack alignItems="center" padding={2}>
-            <Typography variant="h1" component="div">
-              {utils.formatEther(balance)} ETH
-            </Typography>
+          <Stack padding={2}>
+            <BalanceChain />
           </Stack>
         </Paper>
 

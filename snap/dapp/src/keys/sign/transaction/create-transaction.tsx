@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, Paper } from "@mui/material";
 
 import NotFound from "../../../not-found";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
 //import { sessionSelector } from "../../../store/session";
 import { getChainName } from "../../../utils";
 
-import SelectedChain from "../../selected-chain";
+import BalanceChain from "../../balance-chain";
 
 import ChooseKeyShare from "../choose-key-share";
 
@@ -24,9 +24,10 @@ export default function CreateTransaction(props: SignTransactionProps) {
   //const { signProof } = useSelector(sessionSelector);
   const [selectedParty, setSelectedParty] = useState(null);
 
-  const [balance, setBalance] = useState("0x0");
   const [gasPrice, setGasPrice] = useState("0x0");
   const [transactionCount, setTransactionCount] = useState("0x0");
+
+  //const [balance, setBalance] = useState("0x0");
   const [chain, setChain] = useState<string>(null);
 
   useEffect(() => {
@@ -36,7 +37,8 @@ export default function CreateTransaction(props: SignTransactionProps) {
       setChain(chainId);
     }
 
-    const getBalance = async () => {
+    const init = async () => {
+
       const chainId = (await ethereum.request({
         method: "eth_chainId",
       })) as string;
@@ -52,14 +54,8 @@ export default function CreateTransaction(props: SignTransactionProps) {
         params: [address, "latest"],
       })) as string;
       setTransactionCount(transactionCount);
-
-      const result = (await ethereum.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      })) as string;
-      setBalance(result);
     };
-    getBalance();
+    init();
   }, [address]);
 
   const keyShare = keyShares.find((item) => {
@@ -71,11 +67,13 @@ export default function CreateTransaction(props: SignTransactionProps) {
     return <NotFound />;
   }
 
+  /*
   if (!chain) {
     return null;
   }
 
   const chainName = getChainName(chain);
+  */
 
   //console.log(chain);
   //console.log(BigNumber.from(chain).toHexString());
@@ -87,12 +85,11 @@ export default function CreateTransaction(props: SignTransactionProps) {
   return (
     <>
       <Stack spacing={2}>
-        <Stack direction="row" alignItems="center">
-          <Box sx={{ flexGrow: 1 }}>
-            Balance: {utils.formatEther(balance)} ETH
-          </Box>
-          <SelectedChain chainName={chainName} />
-        </Stack>
+        <Paper variant="outlined">
+          <Stack padding={2}>
+            <BalanceChain />
+          </Stack>
+        </Paper>
 
         <ChooseKeyShare {...props} />
 
