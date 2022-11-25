@@ -12,7 +12,7 @@ import { fromHexString } from "../../utils";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
-import { BigNumber } from 'ethers';
+import { BigNumber, providers } from 'ethers';
 
 import { prepareSignedTransaction} from "@metamask/mpc-snap-wasm";
 
@@ -46,12 +46,18 @@ export default function SendTransaction() {
     */
 
     try {
-      const result = (await ethereum.request({
+      const txHash = (await ethereum.request({
         method: "eth_sendRawTransaction",
         params: [tx],
       })) as string;
 
-      console.log('result', result);
+      console.log('tx hash', txHash);
+      console.log("Waiting for transaction...");
+
+      const provider = new providers.JsonRpcProvider();
+      const txReceipt = await provider.waitForTransaction(txHash);
+      console.log('txReceipt', txReceipt);
+
       // FIXME: handle the result and navigate
 
     } catch (e) {

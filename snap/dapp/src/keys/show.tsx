@@ -91,6 +91,15 @@ export default function ShowKey() {
     threshold + 1
   } of ${parties}`;
 
+  /*
+  let etherscanProvider = new ethers.providers.EtherscanProvider();
+  etherscanProvider.getHistory(address).then((history) => {
+      history.forEach((tx) => {
+          console.log(tx);
+      })
+  });
+  */
+
   return (
     <>
       <Stack spacing={2}>
