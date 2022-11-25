@@ -39,12 +39,10 @@ test-headed:
 	@cd demo && yarn test-headed
 
 lint:
-	@cd demo && yarn lint
 	#@cd packages/client && yarn lint
 	@cd snap/dapp  && yarn lint
 
 fmt: lint
-	@cd demo && yarn fmt
 	@cd library && cargo fmt
 	@cd cli && cargo fmt
 	@cd packages/wasm && cargo fmt
