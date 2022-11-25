@@ -7,7 +7,8 @@ license = "MIT"
 default-run = "mpc-websocket"
 
 [dependencies]
-mpc-websocket = {path = "../library"}
+#mpc-websocket = {path = "../library"}
+mpc-websocket = "0.3.6"
 clap = { version = "3", features = ["derive"]}
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
