@@ -23,9 +23,6 @@ release: dist
 server: dist
 	@cd cli && cargo run
 
-demo:
-	@cd demo && yarn start
-
 test-server: dist-dev
 	@cd cli && cargo run
 
@@ -45,4 +42,4 @@ fmt: lint
 	@cd packages/wasm && cargo fmt
 	@cd snap/wasm && cargo fmt
 
-.PHONY: wasm snap-wasm dist setup build release server demo test lint fmt
+.PHONY: wasm snap-wasm dist setup build release server test lint fmt
