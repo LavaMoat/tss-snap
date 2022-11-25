@@ -39,8 +39,8 @@
     "typescript": "^4.6.3"
   },
   "dependencies": {
-    "@emotion/react": "^11.8.2",
-    "@emotion/styled": "^11.8.1",
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
     "@lavamoat/mpc-client": "file:../../packages/client",
     "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
     "@lavamoat/mpc-snap-wasm": "file:../wasm/pkg",
