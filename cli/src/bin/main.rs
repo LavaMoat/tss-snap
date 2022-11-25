@@ -36,7 +36,8 @@ async fn main() -> Result<()> {
     } else {
         let mut static_files = std::env::current_dir()?;
         static_files.pop();
-        static_files.push("demo");
+        static_files.push("snap");
+        static_files.push("dapp");
         static_files.push("dist");
         static_files
     };
