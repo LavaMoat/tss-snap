@@ -7,6 +7,9 @@ snap-wasm:
 dist: wasm
 	@cd snap/dapp && yarn clean && yarn build
 
+dist-dev: wasm
+	@cd demo && yarn build:dev
+
 setup: wasm snap-wasm
 	@cd demo && yarn install && npx playwright install
 	@cd packages/wasm/pkg && yarn install
@@ -22,6 +25,9 @@ release: dist
 
 server: dist
 	@cd cli && cargo run
+
+demo:
+	@cd demo && yarn start
 
 test-server: dist-dev
 	@cd cli && cargo run
@@ -42,4 +48,4 @@ fmt: lint
 	@cd packages/wasm && cargo fmt
 	@cd snap/wasm && cargo fmt
 
-.PHONY: wasm snap-wasm dist setup build release server test lint fmt
+.PHONY: wasm snap-wasm dist dist-dev setup build release server demo test lint fmt
