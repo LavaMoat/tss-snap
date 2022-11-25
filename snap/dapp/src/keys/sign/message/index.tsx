@@ -35,6 +35,7 @@ import { StepProps } from "../";
 import { ChooseKeyShareProps } from "../choose-key-share";
 
 import { utils } from "ethers";
+import { hashMessage } from "@ethersproject/hash";
 
 const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
 
@@ -97,13 +98,13 @@ export default function SignMessage() {
   };
 
   const onMessage = async (message: string) => {
-    // NOTE: Handle the quirky 0x prefixed string keccack256 implementation
-    const digest = fromHexString(
-      utils.keccak256(Array.from(encode(message))).substring(2)
-    );
+    // NOTE: Use hashMessage so the hash uses the standard
+    // NOTE: prefix for signing messages which means that signing
+    // NOTE: a message cannot be used to sign transactions etc.
+    const hash = hashMessage(message);
 
+    const digest = fromHexString(hash.substring(2));
     const formData: GroupFormData = [label, { parties, threshold }];
-
     const signValue = { message, digest };
 
     try {
