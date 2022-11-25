@@ -1,6 +1,6 @@
-import { KeyGenerator, Signer } from '@metamask/mpc-ecdsa-wasm';
+import { KeyGenerator, Signer } from '@lavamoat/mpc-ecdsa-wasm';
 
-export { KeyGenerator, Signer } from '@metamask/mpc-ecdsa-wasm';
+export { KeyGenerator, Signer } from '@lavamoat/mpc-ecdsa-wasm';
 
 export * from './keygen';
 export * from './sign';
