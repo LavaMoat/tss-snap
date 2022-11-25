@@ -1,4 +1,4 @@
-use clap::{Parser, builder::ValueParser};
+use clap::{builder::ValueParser, Parser};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;

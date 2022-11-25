@@ -3,8 +3,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { loadStateData, saveStateData } from "./state";
 import { TransactionReceipts, SignTxReceipt } from "../types";
 
-import { TransactionReceipt } from '@ethersproject/abstract-provider';
-
 // Load all message receipts grouped by key address.
 const loadReceiptsData = async (): Promise<TransactionReceipts> => {
   const { transactionReceipts } = await loadStateData();
