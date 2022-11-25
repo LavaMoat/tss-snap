@@ -40,7 +40,7 @@ test-headed:
 
 lint:
 	@cd demo && yarn lint
-	@cd packages/client && yarn lint
+	#@cd packages/client && yarn lint
 	@cd snap/dapp  && yarn lint
 
 fmt: lint
