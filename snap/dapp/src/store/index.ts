@@ -26,9 +26,9 @@ const store = configureStore({
           "session/setSignCandidate",
           "session/setSignProof",
 
-          "receipts/saveMessageProof/pending",
-          "receipts/saveMessageProof/fulfilled",
-          "receipts/saveMessageProof/rejected",
+          "proofs/saveMessageProof/pending",
+          "proofs/saveMessageProof/fulfilled",
+          "proofs/saveMessageProof/rejected",
 
           "receipts/saveTransactionReceipt/pending",
           "receipts/saveTransactionReceipt/fulfilled",
@@ -37,7 +37,7 @@ const store = configureStore({
         // Ignore these field paths in all actions
         ignoredActionPaths: [],
         // Ignore these paths in the state
-        ignoredPaths: ["session", "receipts"],
+        ignoredPaths: ["session", "proofs", "receipts"],
       },
     }),
 });

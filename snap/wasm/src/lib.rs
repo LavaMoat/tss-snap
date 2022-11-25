@@ -127,45 +127,11 @@ pub fn prepare_signed_transaction(
     signature: JsValue,
 ) -> Result<JsValue, JsError> {
     let tx = get_typed_transaction(nonce, chain_id, value, from, to)?;
-
-    /*
-    let from: Vec<u8> = from.into_serde()?;
-    let from = Address::from_slice(&from);
-
-    let to: Vec<u8> = to.into_serde()?;
-    let to = Address::from_slice(&to);
-
-    // NOTE: must use an Eip1559 transaction
-    // NOTE: otherwise ganache/ethers fails to
-    // NOTE: parse the correct chain id!
-    let tx: TypedTransaction = Eip1559TransactionRequest::new()
-        .from(from)
-        .to(to)
-        .value(value)
-        .max_fee_per_gas(800_000_000u64)
-        .max_priority_fee_per_gas(22_000_000u64)
-        .gas(21_000u64)
-        //.gas_price(22_000_000_000u64)
-        //.chain_id(1337u64)
-        .chain_id(chain_id)
-        .nonce(nonce)
-        .into();
-    */
-
-    let sighash = tx.sighash();
-
     let signature: SignatureRecid = signature.into_serde()?;
-
-    log::info!("{:#?}", signature);
 
     let r = signature.r.to_bytes().as_ref().to_vec();
     let s = signature.s.to_bytes().as_ref().to_vec();
     let v = signature.recid as u64;
-
-    log::info!("M {}", hex::encode(&sighash));
-    log::info!("R {}", hex::encode(&r));
-    log::info!("S {}", hex::encode(&s));
-    log::info!("V {}", signature.recid);
 
     let signature = Signature {
         r: U256::from_big_endian(&r),
@@ -176,8 +142,6 @@ pub fn prepare_signed_transaction(
 
     let bytes = tx.rlp_signed(&signature);
     let encoded = format!("0x{}", hex::encode(&bytes.0));
-
-    log::info!("{}", &encoded);
 
     Ok(JsValue::from_serde(&encoded)?)
 }

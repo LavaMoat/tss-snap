@@ -6,7 +6,7 @@ import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
 import { SessionKind } from "@metamask/mpc-client";
 
-import { encode, fromHexString } from "../../../utils";
+import { fromHexString } from "../../../utils";
 import { SigningType } from "../../../types";
 
 import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
@@ -34,7 +34,6 @@ import { StepProps } from "../";
 
 import { ChooseKeyShareProps } from "../choose-key-share";
 
-import { utils } from "ethers";
 import { hashMessage } from "@ethersproject/hash";
 
 const steps = ["Create message", "Invite people", "Compute", "Save Proof"];

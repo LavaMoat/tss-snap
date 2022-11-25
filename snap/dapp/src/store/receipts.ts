@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 import { loadStateData, saveStateData } from "./state";
 import { TransactionReceipts, SignTxReceipt } from "../types";
-import { toHexString } from "../utils";
 
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
@@ -48,7 +47,7 @@ export const deleteTransactionReceipt = createAsyncThunk(
     const transactionReceipts = appState.transactionReceipts[address];
     if (transactionReceipts) {
       appState.transactionReceipts[address] = transactionReceipts.filter(
-        (receipt: TransactionReceipt) => {
+        (receipt: SignTxReceipt) => {
           return hash !== receipt.value.transactionHash;
         }
       );

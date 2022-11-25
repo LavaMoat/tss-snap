@@ -18,7 +18,7 @@ import { deleteMessageProof } from "../store/proofs";
 import { deleteTransactionReceipt } from "../store/receipts";
 import { setSnackbar } from "../store/snackbars";
 import { encode, download } from "../utils";
-import { SignProof } from "../types";
+import { SignProof, SignTxReceipt } from "../types";
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 import ConfirmDeleteMessageProofDialog from "./confirm-delete-message-proof";

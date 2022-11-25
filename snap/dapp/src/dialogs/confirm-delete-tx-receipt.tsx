@@ -15,7 +15,6 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 import { DeleteTxReceipt } from "./index";
-import { SignMessage } from "../types";
 
 interface ConfirmDeleteTxReceiptProps {
   open: boolean;
