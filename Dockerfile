@@ -30,7 +30,7 @@ RUN wasm-pack --version
 
 # WASM
 COPY wasm wasm
-RUN rustup component add rust-src --toolchain nightly-2021-08-12-x86_64-unknown-linux-gnu;
+RUN rustup component add rust-src --toolchain nightly-2021-08-12-aarch64-unknown-linux-gnu;
 RUN cd wasm && wasm-pack build --target web;
 
 # CLIENT

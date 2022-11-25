@@ -14,11 +14,11 @@ To install a particular version of `wasm-pack`:
 cargo install --version 0.10.2 wasm-pack
 ```
 
-Note: when you run the command in the project directory, you may run into an error `The package requires the Cargo feature called edition2021, but that feature is not stablized in this version of Cargo (1.56.0-nightly (cc17afbb0 2021-08-02)).` 
+Note: when you run the command in the project directory, you may run into an error `The package requires the Cargo feature called edition2021, but that feature is not stablized in this version of Cargo (1.56.0-nightly (cc17afbb0 2021-08-02)).`
 
 This is because `rust-toolchain` specifies an overriding cargo version of `nightly-2021-08-12`.
 
-To fix this, run `cargo install --version 0.10.2 wasm-pack` again outside the current directory. 
+To fix this, run `cargo install --version 0.10.2 wasm-pack` again outside the current directory.
 
 Note: installation was successful using `cargo 1.65.0-nightly (4ed54cecc 2022-08-27)`.
 
@@ -100,8 +100,8 @@ make test-server                # start the backend server
 For deployment or if you don't want to install the rust toolchain and are just working on the client code you can build and run a docker image:
 
 ```
-docker build . -t ecdsa-wasm
-docker run -p 3030:8080 -it ecdsa-wasm
+docker build . -t tss-ac
+docker run -p 3030:8080 -it tss-ac
 ```
 
 Now you can view the demo at `http://localhost:3030`.
