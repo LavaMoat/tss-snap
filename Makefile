@@ -5,10 +5,7 @@ snap-wasm:
 	@cd snap/wasm && wasm-pack build --target web --scope lavamoat
 
 dist: wasm
-	@cd demo && yarn build
-
-dist-dev: wasm
-	@cd demo && yarn build:dev
+	@cd snap/dapp && yarn clean && yarn build
 
 setup: wasm snap-wasm
 	@cd demo && yarn install && npx playwright install
@@ -48,4 +45,4 @@ fmt: lint
 	@cd packages/wasm && cargo fmt
 	@cd snap/wasm && cargo fmt
 
-.PHONY: wasm snap-wasm dist dist-dev setup build release server demo test lint fmt
+.PHONY: wasm snap-wasm dist setup build release server demo test lint fmt
