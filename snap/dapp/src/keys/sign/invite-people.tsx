@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { Stack } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 
 import { StepProps } from "./";
 import { sessionSelector } from "../../store/session";
@@ -18,6 +18,7 @@ type InvitePeopleProps = {
 
 export default function InvitePeople(props: InvitePeopleProps) {
   const { address } = useParams();
+  const [approved, setApproved] = useState(false);
   const { next } = props;
   const { group, session, signCandidate } = useSelector(sessionSelector);
 
@@ -40,11 +41,23 @@ export default function InvitePeople(props: InvitePeopleProps) {
     view = <SignTransactionView transaction={transaction} digest={digest} />;
   }
 
-  return (
-    <Stack spacing={4}>
-      {view}
-      <InviteCard links={links} />
-      <Approval signingType={props.kind} onApprove={next} />
-    </Stack>
-  );
+  const onApprove = () => setApproved(true);
+
+  if (!approved) {
+    return (
+      <Stack spacing={4}>
+        {view}
+        <Approval signingType={props.kind} onApprove={onApprove} />
+      </Stack>
+    );
+  } else {
+    return (
+      <Stack spacing={4}>
+        {view}
+        <InviteCard links={links} />
+        <Button variant="contained" onClick={next}>Next</Button>
+      </Stack>
+    );
+  }
+
 }

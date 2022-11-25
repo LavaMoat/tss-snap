@@ -26,6 +26,10 @@ const store = configureStore({
           "session/setSignCandidate",
           "session/setSignProof",
 
+          "receipts/saveMessageProof/pending",
+          "receipts/saveMessageProof/fulfilled",
+          "receipts/saveMessageProof/rejected",
+
           "receipts/saveTransactionReceipt/pending",
           "receipts/saveTransactionReceipt/fulfilled",
           "receipts/saveTransactionReceipt/rejected",
