@@ -1492,7 +1492,7 @@
 "@lavamoat/mpc-client@file:../../packages/client":
   version "1.0.1"
   dependencies:
-    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@lavamoat-mpc-client-1.0.1-3146611f-4ca4-4b65-85ca-0f5214e0d045-1669368650974/node_modules/@lavamoat/wasm/pkg"
+    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@lavamoat-mpc-client-1.0.1-044b2fe1-43c0-4d80-b904-0ef4b42a883b-1669368764668/node_modules/@lavamoat/wasm/pkg"
     comlink "^4.3.1"
     events "^3.3.0"
 
@@ -1544,10 +1544,10 @@
   resolved "https://registry.yarnpkg.com/@lmdb/lmdb-win32-x64/-/lmdb-win32-x64-2.5.2.tgz#28f643fbc0bec30b07fbe95b137879b6b4d1c9c5"
   integrity sha512-zrBczSbXKxEyK2ijtbRdICDygRqWSRPpZMN5dD1T8VMEW5RIhIbwFWw2phDRXuBQdVDpSjalCIUMWMV2h3JaZA==
 
-"@metamask/detect-provider@^1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@metamask/detect-provider/-/detect-provider-1.2.0.tgz#3667a7531f2a682e3c3a43eaf3a1958bdb42a696"
-  integrity sha512-ocA76vt+8D0thgXZ7LxFPyqw3H7988qblgzddTDA6B8a/yU0uKV42QR/DhA+Jh11rJjxW0jKvwb5htA6krNZDQ==
+"@metamask/detect-provider@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@metamask/detect-provider/-/detect-provider-2.0.0.tgz#4bc2795e5e6f7d8b84b2e845058d2f222c99917d"
+  integrity sha512-sFpN+TX13E9fdBDh9lvQeZdJn4qYoRb/6QF2oZZK/Pn559IhCFacPMU1rMuqyXoFQF3JSJfii2l98B87QDPeCQ==
 
 "@metamask/mpc-ecdsa-wasm@file:../../packages/wasm/pkg":
   version "0.2.0"
