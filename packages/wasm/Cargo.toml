@@ -22,7 +22,7 @@ serde = {version = "1", features = ["derive"]}
 hex = "0.4"
 round-based = "0.1"
 log = "0.4"
-wasm-logger = "0.2"
+wasm-log = "0.3"
 
 [dependencies.curv-kzen]
 #git = "https://github.com/ZenGo-X/curv"

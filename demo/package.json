@@ -30,8 +30,8 @@
   },
   "homepage": "https://github.com/LavaMoat/ecdsa-wasm",
   "dependencies": {
-    "@metamask/mpc-client": "file:../packages/client",
-    "@metamask/mpc-ecdsa-wasm": "file:../packages/wasm/pkg",
+    "@lavamoat/mpc-client": "file:../packages/client",
+    "@lavamoat/mpc-ecdsa-wasm": "file:../packages/wasm/pkg",
     "@reduxjs/toolkit": "^1.7.1",
     "@types/uuid": "^8.3.4",
     "comlink": "^4.3.1",

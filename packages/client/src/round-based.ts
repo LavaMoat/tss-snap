@@ -51,7 +51,7 @@ export class RoundBased<R> {
     this.sink = sink;
   }
 
-  waitForRound(round: number): Promise<Message[]> {
+  async waitForRound(round: number): Promise<Message[]> {
     return new Promise((resolve) => {
       const interval = setInterval(() => {
         if (this.sink.isReady(round)) {

@@ -1,5 +1,5 @@
 import React, { createContext, PropsWithChildren } from "react";
-import { WebSocketClient } from "@metamask/mpc-client";
+import { WebSocketClient } from "@lavamoat/mpc-client";
 
 const WebSocketContext = createContext(null);
 export { WebSocketContext };

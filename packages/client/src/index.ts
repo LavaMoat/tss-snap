@@ -6,7 +6,7 @@ export * from './keygen';
 export * from './sign';
 export * from './transports/websocket';
 export * from './clients/websocket';
-export { StreamTransport, SinkTransport } from './round-based';
+export type { StreamTransport, SinkTransport } from './round-based';
 
 export enum SessionKind {
   KEYGEN = 'keygen',
@@ -14,11 +14,12 @@ export enum SessionKind {
 }
 
 export type EcdsaWorker = {
+  /* eslint-disable @typescript-eslint/naming-convention */
   KeyGenerator(
     parameters: Parameters,
     partySignup: PartySignup,
   ): Promise<KeyGenerator>;
-
+  /* eslint-disable @typescript-eslint/naming-convention */
   Signer(
     index: number,
     participants: number[],

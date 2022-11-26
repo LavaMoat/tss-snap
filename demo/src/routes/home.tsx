@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { groupSelector } from "../store/group";
 import { useNavigate } from "react-router-dom";
-import { Parameters } from "@metamask/mpc-client";
+import { Parameters } from "@lavamoat/mpc-client";
 
 import { WebSocketContext } from "../websocket-provider";
 import { setGroup } from "../store/group";

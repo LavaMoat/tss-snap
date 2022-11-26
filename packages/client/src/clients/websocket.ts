@@ -1,3 +1,6 @@
+/* eslint id-denylist: 0 */
+
+/* eslint-disable import/no-nodejs-modules */
 import { EventEmitter } from 'events';
 
 export type RpcRequest = {
@@ -33,6 +36,7 @@ export class WebSocketClient extends EventEmitter {
 
   messageRequests: Map<number, PromiseCache>;
 
+  /* eslint-disable no-restricted-globals */
   websocket: WebSocket;
 
   connected: boolean;
@@ -51,6 +55,8 @@ export class WebSocketClient extends EventEmitter {
     if (this.websocket) {
       this.websocket.close();
     }
+
+    /* eslint-disable no-restricted-globals */
     this.websocket = new WebSocket(url);
     this.websocket.onopen = (/* event */) => {
       this.connected = true;
@@ -70,8 +76,8 @@ export class WebSocketClient extends EventEmitter {
       this.emit('close');
     };
 
-    this.websocket.onmessage = async (e) => {
-      const msg = JSON.parse(e.data);
+    this.websocket.onmessage = (messageEvent) => {
+      const msg = JSON.parse(messageEvent.data);
 
       // Got a promise to resolve
       if (msg.id > 0 && this.messageRequests.has(msg.id)) {
@@ -93,17 +99,17 @@ export class WebSocketClient extends EventEmitter {
 
   notify(message: RpcRequest): void {
     message.jsonrpc = '2.0';
-    if (this.connected === false) {
-      this.queue.push(message);
-    } else {
+    if (this.connected) {
       this.websocket.send(JSON.stringify(message));
+    } else {
+      this.queue.push(message);
     }
   }
 
-  rpc(message: RpcRequest): Promise<any> {
+  async rpc(message: RpcRequest): Promise<any> {
     this.messageId += 1;
     const id = this.messageId;
-    const p = new Promise((_resolve, reject) => {
+    const promise = new Promise((_resolve, reject) => {
       const resolve = (response: RpcResponse) => {
         if (response.error) {
           return reject(new Error(response.error.message));
@@ -115,6 +121,6 @@ export class WebSocketClient extends EventEmitter {
     });
     message.id = id;
     this.notify(message);
-    return p;
+    return promise;
   }
 }

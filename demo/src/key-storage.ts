@@ -1,4 +1,4 @@
-import { KeyShare } from "@metamask/mpc-client";
+import { KeyShare } from "@lavamoat/mpc-client";
 
 const KEY = "keys";
 

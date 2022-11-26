@@ -1,3 +1,4 @@
+import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from '.';
 import {
   Round,
   RoundBased,
@@ -5,7 +6,6 @@ import {
   SinkTransport,
   onTransition as onTransitionLog,
 } from './round-based';
-import { Message, KeyShare, SessionInfo, EcdsaWorker, KeyGenerator } from '.';
 
 /**
  * Starts the round-based processing to generate a key share.
@@ -23,7 +23,7 @@ export async function generateKeyShare(
   info: SessionInfo,
   onTransition?: (previousRound: string, current: string) => void,
 ): Promise<KeyShare> {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method */
   const keygen: KeyGenerator = await new (worker.KeyGenerator as any)(
     info.parameters,
     info.partySignup,
@@ -42,6 +42,7 @@ export async function generateKeyShare(
     incoming: Message[],
   ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
+      /* eslint-disable @typescript-eslint/await-thenable */
       await keygen.handleIncoming(message);
     }
     return await keygen.proceed();
