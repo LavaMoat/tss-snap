@@ -13,6 +13,7 @@ import {
   CONFIRM_DELETE_TX_RECEIPT,
 } from "../store/dialogs";
 
+import { AppDispatch } from '../store';
 import { deleteKey, findKeyShare } from "../store/keys";
 import { deleteMessageProof } from "../store/proofs";
 import { deleteTransactionReceipt } from "../store/receipts";
@@ -32,7 +33,7 @@ export type DeleteTxReceipt = [string, SignTxReceipt];
 
 export default function Dialogs() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const { dialogs } = useSelector(dialogsSelector);
 
   const onDeleteKeyShare = async (result: DeleteKeyShare) => {

@@ -11,7 +11,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 import { SignTxReceipt } from "../types";
-import { encode, download } from "../utils";
+import { encode, download, sortTimestamp } from "../utils";
 import { loadTransactionReceipts, receiptsSelector } from "../store/receipts";
 import {
   setDialogVisible,
@@ -26,7 +26,8 @@ export default function TransactionReceipts(props: TransactionReceiptsProps) {
   const dispatch = useDispatch();
   const { address } = props;
   const { transactions } = useSelector(receiptsSelector);
-  const items: SignTxReceipt[] = transactions[address] || [];
+  // NOTE: need a copy of the array as we need to sort in place
+  const items: SignTxReceipt[] = (transactions[address] || []).slice(0);
 
   useEffect(() => {
     const getTransactionReceipts = async () => {
@@ -58,7 +59,7 @@ export default function TransactionReceipts(props: TransactionReceiptsProps) {
       component="div"
       subheader={<ListSubheader component="div">Receipts</ListSubheader>}
     >
-      {items.map((receipt: SignTxReceipt, index: number) => {
+      {items.sort(sortTimestamp).reverse().map((receipt: SignTxReceipt, index: number) => {
         const formatDateDistance = () => {
           const dt = new Date();
           dt.setTime(receipt.timestamp);

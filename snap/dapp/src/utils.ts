@@ -106,3 +106,13 @@ export function humanFileSize(bytes: number, si = false, dp = 1) {
 
   return bytes.toFixed(dp) + " " + units[u];
 }
+
+export function sortTimestamp(a: {timestamp: number}, b: {timestamp: number}) {
+  if (a.timestamp < b.timestamp) {
+    return -1;
+  }
+  if (a.timestamp > b.timestamp) {
+    return 1;
+  }
+  return 0;
+}

@@ -11,7 +11,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 import { SignProof, SignMessage } from "../types";
-import { encode, download, toHexString } from "../utils";
+import { encode, download, toHexString, sortTimestamp } from "../utils";
 import { loadMessageProofs, proofsSelector } from "../store/proofs";
 import {
   setDialogVisible,
@@ -26,7 +26,8 @@ export default function MessageProofs(props: MessageProofProps) {
   const dispatch = useDispatch();
   const { address } = props;
   const { messages } = useSelector(proofsSelector);
-  const items: SignProof[] = messages[address] || [];
+  // NOTE: need a copy of the array as we need to sort in place
+  const items: SignProof[] = (messages[address] || []).slice(0);
 
   useEffect(() => {
     const getMessageProofs = async () => {
@@ -60,7 +61,7 @@ export default function MessageProofs(props: MessageProofProps) {
       component="div"
       subheader={<ListSubheader component="div">Proofs</ListSubheader>}
     >
-      {items.map((proof: SignProof, index: number) => {
+      {items.sort(sortTimestamp).reverse().map((proof: SignProof, index: number) => {
         const formatDateDistance = () => {
           const dt = new Date();
           dt.setTime(proof.timestamp);

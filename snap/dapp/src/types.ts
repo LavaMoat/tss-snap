@@ -3,7 +3,7 @@ import {
   StreamTransport,
   SinkTransport,
   SignResult,
-} from "@metamask/mpc-client";
+} from "@lavamoat/mpc-client";
 
 import { UnsignedTransaction } from "ethers";
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
