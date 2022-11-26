@@ -15,7 +15,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
+          profile: default
           components: rustfmt
       - name: Run cargo fmt
         working-directory: ${{env.WORKING_DIRECTORY}}
@@ -29,8 +29,8 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
-          components: clippy, rust-src
+          profile: default
+          components: rust-src
           target: wasm32-unknown-unknown
       - name: Run cargo clippy
         working-directory: ${{env.WORKING_DIRECTORY}}
@@ -44,7 +44,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
+          profile: default
           components: rust-src
           target: wasm32-unknown-unknown
       - name: Run cargo build
@@ -59,7 +59,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
+          profile: default
           components: rust-src
           target: wasm32-unknown-unknown
       - name: Install wasm-pack
