@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { Alert, Button, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 import { AppDispatch } from "../../store";
 import { sessionSelector } from "../../store/session";
@@ -17,9 +23,55 @@ import { BigNumber, providers, utils } from 'ethers';
 
 import { prepareSignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
+type MakeTransactionProps = {
+  transaction: UnsignedTransaction;
+  digest: Uint8Array;
+  sendTransaction: () => Promise<void>;
+  transactionHash?: string;
+  disabled: boolean;
+}
+
+function MakeTransaction(props: MakeTransactionProps) {
+  const {
+    transaction,
+    digest,
+    sendTransaction,
+    transactionHash,
+    disabled,
+  } = props;
+
+  if (transactionHash == null) {
+    return <>
+      <SignTransactionView isSigned={true}
+        transaction={transaction}
+        digest={digest} />
+      <Button
+        variant="contained"
+        onClick={sendTransaction}>Make Transaction</Button>
+    </>;
+  } else {
+    return <>
+      <Typography variant="body1" component="div">
+        Transaction hash: {transactionHash}
+      </Typography>
+      <Stack direction="row" spacing={2}>
+        <CircularProgress size={20} />
+        <Typography variant="body2" component="div" color="text.secondary">
+          Waiting for transaction confirmation...
+        </Typography>
+      </Stack>
+      <SignTransactionView isSigned={true}
+        transaction={transaction}
+        digest={digest} />
+    </>;
+  }
+}
+
 export default function SendTransaction() {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+
+  const [transactionHash, setTransactionHash] = useState<string>(null);
   const [disabled, setDisabled] = useState(false);
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
@@ -47,6 +99,8 @@ export default function SendTransaction() {
         method: "eth_sendRawTransaction",
         params: [tx],
       })) as string;
+
+      setTransactionHash(txHash);
 
       // TODO: switch to InfuraProvider for chains other than Ganache
       const provider = new providers.JsonRpcProvider();
@@ -92,13 +146,13 @@ export default function SendTransaction() {
   );
 
   const action = creator
-    ? (<>
-        <SignTransactionView isSigned={true} transaction={transaction} digest={digest} />
-        <Button
-          disabled={disabled}
-          variant="contained"
-          onClick={sendTransaction}>Make Transaction</Button>
-      </>)
+    ? (<MakeTransaction
+        transaction={transaction}
+        digest={digest}
+        sendTransaction={sendTransaction}
+        transactionHash={transactionHash}
+        disabled={disabled}
+      />)
     : (<>
         <Typography variant="body1" component="div">
           The creator of the transaction will submit it to the blockchain.
