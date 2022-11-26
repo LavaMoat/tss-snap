@@ -3,10 +3,11 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { Stack, Typography, CircularProgress } from "@mui/material";
 
+import { AppDispatch } from "../store";
 import { keysSelector, loadKeys } from "../store/keys";
 
 export default function KeysLoader() {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const { loaded } = useSelector(keysSelector);
 

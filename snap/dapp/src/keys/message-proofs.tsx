@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 
 import { SignProof, SignMessage } from "../types";
 import { encode, download, toHexString, sortTimestamp } from "../utils";
+import { AppDispatch } from "../store";
 import { loadMessageProofs, proofsSelector } from "../store/proofs";
 import {
   setDialogVisible,
@@ -23,7 +24,7 @@ type MessageProofProps = {
 };
 
 export default function MessageProofs(props: MessageProofProps) {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const { address } = props;
   const { messages } = useSelector(proofsSelector);
   // NOTE: need a copy of the array as we need to sort in place

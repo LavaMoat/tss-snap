@@ -118,7 +118,7 @@ export default function ShowKey() {
             <Button onClick={signTransaction}>Sign Transaction</Button>
           </ButtonGroup>
         </Stack>
-        <PublicAddress address={address} />
+        <PublicAddress address={address} abbreviate />
 
         <Paper variant="outlined">
           <Stack padding={2}>

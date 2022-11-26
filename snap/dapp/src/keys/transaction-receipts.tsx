@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 
 import { SignTxReceipt } from "../types";
 import { encode, download, sortTimestamp } from "../utils";
+import { AppDispatch } from "../store";
 import { loadTransactionReceipts, receiptsSelector } from "../store/receipts";
 import {
   setDialogVisible,
@@ -23,7 +24,7 @@ type TransactionReceiptsProps = {
 };
 
 export default function TransactionReceipts(props: TransactionReceiptsProps) {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const { address } = props;
   const { transactions } = useSelector(receiptsSelector);
   // NOTE: need a copy of the array as we need to sort in place

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Alert, Button, Stack, Typography } from "@mui/material";
 
+import { AppDispatch } from "../../store";
 import { sessionSelector } from "../../store/session";
 import { saveTransactionReceipt } from "../../store/receipts";
 import { setSnackbar } from "../../store/snackbars";
@@ -17,7 +18,7 @@ import { BigNumber, providers, utils } from 'ethers';
 import { prepareSignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
 export default function SendTransaction() {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const [disabled, setDisabled] = useState(false);
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
@@ -85,7 +86,7 @@ export default function SendTransaction() {
         {label}
       </Typography>
       <Stack direction="row" alignItems="center">
-        <PublicAddress address={address} />
+        <PublicAddress address={address} abbreviate />
       </Stack>
     </Stack>
   );

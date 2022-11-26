@@ -3,11 +3,13 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { Stack, Button, Typography } from "@mui/material";
+
+import { AppDispatch } from "../store";
 import { keysSelector, saveKey } from "../store/keys";
 import { sessionSelector } from "../store/session";
 
 export default function Save() {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const { keyShare } = useSelector(keysSelector);
   const { group } = useSelector(sessionSelector);

@@ -55,7 +55,7 @@ function Keys() {
                   <Typography variant="subtitle2" component="div">
                     {label}
                   </Typography>
-                  <PublicAddress address={address} abbreviate={true} />
+                  <PublicAddress address={address} abbreviate />
                 </Stack>
               </ListItemButton>
             </ListItem>

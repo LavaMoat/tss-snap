@@ -114,7 +114,7 @@ function SessionConnect(props: SessionConnectProps) {
           {label}
         </Typography>
         <Stack direction="row" alignItems="center">
-          <PublicAddress address={address} />
+          <PublicAddress address={address} abbreviate />
           <Box sx={{ flexGrow: 1 }} />
           <Chip
             label={`Using key share for party #${selectedParty || items[0]}`}
