@@ -19,7 +19,7 @@ import { fromHexString } from "../../utils";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
-import { BigNumber, providers, utils } from 'ethers';
+import { BigNumber, UnsignedTransaction, providers, utils } from 'ethers';
 
 import { prepareSignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
@@ -28,7 +28,6 @@ type MakeTransactionProps = {
   digest: Uint8Array;
   sendTransaction: () => Promise<void>;
   transactionHash?: string;
-  disabled: boolean;
 }
 
 function MakeTransaction(props: MakeTransactionProps) {
@@ -37,7 +36,6 @@ function MakeTransaction(props: MakeTransactionProps) {
     digest,
     sendTransaction,
     transactionHash,
-    disabled,
   } = props;
 
   if (transactionHash == null) {
@@ -72,7 +70,6 @@ export default function SendTransaction() {
   const navigate = useNavigate();
 
   const [transactionHash, setTransactionHash] = useState<string>(null);
-  const [disabled, setDisabled] = useState(false);
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
   const { label } = group;
@@ -81,7 +78,6 @@ export default function SendTransaction() {
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
   const sendTransaction = async () => {
-    setDisabled(true);
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
     const amount = BigNumber.from(transaction.value).toBigInt();
@@ -124,7 +120,6 @@ export default function SendTransaction() {
       navigate(`/keys/${address}`);
     } catch (e) {
       console.error(e);
-      setDisabled(false);
       dispatch(
         setSnackbar({
           message: e.message || "Failed to make transaction",
@@ -151,7 +146,6 @@ export default function SendTransaction() {
         digest={digest}
         sendTransaction={sendTransaction}
         transactionHash={transactionHash}
-        disabled={disabled}
       />)
     : (<>
         <Typography variant="body1" component="div">

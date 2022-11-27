@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 
@@ -6,6 +6,7 @@ import { Stack, Paper } from "@mui/material";
 
 import NotFound from "../../../not-found";
 import { keysSelector } from "../../../store/keys";
+import { ChainContext } from "../../../chain-provider";
 
 import BalanceChain from "../../balance-chain";
 
@@ -17,27 +18,13 @@ import TransactionForm from "./transaction-form";
 export default function CreateTransaction(props: SignTransactionProps) {
   const { address } = useParams();
   const { keyShares } = useSelector(keysSelector);
+  const chain = useContext(ChainContext);
 
   const [gasPrice, setGasPrice] = useState("0x0");
   const [transactionCount, setTransactionCount] = useState("0x0");
 
-  //const [balance, setBalance] = useState("0x0");
-  const [chain, setChain] = useState<string>(null);
-
   useEffect(() => {
-    ethereum.on("chainChanged", handleChainChanged);
-
-    function handleChainChanged(chainId: string) {
-      setChain(chainId);
-    }
-
     const init = async () => {
-
-      const chainId = (await ethereum.request({
-        method: "eth_chainId",
-      })) as string;
-      setChain(chainId);
-
       const gasPrice = (await ethereum.request({
         method: "eth_gasPrice",
       })) as string;
