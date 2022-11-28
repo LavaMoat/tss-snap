@@ -94,6 +94,7 @@ pub fn prepare_unsigned_transaction(
     nonce: String,
     chain_id: u64,
     value: String,
+    gas: String,
     max_fee_per_gas: String,
     max_priority_fee_per_gas: String,
     from: JsValue,
@@ -102,6 +103,7 @@ pub fn prepare_unsigned_transaction(
 
     let nonce: U256 = nonce.parse()?;
     let value: U256 = value.parse()?;
+    let gas: U256 = gas.parse()?;
 
     let max_fee_per_gas: U256 = max_fee_per_gas.parse()?;
     let max_priority_fee_per_gas: U256 = max_priority_fee_per_gas.parse()?;
@@ -110,6 +112,7 @@ pub fn prepare_unsigned_transaction(
         nonce,
         chain_id,
         value,
+        gas,
         max_fee_per_gas,
         max_priority_fee_per_gas,
         from,
@@ -130,6 +133,7 @@ pub fn prepare_signed_transaction(
     nonce: String,
     chain_id: u64,
     value: String,
+    gas: String,
     max_fee_per_gas: String,
     max_priority_fee_per_gas: String,
     from: JsValue,
@@ -139,6 +143,7 @@ pub fn prepare_signed_transaction(
 
     let nonce: U256 = nonce.parse()?;
     let value: U256 = value.parse()?;
+    let gas: U256 = gas.parse()?;
 
     let max_fee_per_gas: U256 = max_fee_per_gas.parse()?;
     let max_priority_fee_per_gas: U256 = max_priority_fee_per_gas.parse()?;
@@ -147,6 +152,7 @@ pub fn prepare_signed_transaction(
         nonce,
         chain_id,
         value,
+        gas,
         max_fee_per_gas,
         max_priority_fee_per_gas,
         from,
@@ -176,6 +182,7 @@ pub fn get_typed_transaction(
     nonce: U256,
     chain_id: u64,
     value: U256,
+    gas: U256,
     max_fee_per_gas: U256,
     max_priority_fee_per_gas: U256,
     from: JsValue,
@@ -196,8 +203,7 @@ pub fn get_typed_transaction(
         .value(value)
         .max_fee_per_gas(max_fee_per_gas)
         .max_priority_fee_per_gas(max_priority_fee_per_gas)
-        .gas(21_000u64)
-        //.gas_price(22_000_000_000u64)
+        .gas(gas)
         .chain_id(chain_id)
         .nonce(nonce)
         .into();

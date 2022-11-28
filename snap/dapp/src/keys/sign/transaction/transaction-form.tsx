@@ -60,6 +60,7 @@ export default function TransactionForm(props: TransactionFormProps) {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     setAddressError(false);
     setAmountError(false);
 
@@ -82,7 +83,6 @@ export default function TransactionForm(props: TransactionFormProps) {
     console.log("baseFeePerGas", baseFeePerGas);
 
     const data = "0x00";
-    const gasLimit = BigNumber.from(3_200_000);
     const maxFeePerGas = BigNumber.from(800_000_000);
     const maxPriorityFeePerGas = BigNumber.from(22_000_000);
 
@@ -97,7 +97,7 @@ export default function TransactionForm(props: TransactionFormProps) {
       method: "eth_estimateGas",
       params: [{ to }]
     })) as string;
-    console.log("estimatedGas", estimated);
+    const gasLimit = BigNumber.from(estimated);
 
     // NOTE: This transaction is only used to store state
     // NOTE: for UI display purposes; building of transactions
@@ -120,6 +120,7 @@ export default function TransactionForm(props: TransactionFormProps) {
       nonce.toHexString(),
       BigInt(transaction.chainId),
       BigNumber.from(transaction.value).toHexString(),
+      gasLimit.toHexString(),
       maxFeePerGas.toHexString(),
       maxPriorityFeePerGas.toHexString(),
       Array.from(fromHexString(address.substring(2))),

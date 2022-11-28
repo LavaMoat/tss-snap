@@ -86,6 +86,7 @@ export default function SendTransaction() {
       nonce.toHexString(),
       BigInt(transaction.chainId),
       value.toHexString(),
+      BigNumber.from(transaction.gasLimit).toHexString(),
       BigNumber.from(transaction.maxFeePerGas).toHexString(),
       BigNumber.from(transaction.maxPriorityFeePerGas).toHexString(),
       from,
