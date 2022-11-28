@@ -81,13 +81,13 @@ export default function SendTransaction() {
     const nonce = BigNumber.from(transaction.nonce);
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
-    const amount = BigNumber.from(transaction.value);
+    const value = BigNumber.from(transaction.value);
     const tx = await prepareSignedTransaction(
       nonce.toHexString(),
       BigInt(transaction.chainId),
-      amount.toHexString(),
-      transaction.maxFeePerGas.toHexString(),
-      transaction.maxPriorityFeePerGas.toHexString(),
+      value.toHexString(),
+      BigNumber.from(transaction.maxFeePerGas).toHexString(),
+      BigNumber.from(transaction.maxPriorityFeePerGas).toHexString(),
       from,
       to,
       signProof.signature,

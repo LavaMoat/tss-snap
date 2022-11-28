@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 
 import { Button, Stack, TextField } from "@mui/material";
 
@@ -6,24 +6,51 @@ import { utils, UnsignedTransaction, BigNumber } from "ethers";
 
 import { fromHexString } from "../../../utils";
 import { SignTransaction } from "../../../types";
+import { ChainContext } from "../../../chain-provider";
 
 
 import { prepareUnsignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
 type TransactionFormProps = {
-  chain: string;
-  gasPrice: string;
-  transactionCount: string;
+  from: string,
   onTransaction: (tx: SignTransaction) => void;
 };
 
 export default function TransactionForm(props: TransactionFormProps) {
-  const { chain, gasPrice, transactionCount } = props;
+  const chain = useContext(ChainContext);
+
   const [address, setAddress] = useState("");
   const [addressError, setAddressError] = useState(false);
 
   const [amount, setAmount] = useState("");
   const [amountError, setAmountError] = useState(false);
+
+  const [pendingBlock, setPendingBlock] = useState(null);
+  const [gasPrice, setGasPrice] = useState("0x0");
+  const [transactionCount, setTransactionCount] = useState("0x0");
+  const [estimatedGas, setEstimatedGas] = useState<BigNumber>(null);
+
+  useEffect(() => {
+    const getBlockInfo = async () => {
+
+      const gasPrice = (await ethereum.request({
+        method: "eth_gasPrice",
+      })) as string;
+      setGasPrice(gasPrice);
+
+      const transactionCount = (await ethereum.request({
+        method: "eth_getTransactionCount",
+        params: [props.from, "latest"],
+      })) as string;
+      setTransactionCount(transactionCount);
+
+      const pending = await ethereum.request({
+        method: "eth_getBlockByNumber",
+        params: ["pending", false]});
+      setPendingBlock(pending);
+    }
+    getBlockInfo();
+  }, []);
 
   const onAddressChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setAddress(e.target.value);
@@ -50,6 +77,10 @@ export default function TransactionForm(props: TransactionFormProps) {
       return;
     }
 
+    const baseFeePerGas = BigNumber.from(pendingBlock.baseFeePerGas);
+
+    console.log("baseFeePerGas", baseFeePerGas);
+
     const data = "0x00";
     const gasLimit = BigNumber.from(3_200_000);
     const maxFeePerGas = BigNumber.from(800_000_000);
@@ -60,6 +91,13 @@ export default function TransactionForm(props: TransactionFormProps) {
     // NOTE: some values are not detected as BytesLike
     const chainId = BigNumber.from(chain);
     const nonce = BigNumber.from(transactionCount);
+
+
+    const estimated = (await ethereum.request({
+      method: "eth_estimateGas",
+      params: [{ to }]
+    })) as string;
+    console.log("estimatedGas", estimated);
 
     // NOTE: This transaction is only used to store state
     // NOTE: for UI display purposes; building of transactions
@@ -94,16 +132,9 @@ export default function TransactionForm(props: TransactionFormProps) {
     });
   };
 
-  /*
-        <Stack marginBottom={1}>
-          <Typography variant="body1" component="div">
-            Enter the address to send to.
-          </Typography>
-          <Typography variant="body2" component="div" color="text.secondary">
-            Should be a valid public address starting with 0x.
-          </Typography>
-        </Stack>
-  */
+  if (pendingBlock == null) {
+    return null;
+  }
 
   return (
     <form id="transaction" onSubmit={onSubmit} noValidate>
