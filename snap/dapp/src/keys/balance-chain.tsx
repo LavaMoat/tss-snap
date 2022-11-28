@@ -29,8 +29,6 @@ export default function BalanceChain() {
     getBalance();
   }, [address]);
 
-  console.log(chain);
-
   if (!chain) {
     return null;
   }

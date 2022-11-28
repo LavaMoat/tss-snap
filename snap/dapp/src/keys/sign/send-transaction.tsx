@@ -78,13 +78,16 @@ export default function SendTransaction() {
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
   const sendTransaction = async () => {
+    const nonce = BigNumber.from(transaction.nonce);
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
-    const amount = BigNumber.from(transaction.value).toBigInt();
+    const amount = BigNumber.from(transaction.value);
     const tx = await prepareSignedTransaction(
-      BigInt(transaction.nonce),
+      nonce.toHexString(),
       BigInt(transaction.chainId),
-      amount,
+      amount.toHexString(),
+      transaction.maxFeePerGas.toHexString(),
+      transaction.maxPriorityFeePerGas.toHexString(),
       from,
       to,
       signProof.signature,

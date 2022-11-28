@@ -50,8 +50,10 @@ export default function TransactionForm(props: TransactionFormProps) {
       return;
     }
 
-    const gasLimit = "0x30d400";
     const data = "0x00";
+    const gasLimit = BigNumber.from(3_200_000);
+    const maxFeePerGas = BigNumber.from(800_000_000);
+    const maxPriorityFeePerGas = BigNumber.from(22_000_000);
 
     // NOTE: Must do some conversion so that
     // NOTE: RLP encoding works as expected, otherwise
@@ -69,17 +71,19 @@ export default function TransactionForm(props: TransactionFormProps) {
       gasPrice,
       gasLimit,
       data,
-      //maxFeePerGas,
-      //maxPriorityFeePerGas,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
       chainId: chainId.toNumber(),
     };
 
     // Call out to webassembly to prepare a transaction
     // and get the transaction hash
     const digest = await prepareUnsignedTransaction(
-      BigInt(transaction.nonce),
+      nonce.toHexString(),
       BigInt(transaction.chainId),
-      BigNumber.from(transaction.value).toBigInt(),
+      BigNumber.from(transaction.value).toHexString(),
+      maxFeePerGas.toHexString(),
+      maxPriorityFeePerGas.toHexString(),
       Array.from(fromHexString(address.substring(2))),
       Array.from(fromHexString(transaction.to.substring(2))),
     );

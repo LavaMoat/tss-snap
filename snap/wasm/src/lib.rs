@@ -91,13 +91,30 @@ pub fn import_key_store(
 /// Returns the transaction hash as bytes.
 #[wasm_bindgen(js_name = "prepareUnsignedTransaction")]
 pub fn prepare_unsigned_transaction(
-    nonce: u64,
+    nonce: String,
     chain_id: u64,
-    value: u64,
+    value: String,
+    max_fee_per_gas: String,
+    max_priority_fee_per_gas: String,
     from: JsValue,
     to: JsValue,
 ) -> Result<JsValue, JsError> {
-    let tx = get_typed_transaction(nonce, chain_id, value, from, to)?;
+
+    let nonce: U256 = nonce.parse()?;
+    let value: U256 = value.parse()?;
+
+    let max_fee_per_gas: U256 = max_fee_per_gas.parse()?;
+    let max_priority_fee_per_gas: U256 = max_priority_fee_per_gas.parse()?;
+
+    let tx = get_typed_transaction(
+        nonce,
+        chain_id,
+        value,
+        max_fee_per_gas,
+        max_priority_fee_per_gas,
+        from,
+        to,
+    )?;
 
     let sighash = tx.sighash();
 
@@ -110,14 +127,31 @@ pub fn prepare_unsigned_transaction(
 /// a call to eth_sendRawTransaction().
 #[wasm_bindgen(js_name = "prepareSignedTransaction")]
 pub fn prepare_signed_transaction(
-    nonce: u64,
+    nonce: String,
     chain_id: u64,
-    value: u64,
+    value: String,
+    max_fee_per_gas: String,
+    max_priority_fee_per_gas: String,
     from: JsValue,
     to: JsValue,
     signature: JsValue,
 ) -> Result<JsValue, JsError> {
-    let tx = get_typed_transaction(nonce, chain_id, value, from, to)?;
+
+    let nonce: U256 = nonce.parse()?;
+    let value: U256 = value.parse()?;
+
+    let max_fee_per_gas: U256 = max_fee_per_gas.parse()?;
+    let max_priority_fee_per_gas: U256 = max_priority_fee_per_gas.parse()?;
+
+    let tx = get_typed_transaction(
+        nonce,
+        chain_id,
+        value,
+        max_fee_per_gas,
+        max_priority_fee_per_gas,
+        from,
+        to,
+    )?;
     let signature: SignatureRecid = signature.into_serde()?;
 
     let r = signature.r.to_bytes().as_ref().to_vec();
@@ -139,9 +173,11 @@ pub fn prepare_signed_transaction(
 
 /// Helper to build a transaction.
 pub fn get_typed_transaction(
-    nonce: u64,
+    nonce: U256,
     chain_id: u64,
-    value: u64,
+    value: U256,
+    max_fee_per_gas: U256,
+    max_priority_fee_per_gas: U256,
     from: JsValue,
     to: JsValue,
 ) -> Result<TypedTransaction, JsError> {
@@ -158,11 +194,10 @@ pub fn get_typed_transaction(
         .from(from)
         .to(to)
         .value(value)
-        .max_fee_per_gas(800_000_000u64)
-        .max_priority_fee_per_gas(22_000_000u64)
+        .max_fee_per_gas(max_fee_per_gas)
+        .max_priority_fee_per_gas(max_priority_fee_per_gas)
         .gas(21_000u64)
         //.gas_price(22_000_000_000u64)
-        //.chain_id(1337u64)
         .chain_id(chain_id)
         .nonce(nonce)
         .into();
