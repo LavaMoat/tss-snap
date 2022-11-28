@@ -28,7 +28,6 @@ export default function TransactionForm(props: TransactionFormProps) {
   const [pendingBlock, setPendingBlock] = useState(null);
   const [gasPrice, setGasPrice] = useState("0x0");
   const [transactionCount, setTransactionCount] = useState("0x0");
-  const [estimatedGas, setEstimatedGas] = useState<BigNumber>(null);
 
   useEffect(() => {
     const getBlockInfo = async () => {
