@@ -124,9 +124,10 @@ export default function SendTransaction() {
       navigate(`/keys/${address}`);
     } catch (e) {
       console.error(e);
+      const message = (e.data && e.data.message) || e.message;
       dispatch(
         setSnackbar({
-          message: e.message || "Failed to make transaction",
+          message: message || "Failed to make transaction",
           severity: "error",
         })
       );

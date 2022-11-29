@@ -25,6 +25,9 @@ export default function TransactionForm(props: TransactionFormProps) {
   const [amount, setAmount] = useState("");
   const [amountError, setAmountError] = useState(false);
 
+  const [tip, setTip] = useState("22000000");
+  const [tipError, setTipError] = useState(false);
+
   const [pendingBlock, setPendingBlock] = useState(null);
   const [gasPrice, setGasPrice] = useState("0x0");
   const [transactionCount, setTransactionCount] = useState("0x0");
@@ -57,32 +60,39 @@ export default function TransactionForm(props: TransactionFormProps) {
   const onAmountChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setAmount(e.target.value);
 
+  const onTipChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setTip(e.target.value);
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setAddressError(false);
     setAmountError(false);
+    setTipError(false);
 
-    let to, value;
+    let to, value, priorityFee;
     try {
       to = utils.getAddress(address);
-      try {
-        value = utils.parseUnits(amount);
-      } catch (e) {
-        setAmountError(true);
-        return;
-      }
     } catch (e) {
       setAddressError(true);
       return;
     }
+    try {
+      value = utils.parseUnits(amount);
+    } catch (e) {
+      setAmountError(true);
+      return;
+    }
+    try {
+      priorityFee = utils.parseUnits(tip, "wei");
+    } catch(e) {
+      setTipError(true);
+      return;
+    }
 
     const baseFeePerGas = BigNumber.from(pendingBlock.baseFeePerGas);
-
-    console.log("baseFeePerGas", baseFeePerGas);
-
     const data = "0x00";
-    const maxPriorityFeePerGas = BigNumber.from(22_000_000);
+    const maxPriorityFeePerGas = BigNumber.from(priorityFee);
     const maxFeePerGas = baseFeePerGas.add(maxPriorityFeePerGas);
 
     // NOTE: Must do some conversion so that
@@ -154,13 +164,23 @@ export default function TransactionForm(props: TransactionFormProps) {
         />
 
         <TextField
-          label="Amount"
+          label="Amount (ETH)"
           autoComplete="off"
           onChange={onAmountChange}
           value={amount}
           error={amountError}
           variant="outlined"
           placeholder="Amount of ETH to send"
+        />
+
+        <TextField
+          label="Tip (WEI)"
+          autoComplete="off"
+          onChange={onTipChange}
+          value={tip}
+          error={tipError}
+          variant="outlined"
+          placeholder="Miner tip in WEI, bigger tips speed up the transaction"
         />
 
         <Button variant="contained" type="submit" form="transaction">
