@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -16,6 +16,7 @@ import { saveTransactionReceipt } from "../../store/receipts";
 import { setSnackbar } from "../../store/snackbars";
 import { SignTransaction } from "../../types";
 import { fromHexString } from "../../utils";
+import { ChainContext } from "../../chain-provider";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
@@ -68,6 +69,7 @@ function MakeTransaction(props: MakeTransactionProps) {
 export default function SendTransaction() {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const chain = useContext(ChainContext);
 
   const [transactionHash, setTransactionHash] = useState<string>(null);
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
@@ -102,8 +104,15 @@ export default function SendTransaction() {
 
       setTransactionHash(txHash);
 
-      // TODO: switch to InfuraProvider for chains other than Ganache
-      const provider = new providers.JsonRpcProvider();
+      // Switch to InfuraProvider for chains other than Ganache
+      const chainNumber = BigNumber.from(chain).toNumber();
+      const isLocalChain = chainNumber == 1337;
+      const provider = isLocalChain
+        ? new providers.JsonRpcProvider()
+        : new providers.InfuraProvider(
+          chainNumber,
+          process.env.INFURA_API_KEY,
+        );
       const txReceipt = await provider.waitForTransaction(txHash);
       const signTxReceipt = {
         ...signProof,

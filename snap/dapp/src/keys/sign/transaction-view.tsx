@@ -10,15 +10,13 @@ type SignTransactionViewProps = {
   digest: Uint8Array;
 };
 
-export default function SignMessageView(props: SignTransactionViewProps) {
+export default function SignTransactionView(props: SignTransactionViewProps) {
   const { transaction, digest, isSigned } = props;
 
   //console.log(transaction);
 
   const { to } = transaction;
   const value = utils.formatEther(transaction.value);
-  const gasPrice = utils.formatEther(transaction.gasPrice);
-
   const chainName = getChainName(transaction.chainId);
 
   return (
