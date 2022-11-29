@@ -82,8 +82,8 @@ export default function TransactionForm(props: TransactionFormProps) {
     console.log("baseFeePerGas", baseFeePerGas);
 
     const data = "0x00";
-    const maxFeePerGas = BigNumber.from(800_000_000);
     const maxPriorityFeePerGas = BigNumber.from(22_000_000);
+    const maxFeePerGas = baseFeePerGas.add(maxPriorityFeePerGas);
 
     // NOTE: Must do some conversion so that
     // NOTE: RLP encoding works as expected, otherwise
