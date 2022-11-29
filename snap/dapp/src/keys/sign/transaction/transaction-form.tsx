@@ -91,7 +91,6 @@ export default function TransactionForm(props: TransactionFormProps) {
     const chainId = BigNumber.from(chain);
     const nonce = BigNumber.from(transactionCount);
 
-
     const estimated = (await ethereum.request({
       method: "eth_estimateGas",
       params: [{ to }]
@@ -100,7 +99,11 @@ export default function TransactionForm(props: TransactionFormProps) {
 
     // NOTE: This transaction is only used to store state
     // NOTE: for UI display purposes; building of transactions
-    // NOTE: RLP encoding, hashing etc. is done in webassembly
+    // NOTE: RLP encoding, hashing etc. is done in webassembly.
+    //
+    // NOTE: The reason for this is that using serializeTransaction()
+    // NOTE: and parseTransaction() from ethers.utils was computing an
+    // NOTE: incorrect `from` field which would cause the transaction to fail.
     const transaction: UnsignedTransaction = {
       nonce: nonce.toNumber(),
       to,

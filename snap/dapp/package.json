@@ -5,7 +5,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/LavaMoat/demo-gg20-wasm.git"
+    "url": "https://github.com/LavaMoat/tss-snap"
   },
   "license": "MIT",
   "files": [
