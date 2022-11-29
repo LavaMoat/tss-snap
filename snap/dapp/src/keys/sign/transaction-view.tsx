@@ -73,15 +73,29 @@ export default function SignMessageView(props: SignTransactionViewProps) {
           <Stack direction="row">
             <Box flexGrow={1}>
               <Typography variant="body1" component="div">
-                Gas price:
+                Tip:
               </Typography>
             </Box>
             <Box>
               <Typography variant="body1" component="div">
-                {gasPrice} ETH
+                {utils.formatUnits(transaction.maxPriorityFeePerGas, "wei")} WEI
               </Typography>
             </Box>
           </Stack>
+
+          <Stack direction="row">
+            <Box flexGrow={1}>
+              <Typography variant="body1" component="div">
+                Max gas fee:
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body1" component="div">
+                {utils.formatUnits(transaction.maxFeePerGas, "wei")} WEI
+              </Typography>
+            </Box>
+          </Stack>
+
         </Stack>
         <Divider />
         <Typography variant="body2" component="div" color="text.secondary">
