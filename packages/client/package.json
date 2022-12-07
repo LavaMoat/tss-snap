@@ -4,6 +4,9 @@
   "description": "Threshold signatures multi-party compute client library",
   "module": "dist/index.esm.js",
   "main": "dist/index.js",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "lint": "eslint src --cache --ext js,ts",
     "fmt": "prettier --write . --no-color",
@@ -12,7 +15,7 @@
     "types": "tsc --project tsconfig.json"
   },
   "dependencies": {
-    "@lavamoat/mpc-ecdsa-wasm": "file:../wasm/pkg",
+    "@lavamoat/mpc-ecdsa-wasm": "^0.2",
     "comlink": "^4.3.1",
     "events": "^3.3.0"
   },

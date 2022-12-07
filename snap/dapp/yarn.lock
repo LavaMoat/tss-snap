@@ -1489,18 +1489,24 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@lavamoat/mpc-client@file:../../packages/client":
+"@lavamoat/mpc-client@^1.0.0":
   version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@lavamoat/mpc-client/-/mpc-client-1.0.1.tgz#5da38486d925f782735c94ede3f2457a3cb32e11"
+  integrity sha512-jvIu5+6Ihq7gwV0wq/EXHyxVHW8DU8ka12bQVFjYrWLLUFZ6UteJfxPzmaHJ6WhdWVmEjJACbJClWiWlRpTn+g==
   dependencies:
-    "@metamask/mpc-ecdsa-wasm" "file:../../../../../Library/Caches/Yarn/v6/npm-@lavamoat-mpc-client-1.0.1-044b2fe1-43c0-4d80-b904-0ef4b42a883b-1669368764668/node_modules/@lavamoat/wasm/pkg"
+    "@lavamoat/mpc-ecdsa-wasm" "^0.2"
     comlink "^4.3.1"
     events "^3.3.0"
 
-"@lavamoat/mpc-ecdsa-wasm@file:../../packages/wasm/pkg":
+"@lavamoat/mpc-ecdsa-wasm@^0.2":
   version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@lavamoat/mpc-ecdsa-wasm/-/mpc-ecdsa-wasm-0.2.0.tgz#d75b8dd24abb149c1863aa563491c125b03f2cfd"
+  integrity sha512-DNPMe+mwDWnZuqwQ8Y0lrLgG9Bdw+DK+JBBIVjW6frVnvIoGnBfzaTlvPU79g3PhIxPn9gjmAwuIdomXZfrL+A==
 
-"@lavamoat/mpc-snap-wasm@file:../wasm/pkg":
+"@lavamoat/mpc-snap-wasm@^0.1":
   version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@lavamoat/mpc-snap-wasm/-/mpc-snap-wasm-0.1.0.tgz#fca15551f9b299c386ab2be3fe0d0d2e464b04f7"
+  integrity sha512-DhTRhByNvznAWNKr8C8nEg6r5qWxsbRetIUUuikKlb6zncfiUXcpuUmS4JzjPaVjhk7lfUFHrXsJ5XI5P21cNA==
 
 "@lezer/common@^0.15.0", "@lezer/common@^0.15.7":
   version "0.15.12"
@@ -1548,9 +1554,6 @@
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@metamask/detect-provider/-/detect-provider-2.0.0.tgz#4bc2795e5e6f7d8b84b2e845058d2f222c99917d"
   integrity sha512-sFpN+TX13E9fdBDh9lvQeZdJn4qYoRb/6QF2oZZK/Pn559IhCFacPMU1rMuqyXoFQF3JSJfii2l98B87QDPeCQ==
-
-"@metamask/mpc-ecdsa-wasm@file:../../packages/wasm/pkg":
-  version "0.2.0"
 
 "@metamask/object-multiplex@^1.1.0":
   version "1.2.0"

@@ -41,9 +41,9 @@
   "dependencies": {
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@lavamoat/mpc-client": "file:../../packages/client",
-    "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
-    "@lavamoat/mpc-snap-wasm": "file:../wasm/pkg",
+    "@lavamoat/mpc-client": "^1.0.0",
+    "@lavamoat/mpc-ecdsa-wasm": "^0.2",
+    "@lavamoat/mpc-snap-wasm": "^0.1",
     "@metamask/detect-provider": "^2.0.0",
     "@mui/icons-material": "^5.10.15",
     "@mui/material": "^5.10.15",

@@ -55,6 +55,11 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
+"@lavamoat/mpc-ecdsa-wasm@^0.2":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@lavamoat/mpc-ecdsa-wasm/-/mpc-ecdsa-wasm-0.2.0.tgz#d75b8dd24abb149c1863aa563491c125b03f2cfd"
+  integrity sha512-DNPMe+mwDWnZuqwQ8Y0lrLgG9Bdw+DK+JBBIVjW6frVnvIoGnBfzaTlvPU79g3PhIxPn9gjmAwuIdomXZfrL+A==
+
 "@metamask/eslint-config-typescript@^11.0.0":
   version "11.0.0"
   resolved "https://registry.yarnpkg.com/@metamask/eslint-config-typescript/-/eslint-config-typescript-11.0.0.tgz#86a87f9a64db754df0ea3b3f985490400f42e47f"
@@ -64,9 +69,6 @@
   version "11.0.1"
   resolved "https://registry.yarnpkg.com/@metamask/eslint-config/-/eslint-config-11.0.1.tgz#a197bbb89d5d9f76b812b073ef90af2db8089777"
   integrity sha512-+Y6JrCbYg8RZSARmKL2RmaTx6e4nxJy/DH4JkgzRuDWUxw8hxkDTRggfj3ljfFvUIGiTK9xFp5sd52wCRlkf/g==
-
-"@metamask/mpc-ecdsa-wasm@file:../wasm/pkg":
-  version "0.2.0"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
