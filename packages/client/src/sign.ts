@@ -1,12 +1,5 @@
-import { WebSocketClient } from './clients/websocket';
+/* eslint id-denylist: 0 */
 
-import {
-  Round,
-  RoundBased,
-  StreamTransport,
-  SinkTransport,
-  onTransition as onTransitionLog,
-} from './round-based';
 import {
   Message,
   KeyShare,
@@ -17,6 +10,14 @@ import {
   Signer,
   GroupInfo,
 } from '.';
+import { WebSocketClient } from './clients/websocket';
+import {
+  Round,
+  RoundBased,
+  StreamTransport,
+  SinkTransport,
+  onTransition as onTransitionLog,
+} from './round-based';
 
 /**
  * Get the participant's party signup index used when generating
@@ -41,6 +42,7 @@ async function getParticipants(
   const rounds: Round[] = [
     {
       name: 'SIGN_ROUND_0',
+      /* eslint-disable @typescript-eslint/require-await */
       transition: async (): Promise<[number, Message[]]> => {
         const index = keyShare.localKey.i;
         const round = 0;
@@ -63,6 +65,7 @@ async function getParticipants(
 
   const finalizer = {
     name: 'SIGN_PARTICIPANTS',
+    /* eslint-disable @typescript-eslint/require-await */
     finalize: async (incoming: Message[]) => {
       const participants = incoming.map((msg) => [msg.sender, msg.body]);
       participants.push([keyShare.localKey.i, info.partySignup.number]);
@@ -115,6 +118,7 @@ async function offlineStage(
     incoming: Message[],
   ): Promise<[number, Message[]]> => {
     for (const message of incoming) {
+      /* eslint-disable @typescript-eslint/await-thenable */
       await signer.handleIncoming(message);
     }
     return await signer.proceed();
@@ -256,7 +260,7 @@ async function signMessage(
     onTransition,
   );
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method */
   const signer: Signer = await new (worker.Signer as any)(
     info.partySignup.number,
     participants,

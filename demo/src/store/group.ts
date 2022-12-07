@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { GroupInfo } from "@metamask/mpc-client";
+import { GroupInfo } from "@lavamoat/mpc-client";
 
 export interface GroupState {
   group?: GroupInfo;

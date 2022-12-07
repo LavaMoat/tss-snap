@@ -1,4 +1,4 @@
-FROM rust:1.57-buster AS rust
+FROM rust:1.65-buster AS rust
 
 FROM debian:bullseye AS builder
 WORKDIR /usr/app
@@ -21,7 +21,7 @@ ENV PATH=/usr/local/cargo/bin:$PATH
 # SERVER
 COPY getrandom getrandom
 COPY cli cli
-RUN rustup override set nightly-2021-08-12
+RUN rustup default stable
 RUN cargo install --path ./cli
 RUN cargo install --version 0.10.2 wasm-pack
 RUN mv ~/.cargo/bin/* /usr/bin
@@ -29,9 +29,10 @@ RUN mpc-websocket --version
 RUN wasm-pack --version
 
 # WASM
-COPY wasm wasm
-RUN rustup component add rust-src --toolchain nightly-2021-08-12-x86_64-unknown-linux-gnu;
-RUN cd wasm && wasm-pack build --target web;
+COPY packages/wasm wasm
+RUN rustup override set nightly
+RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
+RUN cd wasm && wasm-pack build --target web --scope lavamoat;
 
 # CLIENT
 FROM node:14 AS client

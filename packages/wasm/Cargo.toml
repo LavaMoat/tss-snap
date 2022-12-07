@@ -9,9 +9,9 @@ description = "Webassembly bindings to multi-party-ecdsa"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mpc-ecdsa-getrandom-hack = {path = "../../getrandom", version = "*"}
+#mpc-ecdsa-getrandom-hack = {path = "../../getrandom", version = "*"}
+mpc-ecdsa-getrandom-hack = {version = "*"}
 getrandom = {version = "0.1.16", features = ["wasm-bindgen"]}
-curv-kzen = {version = "0.9", features = ["num-bigint"], default-features = false}
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
 wasm-bindgen-rayon = "1.0"
 rand = { version="0.6.5", features = ["wasm-bindgen"] }
@@ -21,6 +21,14 @@ sha3 = "0.10"
 serde = {version = "1", features = ["derive"]}
 hex = "0.4"
 round-based = "0.1"
+log = "0.4"
+wasm-log = "0.3"
+
+[dependencies.curv-kzen]
+#git = "https://github.com/ZenGo-X/curv"
+version = "0.9"
+features = ["num-bigint"]
+default-features = false
 
 [dependencies.paillier]
 version = "0.4.2"
@@ -28,9 +36,9 @@ package = "kzen-paillier"
 default-features = false
 
 [dependencies.multi-party-ecdsa]
-#git = "https://github.com/ZenGo-X/multi-party-ecdsa"
-git = "https://github.com/tmpfs/multi-party-ecdsa"
-branch = "libsecp256k1-dev-dep"
+git = "https://github.com/ZenGo-X/multi-party-ecdsa"
+#git = "https://github.com/tmpfs/multi-party-ecdsa"
+#branch = "libsecp256k1-dev-dep"
 default-features = false
 #rev = "c94065fbf37132dccc7955cf2627866e87c162bf"
 version = "*"

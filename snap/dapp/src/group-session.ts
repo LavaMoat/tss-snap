@@ -7,7 +7,7 @@ import {
   WebSocketStream,
   GroupInfo,
   Session,
-} from "@metamask/mpc-client";
+} from "@lavamoat/mpc-client";
 
 import { AppDispatch } from "./store";
 import { setGroup, setSession, setTransport } from "./store/session";
@@ -53,9 +53,16 @@ export async function createGroupSession(
   const group = { label, params, uuid };
   dispatch(setGroup(group));
 
+  // NOTE: must be an array for JSON serialization otherwise
+  // NOTE: Uint8Array is converted to an object which is problematic
+  // NOTE: when recipients receive the value
+  const value = signValue != null
+    ? { ...signValue, digest: Array.from(signValue.digest) }
+    : null;
+
   let session = await websocket.rpc({
     method: "Session.create",
-    params: [uuid, kind, signValue],
+    params: [uuid, kind, value],
   });
 
   let partyNumber = null;

@@ -1,11 +1,11 @@
 wasm:
-	@cd packages/wasm && wasm-pack build --target web --scope metamask
+	@cd packages/wasm && wasm-pack build --target web --scope lavamoat
 
 snap-wasm:
-	@cd snap/wasm && wasm-pack build --target web --scope metamask
+	@cd snap/wasm && wasm-pack build --target web --scope lavamoat
 
 dist: wasm
-	@cd demo && yarn build
+	@cd snap/dapp && yarn clean && yarn build
 
 dist-dev: wasm
 	@cd demo && yarn build:dev
@@ -39,12 +39,10 @@ test-headed:
 	@cd demo && yarn test-headed
 
 lint:
-	@cd demo && yarn lint
 	@cd packages/client && yarn lint
 	@cd snap/dapp  && yarn lint
 
 fmt: lint
-	@cd demo && yarn fmt
 	@cd library && cargo fmt
 	@cd cli && cargo fmt
 	@cd packages/wasm && cargo fmt

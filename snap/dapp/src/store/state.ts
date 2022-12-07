@@ -1,6 +1,5 @@
 // Helper functions for saving and loading the snap state data.
 //
-import { encode, decode } from "../utils";
 import { AppState } from "../types";
 import snapId from "../snap-id";
 
@@ -8,13 +7,9 @@ function getDefaultAppState(): AppState {
   return {
     keyShares: [],
     messageProofs: {},
+    transactionReceipts: {},
   };
 }
-
-// Key material returned from `getBip44Entropy_*`.
-type KeyResponse = {
-  key: string;
-};
 
 async function getState() {
   return await ethereum.request({

@@ -4,11 +4,9 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { Box, Chip, Breadcrumbs, Link, Stack, Typography } from "@mui/material";
 
-import { keccak256 } from "@metamask/mpc-snap-wasm";
+import { SessionKind } from "@lavamoat/mpc-client";
 
-import { SessionKind } from "@metamask/mpc-client";
-
-import { encode } from "../../../utils";
+import { fromHexString } from "../../../utils";
 import { SigningType } from "../../../types";
 
 import { WebSocketContext, ListenerCleanup } from "../../../websocket-provider";
@@ -17,7 +15,7 @@ import { createGroupSession, GroupFormData } from "../../../group-session";
 import NotFound from "../../../not-found";
 import PublicAddress from "../../../components/public-address";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
-import { setSnackbar } from '../../../store/snackbars';
+import { setSnackbar } from "../../../store/snackbars";
 import {
   sessionSelector,
   setSignCandidate,
@@ -27,20 +25,23 @@ import SignStepper from "../../../components/stepper";
 import KeysLoader from "../../loader";
 
 import CreateMessage from "./create-message";
-import InvitePeople from "./invite-people";
+import InvitePeople from "../invite-people";
 import Compute from "../compute";
 import SaveProof from "../save-proof";
 
 import Signer from "../signer";
+import { StepProps } from "../";
 
 import { ChooseKeyShareProps } from "../choose-key-share";
+
+import { hashMessage } from "@ethersproject/hash";
 
 const steps = ["Create message", "Invite people", "Compute", "Save Proof"];
 
 const getStepComponent = (activeStep: number, props: SignMessageProps) => {
   const stepComponents = [
     <CreateMessage key={0} {...props} />,
-    <InvitePeople key={1} {...props} />,
+    <InvitePeople key={1} {...props} kind={SigningType.MESSAGE} />,
     <Compute key={2} {...props} />,
     <SaveProof key={3} {...props} />,
   ];
@@ -48,9 +49,9 @@ const getStepComponent = (activeStep: number, props: SignMessageProps) => {
 };
 
 export type SignMessageProps = {
-  next: () => void;
   onMessage: (message: string) => void;
-} & ChooseKeyShareProps;
+} & StepProps &
+  ChooseKeyShareProps;
 
 export default function SignMessage() {
   const dispatch = useDispatch();
@@ -96,10 +97,13 @@ export default function SignMessage() {
   };
 
   const onMessage = async (message: string) => {
-    const digest = await keccak256(Array.from(encode(message)));
+    // NOTE: Use hashMessage so the hash uses the standard
+    // NOTE: prefix for signing messages which means that signing
+    // NOTE: a message cannot be used to sign transactions etc.
+    const hash = hashMessage(message);
 
+    const digest = fromHexString(hash.substring(2));
     const formData: GroupFormData = [label, { parties, threshold }];
-
     const signValue = { message, digest };
 
     try {

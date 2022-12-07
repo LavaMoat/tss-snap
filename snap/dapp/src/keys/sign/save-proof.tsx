@@ -4,13 +4,14 @@ import { useNavigate } from "react-router-dom";
 
 import { Alert, Button, Stack, Typography } from "@mui/material";
 
+import { AppDispatch } from "../../store";
 import { sessionSelector } from "../../store/session";
 import { saveMessageProof } from "../../store/proofs";
 import { setSnackbar } from "../../store/snackbars";
 import PublicAddress from "../../components/public-address";
 
 export default function SaveProof() {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const { group, signCandidate, signProof } = useSelector(sessionSelector);
   const { address, creator, signingType } = signCandidate;
@@ -37,7 +38,7 @@ export default function SaveProof() {
         {label}
       </Typography>
       <Stack direction="row" alignItems="center">
-        <PublicAddress address={address} />
+        <PublicAddress address={address} abbreviate />
       </Stack>
     </Stack>
   );

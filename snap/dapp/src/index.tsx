@@ -19,6 +19,9 @@ type SnapEthereum = {
 
 declare global {
   const ethereum: SnapEthereum;
+  interface Window {
+    ethereum: SnapEthereum;
+  }
 }
 
 const root = ReactDOMClient.createRoot(document.querySelector("main"));

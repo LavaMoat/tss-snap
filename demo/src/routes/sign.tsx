@@ -18,7 +18,7 @@ import {
   SignResult,
   EcdsaWorker,
   sign,
-} from "@metamask/mpc-client";
+} from "@lavamoat/mpc-client";
 //import { sign } from "@metamask/mpc-client";
 
 //import { WebSocketStream, WebSocketSink } from "../mpc/transports/websocket";

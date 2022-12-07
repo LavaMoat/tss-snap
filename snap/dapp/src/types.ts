@@ -3,7 +3,10 @@ import {
   StreamTransport,
   SinkTransport,
   SignResult,
-} from "@metamask/mpc-client";
+} from "@lavamoat/mpc-client";
+
+import { UnsignedTransaction } from "ethers";
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 // Key share with a human-friendly label.
 export type NamedKeyShare = {
@@ -18,15 +21,30 @@ export type SignProof = {
   timestamp: number;
 };
 
+export type SignTxReceipt = {
+  signature: SignResult;
+  address: string;
+  amount: string,
+  tx: SignTransaction,
+  value: TransactionReceipt;
+  timestamp: number;
+};
+
 // Maps message signing proofs from key address.
 export type MessageProofs = {
   [key: string]: SignProof[];
+};
+
+// Maps transaction receipts from key address.
+export type TransactionReceipts = {
+  [key: string]: SignTxReceipt[];
 };
 
 // Application state that can be persisted to disc by the snap backend.
 export type AppState = {
   keyShares: NamedKeyShare[];
   messageProofs: MessageProofs;
+  transactionReceipts: TransactionReceipts;
 };
 
 // Message to be signed.
@@ -40,9 +58,9 @@ export enum SigningType {
   TRANSACTION = "transaction",
 }
 
-// TODO: type for signing transactions
+// Type for signing transactions
 export type SignTransaction = {
-  // TODO: store the transaction information
+  transaction: UnsignedTransaction;
   digest: Uint8Array;
 };
 

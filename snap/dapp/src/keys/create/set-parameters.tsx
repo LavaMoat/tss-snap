@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 
 import { Stack, Button, Typography, Slider, TextField } from "@mui/material";
 
-import { SessionKind } from "@metamask/mpc-client";
+import { SessionKind } from "@lavamoat/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
 import { createGroupSession, GroupFormData } from "../../group-session";

@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 
 import { Stack, Typography, CircularProgress } from "@mui/material";
 
-import { SessionKind } from "@metamask/mpc-client";
+import { SessionKind } from "@lavamoat/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
 import { joinGroupSessionWithSignup } from "../../group-session";
@@ -57,7 +57,6 @@ export default function Compute(props: StepProps) {
           })
         );
       }
-
     }, 1000);
   }, []);
 

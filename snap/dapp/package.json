@@ -1,11 +1,11 @@
 {
-  "name": "@metamask/mpc-snap",
+  "name": "@lavamoat/tss-snap",
   "version": "0.1.0",
   "description": "Snap for threshold signatures.",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/LavaMoat/demo-gg20-wasm.git"
+    "url": "https://github.com/LavaMoat/tss-snap"
   },
   "license": "MIT",
   "files": [
@@ -24,34 +24,36 @@
     "start": "yarn build:snap && parcel src/index.html --port 7070"
   },
   "devDependencies": {
-    "@metamask/snaps-cli": "0.22.3",
+    "@metamask/snaps-cli": "0.25.0",
     "@metamask/types": "^1.1.0",
-    "@types/react": "^18.0.1",
-    "@types/react-dom": "^18.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.13.0",
-    "@typescript-eslint/parser": "^5.13.0",
-    "eslint": "^8.10.0",
-    "eslint-plugin-react": "^7.29.3",
-    "parcel": "^2.4.1",
-    "prettier": "^2.6.2",
-    "typescript": "^4.6.3"
+    "@types/node": "^18.11.9",
+    "@types/react": "^18.0.25",
+    "@types/react-dom": "^18.0.9",
+    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "@typescript-eslint/parser": "^5.44.0",
+    "eslint": "^8.28.0",
+    "eslint-plugin-react": "^7.31.11",
+    "ganache": "^7.5.0",
+    "parcel": "^2.8.0",
+    "prettier": "^2.8.0",
+    "typescript": "^4.9.3"
   },
   "dependencies": {
-    "@emotion/react": "^11.8.2",
-    "@emotion/styled": "^11.8.1",
-    "@metamask/detect-provider": "^1.2.0",
-    "@metamask/mpc-client": "file:../../packages/client",
-    "@metamask/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
-    "@metamask/mpc-snap-wasm": "file:../wasm/pkg",
-    "@mui/icons-material": "^5.5.1",
-    "@mui/material": "^5.5.3",
-    "@reduxjs/toolkit": "^1.8.1",
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@lavamoat/mpc-client": "file:../../packages/client",
+    "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
+    "@lavamoat/mpc-snap-wasm": "file:../wasm/pkg",
+    "@metamask/detect-provider": "^2.0.0",
+    "@mui/icons-material": "^5.10.15",
+    "@mui/material": "^5.10.15",
+    "@reduxjs/toolkit": "^1.9.0",
     "comlink": "^4.3.1",
-    "date-fns": "^2.28.0",
-    "ethers": "^5.6.3",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-redux": "^7.2.8",
-    "react-router-dom": "^6.3.0"
+    "date-fns": "^2.29.3",
+    "ethers": "5.7.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.0.5",
+    "react-router-dom": "^6.4.3"
   }
 }

@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
-
-import { utils } from "ethers";
 
 import {
   Box,
@@ -26,42 +24,19 @@ import {
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
 } from "../store/dialogs";
-import { chains } from "../utils";
 
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
+import TransactionReceipts from "./transaction-receipts";
 import MessageProofs from "./message-proofs";
+import BalanceChain from "./balance-chain";
 
 export default function ShowKey() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { address } = useParams();
   const { keyShares, loaded } = useSelector(keysSelector);
-  const [balance, setBalance] = useState("0x0");
-  const [chain, setChain] = useState<string>(null);
-
-  useEffect(() => {
-    ethereum.on("chainChanged", handleChainChanged);
-
-    function handleChainChanged(chainId: string) {
-      setChain(chainId);
-    }
-
-    const getBalance = async () => {
-      const chainId = (await ethereum.request({
-        method: "eth_chainId",
-      })) as string;
-      setChain(chainId);
-
-      const result = (await ethereum.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      })) as string;
-      setBalance(result);
-    };
-    getBalance();
-  }, [address]);
 
   if (!loaded) {
     return <KeysLoader />;
@@ -114,11 +89,6 @@ export default function ShowKey() {
     threshold + 1
   } of ${parties}`;
 
-  if (!chain) {
-    return null;
-  }
-
-  const chainName = chains[chain] as string;
   return (
     <>
       <Stack spacing={2}>
@@ -137,9 +107,6 @@ export default function ShowKey() {
         <Stack direction="row">
           <Stack direction="row" spacing={1}>
             <Box>
-              <Chip label={chainName} color="secondary" />
-            </Box>
-            <Box>
               <Chip label={sharesLabel} />
             </Box>
           </Stack>
@@ -151,13 +118,11 @@ export default function ShowKey() {
             <Button onClick={signTransaction}>Sign Transaction</Button>
           </ButtonGroup>
         </Stack>
-        <PublicAddress address={address} />
+        <PublicAddress address={address} abbreviate />
 
         <Paper variant="outlined">
-          <Stack alignItems="center" padding={2}>
-            <Typography variant="h1" component="div">
-              {utils.formatEther(balance)} ETH
-            </Typography>
+          <Stack padding={2}>
+            <BalanceChain />
           </Stack>
         </Paper>
 
@@ -197,6 +162,7 @@ export default function ShowKey() {
           })}
         </List>
 
+        <TransactionReceipts address={address} />
         <MessageProofs address={address} />
       </Stack>
     </>

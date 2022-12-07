@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-import { sign } from "@metamask/mpc-client";
+import { sign } from "@lavamoat/mpc-client";
 
 import { WebSocketContext } from "../../websocket-provider";
 import { sessionSelector, setSignProof } from "../../store/session";

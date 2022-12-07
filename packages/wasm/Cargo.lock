@@ -710,6 +710,8 @@ dependencies = [
 [[package]]
 name = "mpc-ecdsa-getrandom-hack"
 version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3b9823566d7be5ce1dbee68d07d92eb9575b43b91f44f986335e86ea1fa953b"
 dependencies = [
  "getrandom 0.2.5",
 ]
@@ -723,6 +725,7 @@ dependencies = [
  "getrandom 0.1.16",
  "hex",
  "kzen-paillier",
+ "log",
  "mpc-ecdsa-getrandom-hack",
  "multi-party-ecdsa",
  "rand 0.6.5",
@@ -732,12 +735,13 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-rayon",
  "wasm-bindgen-test",
+ "wasm-log",
 ]
 
 [[package]]
 name = "multi-party-ecdsa"
 version = "0.8.1"
-source = "git+https://github.com/tmpfs/multi-party-ecdsa?branch=libsecp256k1-dev-dep#43a3bedb2bf3aff66c15f7c94a4355621212b9f3"
+source = "git+https://github.com/ZenGo-X/multi-party-ecdsa#9193fb7d42178fe854688b1874a9a7cd61b540c9"
 dependencies = [
  "centipede",
  "curv-kzen",
@@ -1461,6 +1465,17 @@ checksum = "d0e560d44db5e73b69a9757a15512fe7e1ef93ed2061c928871a4025798293dd"
 dependencies = [
  "proc-macro2",
  "quote",
+]
+
+[[package]]
+name = "wasm-log"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "def95b2a762924804037f77e3de791f1c177d6ecbe0385a64e519bd7902a5f81"
+dependencies = [
+ "log",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

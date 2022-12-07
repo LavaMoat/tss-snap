@@ -15,11 +15,12 @@ import {
   Paper,
 } from "@mui/material";
 
-import { importKeyStore } from "@metamask/mpc-snap-wasm";
+import { importKeyStore } from "@lavamoat/mpc-snap-wasm";
 
 import FileUploadReader from "../components/file-upload-reader";
 import PublicAddress from "../components/public-address";
 import { decode } from "../utils";
+import { AppDispatch } from "../store";
 import { setSnackbar } from "../store/snackbars";
 import { findKeyShare, saveKey } from "../store/keys";
 
@@ -94,7 +95,7 @@ function ImportKeyStore(props: ImportKeyStoreProps) {
             <Typography variant="h3" component="div">
               {label}
             </Typography>
-            <PublicAddress address={address} />
+            <PublicAddress address={address} abbreviate />
           </Stack>
           <Alert severity="success">
             Imported key share {partyNumber} or {parties}!
@@ -114,7 +115,7 @@ function ImportKeyStore(props: ImportKeyStoreProps) {
 }
 
 function ImportStepper() {
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const [activeStep, setActiveStep] = useState(0);
   const [file, setFile] = useState(null);
   const [keyStore, setKeyStore] = useState(null);

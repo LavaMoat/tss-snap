@@ -20,4 +20,4 @@ export const onRpcRequest = ({ origin, request }) => {
     default:
       throw new Error("Method not found.");
   }
-}
+};

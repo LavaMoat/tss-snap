@@ -1,25 +1,32 @@
 //! Webassembly utilities for the threshold signatures snap.
 #![deny(missing_docs)]
 use serde::{Deserialize, Serialize};
-use sha3::{Digest, Keccak256};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
 use curv::elliptic::curves::secp256_k1::Secp256k1;
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::LocalKey;
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
+    party_i::SignatureRecid, state_machine::keygen::LocalKey,
+};
+
+use web3_signature::Signature;
+use web3_transaction::{
+    eip1559::Eip1559TransactionRequest,
+    types::{Address, U256},
+    TypedTransaction,
+};
 
 extern crate wasm_bindgen;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
 #[doc(hidden)]
-#[macro_export]
-macro_rules! console_log {
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
+    wasm_log::init(wasm_log::Config::new(log::Level::Debug));
+    log::info!(
+        "WASM snap helpers module started {:?}",
+        std::thread::current().id()
+    );
 }
 
 /// Key share with a human-friendly label.
@@ -79,10 +86,126 @@ pub fn import_key_store(
     Ok(JsValue::from_serde(&key_share)?)
 }
 
-/// Compute the Keccak256 hash of a value.
-#[wasm_bindgen]
-pub fn keccak256(message: JsValue) -> Result<JsValue, JsError> {
-    let message: Vec<u8> = message.into_serde()?;
-    let digest = Keccak256::digest(&message).to_vec();
-    Ok(JsValue::from_serde(&digest)?)
+/// Prepare an unsigned transaction.
+///
+/// Returns the transaction hash as bytes.
+#[wasm_bindgen(js_name = "prepareUnsignedTransaction")]
+pub fn prepare_unsigned_transaction(
+    nonce: String,
+    chain_id: u64,
+    value: String,
+    gas: String,
+    max_fee_per_gas: String,
+    max_priority_fee_per_gas: String,
+    from: JsValue,
+    to: JsValue,
+) -> Result<JsValue, JsError> {
+
+    let nonce: U256 = nonce.parse()?;
+    let value: U256 = value.parse()?;
+    let gas: U256 = gas.parse()?;
+
+    let max_fee_per_gas: U256 = max_fee_per_gas.parse()?;
+    let max_priority_fee_per_gas: U256 = max_priority_fee_per_gas.parse()?;
+
+    let tx = get_typed_transaction(
+        nonce,
+        chain_id,
+        value,
+        gas,
+        max_fee_per_gas,
+        max_priority_fee_per_gas,
+        from,
+        to,
+    )?;
+
+    let sighash = tx.sighash();
+
+    Ok(JsValue::from_serde(&sighash)?)
+}
+
+/// Prepare a signed transaction.
+///
+/// Returns the hex-encoded raw transaction suitable for
+/// a call to eth_sendRawTransaction().
+#[wasm_bindgen(js_name = "prepareSignedTransaction")]
+pub fn prepare_signed_transaction(
+    nonce: String,
+    chain_id: u64,
+    value: String,
+    gas: String,
+    max_fee_per_gas: String,
+    max_priority_fee_per_gas: String,
+    from: JsValue,
+    to: JsValue,
+    signature: JsValue,
+) -> Result<JsValue, JsError> {
+
+    let nonce: U256 = nonce.parse()?;
+    let value: U256 = value.parse()?;
+    let gas: U256 = gas.parse()?;
+
+    let max_fee_per_gas: U256 = max_fee_per_gas.parse()?;
+    let max_priority_fee_per_gas: U256 = max_priority_fee_per_gas.parse()?;
+
+    let tx = get_typed_transaction(
+        nonce,
+        chain_id,
+        value,
+        gas,
+        max_fee_per_gas,
+        max_priority_fee_per_gas,
+        from,
+        to,
+    )?;
+    let signature: SignatureRecid = signature.into_serde()?;
+
+    let r = signature.r.to_bytes().as_ref().to_vec();
+    let s = signature.s.to_bytes().as_ref().to_vec();
+    let v = signature.recid as u64;
+
+    let signature = Signature {
+        r: U256::from_big_endian(&r),
+        s: U256::from_big_endian(&s),
+        v,
+    }
+    .into_eip155(chain_id);
+
+    let bytes = tx.rlp_signed(&signature);
+    let encoded = format!("0x{}", hex::encode(&bytes.0));
+
+    Ok(JsValue::from_serde(&encoded)?)
+}
+
+/// Helper to build a transaction.
+pub fn get_typed_transaction(
+    nonce: U256,
+    chain_id: u64,
+    value: U256,
+    gas: U256,
+    max_fee_per_gas: U256,
+    max_priority_fee_per_gas: U256,
+    from: JsValue,
+    to: JsValue,
+) -> Result<TypedTransaction, JsError> {
+    let from: Vec<u8> = from.into_serde()?;
+    let from = Address::from_slice(&from);
+
+    let to: Vec<u8> = to.into_serde()?;
+    let to = Address::from_slice(&to);
+
+    // NOTE: must use an Eip1559 transaction
+    // NOTE: otherwise ganache/ethers fails to
+    // NOTE: parse the correct chain id!
+    let tx: TypedTransaction = Eip1559TransactionRequest::new()
+        .from(from)
+        .to(to)
+        .value(value)
+        .max_fee_per_gas(max_fee_per_gas)
+        .max_priority_fee_per_gas(max_priority_fee_per_gas)
+        .gas(gas)
+        .chain_id(chain_id)
+        .nonce(nonce)
+        .into();
+    Ok(tx)
 }

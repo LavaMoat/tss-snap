@@ -23,7 +23,7 @@ import {
   WebSocketStream,
   WebSocketSink,
   generateKeyShare,
-} from "@metamask/mpc-client";
+} from "@lavamoat/mpc-client";
 
 const copyToClipboard = async (
   e: React.MouseEvent<HTMLElement>,

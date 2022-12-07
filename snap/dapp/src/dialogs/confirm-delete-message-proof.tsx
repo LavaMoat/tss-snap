@@ -15,7 +15,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 import { DeleteMessageProof } from "./index";
-import { SignMessage } from '../types';
+import { SignMessage } from "../types";
 
 interface ConfirmDeleteMessageProofProps {
   open: boolean;
@@ -51,7 +51,11 @@ export default function ConfirmDeleteMessageProofDialog(
               <Typography variant="body1" component="div">
                 {(proof.value as SignMessage).message}
               </Typography>
-              <Typography variant="body2" component="div" color="text.secondary">
+              <Typography
+                variant="body2"
+                component="div"
+                color="text.secondary"
+              >
                 Signed by key {address} {formatDistanceToNow(dt)} ago
               </Typography>
             </Stack>

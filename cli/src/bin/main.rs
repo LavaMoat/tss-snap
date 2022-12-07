@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{builder::ValueParser, Parser};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -8,14 +8,15 @@ use mpc_websocket::{Result, Server};
 #[derive(Debug, Parser)]
 #[clap(
     name = "mpc-websocket",
-    about = "Websocket server for MPC key generation and signing"
+    about = "Websocket server for MPC key generation and signing",
+    version
 )]
 struct Options {
     /// Bind to host:port.
-    #[structopt(short, long)]
+    #[clap(short, long)]
     bind: Option<String>,
     /// Path to static files to serve
-    #[structopt(parse(from_os_str))]
+    #[clap(value_parser = ValueParser::os_string())]
     files: Option<PathBuf>,
 }
 
@@ -35,7 +36,8 @@ async fn main() -> Result<()> {
     } else {
         let mut static_files = std::env::current_dir()?;
         static_files.pop();
-        static_files.push("demo");
+        static_files.push("snap");
+        static_files.push("dapp");
         static_files.push("dist");
         static_files
     };

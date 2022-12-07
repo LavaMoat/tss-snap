@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { Box, Chip, Stack, Typography, CircularProgress } from "@mui/material";
 
-import { SessionKind, GroupInfo, Session } from "@metamask/mpc-client";
+import { SessionKind, GroupInfo, Session } from "@lavamoat/mpc-client";
 
 import { WebSocketContext } from "../../../websocket-provider";
 import { joinGroupSession, loadPartyNumber } from "../../../group-session";
@@ -11,12 +11,13 @@ import { setSnackbar } from "../../../store/snackbars";
 import { keysSelector, KeyShareGroup } from "../../../store/keys";
 
 import { setGroup, setSession, setSignCandidate } from "../../../store/session";
-import { SignValue, SignMessage, SigningType } from "../../../types";
+import { SignValue, SignMessage, SignTransaction, SigningType } from "../../../types";
 
 import NotFound from "../../../not-found";
 import KeysLoader from "../../loader";
 import Approval from "../approval";
 import SignMessageView from "../message-view";
+import SignTransactionView from "../transaction-view";
 import ChooseKeyShare from "../choose-key-share";
 import PublicAddress from "../../../components/public-address";
 
@@ -87,7 +88,6 @@ function SessionConnect(props: SessionConnectProps) {
           })
         );
       }
-
     }, 1000);
   }, []);
 
@@ -100,7 +100,10 @@ function SessionConnect(props: SessionConnectProps) {
           digest={value.digest}
         />
       ) : (
-        <p>TODO: show transaction preview</p>
+        <SignTransactionView
+          transaction={(value as SignTransaction).transaction}
+          digest={value.digest}
+        />
       );
   }
 
@@ -111,7 +114,7 @@ function SessionConnect(props: SessionConnectProps) {
           {label}
         </Typography>
         <Stack direction="row" alignItems="center">
-          <PublicAddress address={address} />
+          <PublicAddress address={address} abbreviate />
           <Box sx={{ flexGrow: 1 }} />
           <Chip
             label={`Using key share for party #${selectedParty || items[0]}`}

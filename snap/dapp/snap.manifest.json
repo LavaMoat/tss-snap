@@ -4,7 +4,7 @@
   "proposedName": "Threshold Signatures",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LavaMoat/demo-gg20-wasm.git"
+    "url": "https://github.com/LavaMoat/tss-snap"
   },
   "source": {
     "shasum": "DEbKtISHHlgVGyErpdr5pRndiUtSZ7D9clExd/RcacA=",
@@ -12,7 +12,7 @@
       "npm": {
         "filePath": "bundle.js",
         "iconPath": "images/icon.svg",
-        "packageName": "@metamask/mpc-snap",
+        "packageName": "@lavamoat/tss-snap",
         "registry": "https://registry.npmjs.org/"
       }
     }

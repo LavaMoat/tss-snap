@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import init from "@metamask/mpc-snap-wasm";
+import init from "@lavamoat/mpc-snap-wasm";
 
 import { Routes, Route } from "react-router-dom";
 import detectEthereumProvider from "@metamask/detect-provider";
@@ -19,6 +19,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import ScienceIcon from "@mui/icons-material/Science";
 
 import WebSocketProvider from "./websocket-provider";
+import ChainProvider from "./chain-provider";
 import WorkerProvider, { webWorker } from "./worker";
 
 import Home from "./home";
@@ -146,10 +147,12 @@ export default function App() {
         <div style={{ display: "flex", flexDirection: "column" }}>
           <WebSocketProvider>
             <WorkerProvider>
-              <MainAppBar />
-              <Content />
-              <Dialogs />
-              <Snackbars />
+              <ChainProvider>
+                <MainAppBar />
+                <Content />
+                <Dialogs />
+                <Snackbars />
+              </ChainProvider>
             </WorkerProvider>
           </WebSocketProvider>
         </div>

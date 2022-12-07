@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { exportKeyStore } from "@metamask/mpc-snap-wasm";
+import { exportKeyStore } from "@lavamoat/mpc-snap-wasm";
 
 import {
   dialogsSelector,
@@ -10,25 +10,30 @@ import {
   CONFIRM_DELETE_KEY_SHARE,
   EXPORT_KEY_STORE,
   CONFIRM_DELETE_MESSAGE_PROOF,
+  CONFIRM_DELETE_TX_RECEIPT,
 } from "../store/dialogs";
 
+import { AppDispatch } from '../store';
 import { deleteKey, findKeyShare } from "../store/keys";
 import { deleteMessageProof } from "../store/proofs";
+import { deleteTransactionReceipt } from "../store/receipts";
 import { setSnackbar } from "../store/snackbars";
 import { encode, download } from "../utils";
-import { SignProof } from "../types";
+import { SignProof, SignTxReceipt } from "../types";
 
 import ConfirmDeleteKeyShareDialog from "./confirm-delete-key-share";
 import ConfirmDeleteMessageProofDialog from "./confirm-delete-message-proof";
+import ConfirmDeleteTxReceiptDialog from "./confirm-delete-tx-receipt";
 import ExportKeyStoreDialog from "./export-keystore";
 
 export type DeleteKeyShare = [string, number, number];
 export type ExportKeyStore = [string, number, number];
 export type DeleteMessageProof = [string, SignProof];
+export type DeleteTxReceipt = [string, SignTxReceipt];
 
 export default function Dialogs() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const { dialogs } = useSelector(dialogsSelector);
 
   const onDeleteKeyShare = async (result: DeleteKeyShare) => {
@@ -82,7 +87,20 @@ export default function Dialogs() {
       })
     );
     cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF);
-  }
+  };
+
+  const onDeleteTxReceipt = async (result: DeleteTxReceipt) => {
+    const [address, receipt] = result;
+    await dispatch(deleteTransactionReceipt(
+      [address, receipt.value.transactionHash]));
+    dispatch(
+      setSnackbar({
+        message: "Transaction receipt deleted",
+        severity: "success",
+      })
+    );
+    cancelDialog(CONFIRM_DELETE_TX_RECEIPT);
+  };
 
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
@@ -108,9 +126,19 @@ export default function Dialogs() {
         open={dialogs[CONFIRM_DELETE_MESSAGE_PROOF][0] || false}
         handleCancel={() => cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF)}
         handleOk={onDeleteMessageProof}
-        request={(dialogs[CONFIRM_DELETE_MESSAGE_PROOF][1] || []) as DeleteMessageProof}
+        request={
+          (dialogs[CONFIRM_DELETE_MESSAGE_PROOF][1] || []) as DeleteMessageProof
+        }
       />
 
+      <ConfirmDeleteTxReceiptDialog
+        open={dialogs[CONFIRM_DELETE_TX_RECEIPT][0] || false}
+        handleCancel={() => cancelDialog(CONFIRM_DELETE_TX_RECEIPT)}
+        handleOk={onDeleteTxReceipt}
+        request={
+          (dialogs[CONFIRM_DELETE_TX_RECEIPT][1] || []) as DeleteTxReceipt
+        }
+      />
     </>
   );
 }

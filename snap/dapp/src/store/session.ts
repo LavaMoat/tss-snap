@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { GroupInfo, Session } from "@metamask/mpc-client";
+import { GroupInfo, Session } from "@lavamoat/mpc-client";
 import { Transport, SigningType, SignProof, SignValue } from "../types";
 
 export type SignCandidate = {

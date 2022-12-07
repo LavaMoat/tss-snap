@@ -1,6 +1,6 @@
+import { Message, SessionKind } from '..';
 import { WebSocketClient } from '../clients/websocket';
 import { StreamTransport, SinkTransport } from '../round-based';
-import { Message, SessionKind } from '..';
 
 // Stream for outgoing messages that send JSON-RPC
 // via a websocket client.
