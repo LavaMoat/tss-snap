@@ -32,17 +32,17 @@ RUN wasm-pack --version
 COPY packages/wasm wasm
 RUN rustup override set nightly
 RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
-RUN cd wasm && wasm-pack build --target web --scope lavamoat;
+RUN cd wasm && wasm-pack build --target web --scope lavamoat
 
 # CLIENT
 FROM node:14 AS client
 WORKDIR /usr/app
-COPY demo demo
+COPY snap snap
 COPY --from=builder /usr/app/wasm /usr/app/wasm
-RUN cd demo && yarn install && yarn build
+RUN cd snap/dapp && yarn install && yarn build
 
 FROM debian:bullseye AS runner
 WORKDIR /usr/app
 COPY --from=builder /usr/bin/mpc-websocket /usr/bin/mpc-websocket
-COPY --from=client /usr/app/demo/dist /usr/app/demo/dist
-CMD mpc-websocket --bind 0.0.0.0:8080 demo/dist
+COPY --from=client /usr/app/snap/dapp/dist /usr/app/dist
+CMD mpc-websocket --bind 0.0.0.0:8080 dist
