@@ -718,7 +718,7 @@ dependencies = [
 
 [[package]]
 name = "mpc-ecdsa-wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "console_error_panic_hook",
  "curv-kzen",

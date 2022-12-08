@@ -1,6 +1,6 @@
 [package]
 name = "mpc-ecdsa-wasm"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2018"
 license = "MIT"
 description = "Webassembly bindings to multi-party-ecdsa"

@@ -35,7 +35,7 @@ RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
 RUN cd wasm && wasm-pack build --target web --scope lavamoat
 
 # CLIENT
-FROM node:14 AS client
+FROM node:16-bullseye AS client
 WORKDIR /usr/app
 COPY snap snap
 COPY --from=builder /usr/app/wasm /usr/app/wasm
