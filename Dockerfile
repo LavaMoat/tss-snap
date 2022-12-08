@@ -24,7 +24,7 @@ COPY cli cli
 RUN rustup default stable
 RUN cargo install --path ./cli
 #RUN cargo install --version 0.10.2 wasm-pack
-#RUN mv ~/.cargo/bin/* /usr/bin
+RUN mv ~/.cargo/bin/* /usr/bin
 RUN mpc-websocket --version
 #RUN wasm-pack --version
 

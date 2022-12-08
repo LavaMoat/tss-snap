@@ -1,4 +1,4 @@
-use clap::{builder::ValueParser, Parser};
+use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -16,7 +16,6 @@ struct Options {
     #[clap(short, long)]
     bind: Option<String>,
     /// Path to static files to serve
-    #[clap(value_parser = ValueParser::os_string())]
     files: Option<PathBuf>,
 }
 
