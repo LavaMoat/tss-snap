@@ -1,6 +1,6 @@
 {
   "name": "@lavamoat/mpc-client",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Threshold signatures multi-party compute client library",
   "module": "dist/index.esm.js",
   "main": "dist/index.js",
@@ -15,7 +15,7 @@
     "types": "tsc --project tsconfig.json"
   },
   "dependencies": {
-    "@lavamoat/mpc-ecdsa-wasm": "^0.2",
+    "@lavamoat/mpc-ecdsa-wasm": "^0.2.1",
     "comlink": "^4.3.1",
     "events": "^3.3.0"
   },

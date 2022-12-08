@@ -19,7 +19,7 @@ COPY --from=rust /usr/local/cargo /usr/local/cargo
 ENV PATH=/usr/local/cargo/bin:$PATH
 
 # SERVER
-COPY getrandom getrandom
+#COPY getrandom getrandom
 COPY cli cli
 RUN rustup default stable
 RUN cargo install --path ./cli
@@ -29,20 +29,20 @@ RUN mpc-websocket --version
 RUN wasm-pack --version
 
 # WASM
-COPY packages/wasm wasm
+COPY packages/wasm packages/wasm
 RUN rustup override set nightly
 RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
-RUN cd wasm && wasm-pack build --target web --scope lavamoat;
+RUN cd packages/wasm && wasm-pack build --target web --scope lavamoat
 
 # CLIENT
-FROM node:14 AS client
+FROM node:16-bullseye AS client
 WORKDIR /usr/app
-COPY demo demo
-COPY --from=builder /usr/app/wasm /usr/app/wasm
-RUN cd demo && yarn install && yarn build
+COPY snap snap
+COPY --from=builder /usr/app/packages/wasm /usr/app/packages/wasm
+RUN cd snap/dapp && yarn install && yarn build
 
 FROM debian:bullseye AS runner
 WORKDIR /usr/app
 COPY --from=builder /usr/bin/mpc-websocket /usr/bin/mpc-websocket
-COPY --from=client /usr/app/demo/dist /usr/app/demo/dist
-CMD mpc-websocket --bind 0.0.0.0:8080 demo/dist
+COPY --from=client /usr/app/snap/dapp/dist /usr/app/dist
+CMD mpc-websocket --bind 0.0.0.0:8080 dist
