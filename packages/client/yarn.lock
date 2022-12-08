@@ -55,10 +55,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@lavamoat/mpc-ecdsa-wasm@^0.2":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@lavamoat/mpc-ecdsa-wasm/-/mpc-ecdsa-wasm-0.2.0.tgz#d75b8dd24abb149c1863aa563491c125b03f2cfd"
-  integrity sha512-DNPMe+mwDWnZuqwQ8Y0lrLgG9Bdw+DK+JBBIVjW6frVnvIoGnBfzaTlvPU79g3PhIxPn9gjmAwuIdomXZfrL+A==
+"@lavamoat/mpc-ecdsa-wasm@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@lavamoat/mpc-ecdsa-wasm/-/mpc-ecdsa-wasm-0.2.1.tgz#9b62b672468674dc2443979d70c42343bbafbdef"
+  integrity sha512-bYbYsS0WX/c68CKOysTivnni/C96ZiZHY/DDVt8RuosJIc75VVWU+tQb98iOBjDqgTRWfSC1RzOH3wTaA4HQKQ==
 
 "@metamask/eslint-config-typescript@^11.0.0":
   version "11.0.0"
