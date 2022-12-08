@@ -23,22 +23,22 @@ ENV PATH=/usr/local/cargo/bin:$PATH
 COPY cli cli
 RUN rustup default stable
 RUN cargo install --path ./cli
-#RUN cargo install --version 0.10.2 wasm-pack
+RUN cargo install --version 0.10.2 wasm-pack
 RUN mv ~/.cargo/bin/* /usr/bin
 RUN mpc-websocket --version
-#RUN wasm-pack --version
+RUN wasm-pack --version
 
 # WASM
-#COPY packages/wasm wasm
-#RUN rustup override set nightly
-#RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
-#RUN cd wasm && wasm-pack build --target web --scope lavamoat
+COPY packages/wasm packages/wasm
+RUN rustup override set nightly
+RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
+RUN cd packages/wasm && wasm-pack build --target web --scope lavamoat
 
 # CLIENT
 FROM node:16-bullseye AS client
 WORKDIR /usr/app
 COPY snap snap
-#COPY --from=builder /usr/app/wasm /usr/app/wasm
+COPY --from=builder /usr/app/packages/wasm /usr/app/packages/wasm
 RUN cd snap/dapp && yarn install && yarn build
 
 FROM debian:bullseye AS runner

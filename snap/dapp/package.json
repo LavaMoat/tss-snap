@@ -2,7 +2,6 @@
   "name": "@lavamoat/tss-snap",
   "version": "0.1.0",
   "description": "Snap for threshold signatures.",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/LavaMoat/tss-snap"
@@ -17,7 +16,7 @@
     "clean": "rm -rf dist .parcel-cache && mkdir dist",
     "build:snap": "yarn clean && mm-snap build -s snap.js -d . && yarn build:assets",
     "build:assets": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
-    "build": "yarn build:snap && parcel build src/index.html",
+    "build": "yarn build:snap && parcel build src/index.html --no-optimize --no-scope-hoist",
     "types": "tsc --noEmit --project tsconfig.json",
     "fmt": "prettier --write . --no-color",
     "lint": "eslint src",
@@ -34,7 +33,7 @@
     "eslint": "^8.28.0",
     "eslint-plugin-react": "^7.31.11",
     "ganache": "^7.5.0",
-    "parcel": "^2.8.0",
+    "parcel": "2.8.0",
     "prettier": "^2.8.0",
     "typescript": "^4.9.3"
   },
@@ -42,7 +41,7 @@
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@lavamoat/mpc-client": "^1.0.2",
-    "@lavamoat/mpc-ecdsa-wasm": "^0.2.1",
+    "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
     "@lavamoat/mpc-snap-wasm": "^0.1",
     "@metamask/detect-provider": "^2.0.0",
     "@mui/icons-material": "^5.10.15",
