@@ -1,2 +1,3 @@
 bundle.js
 .env
+.env.production
