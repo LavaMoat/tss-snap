@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "start:webpack": "webpack-dev-server --no-client-overlay",
-    "build:webpack": "webpack --config webpack.config.js --node-env production",
+    "build:webpack": "yarn build:snap && yarn build:assets && webpack --config webpack.config.js --node-env production",
     "clean": "rm -rf dist .parcel-cache && mkdir dist",
     "build:snap": "yarn clean && mm-snap build -s snap.js -d . && yarn build:assets",
     "build:assets": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",

@@ -9,7 +9,8 @@ type WebSocketProviderProps = PropsWithChildren<Record<string, unknown>>;
 // WARN: component render function otherwise multiple websockets
 // WARN: may be created.
 const websocket = new WebSocketClient();
-websocket.connect(/*process && process.env && process.env.WS_URL ||*/ `ws://localhost:3030/mpc`);
+// NOTE: must use backticks as webpack uses variable replacement
+websocket.connect(process.env.WS_URL || `ws://localhost:3030/mpc`);
 
 const WebSocketProvider = (props: WebSocketProviderProps) => {
   return (

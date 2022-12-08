@@ -1,5 +1,6 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require("path");
+const webpack = require("webpack");
 
 const isProduction = process.env.NODE_ENV === "production";
 const url = isProduction
@@ -33,7 +34,12 @@ module.exports = {
   },
   devtool: false,
   mode: process.env.NODE_ENV || "development",
-  plugins: [new CopyWebpackPlugin(["index.html", "favicon.png"])],
+  plugins: [
+    new CopyWebpackPlugin(["index.html", "favicon.png"]),
+    new webpack.DefinePlugin({
+      'process.env.WS_URL': JSON.stringify(""),
+    }),
+  ],
   devServer: {
     headers: {
       "Access-Control-Allow-Origin": "*",
