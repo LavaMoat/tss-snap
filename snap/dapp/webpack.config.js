@@ -6,6 +6,8 @@ const dotenv = require("dotenv");
 const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env'
 dotenv.config({ path: envFile })
 
+console.log("SNAP_ID", process.env.SNAP_ID);
+
 const isProduction = process.env.NODE_ENV === "production";
 const url = isProduction
   ? "${document.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/mpc"
