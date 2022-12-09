@@ -36,6 +36,12 @@ RUN cd packages/wasm && wasm-pack build --target web --scope lavamoat
 # CLIENT
 FROM node:16-bullseye AS client
 WORKDIR /usr/app
+ARG SNAP_ID=npm:@lavamoat/tss-snap
+ARG WS_URL=/mpc
+ARG INFURA_API_KEY
+ENV SNAP_ID=$SNAP_ID
+ENV WS_URL=$WS_URL
+ENV INFURA_API_KEY=$INFURA_API_KEY
 COPY snap snap
 COPY --from=builder /usr/app/packages/wasm /usr/app/packages/wasm
 RUN cd snap/dapp && yarn install && yarn build:webpack
