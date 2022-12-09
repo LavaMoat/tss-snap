@@ -1,0 +1,9 @@
+# fly.toml file generated for tss-snap on 2022-12-08T17:29:32+08:00
+
+app = "tss-snap"
+
+#[build]
+  #image = "metamask/tss-snap:latest"
+
+[[services]]
+  internal_port = 8080

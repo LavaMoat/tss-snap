@@ -19,7 +19,6 @@ COPY --from=rust /usr/local/cargo /usr/local/cargo
 ENV PATH=/usr/local/cargo/bin:$PATH
 
 # SERVER
-#COPY getrandom getrandom
 COPY cli cli
 RUN rustup default stable
 RUN cargo install --path ./cli
@@ -31,7 +30,7 @@ RUN wasm-pack --version
 # WASM
 COPY packages/wasm packages/wasm
 RUN rustup override set nightly
-RUN rustup component add rust-src --toolchain nightly-aarch64-unknown-linux-gnu
+RUN rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
 RUN cd packages/wasm && wasm-pack build --target web --scope lavamoat
 
 # CLIENT
@@ -39,7 +38,7 @@ FROM node:16-bullseye AS client
 WORKDIR /usr/app
 COPY snap snap
 COPY --from=builder /usr/app/packages/wasm /usr/app/packages/wasm
-RUN cd snap/dapp && yarn install && yarn build
+RUN cd snap/dapp && yarn install && yarn build:webpack
 
 FROM debian:bullseye AS runner
 WORKDIR /usr/app

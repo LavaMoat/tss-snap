@@ -1,0 +1,11 @@
+name: tss-snap
+services:
+- dockerfile_path: Dockerfile
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: LavaMoat/tss-snap
+  name: tss-snap
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: basic-xxs
