@@ -12,8 +12,9 @@ export default function Connect() {
           Connect
         </Typography>
         <Alert severity="warning">
-          This is BETA software, you use it at your own risk; at the very least
-          avoid Mainnet for your transactions.
+          This is BETA software, you use it at your own risk.
+
+          It is strongly recommended that you export your key shares to password protected keystores and back them up to multiple storage devices.
         </Alert>
         <SnapConnect redirect="/keys" />
       </Stack>
