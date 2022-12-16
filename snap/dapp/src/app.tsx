@@ -6,6 +6,7 @@ import detectEthereumProvider from "@metamask/detect-provider";
 
 import {
   AppBar,
+  IconButton,
   Chip,
   Link,
   Stack,
@@ -13,6 +14,8 @@ import {
   Typography,
   CssBaseline,
 } from "@mui/material";
+
+import GithubIcon from '@mui/icons-material/Github';
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -48,7 +51,14 @@ function MainAppBar() {
           </Stack>
 
           <Box sx={{ flexGrow: 1 }} />
-          <Chip icon={<ScienceIcon />} label="BETA" color="secondary" />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Link href="https://github.com/LavaMoat/tss-snap">
+              <IconButton aria-label="source code">
+                <GithubIcon />
+              </IconButton>
+            </Link>
+            <Chip icon={<ScienceIcon />} label="BETA" color="secondary" />
+          </Stack>
         </Stack>
       </AppBar>
     </Box>
