@@ -26,6 +26,7 @@ import ChainProvider from "./chain-provider";
 import WorkerProvider, { webWorker } from "./worker";
 
 import Home from "./home";
+import About from "./about";
 import Dialogs from "./dialogs";
 import Snackbars from "./snackbars";
 import { Keys, Create, Join, ShowKey, Import } from "./keys";
@@ -70,6 +71,7 @@ function Content() {
     <Box padding={5}>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
         <Route path="/keys/create" element={<Create />} />
         <Route path="/keys/import" element={<Import />} />
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />
