@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Stack, Typography } from "@mui/material";
+import { Link, Stack, Typography } from "@mui/material";
 
 export default function About() {
   return (
@@ -14,7 +14,7 @@ export default function About() {
         </Typography>
 
         <Typography variant="body1" component="div" gutterBottom>
-          The private key is shared between the participants using a technique called multi-party computation (MPC) which ensures that the entire private key is never exposed to any participant; the process for generating key shares is called distributed key generation (DKG).
+          The private key is shared between the participants using a technique called <Link href="https://en.wikipedia.org/wiki/Secure_multi-party_computation">multi-party computation</Link> (MPC) which ensures that the entire private key is never exposed to any participant; the process for generating key shares is called <Link href="https://en.wikipedia.org/wiki/Distributed_key_generation">distributed key generation</Link> (DKG).
         </Typography>
 
         <Typography variant="body1" component="div" gutterBottom>
@@ -22,7 +22,7 @@ export default function About() {
         </Typography>
 
         <Typography variant="body1" component="div" gutterBottom>
-          Unlike other techniques such as Shamirs Secret Sharing (SSS) the entire private key is never revealed to any single participant and is therefore more secure as it does not have the <em>trusted dealer</em> problem.
+          Unlike other techniques such as <Link href="https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing">Shamirs Secret Sharing</Link> (SSS) the entire private key is never revealed to any single participant and is therefore more secure as it does not have the <em>trusted dealer</em> problem.
         </Typography>
 
         <Typography variant="h4" component="div" gutterBottom>
