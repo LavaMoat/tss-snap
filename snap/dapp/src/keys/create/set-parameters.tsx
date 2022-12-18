@@ -63,7 +63,13 @@ export default function SetParameters(props: StepProps) {
         { parties, threshold: threshold - 1 },
       ];
 
+      console.log(formData);
+
       try {
+
+
+        console.log("Before create group session...");
+
         // Create the remote server group and session and store
         // the information in the redux state before proceeding to
         // the next view
@@ -73,6 +79,9 @@ export default function SetParameters(props: StepProps) {
           websocket,
           dispatch
         );
+
+        console.log("After create group session...");
+
         next();
       } catch (e) {
         console.error(e);
