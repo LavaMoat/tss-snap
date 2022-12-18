@@ -15,7 +15,7 @@ import {
   CssBaseline,
 } from "@mui/material";
 
-import GithubIcon from '@mui/icons-material/Github';
+import GithubIcon from '@mui/icons-material/GitHub';
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
