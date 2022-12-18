@@ -10,8 +10,6 @@ type WebSocketProviderProps = PropsWithChildren<Record<string, unknown>>;
 // WARN: may be created.
 const websocket = new WebSocketClient();
 
-console.log(process.env.WS_URL);
-
 // NOTE: must use backticks as webpack uses variable replacement
 websocket.connect(process.env.WS_URL || `ws://localhost:3030/mpc`);
 
