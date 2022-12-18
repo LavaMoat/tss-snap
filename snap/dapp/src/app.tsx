@@ -6,6 +6,7 @@ import detectEthereumProvider from "@metamask/detect-provider";
 
 import {
   AppBar,
+  IconButton,
   Chip,
   Link,
   Stack,
@@ -13,6 +14,8 @@ import {
   Typography,
   CssBaseline,
 } from "@mui/material";
+
+import GithubIcon from '@mui/icons-material/Github';
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -23,6 +26,7 @@ import ChainProvider from "./chain-provider";
 import WorkerProvider, { webWorker } from "./worker";
 
 import Home from "./home";
+import About from "./about";
 import Dialogs from "./dialogs";
 import Snackbars from "./snackbars";
 import { Keys, Create, Join, ShowKey, Import } from "./keys";
@@ -48,7 +52,14 @@ function MainAppBar() {
           </Stack>
 
           <Box sx={{ flexGrow: 1 }} />
-          <Chip icon={<ScienceIcon />} label="BETA" color="secondary" />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Link href="https://github.com/LavaMoat/tss-snap">
+              <IconButton aria-label="source code">
+                <GithubIcon />
+              </IconButton>
+            </Link>
+            <Chip icon={<ScienceIcon />} label="BETA" color="secondary" />
+          </Stack>
         </Stack>
       </AppBar>
     </Box>
@@ -60,6 +71,7 @@ function Content() {
     <Box padding={5}>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
         <Route path="/keys/create" element={<Create />} />
         <Route path="/keys/import" element={<Import />} />
         <Route path="/keys/join/:groupId/:sessionId" element={<Join />} />

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Alert, Stack, Typography } from "@mui/material";
+import { Alert, Link, Stack, Typography } from "@mui/material";
 
 import SnapConnect from "./snap-connect";
 
@@ -10,6 +10,16 @@ export default function Connect() {
       <Stack spacing={2}>
         <Typography variant="h3" component="div" gutterBottom>
           Connect
+        </Typography>
+        <Typography variant="body1" component="div" gutterBottom>
+          See the about page to learn more&nbsp;
+          <Link href="#/about">
+          about threshold signatures
+          </Link>
+          &nbsp;and get the&nbsp;
+          <Link href="https://github.com/LavaMoat/tss-snap">
+          source code on github.
+          </Link>
         </Typography>
         <Alert severity="warning">
           This is BETA software, you use it at your own risk.
