@@ -25,7 +25,7 @@
     "start": "yarn build:snap && parcel src/index.html --port 7070"
   },
   "devDependencies": {
-    "@metamask/snaps-cli": "0.25.0",
+    "@metamask/snaps-cli": "0.27.1",
     "@metamask/types": "^1.1.0",
     "@types/node": "^18.11.9",
     "@types/react": "^18.0.25",
