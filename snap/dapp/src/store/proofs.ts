@@ -45,6 +45,7 @@ export const deleteMessageProof = createAsyncThunk(
 
     const messageProofs = appState.messageProofs[address];
     if (messageProofs) {
+
       // Compare as strings as they are Uint8Arrays and we
       // need to check the values are equal
       const hash = toHexString(digest);
@@ -54,6 +55,7 @@ export const deleteMessageProof = createAsyncThunk(
         }
       );
     }
+
     await saveStateData(appState);
     return loadProofsData();
   }
