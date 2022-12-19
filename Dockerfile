@@ -37,7 +37,7 @@ RUN cd packages/wasm && wasm-pack build --target web --scope lavamoat
 FROM node:16-bullseye AS client
 WORKDIR /usr/app
 ARG SNAP_ID=npm:@lavamoat/tss-snap
-ARG WS_URL=/mpc
+ARG WS_URL=wss://tss.ac/mpc
 ARG INFURA_API_KEY
 ENV SNAP_ID=$SNAP_ID
 ENV WS_URL=$WS_URL
