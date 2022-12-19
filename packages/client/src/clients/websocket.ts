@@ -52,7 +52,9 @@ export class WebSocketClient extends EventEmitter {
   }
 
   connect(url: string) {
-    if (this.websocket) {
+    // Only close if connecting or open
+    if (this.websocket
+      && (this.websocket.readyState == 0 || this.websocket.readyState == 1)) {
       this.websocket.close();
     }
 
@@ -103,6 +105,8 @@ export class WebSocketClient extends EventEmitter {
       this.websocket.send(JSON.stringify(message));
     } else {
       this.queue.push(message);
+      // Try to reconnect
+      this.connect(this.websocket.url);
     }
   }
 
