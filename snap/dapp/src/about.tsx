@@ -51,6 +51,18 @@ export default function About() {
         <Typography variant="body1" component="div" gutterBottom>
           These scenarios using multiple users to approve transactions or messages can be achieved using smart contracts and where logic is required a smart contract will be the appropriate choice however if there is no logic then using a threshold signature scheme removes the upfront burden of programming a smart contract and will be cheaper as it does not incur the gas fees of smart contract calls.
         </Typography>
+
+        <Typography variant="h4" component="div" gutterBottom>
+          Notes
+        </Typography>
+
+        <Typography variant="body1" component="div" gutterBottom>
+          We use the <Link href="https://eprint.iacr.org/2020/540.pdf">GG20 protocol (pdf)</Link> exposed by the <Link href="https://github.com/ZenGo-X/multi-party-ecdsa">multi-party-ecdsa</Link> library compiled to Webassembly. Special thanks to <Link href="https://github.com/survived">@survived</Link> for the assistance updating the library to support Webassembly.
+        </Typography>
+
+        <Typography variant="body1" component="div" gutterBottom>
+          Communication between participants uses a websocket transport using an <Link href="https://docs.rs/mpc-websocket/latest/mpc_websocket/">open-source library</Link> we created. The websocket server code is licensed as MIT or Apache-2.0. This <Link href="https://github.com/LavaMoat/tss-snap/tree/main/snap/dapp">snap</Link>, <Link href="https://github.com/LavaMoat/tss-snap/tree/main/packages/client">javascript client</Link> and <Link href="https://github.com/LavaMoat/tss-snap/tree/main/packages/wasm">webassembly bindings</Link> are licensed as GPLv3.
+        </Typography>
       </Stack>
     </>
   );
