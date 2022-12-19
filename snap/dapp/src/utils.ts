@@ -28,12 +28,14 @@ export const abbreviateAddress = (address: string): string => {
   return `${start}...${end}`;
 };
 
-export function fromHexString(hex: string) {
+export function fromHexString(hex: string): Uint8Array {
   return new Uint8Array(hex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 }
 
-export function toHexString(bytes: Uint8Array) {
-  return bytes.reduce(
+export function toHexString(bytes: Uint8Array): string {
+  // NOTE: calling reduce directly on Uint8Array appears to be buggy
+  // NOTE: sometimes the function never returns, so we need the Array.from()
+  return Array.from(bytes).reduce(
     (str: string, byte: number) => str + byte.toString(16).padStart(2, "0"),
     ""
   );
