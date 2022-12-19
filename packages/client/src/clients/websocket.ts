@@ -51,10 +51,14 @@ export class WebSocketClient extends EventEmitter {
     this.queue = [];
   }
 
-  connect(url: string) {
-    // Only close if connecting or open
-    if (this.websocket
-      && (this.websocket.readyState == 0 || this.websocket.readyState == 1)) {
+  connect(url: string): boolean {
+    // In the process of connecting so the caller needs to wait and retry later
+    if (this.websocket && this.websocket.readyState === 0) {
+      return false;
+    }
+
+    // If the connection is open let's close it first
+    if (this.websocket && this.websocket.readyState === 1) {
       this.websocket.close();
     }
 
@@ -97,6 +101,8 @@ export class WebSocketClient extends EventEmitter {
         }
       }
     };
+
+    return true;
   }
 
   notify(message: RpcRequest): void {
