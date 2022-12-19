@@ -39,7 +39,12 @@ module.exports = {
   devtool: false,
   mode: process.env.NODE_ENV || "development",
   plugins: [
-    new CopyWebpackPlugin(["index.html", "favicon.png"]),
+    new CopyWebpackPlugin({
+      patterns: [
+        "index.html",
+        "favicon.png"
+      ]
+    }),
     new webpack.DefinePlugin({
       'process.env.WS_URL': JSON.stringify(""),
       'process.env.INFURA_API_KEY': JSON.stringify(process.env.INFURA_API_KEY),
