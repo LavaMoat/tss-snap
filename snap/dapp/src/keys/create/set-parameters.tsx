@@ -25,7 +25,12 @@ export default function SetParameters(props: StepProps) {
 
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setName(e.target.value);
-  const onPartiesChange = (value: number) => setParties(value);
+  const onPartiesChange = (value: number) => {
+    if (threshold > value) {
+      setThreshold(value);
+    }
+    setParties(value)
+  }
   const onThresholdChange = (value: number) => setThreshold(value);
 
   const marks = Array(maxParties)
@@ -87,6 +92,9 @@ export default function SetParameters(props: StepProps) {
       }
     }
   };
+
+    console.log('threshold', threshold);
+    console.log('parties', parties);
 
   return (
     <form id="parameters-form" onSubmit={onSubmit} noValidate>

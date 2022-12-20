@@ -12,14 +12,15 @@ export default function Connect() {
           Connect
         </Typography>
         <Typography variant="body1" component="div" gutterBottom>
-          See the about page to learn more&nbsp;
+          Read more&nbsp;
           <Link href="#/about">
           about threshold signatures
           </Link>
-          &nbsp;and get the&nbsp;
+          &nbsp;or get the&nbsp;
           <Link href="https://github.com/LavaMoat/tss-snap">
-          source code on github.
+          source code
           </Link>
+          &nbsp;on github.
         </Typography>
         <Alert severity="warning">
           This is BETA software, you use it at your own risk.
