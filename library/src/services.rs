@@ -220,7 +220,7 @@ pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 type GroupCreateParams = (String, Parameters);
 type SessionCreateParams = (Uuid, SessionKind, Option<Value>);
 type SessionJoinParams = (Uuid, Uuid, SessionKind);
-type SessionSignupParams = (Uuid, Uuid, SessionKind);
+type SessionSignupParams = (Uuid, Uuid, Uuid, SessionKind);
 type SessionLoadParams = (Uuid, Uuid, SessionKind, u16);
 type SessionMessageParams = (Uuid, Uuid, SessionKind, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
@@ -370,7 +370,7 @@ impl Service for ServiceHandler {
             SESSION_SIGNUP => {
                 let (conn_id, state, notification) = ctx;
                 let params: SessionSignupParams = req.deserialize()?;
-                let (group_id, session_id, kind) = params;
+                let (group_id, session_id, _invite_id, kind) = params;
 
                 let mut writer = state.write().await;
                 let group =
