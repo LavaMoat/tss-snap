@@ -1,6 +1,6 @@
 {
   "name": "@lavamoat/tss-snap",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Snap for threshold signatures.",
   "repository": {
     "type": "git",
