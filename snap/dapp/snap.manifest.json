@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Snap using threshold signatures to sign messages and transactions.",
   "proposedName": "Threshold Signatures",
   "repository": {
