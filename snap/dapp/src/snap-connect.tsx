@@ -23,12 +23,8 @@ export default function SnapConnect(props: SnapConnectProps) {
 
     try {
       await ethereum.request({
-        method: "wallet_enable",
-        params: [
-          {
-            wallet_snap: { [snapId]: {} },
-          },
-        ],
+        method: "wallet_requestSnaps",
+        params: { [snapId]: {} },
       });
 
       if (typeof redirect === "string") {

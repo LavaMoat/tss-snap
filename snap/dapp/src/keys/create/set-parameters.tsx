@@ -93,9 +93,6 @@ export default function SetParameters(props: StepProps) {
     }
   };
 
-    console.log('threshold', threshold);
-    console.log('parties', parties);
-
   return (
     <form id="parameters-form" onSubmit={onSubmit} noValidate>
       <Stack padding={2} spacing={2} marginTop={2}>

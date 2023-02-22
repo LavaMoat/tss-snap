@@ -7,7 +7,7 @@
     "url": "https://github.com/LavaMoat/tss-snap"
   },
   "source": {
-    "shasum": "DEbKtISHHlgVGyErpdr5pRndiUtSZ7D9clExd/RcacA=",
+    "shasum": "cXhvie+xy84HqQFW+1dae44e0EV/kr8PUzt+6u+09eE=",
     "location": {
       "npm": {
         "filePath": "bundle.js",
@@ -18,7 +18,11 @@
     }
   },
   "initialPermissions": {
-    "snap_manageState": {}
+    "snap_manageState": {},
+    "endowment:rpc": {
+      "dapps": true,
+      "snaps": false
+    }
   },
   "manifestVersion": "0.1"
 }
