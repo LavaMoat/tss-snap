@@ -25,7 +25,7 @@ export default function TransactionForm(props: TransactionFormProps) {
   const [amount, setAmount] = useState("");
   const [amountError, setAmountError] = useState(false);
 
-  const [tip, setTip] = useState("22000000");
+  const [tip, setTip] = useState("220000000");
   const [tipError, setTipError] = useState(false);
 
   const [pendingBlock, setPendingBlock] = useState(null);
