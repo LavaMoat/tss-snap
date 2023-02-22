@@ -18,7 +18,11 @@
     }
   },
   "initialPermissions": {
-    "snap_manageState": {}
+    "snap_manageState": {},
+    "endowment:rpc": {
+      "dapps": true,
+      "snaps": false
+    }
   },
   "manifestVersion": "0.1"
 }
