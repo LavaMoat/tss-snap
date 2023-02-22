@@ -46,7 +46,7 @@ function MakeTransaction(props: MakeTransactionProps) {
         digest={digest} />
       <Button
         variant="contained"
-        onClick={sendTransaction}>Make Transaction</Button>
+        onClick={sendTransaction}>Submit Transaction</Button>
     </>;
   } else {
     return <>
