@@ -3,17 +3,17 @@ export const onRpcRequest = ({ origin, request }) => {
 
   switch (request.method) {
     case "getState":
-      return wallet.request({
+      return snap.request({
         method: "snap_manageState",
         params: {operation: "get"},
       });
     case "updateState":
-      return wallet.request({
+      return snap.request({
         method: "snap_manageState",
         params: {operation: "update", newState: request.params},
       });
     case "clearState":
-      return wallet.request({
+      return snap.request({
         method: "snap_manageState",
         params: {operation: "clear"},
       });
