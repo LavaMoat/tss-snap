@@ -1,5 +1,4 @@
 import init, {
-  //initThreadPool,
   KeyGenerator,
   Signer,
 } from "@lavamoat/mpc-ecdsa-wasm";
@@ -21,8 +20,6 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
 console.log("Worker is initializing...");
 void (async function () {
   await init();
-  //await initThreadPool(navigator.hardwareConcurrency);
-  //await initThreadPool(1);
   self.postMessage({ ready: true });
 })();
 
