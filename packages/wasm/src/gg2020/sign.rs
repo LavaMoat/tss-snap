@@ -77,9 +77,9 @@ impl Signer {
         participants: JsValue,
         local_key: JsValue,
     ) -> Result<Signer, JsError> {
-        let index: u16 = index.into_serde()?;
-        let participants: Vec<u16> = participants.into_serde()?;
-        let local_key: LocalKey<Secp256k1> = local_key.into_serde()?;
+        let index: u16 = serde_wasm_bindgen::from_value(index)?;
+        let participants: Vec<u16> = serde_wasm_bindgen::from_value(participants)?;
+        let local_key: LocalKey<Secp256k1> = serde_wasm_bindgen::from_value(local_key)?;
         Ok(Signer {
             inner: OfflineStage::new(index, participants.clone(), local_key)?,
             completed: None,
@@ -89,7 +89,9 @@ impl Signer {
     /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
     pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
-        let message: Msg<<OfflineStage as StateMachine>::MessageBody> = message.into_serde()?;
+        let message: Msg<<OfflineStage as StateMachine>::MessageBody> =
+            serde_wasm_bindgen::from_value(message)?;
+
         self.inner.handle_incoming(message)?;
         Ok(())
     }
@@ -101,9 +103,9 @@ impl Signer {
             let messages = self.inner.message_queue().drain(..).collect();
             let round = self.inner.current_round();
             let messages = RoundMsg::from_round(round, messages);
-            Ok(JsValue::from_serde(&(round, &messages))?)
+            Ok(serde_wasm_bindgen::to_value(&(round, &messages))?)
         } else {
-            Ok(JsValue::from_serde(&false)?)
+            Ok(serde_wasm_bindgen::to_value(&false)?)
         }
     }
 
@@ -113,7 +115,7 @@ impl Signer {
     /// Return a partial signature that must be sent to the other
     /// signing participents.
     pub fn partial(&mut self, message: JsValue) -> Result<JsValue, JsError> {
-        let message: Vec<u8> = message.into_serde()?;
+        let message: Vec<u8> = serde_wasm_bindgen::from_value(message)?;
         let message: [u8; 32] = message.as_slice().try_into()?;
         let completed_offline_stage = self.inner.pick_output().unwrap()?;
         let data = BigInt::from_bytes(&message);
@@ -121,12 +123,12 @@ impl Signer {
 
         self.completed = Some((completed_offline_stage, data));
 
-        Ok(JsValue::from_serde(&partial)?)
+        Ok(serde_wasm_bindgen::to_value(&partial)?)
     }
 
     /// Create and verify the signature.
     pub fn create(&mut self, partials: JsValue) -> Result<JsValue, JsError> {
-        let partials: Vec<PartialSignature> = partials.into_serde()?;
+        let partials: Vec<PartialSignature> = serde_wasm_bindgen::from_value(partials)?;
 
         let (completed_offline_stage, data) = self
             .completed
@@ -147,6 +149,6 @@ impl Signer {
             public_key,
         };
 
-        Ok(JsValue::from_serde(&result)?)
+        Ok(serde_wasm_bindgen::to_value(&result)?)
     }
 }

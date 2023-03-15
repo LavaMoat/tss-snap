@@ -1,5 +1,5 @@
 import init, {
-  initThreadPool,
+  //initThreadPool,
   KeyGenerator,
   Signer,
 } from "@lavamoat/mpc-ecdsa-wasm";
@@ -20,7 +20,7 @@ console.log("Worker is initializing...");
 void (async function () {
   await init();
   //await initThreadPool(navigator.hardwareConcurrency);
-  await initThreadPool(1);
+  //await initThreadPool(1);
   self.postMessage({ ready: true });
 })();
 
