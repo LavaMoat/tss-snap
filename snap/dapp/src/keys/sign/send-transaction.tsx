@@ -20,7 +20,7 @@ import { ChainContext } from "../../chain-provider";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
-import { Transaction, JsonRpcProvider, getNumber, toBeHex, formatEther} from 'ethers';
+import { Transaction, InfuraProvider, JsonRpcProvider, getNumber, toBeHex, formatEther} from 'ethers';
 
 import { prepareSignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
@@ -107,18 +107,12 @@ export default function SendTransaction() {
       const chainNumber = getNumber(chain);
       const isLocalChain = chainNumber == 1337;
 
-      // FIXME:
-      const provider = new JsonRpcProvider();
-      //const provider = new BrowserProvider();
-
-      /*
       const provider = isLocalChain
         ? new JsonRpcProvider()
-        : new providers.InfuraProvider(
+        : new InfuraProvider(
           chainNumber,
           process.env.INFURA_API_KEY,
         );
-      */
       const txReceipt = await provider.waitForTransaction(txHash);
       const signTxReceipt = {
         ...signProof,
