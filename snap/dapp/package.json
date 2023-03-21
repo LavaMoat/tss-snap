@@ -53,7 +53,7 @@
     "@ethersproject/hash": "^5.7.0",
     "@lavamoat/mpc-client": "^1.0.4",
     "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
-    "@lavamoat/mpc-snap-wasm": "^0.1",
+    "@lavamoat/mpc-snap-wasm": "^0.2",
     "@metamask/detect-provider": "^2.0.0",
     "@mui/icons-material": "^5.11.0",
     "@mui/material": "^5.11.0",
