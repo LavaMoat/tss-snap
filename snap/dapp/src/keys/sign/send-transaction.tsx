@@ -101,7 +101,6 @@ export default function SendTransaction() {
         method: "eth_sendRawTransaction",
         params: [tx],
       })) as string;
-
       setTransactionHash(txHash);
 
       // Switch to InfuraProvider for chains other than Ganache
