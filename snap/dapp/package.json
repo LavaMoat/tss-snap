@@ -13,8 +13,6 @@
     "snap.manifest.json"
   ],
   "scripts": {
-    "start:webpack": "webpack-dev-server --no-client-overlay",
-    "build:webpack": "yarn build:snap && yarn build:assets && webpack --config webpack.config.js --node-env production",
     "clean": "rm -rf dist .parcel-cache && mkdir dist",
     "build:snap": "yarn clean && mm-snap build -s snap.js -d . && yarn build:assets",
     "build:assets": "cp -r images dist/ && cp -r snap.manifest.json dist && cp -r bundle.js dist",
@@ -32,17 +30,13 @@
     "@types/react-dom": "^18.0.9",
     "@typescript-eslint/eslint-plugin": "5.56.0",
     "@typescript-eslint/parser": "5.56.0",
-    "copy-webpack-plugin": "^11.0.0",
     "dotenv": "^16.0.3",
     "eslint": "^8.30.0",
     "eslint-plugin-react": "^7.31.11",
     "ganache": "^7.7.1",
     "parcel": "2.8.3",
     "prettier": "2.8.5",
-    "string-replace-loader": "^3.1.0",
-    "ts-loader": "^9.2.6",
-    "typescript": "5.0.2",
-    "webpack-cli": "^5.0.1"
+    "typescript": "5.0.2"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
