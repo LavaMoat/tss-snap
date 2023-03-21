@@ -13,6 +13,7 @@ const loadReceiptsData = async (): Promise<TransactionReceipts> => {
 // message signing receipt.
 type SaveTransactionReceipt = [string, SignTxReceipt];
 
+/*
 export const loadTransactionReceipts = createAsyncThunk(
   "receipts/loadTransactionReceipts",
   loadReceiptsData
@@ -54,6 +55,7 @@ export const deleteTransactionReceipt = createAsyncThunk(
     return loadReceiptsData();
   }
 );
+*/
 
 export type ReceiptState = {
   transactions: TransactionReceipts;
@@ -75,9 +77,11 @@ const receiptSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
+    /*
     builder.addCase(loadTransactionReceipts.fulfilled, updateTransactions);
     builder.addCase(saveTransactionReceipt.fulfilled, updateTransactions);
     builder.addCase(deleteTransactionReceipt.fulfilled, updateTransactions);
+    */
   },
 });
 

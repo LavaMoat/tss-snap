@@ -44,7 +44,7 @@ ENV WS_URL=$WS_URL
 ENV INFURA_API_KEY=$INFURA_API_KEY
 COPY snap snap
 COPY --from=builder /usr/app/packages/wasm /usr/app/packages/wasm
-RUN cd snap/dapp && yarn install && yarn build
+RUN cd snap/dapp && yarn install && yarn build:webpack
 
 FROM debian:bullseye AS runner
 WORKDIR /usr/app

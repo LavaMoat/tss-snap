@@ -16,7 +16,7 @@ import {
 import { AppDispatch } from '../store';
 import { deleteKey, findKeyShare } from "../store/keys";
 import { deleteMessageProof } from "../store/proofs";
-import { deleteTransactionReceipt } from "../store/receipts";
+//import { deleteTransactionReceipt } from "../store/receipts";
 import { setSnackbar } from "../store/snackbars";
 import { encode, download } from "../utils";
 import { SignProof, SignTxReceipt } from "../types";
@@ -89,6 +89,7 @@ export default function Dialogs() {
     cancelDialog(CONFIRM_DELETE_MESSAGE_PROOF);
   };
 
+  /*
   const onDeleteTxReceipt = async (result: DeleteTxReceipt) => {
     const [address, receipt] = result;
     await dispatch(deleteTransactionReceipt(
@@ -101,10 +102,22 @@ export default function Dialogs() {
     );
     cancelDialog(CONFIRM_DELETE_TX_RECEIPT);
   };
+  */
 
   const cancelDialog = (key: string) => {
     dispatch(setDialogVisible([key, false, null]));
   };
+
+    /*
+      <ConfirmDeleteTxReceiptDialog
+        open={dialogs[CONFIRM_DELETE_TX_RECEIPT][0] || false}
+        handleCancel={() => cancelDialog(CONFIRM_DELETE_TX_RECEIPT)}
+        handleOk={onDeleteTxReceipt}
+        request={
+          (dialogs[CONFIRM_DELETE_TX_RECEIPT][1] || []) as DeleteTxReceipt
+        }
+      />
+    */
 
   return (
     <>
@@ -131,14 +144,6 @@ export default function Dialogs() {
         }
       />
 
-      <ConfirmDeleteTxReceiptDialog
-        open={dialogs[CONFIRM_DELETE_TX_RECEIPT][0] || false}
-        handleCancel={() => cancelDialog(CONFIRM_DELETE_TX_RECEIPT)}
-        handleOk={onDeleteTxReceipt}
-        request={
-          (dialogs[CONFIRM_DELETE_TX_RECEIPT][1] || []) as DeleteTxReceipt
-        }
-      />
     </>
   );
 }
