@@ -12,7 +12,7 @@ import {
 
 import { AppDispatch } from "../../store";
 import { sessionSelector } from "../../store/session";
-//import { saveTransactionReceipt } from "../../store/receipts";
+import { saveTransactionReceipt } from "../../store/receipts";
 import { setSnackbar } from "../../store/snackbars";
 import { SignTransaction } from "../../types";
 import { fromHexString } from "../../utils";
@@ -115,7 +115,6 @@ export default function SendTransaction() {
         );
       const txReceipt = await provider.waitForTransaction(txHash);
 
-      /*
       const signTxReceipt = {
         ...signProof,
         amount: formatEther(transaction.value),
@@ -126,7 +125,6 @@ export default function SendTransaction() {
       };
 
       await dispatch(saveTransactionReceipt([address, signTxReceipt]));
-      */
       dispatch(
         setSnackbar({
           message: `Transaction completed`,

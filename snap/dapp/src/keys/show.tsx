@@ -28,7 +28,7 @@ import {
 import PublicAddress from "../components/public-address";
 import NotFound from "../not-found";
 import KeysLoader from "./loader";
-//import TransactionReceipts from "./transaction-receipts";
+import TransactionReceipts from "./transaction-receipts";
 import MessageProofs from "./message-proofs";
 import BalanceChain from "./balance-chain";
 
@@ -89,8 +89,6 @@ export default function ShowKey() {
     threshold + 1
   } of ${parties}`;
 
-
-        //<TransactionReceipts address={address} />
 
   return (
     <>
@@ -165,6 +163,7 @@ export default function ShowKey() {
           })}
         </List>
 
+        <TransactionReceipts address={address} />
         <MessageProofs address={address} />
       </Stack>
     </>

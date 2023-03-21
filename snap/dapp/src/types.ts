@@ -5,7 +5,7 @@ import {
   SignResult,
 } from "@lavamoat/mpc-client";
 
-import { Transaction, TransactionReceipt } from "ethers";
+import { Transaction, TransactionReceiptParams } from "ethers";
 
 // Key share with a human-friendly label.
 export type NamedKeyShare = {
@@ -24,8 +24,11 @@ export type SignTxReceipt = {
   signature: SignResult;
   address: string;
   amount: string,
-  tx: SignTransaction,
-  value: TransactionReceipt;
+  // WARN: Storing the transaction is not possible at the moment
+  // WARN: due to a typescript error with #private in the type
+  // WARN: definition
+  //tx: SignTransaction,
+  value: TransactionReceiptParams;
   timestamp: number;
 };
 
