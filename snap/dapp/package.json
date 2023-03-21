@@ -49,6 +49,8 @@
   "dependencies": {
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
+    "@ethersproject/address": "^5.7.0",
+    "@ethersproject/hash": "^5.7.0",
     "@lavamoat/mpc-client": "^1.0.4",
     "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
     "@lavamoat/mpc-snap-wasm": "^0.1",
@@ -58,7 +60,7 @@
     "@reduxjs/toolkit": "^1.9.1",
     "comlink": "^4.3.1",
     "date-fns": "^2.29.3",
-    "ethers": "5.7.2",
+    "ethers": "6.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.5",

@@ -46,7 +46,7 @@ export const deleteTransactionReceipt = createAsyncThunk(
     if (transactionReceipts) {
       appState.transactionReceipts[address] = transactionReceipts.filter(
         (receipt: SignTxReceipt) => {
-          return hash !== receipt.value.transactionHash;
+          return hash !== receipt.value.logs[0].transactionHash;
         }
       );
     }

@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { toBeHex } from 'ethers';
 
 export const copyToClipboard = async (text: string) => {
   await window.navigator.clipboard.writeText(text);
@@ -56,7 +56,7 @@ const chains: Dictionary<string> = {
 };
 
 export function getChainName(value: string | number): string {
-  return chains[BigNumber.from(value).toHexString()];
+  return chains[toBeHex(BigInt(value))];
 }
 
 export function getDroppedFiles(e: React.DragEvent<HTMLElement>): File[] {

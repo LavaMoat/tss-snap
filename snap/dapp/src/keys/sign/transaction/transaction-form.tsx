@@ -2,7 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 
 import { Button, Stack, TextField } from "@mui/material";
 
-import { utils, UnsignedTransaction, BigNumber } from "ethers";
+import { getNumber, parseUnits, toBeHex, Transaction } from "ethers";
+
+import { getAddress } from '@ethersproject/address';
 
 import { fromHexString } from "../../../utils";
 import { SignTransaction } from "../../../types";
@@ -72,40 +74,40 @@ export default function TransactionForm(props: TransactionFormProps) {
 
     let to, value, priorityFee;
     try {
-      to = utils.getAddress(address);
+      to = getAddress(address);
     } catch (e) {
       setAddressError(true);
       return;
     }
     try {
-      value = utils.parseUnits(amount);
+      value = parseUnits(amount);
     } catch (e) {
       setAmountError(true);
       return;
     }
     try {
-      priorityFee = utils.parseUnits(tip, "wei");
+      priorityFee = parseUnits(tip, "wei");
     } catch(e) {
       setTipError(true);
       return;
     }
 
-    const baseFeePerGas = BigNumber.from(pendingBlock.baseFeePerGas);
+    const baseFeePerGas = BigInt(pendingBlock.baseFeePerGas);
     const data = "0x00";
-    const maxPriorityFeePerGas = BigNumber.from(priorityFee);
-    const maxFeePerGas = baseFeePerGas.add(maxPriorityFeePerGas);
+    const maxPriorityFeePerGas = BigInt(priorityFee);
+    const maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas;
 
     // NOTE: Must do some conversion so that
     // NOTE: RLP encoding works as expected, otherwise
     // NOTE: some values are not detected as BytesLike
-    const chainId = BigNumber.from(chain);
-    const nonce = BigNumber.from(transactionCount);
+    const chainId = BigInt(chain);
+    const nonce = BigInt(transactionCount);
 
     const estimated = (await ethereum.request({
       method: "eth_estimateGas",
       params: [{ to }]
     })) as string;
-    const gasLimit = BigNumber.from(estimated);
+    const gasLimit = BigInt(estimated);
 
     // NOTE: This transaction is only used to store state
     // NOTE: for UI display purposes; building of transactions
@@ -114,27 +116,26 @@ export default function TransactionForm(props: TransactionFormProps) {
     // NOTE: The reason for this is that using serializeTransaction()
     // NOTE: and parseTransaction() from ethers.utils was computing an
     // NOTE: incorrect `from` field which would cause the transaction to fail.
-    const transaction: UnsignedTransaction = {
-      nonce: nonce.toNumber(),
-      to,
-      value,
-      gasPrice,
-      gasLimit,
-      data,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      chainId: chainId.toNumber(),
-    };
+    const transaction: Transaction = new Transaction();
+    transaction.nonce = getNumber(nonce);
+    transaction.to = to;
+    transaction.value = value;
+    transaction.gasPrice = BigInt(gasPrice);
+    transaction.gasLimit = gasLimit;
+    transaction.data = data;
+    transaction.maxFeePerGas = maxFeePerGas;
+    transaction.maxPriorityFeePerGas = maxPriorityFeePerGas;
+    transaction.chainId = chainId;
 
     // Call out to webassembly to prepare a transaction
     // and get the transaction hash
     const digest = await prepareUnsignedTransaction(
-      nonce.toHexString(),
+      toBeHex(nonce),
       BigInt(transaction.chainId),
-      BigNumber.from(transaction.value).toHexString(),
-      gasLimit.toHexString(),
-      maxFeePerGas.toHexString(),
-      maxPriorityFeePerGas.toHexString(),
+      toBeHex(BigInt(transaction.value)),
+      toBeHex(gasLimit),
+      toBeHex(maxFeePerGas),
+      toBeHex(maxPriorityFeePerGas),
       Array.from(fromHexString(address.substring(2))),
       Array.from(fromHexString(transaction.to.substring(2))),
     );

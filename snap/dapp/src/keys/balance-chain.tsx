@@ -7,7 +7,7 @@ import {
   //Typography,
 } from "@mui/material";
 
-import { utils } from "ethers";
+import { formatEther } from "ethers";
 
 import { getChainName } from "../utils";
 import { ChainContext } from '../chain-provider';
@@ -38,7 +38,7 @@ export default function BalanceChain() {
   return (
     <Stack direction="row" alignItems="center">
       <Box sx={{ flexGrow: 1 }}>
-        Balance: {utils.formatEther(balance)} ETH
+        Balance: {formatEther(balance)} ETH
       </Box>
       <SelectedChain chainName={chainName} />
     </Stack>

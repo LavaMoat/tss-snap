@@ -20,12 +20,12 @@ import { ChainContext } from "../../chain-provider";
 import PublicAddress from "../../components/public-address";
 import SignTransactionView from './transaction-view';
 
-import { BigNumber, UnsignedTransaction, providers, utils } from 'ethers';
+import { Transaction, JsonRpcProvider, getNumber, toBeHex, formatEther} from 'ethers';
 
 import { prepareSignedTransaction} from "@lavamoat/mpc-snap-wasm";
 
 type MakeTransactionProps = {
-  transaction: UnsignedTransaction;
+  transaction: Transaction;
   digest: Uint8Array;
   sendTransaction: () => Promise<void>;
   transactionHash?: string;
@@ -80,17 +80,17 @@ export default function SendTransaction() {
   const { transaction, digest } = signCandidate.value as SignTransaction;
 
   const sendTransaction = async () => {
-    const nonce = BigNumber.from(transaction.nonce);
+    const nonce = BigInt(transaction.nonce);
     const from = Array.from(fromHexString(address.substring(2)));
     const to = Array.from(fromHexString(transaction.to.substring(2)));
-    const value = BigNumber.from(transaction.value);
+    const value = BigInt(transaction.value);
     const tx = await prepareSignedTransaction(
-      nonce.toHexString(),
+      toBeHex(nonce),
       BigInt(transaction.chainId),
-      value.toHexString(),
-      BigNumber.from(transaction.gasLimit).toHexString(),
-      BigNumber.from(transaction.maxFeePerGas).toHexString(),
-      BigNumber.from(transaction.maxPriorityFeePerGas).toHexString(),
+      toBeHex(value),
+      toBeHex(BigInt(transaction.gasLimit)),
+      toBeHex(BigInt(transaction.maxFeePerGas)),
+      toBeHex(BigInt(transaction.maxPriorityFeePerGas)),
       from,
       to,
       signProof.signature,
@@ -105,18 +105,25 @@ export default function SendTransaction() {
       setTransactionHash(txHash);
 
       // Switch to InfuraProvider for chains other than Ganache
-      const chainNumber = BigNumber.from(chain).toNumber();
+      const chainNumber = getNumber(chain);
       const isLocalChain = chainNumber == 1337;
+
+      // FIXME:
+      const provider = new JsonRpcProvider();
+      //const provider = new BrowserProvider();
+
+      /*
       const provider = isLocalChain
-        ? new providers.JsonRpcProvider()
+        ? new JsonRpcProvider()
         : new providers.InfuraProvider(
           chainNumber,
           process.env.INFURA_API_KEY,
         );
+      */
       const txReceipt = await provider.waitForTransaction(txHash);
       const signTxReceipt = {
         ...signProof,
-        amount: utils.formatEther(transaction.value),
+        amount: formatEther(transaction.value),
         tx: signCandidate.value as SignTransaction,
         // NOTE: we want the settled timestamp not the signed timestamp
         timestamp: Date.now(),
