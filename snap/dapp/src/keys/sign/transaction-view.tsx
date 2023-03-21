@@ -2,11 +2,11 @@ import React from "react";
 
 import { Box, Stack, Paper, Typography, Divider } from "@mui/material";
 import { toHexString, getChainName } from "../../utils";
-import { utils, UnsignedTransaction } from "ethers";
+import { formatEther, formatUnits, toBeHex, Transaction } from "ethers";
 
 type SignTransactionViewProps = {
   isSigned?: boolean,
-  transaction: UnsignedTransaction;
+  transaction: Transaction;
   digest: Uint8Array;
 };
 
@@ -16,8 +16,8 @@ export default function SignTransactionView(props: SignTransactionViewProps) {
   //console.log(transaction);
 
   const { to } = transaction;
-  const value = utils.formatEther(transaction.value);
-  const chainName = getChainName(transaction.chainId);
+  const value = formatEther(transaction.value);
+  const chainName = getChainName(toBeHex(transaction.chainId));
 
   return (
     <Paper variant="outlined">
@@ -76,7 +76,7 @@ export default function SignTransactionView(props: SignTransactionViewProps) {
             </Box>
             <Box>
               <Typography variant="body1" component="div">
-                {utils.formatUnits(transaction.maxPriorityFeePerGas, "wei")} WEI
+                {formatUnits(transaction.maxPriorityFeePerGas, "wei")} WEI
               </Typography>
             </Box>
           </Stack>
@@ -89,7 +89,7 @@ export default function SignTransactionView(props: SignTransactionViewProps) {
             </Box>
             <Box>
               <Typography variant="body1" component="div">
-                {utils.formatUnits(transaction.maxFeePerGas, "wei")} WEI
+                {formatUnits(transaction.maxFeePerGas, "wei")} WEI
               </Typography>
             </Box>
           </Stack>

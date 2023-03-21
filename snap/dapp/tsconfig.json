@@ -3,9 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist/",
     "noImplicitAny": true,
-    "module": "esnext",
-    "target": "esnext",
-    "lib": ["esnext", "webworker", "dom"],
+    "module": "es2022",
+    "target": "es2022",
+    "lib": ["es2022", "webworker", "dom"],
     "jsx": "react",
     "allowJs": true,
     "skipLibCheck": true,

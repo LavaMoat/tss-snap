@@ -40,7 +40,7 @@ export default function TransactionReceipts(props: TransactionReceiptsProps) {
   const onExportTransactionReceipt = (receipt: SignTxReceipt) => {
     const dt = new Date();
     dt.setTime(receipt.timestamp);
-    const fileName = `${address}-${receipt.value.transactionHash}-${dt.toISOString()}.json`;
+    const fileName = `${address}-${receipt.value.logs[0].transactionHash}-${dt.toISOString()}.json`;
     const buffer = encode(JSON.stringify(receipt, undefined, 2));
     download(fileName, buffer);
   };

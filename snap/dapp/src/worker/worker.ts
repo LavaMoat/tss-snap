@@ -1,10 +1,10 @@
 import init, {
-  initThreadPool,
   KeyGenerator,
   Signer,
 } from "@lavamoat/mpc-ecdsa-wasm";
 import * as Comlink from "comlink";
 
+/*
 // Temporary hack for getRandomValues() error
 const getRandomValues = crypto.getRandomValues;
 crypto.getRandomValues = function <T extends ArrayBufferView | null>(
@@ -15,12 +15,11 @@ crypto.getRandomValues = function <T extends ArrayBufferView | null>(
   (array as unknown as Uint8Array).set(value);
   return array;
 };
+*/
 
 console.log("Worker is initializing...");
 void (async function () {
   await init();
-  //await initThreadPool(navigator.hardwareConcurrency);
-  await initThreadPool(1);
   self.postMessage({ ready: true });
 })();
 

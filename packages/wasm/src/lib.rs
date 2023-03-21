@@ -18,9 +18,6 @@ pub fn start() {
     log::info!("WASM: module started {:?}", std::thread::current().id());
 }
 
-// Required for rayon thread support
-pub use wasm_bindgen_rayon::init_thread_pool;
-
 mod gg2020;
 mod utils;
 
@@ -53,7 +50,7 @@ impl Default for Parameters {
 #[wasm_bindgen]
 pub fn keccak256(message: JsValue) -> Result<JsValue, JsError> {
     use sha3::{Digest, Keccak256};
-    let message: Vec<u8> = message.into_serde()?;
+    let message: Vec<u8> = serde_wasm_bindgen::from_value(message)?;
     let digest = Keccak256::digest(&message).to_vec();
-    Ok(JsValue::from_serde(&digest)?)
+    Ok(serde_wasm_bindgen::to_value(&digest)?)
 }

@@ -5,8 +5,7 @@ import {
   SignResult,
 } from "@lavamoat/mpc-client";
 
-import { UnsignedTransaction } from "ethers";
-import { TransactionReceipt } from '@ethersproject/abstract-provider';
+import { Transaction, TransactionReceipt } from "ethers";
 
 // Key share with a human-friendly label.
 export type NamedKeyShare = {
@@ -60,7 +59,7 @@ export enum SigningType {
 
 // Type for signing transactions
 export type SignTransaction = {
-  transaction: UnsignedTransaction;
+  transaction: Transaction;
   digest: Uint8Array;
 };
 

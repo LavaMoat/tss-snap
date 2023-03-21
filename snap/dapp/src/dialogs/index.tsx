@@ -92,7 +92,7 @@ export default function Dialogs() {
   const onDeleteTxReceipt = async (result: DeleteTxReceipt) => {
     const [address, receipt] = result;
     await dispatch(deleteTransactionReceipt(
-      [address, receipt.value.transactionHash]));
+      [address, receipt.value.logs[0].transactionHash]));
     dispatch(
       setSnackbar({
         message: "Transaction receipt deleted",

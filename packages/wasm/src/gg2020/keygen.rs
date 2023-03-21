@@ -74,8 +74,8 @@ impl KeyGenerator {
     /// Create a key generator.
     #[wasm_bindgen(constructor)]
     pub fn new(parameters: JsValue, party_signup: JsValue) -> Result<KeyGenerator, JsError> {
-        let params: Parameters = parameters.into_serde()?;
-        let PartySignup { number, uuid } = party_signup.into_serde::<PartySignup>()?;
+        let params: Parameters = serde_wasm_bindgen::from_value(parameters)?;
+        let PartySignup { number, uuid } = serde_wasm_bindgen::from_value(party_signup)?;
         let (party_num_int, _uuid) = (number, uuid);
         Ok(Self {
             inner: Keygen::new(party_num_int, params.threshold, params.parties)?,
@@ -85,7 +85,8 @@ impl KeyGenerator {
     /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
     pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
-        let message: Msg<<Keygen as StateMachine>::MessageBody> = message.into_serde()?;
+        let message: Msg<<Keygen as StateMachine>::MessageBody> =
+            serde_wasm_bindgen::from_value(message)?;
         self.inner.handle_incoming(message)?;
         Ok(())
     }
@@ -96,7 +97,7 @@ impl KeyGenerator {
         let messages = self.inner.message_queue().drain(..).collect();
         let round = self.inner.current_round();
         let messages = RoundMsg::from_round(round, messages);
-        Ok(JsValue::from_serde(&(round, &messages))?)
+        Ok(serde_wasm_bindgen::to_value(&(round, &messages))?)
     }
 
     /// Create the key share.
@@ -108,6 +109,6 @@ impl KeyGenerator {
             address: crate::utils::address(&public_key),
             public_key,
         };
-        Ok(JsValue::from_serde(&key_share)?)
+        Ok(serde_wasm_bindgen::to_value(&key_share)?)
     }
 }
