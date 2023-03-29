@@ -16,7 +16,7 @@
 //! * `label`: Human-friendly `String` label for the group.
 //! * `parameters`: [Parameters](Parameters) for key generation and signing.
 //!
-//! Create a new group; the client that sends this method automatically joins the group.
+//! Create a new group; the client that calls this method automatically joins the group.
 //!
 //! Returns the UUID for the group.
 //!
@@ -111,29 +111,6 @@
 //!
 //! This method is a notification and does not return anything to the caller.
 //!
-//! ### Notify.proposal
-//!
-//! * `group_id`: The `String` UUID for the group.
-//! * `session_id`: The `String` UUID for the session.
-//! * `proposal_id`: Unique identifier for the proposal.
-//! * `message`: The message to be signed.
-//!
-//! Sends a signing proposal to *all other clients in the group*. The event emitted is `notifyProposal` and the payload is an object with `sessionId`, `proposalId` and the `message` to be signed.
-//!
-//! This method is a notification and does not return anything to the caller.
-//!
-//! ### Notify.signed
-//!
-//! * `group_id`: The `String` UUID for the group.
-//! * `session_id`: The `String` UUID for the session.
-//! * `value`: Opaque value for the signing result sent to non-participants.
-//!
-//! Sends a signing result to clients in the session that *did not participate* in the signing; the event name emitted is `notifySigned` and the payload is the `value` passed to this method.
-//!
-//! Client implementations should ensure this method is only called once when signing is complete.
-//!
-//! This method is a notification and does not return anything to the caller.
-//!
 use async_trait::async_trait;
 use json_rpc2::{futures::*, Error, Request, Response, Result, RpcError};
 use serde::{Deserialize, Serialize};
@@ -206,10 +183,6 @@ pub const SESSION_PARTICIPANT: &str = "Session.participant";
 pub const SESSION_MESSAGE: &str = "Session.message";
 /// Method to indicate a session is finished.
 pub const SESSION_FINISH: &str = "Session.finish";
-/// Method to notify of a proposal for signing.
-pub const NOTIFY_PROPOSAL: &str = "Notify.proposal";
-/// Method to notify a proposal has been signed.
-pub const NOTIFY_SIGNED: &str = "Notify.signed";
 
 /// Notification sent when a session has been created.
 ///
@@ -227,10 +200,6 @@ pub const SESSION_MESSAGE_EVENT: &str = "sessionMessage";
 /// Notification sent when a session has been marked as finished
 /// by all participating clients.
 pub const SESSION_CLOSED_EVENT: &str = "sessionClosed";
-/// Notification sent when a proposal has been received.
-pub const NOTIFY_PROPOSAL_EVENT: &str = "notifyProposal";
-/// Notification sent when a proposal has been signed.
-pub const NOTIFY_SIGNED_EVENT: &str = "notifySigned";
 
 type GroupCreateParams = (String, Parameters);
 type SessionCreateParams = (Uuid, SessionKind, Option<Value>);
@@ -240,8 +209,6 @@ type SessionLoadParams = (Uuid, Uuid, SessionKind, u16);
 type SessionParticipantParams = (Uuid, Uuid, u16, u16);
 type SessionMessageParams = (Uuid, Uuid, SessionKind, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
-type NotifyProposalParams = (Uuid, Uuid, String, String);
-type NotifySignedParams = (Uuid, Uuid, Value);
 
 // Mimics the `Msg` struct
 // from `round-based` but doesn't care
@@ -620,71 +587,6 @@ impl Service for ServiceHandler {
                     let mut writer = notification.lock().await;
                     *writer = Some(ctx);
                 }
-
-                // Must ACK so we indicate the service method exists
-                Some(req.into())
-            }
-            NOTIFY_PROPOSAL => {
-                let (conn_id, _state, notification) = ctx;
-                let params: NotifyProposalParams = req.deserialize()?;
-                let (group_id, session_id, proposal_id, message) = params;
-
-                let proposal = Proposal {
-                    session_id,
-                    proposal_id,
-                    message,
-                };
-
-                let value =
-                    serde_json::to_value((NOTIFY_PROPOSAL_EVENT, &proposal))
-                        .unwrap();
-                let response: Response = value.into();
-
-                let ctx = Notification::Group {
-                    group_id,
-                    filter: Some(vec![*conn_id]),
-                    response,
-                };
-
-                let mut writer = notification.lock().await;
-                *writer = Some(ctx);
-
-                // Must ACK so we indicate the service method exists
-                Some(req.into())
-            }
-
-            NOTIFY_SIGNED => {
-                let (conn_id, state, notification) = ctx;
-                let params: NotifySignedParams = req.deserialize()?;
-                let (group_id, session_id, value) = params;
-
-                let reader = state.read().await;
-
-                let (_group, session) = get_group_session(
-                    &conn_id,
-                    &group_id,
-                    &session_id,
-                    &reader.groups,
-                )?;
-
-                let participants = session
-                    .party_signups
-                    .iter()
-                    .map(|(_, c)| c.clone())
-                    .collect::<Vec<usize>>();
-
-                let value =
-                    serde_json::to_value((NOTIFY_SIGNED_EVENT, value)).unwrap();
-                let response: Response = value.into();
-
-                let ctx = Notification::Group {
-                    group_id,
-                    filter: Some(participants),
-                    response,
-                };
-
-                let mut writer = notification.lock().await;
-                *writer = Some(ctx);
 
                 // Must ACK so we indicate the service method exists
                 Some(req.into())
