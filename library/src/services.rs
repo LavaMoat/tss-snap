@@ -95,7 +95,7 @@
 //!
 //! Relay a message to all the other peers in the session (broadcast) or send directly to another peer.
 //!
-//! A `message` is treated as peer to peer when the `receiver` field is present which should be the party signup `number` for the peer.
+//! A `message` is treated as peer to peer when the `receiver` field is present which should be the party signup `number` for the peer for a keygen session or the party index for a signing session.
 //!
 //! This method is a notification and does not return anything to the caller.
 //!
