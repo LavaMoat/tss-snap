@@ -271,9 +271,9 @@ impl Service for ServiceHandler {
 
                 let group =
                     Group::new(*conn_id, parameters.clone(), label.clone());
-                let res = serde_json::to_value(&group.uuid).unwrap();
+                let res = serde_json::to_value(group.uuid).unwrap();
                 let mut writer = state.write().await;
-                writer.groups.insert(group.uuid.clone(), group);
+                writer.groups.insert(group.uuid, group);
                 Some((req, res).into())
             }
             GROUP_JOIN => {
@@ -289,8 +289,7 @@ impl Service for ServiceHandler {
                         );
                         Some((req, err).into())
                     } else {
-                        if let None =
-                            group.clients.iter().find(|c| *c == conn_id)
+                        if !group.clients.iter().any(|c| c == conn_id)
                         {
                             group.clients.push(*conn_id);
                         }
@@ -309,9 +308,9 @@ impl Service for ServiceHandler {
                 let (group_id, kind, value) = params;
                 let mut writer = state.write().await;
                 let group =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    get_group_mut(conn_id, &group_id, &mut writer.groups)?;
                 let session = Session::from((kind.clone(), value));
-                let key = session.uuid.clone();
+                let key = session.uuid;
                 group.sessions.insert(key, session.clone());
 
                 if let SessionKind::Keygen = kind {
@@ -340,7 +339,7 @@ impl Service for ServiceHandler {
 
                 let mut writer = state.write().await;
                 let group =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    get_group_mut(conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
                     let res = serde_json::to_value(&session).unwrap();
                     Some((req, res).into())
@@ -357,7 +356,7 @@ impl Service for ServiceHandler {
 
                 let mut writer = state.write().await;
                 let group =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    get_group_mut(conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
                     let party_number = session.signup(*conn_id);
 
@@ -386,7 +385,7 @@ impl Service for ServiceHandler {
                         *writer = Some(ctx);
                     }
 
-                    let res = serde_json::to_value(&party_number).unwrap();
+                    let res = serde_json::to_value(party_number).unwrap();
                     Some((req, res).into())
                 } else {
                     return Err(Error::from(Box::from(
@@ -403,9 +402,9 @@ impl Service for ServiceHandler {
 
                 let mut writer = state.write().await;
                 let group =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    get_group_mut(conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
-                    let res = serde_json::to_value(&party_number).unwrap();
+                    let res = serde_json::to_value(party_number).unwrap();
                     match session.load(&group.params, *conn_id, party_number) {
                         Ok(_) => {
                             // Enough parties are loaded into the session
@@ -453,7 +452,7 @@ impl Service for ServiceHandler {
 
                 let mut writer = state.write().await;
                 let group =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    get_group_mut(conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
                     session.participants.insert(party_index, party_number);
                     Some(req.into())
@@ -471,7 +470,7 @@ impl Service for ServiceHandler {
 
                 let mut writer = state.write().await;
                 let group =
-                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                    get_group_mut(conn_id, &group_id, &mut writer.groups)?;
                 if let Some(session) = group.sessions.get_mut(&session_id) {
                     let existing_signup = session
                         .party_signups
@@ -492,7 +491,7 @@ impl Service for ServiceHandler {
                         let mut signups = session
                             .party_signups
                             .iter()
-                            .map(|(n, _)| n.clone())
+                            .map(|(n, _)| *n)
                             .collect::<Vec<u16>>();
                         let mut completed = session
                             .finished
@@ -543,7 +542,7 @@ impl Service for ServiceHandler {
 
                 // Check we have valid group / session
                 let (_group, session) = get_group_session(
-                    &conn_id,
+                    conn_id,
                     &group_id,
                     &session_id,
                     &reader.groups,
@@ -604,18 +603,18 @@ fn get_group_mut<'a>(
 ) -> Result<&'a mut Group> {
     if let Some(group) = groups.get_mut(group_id) {
         // Verify connection is part of the group clients
-        if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
+        if group.clients.iter().any(|c| c == conn_id) {
             Ok(group)
         } else {
-            return Err(Error::from(Box::from(ServiceError::BadConnection(
+            Err(Error::from(Box::from(ServiceError::BadConnection(
                 *conn_id,
-                group_id.clone(),
-            ))));
+                *group_id,
+            ))))
         }
     } else {
-        return Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
-            group_id.clone(),
-        ))));
+        Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
+            *group_id,
+        ))))
     }
 }
 
@@ -626,18 +625,18 @@ fn get_group<'a>(
 ) -> Result<&'a Group> {
     if let Some(group) = groups.get(group_id) {
         // Verify connection is part of the group clients
-        if let Some(_) = group.clients.iter().find(|c| *c == conn_id) {
+        if group.clients.iter().any(|c| c == conn_id) {
             Ok(group)
         } else {
-            return Err(Error::from(Box::from(ServiceError::BadConnection(
+            Err(Error::from(Box::from(ServiceError::BadConnection(
                 *conn_id,
-                group_id.clone(),
-            ))));
+                *group_id,
+            ))))
         }
     } else {
-        return Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
-            group_id.clone(),
-        ))));
+        Err(Error::from(Box::from(ServiceError::GroupDoesNotExist(
+            *group_id,
+        ))))
     }
 }
 
@@ -651,9 +650,9 @@ fn get_group_session<'a>(
     if let Some(session) = group.sessions.get(session_id) {
         Ok((group, session))
     } else {
-        return Err(Error::from(Box::from(ServiceError::SessionDoesNotExist(
-            session_id.clone(),
-        ))));
+        Err(Error::from(Box::from(ServiceError::SessionDoesNotExist(
+            *session_id,
+        ))))
     }
 }
 

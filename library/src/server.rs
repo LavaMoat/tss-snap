@@ -25,6 +25,14 @@ use tracing_subscriber::fmt::format::FmtSpan;
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
+type RpcService = Box<dyn json_rpc2::futures::Service<
+    Data = (
+        usize,
+        Arc<RwLock<State>>,
+        Arc<Mutex<Option<Notification>>>,
+    ),
+>>;
+
 /// Error thrown by the server.
 #[derive(Debug, Error)]
 pub enum ServerError {
@@ -74,10 +82,10 @@ pub struct Parameters {
 
 impl Default for Parameters {
     fn default() -> Self {
-        return Self {
+        Self {
             parties: 3,
             threshold: 1,
-        };
+        }
     }
 }
 
@@ -201,12 +209,19 @@ impl Session {
     /// this session and issues them a unique party signup number.
     pub fn signup(&mut self, conn: usize) -> u16 {
         let last = self.party_signups.last();
+        let num = if let Some((num, _)) = last {
+            num + 1
+        } else {
+            1
+        };
+        /*
         let num = if last.is_none() {
             1
         } else {
             let (num, _) = last.unwrap();
             num + 1
         };
+        */
         self.party_signups.push((num, conn));
         num
     }
@@ -227,13 +242,13 @@ impl Session {
         if party_number > parameters.parties {
             return Err(ServerError::PartyNumberOutOfRange);
         }
-        if let Some(_) = self
+        if self
             .party_signups
             .iter()
-            .find(|(num, _)| num == &party_number)
+            .any(|(num, _)| num == &party_number)
         {
             return Err(ServerError::PartyNumberAlreadyExists(
-                self.uuid.clone(),
+                self.uuid,
             ));
         }
         self.party_signups.push((party_number, conn));
@@ -421,9 +436,8 @@ async fn client_connected(ws: WebSocket, state: Arc<RwLock<State>>) {
 
             let reader = should_close.read().await;
             if *reader {
-                match user_ws_tx.close().await {
-                    Err(e) => tracing::warn!(?e, "failed to close websocket"),
-                    _ => {}
+                if let Err(e) = user_ws_tx.close().await {
+                    tracing::warn!(?e, "failed to close websocket");
                 }
                 break;
             }
@@ -478,15 +492,7 @@ async fn rpc_request(
 ) {
     use json_rpc2::futures::*;
 
-    let service: Box<
-        dyn Service<
-            Data = (
-                usize,
-                Arc<RwLock<State>>,
-                Arc<Mutex<Option<Notification>>>,
-            ),
-        >,
-    > = Box::new(ServiceHandler {});
+    let service: RpcService = Box::new(ServiceHandler {});
     let server = Server::new(vec![&service]);
 
     let notification: Arc<Mutex<Option<Notification>>> =
@@ -525,7 +531,7 @@ fn filter_clients(
     if let Some(filter) = filter {
         clients
             .into_iter()
-            .filter(|conn| filter.iter().find(|c| c == &conn).is_none())
+            .filter(|conn| !filter.iter().any(|c| c == conn))
             .collect::<Vec<_>>()
     } else {
         clients
@@ -560,7 +566,7 @@ async fn rpc_notify(state: &Arc<RwLock<State>>, notification: Notification) {
         } => {
             let clients = if let Some(group) = reader.groups.get(&group_id) {
                 if let Some(session) = group.sessions.get(&session_id) {
-                    session.party_signups.iter().map(|i| i.1.clone()).collect()
+                    session.party_signups.iter().map(|i| i.1).collect()
                 } else {
                     tracing::warn!(
                         %session_id,
@@ -625,7 +631,7 @@ async fn client_disconnected(conn_id: usize, state: &Arc<RwLock<State>>) {
 
             // Group has no more connected clients so flag it for removal
             if group.clients.is_empty() {
-                empty_groups.push(key.clone());
+                empty_groups.push(*key);
             }
         }
     }
