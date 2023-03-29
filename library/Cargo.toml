@@ -3,8 +3,8 @@ name = "mpc-websocket"
 version = "0.5.0"
 edition = "2021"
 license = "MIT"
-description = "Websocket server library for MPC sessions"
-keywords = ["websocket", "server", "MPC", "DKG"]
+description = "Websocket server library for threshold signatures"
+keywords = ["websocket", "threshold signatures", "MPC", "DKG"]
 
 [dependencies]
 thiserror = "1"
