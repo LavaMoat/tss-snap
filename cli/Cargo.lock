@@ -527,9 +527,9 @@ dependencies = [
 
 [[package]]
 name = "mpc-websocket"
-version = "0.3.6"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb8594a8b45034ee6caeaf576949365ab7aae4d528ba6c6d0d8a02133f3c9921"
+checksum = "6edd973345b33fbf4aa66989bfcee7e17c89d50c4d23cffd836bd84bcc31bc3d"
 dependencies = [
  "async-trait",
  "futures-util",

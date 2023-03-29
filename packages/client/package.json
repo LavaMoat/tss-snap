@@ -1,6 +1,6 @@
 {
   "name": "@lavamoat/mpc-client",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Threshold signatures multi-party compute client library",
   "module": "dist/index.esm.js",
   "main": "dist/index.js",

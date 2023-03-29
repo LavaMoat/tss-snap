@@ -51,7 +51,7 @@
     "@emotion/styled": "^11.10.5",
     "@ethersproject/address": "^5.7.0",
     "@ethersproject/hash": "^5.7.0",
-    "@lavamoat/mpc-client": "^1.0.4",
+    "@lavamoat/mpc-client": "^1.1.0",
     "@lavamoat/mpc-ecdsa-wasm": "file:../../packages/wasm/pkg",
     "@lavamoat/mpc-snap-wasm": "^0.2",
     "@metamask/detect-provider": "^2.0.0",

@@ -73,6 +73,19 @@
 //!
 //! Returns the party signup number.
 //!
+//! ### Session.participant
+//!
+//! * `group_id`: The `String` UUID for the group.
+//! * `session_id`: The `String` UUID for the session.
+//! * `index`: The `u16` party index.
+//! * `number`: The `u16` party signup number.
+//!
+//! Provide a mapping between receiver indices for a signing session so that the server can locate the connection identifier when relaying peer to peer messages.
+//!
+//! When signing clients must provide an array of the indices used during DKG, the party index is the index (plus one) of each client's local key index in that array. This is the value that the server sees as the receiver when relaying peer to peer messages but the server has no knowledge of this index so client's must register a mapping from the party index to the server-issued party number so that the correct connection id can be resolved.
+//!
+//! Returns an empty response to the caller.
+//!
 //! ### Session.message
 //!
 //! * `group_id`: The `String` UUID for the group.
@@ -187,6 +200,8 @@ pub const SESSION_JOIN: &str = "Session.join";
 pub const SESSION_SIGNUP: &str = "Session.signup";
 /// Method to load a party number into a session.
 pub const SESSION_LOAD: &str = "Session.load";
+/// Register a participant lookup for a signing session.
+pub const SESSION_PARTICIPANT: &str = "Session.participant";
 /// Method to broadcast or relay a message peer to peer.
 pub const SESSION_MESSAGE: &str = "Session.message";
 /// Method to indicate a session is finished.
@@ -222,6 +237,7 @@ type SessionCreateParams = (Uuid, SessionKind, Option<Value>);
 type SessionJoinParams = (Uuid, Uuid, SessionKind);
 type SessionSignupParams = (Uuid, Uuid, SessionKind);
 type SessionLoadParams = (Uuid, Uuid, SessionKind, u16);
+type SessionParticipantParams = (Uuid, Uuid, u16, u16);
 type SessionMessageParams = (Uuid, Uuid, SessionKind, Message);
 type SessionFinishParams = (Uuid, Uuid, u16);
 type NotifyProposalParams = (Uuid, Uuid, String, String);
@@ -457,6 +473,29 @@ impl Service for ServiceHandler {
                     )));
                 }
             }
+            // Register a participant lookup for a signing session.
+            //
+            // This allows clients to map the receiver party index to a
+            // server issued party number which in turn allows the server
+            // to correctly resolve the connection identifier that we need
+            // to relay for peer to peer rounds.
+            SESSION_PARTICIPANT => {
+                let (conn_id, state, _) = ctx;
+                let params: SessionParticipantParams = req.deserialize()?;
+                let (group_id, session_id, party_index, party_number) = params;
+
+                let mut writer = state.write().await;
+                let group =
+                    get_group_mut(&conn_id, &group_id, &mut writer.groups)?;
+                if let Some(session) = group.sessions.get_mut(&session_id) {
+                    session.participants.insert(party_index, party_number);
+                    Some(req.into())
+                } else {
+                    return Err(Error::from(Box::from(
+                        ServiceError::SessionDoesNotExist(session_id),
+                    )));
+                }
+            }
             // Mark the session as finished for a party.
             SESSION_FINISH => {
                 let (conn_id, state, notification) = ctx;
@@ -545,9 +584,7 @@ impl Service for ServiceHandler {
 
                 // Send direct to peer
                 if let Some(receiver) = &msg.receiver {
-                    if let Some(s) =
-                        session.party_signups.iter().find(|s| s.0 == *receiver)
-                    {
+                    if let Some(s) = session.resolve(*receiver) {
                         let value =
                             serde_json::to_value((SESSION_MESSAGE_EVENT, msg))
                                 .unwrap();
