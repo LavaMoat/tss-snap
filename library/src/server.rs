@@ -25,13 +25,11 @@ use tracing_subscriber::fmt::format::FmtSpan;
 /// Global unique connection id counter.
 static CONNECTION_ID: AtomicUsize = AtomicUsize::new(1);
 
-type RpcService = Box<dyn json_rpc2::futures::Service<
-    Data = (
-        usize,
-        Arc<RwLock<State>>,
-        Arc<Mutex<Option<Notification>>>,
-    ),
->>;
+type RpcService = Box<
+    dyn json_rpc2::futures::Service<
+        Data = (usize, Arc<RwLock<State>>, Arc<Mutex<Option<Notification>>>),
+    >,
+>;
 
 /// Error thrown by the server.
 #[derive(Debug, Error)]
@@ -247,9 +245,7 @@ impl Session {
             .iter()
             .any(|(num, _)| num == &party_number)
         {
-            return Err(ServerError::PartyNumberAlreadyExists(
-                self.uuid,
-            ));
+            return Err(ServerError::PartyNumberAlreadyExists(self.uuid));
         }
         self.party_signups.push((party_number, conn));
         Ok(())

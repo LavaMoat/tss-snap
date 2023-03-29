@@ -289,8 +289,7 @@ impl Service for ServiceHandler {
                         );
                         Some((req, err).into())
                     } else {
-                        if !group.clients.iter().any(|c| c == conn_id)
-                        {
+                        if !group.clients.iter().any(|c| c == conn_id) {
                             group.clients.push(*conn_id);
                         }
                         let res = serde_json::to_value(group).unwrap();
@@ -607,8 +606,7 @@ fn get_group_mut<'a>(
             Ok(group)
         } else {
             Err(Error::from(Box::from(ServiceError::BadConnection(
-                *conn_id,
-                *group_id,
+                *conn_id, *group_id,
             ))))
         }
     } else {
@@ -629,8 +627,7 @@ fn get_group<'a>(
             Ok(group)
         } else {
             Err(Error::from(Box::from(ServiceError::BadConnection(
-                *conn_id,
-                *group_id,
+                *conn_id, *group_id,
             ))))
         }
     } else {
