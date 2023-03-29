@@ -260,9 +260,25 @@ async function signMessage(
     onTransition,
   );
 
+  const partyIndex = participants.indexOf(keyShare.localKey.i) + 1;
+
+  // Register this participant with the correct index lookup.
+  //
+  // The server will resolve the party index to the issuer
+  // party number and then to the connection identifier.
+  await websocket.rpc({
+      method: "Session.participant",
+      params: [
+        info.groupId,
+        info.sessionId,
+        partyIndex,
+        info.partySignup.number,
+      ],
+  });
+
   /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method */
   const signer: Signer = await new (worker.Signer as any)(
-    info.partySignup.number,
+    partyIndex,
     participants,
     keyShare.localKey,
   );

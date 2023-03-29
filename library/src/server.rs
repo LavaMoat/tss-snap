@@ -156,6 +156,16 @@ pub struct Session {
     /// marked the session as finished.
     #[serde(skip)]
     pub(crate) finished: HashSet<u16>,
+
+    /// Map receiver indices to server issued party numbers
+    /// which can then be used to resolve a connection identifier.
+    ///
+    /// During keygen we don't have a pre-defined index so we use
+    /// the server issued party number; whereas during signing it
+    /// is imperative that we use the index into the array of the
+    /// indices allocated during keygen.
+    #[serde(skip)]
+    pub(crate) participants: HashMap<u16, u16>,
 }
 
 impl Default for Session {
@@ -166,6 +176,7 @@ impl Default for Session {
             party_signups: Default::default(),
             finished: Default::default(),
             value: None,
+            participants: Default::default(),
         }
     }
 }
@@ -178,6 +189,7 @@ impl From<(SessionKind, Option<Value>)> for Session {
             party_signups: Default::default(),
             finished: Default::default(),
             value: value.1,
+            participants: Default::default(),
         }
     }
 }
@@ -226,6 +238,23 @@ impl Session {
         }
         self.party_signups.push((party_number, conn));
         Ok(())
+    }
+
+    /// Resolve a receiver identifier for a peer to peer message
+    /// that is being related to a party signup and connection id.
+    pub fn resolve(&self, receiver: u16) -> Option<&(u16, usize)> {
+        if let SessionKind::Sign = self.kind {
+            if let Some(party_signup) = self.participants.get(&receiver) {
+                return self
+                    .party_signups
+                    .iter()
+                    .find(|s| s.0 == *party_signup);
+            } else {
+                None
+            }
+        } else {
+            self.party_signups.iter().find(|s| s.0 == receiver)
+        }
     }
 }
 
