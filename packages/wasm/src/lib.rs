@@ -18,6 +18,7 @@ pub fn start() {
     log::info!("WASM: module started {:?}", std::thread::current().id());
 }
 
+mod cggmp;
 mod gg2020;
 mod utils;
 
