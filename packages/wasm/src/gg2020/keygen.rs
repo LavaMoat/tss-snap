@@ -73,18 +73,29 @@ pub struct KeyGenerator {
 impl KeyGenerator {
     /// Create a key generator.
     #[wasm_bindgen(constructor)]
-    pub fn new(parameters: JsValue, party_signup: JsValue) -> Result<KeyGenerator, JsError> {
+    pub fn new(
+        parameters: JsValue,
+        party_signup: JsValue,
+    ) -> Result<KeyGenerator, JsError> {
         let params: Parameters = serde_wasm_bindgen::from_value(parameters)?;
-        let PartySignup { number, uuid } = serde_wasm_bindgen::from_value(party_signup)?;
+        let PartySignup { number, uuid } =
+            serde_wasm_bindgen::from_value(party_signup)?;
         let (party_num_int, _uuid) = (number, uuid);
         Ok(Self {
-            inner: Keygen::new(party_num_int, params.threshold, params.parties)?,
+            inner: Keygen::new(
+                party_num_int,
+                params.threshold,
+                params.parties,
+            )?,
         })
     }
 
     /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
-    pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
+    pub fn handle_incoming(
+        &mut self,
+        message: JsValue,
+    ) -> Result<(), JsError> {
         let message: Msg<<Keygen as StateMachine>::MessageBody> =
             serde_wasm_bindgen::from_value(message)?;
         self.inner.handle_incoming(message)?;

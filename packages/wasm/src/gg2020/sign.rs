@@ -5,8 +5,8 @@ use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::{
     state_machine::{
         keygen::LocalKey,
         sign::{
-            CompletedOfflineStage, OfflineProtocolMessage, OfflineStage, PartialSignature,
-            SignManual,
+            CompletedOfflineStage, OfflineProtocolMessage, OfflineStage,
+            PartialSignature, SignManual,
         },
     },
 };
@@ -78,8 +78,10 @@ impl Signer {
         local_key: JsValue,
     ) -> Result<Signer, JsError> {
         let index: u16 = serde_wasm_bindgen::from_value(index)?;
-        let participants: Vec<u16> = serde_wasm_bindgen::from_value(participants)?;
-        let local_key: LocalKey<Secp256k1> = serde_wasm_bindgen::from_value(local_key)?;
+        let participants: Vec<u16> =
+            serde_wasm_bindgen::from_value(participants)?;
+        let local_key: LocalKey<Secp256k1> =
+            serde_wasm_bindgen::from_value(local_key)?;
         Ok(Signer {
             inner: OfflineStage::new(index, participants.clone(), local_key)?,
             completed: None,
@@ -88,7 +90,10 @@ impl Signer {
 
     /// Handle an incoming message.
     #[wasm_bindgen(js_name = "handleIncoming")]
-    pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
+    pub fn handle_incoming(
+        &mut self,
+        message: JsValue,
+    ) -> Result<(), JsError> {
         let message: Msg<<OfflineStage as StateMachine>::MessageBody> =
             serde_wasm_bindgen::from_value(message)?;
 
@@ -119,7 +124,8 @@ impl Signer {
         let message: [u8; 32] = message.as_slice().try_into()?;
         let completed_offline_stage = self.inner.pick_output().unwrap()?;
         let data = BigInt::from_bytes(&message);
-        let (_sign, partial) = SignManual::new(data.clone(), completed_offline_stage.clone())?;
+        let (_sign, partial) =
+            SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
         self.completed = Some((completed_offline_stage, data));
 
@@ -128,7 +134,8 @@ impl Signer {
 
     /// Create and verify the signature.
     pub fn create(&mut self, partials: JsValue) -> Result<JsValue, JsError> {
-        let partials: Vec<PartialSignature> = serde_wasm_bindgen::from_value(partials)?;
+        let partials: Vec<PartialSignature> =
+            serde_wasm_bindgen::from_value(partials)?;
 
         let (completed_offline_stage, data) = self
             .completed
@@ -136,11 +143,13 @@ impl Signer {
             .ok_or_else(|| JsError::new(ERR_COMPLETED_OFFLINE_STAGE))?;
         let pk = completed_offline_stage.public_key().clone();
 
-        let (sign, _partial) = SignManual::new(data.clone(), completed_offline_stage.clone())?;
+        let (sign, _partial) =
+            SignManual::new(data.clone(), completed_offline_stage.clone())?;
 
         let signature = sign.complete(&partials)?;
-        verify(&signature, &pk, &data)
-            .map_err(|e| JsError::new(&format!("failed to verify signature: {:?}", e)))?;
+        verify(&signature, &pk, &data).map_err(|e| {
+            JsError::new(&format!("failed to verify signature: {:?}", e))
+        })?;
 
         let public_key = pk.to_bytes(false).to_vec();
         let result = Signature {

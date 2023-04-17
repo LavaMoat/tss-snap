@@ -12,7 +12,9 @@ extern crate wasm_bindgen_test;
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
-    if let Ok(_) = wasm_log::try_init(wasm_log::Config::new(log::Level::Debug)) {
+    if let Ok(_) =
+        wasm_log::try_init(wasm_log::Config::new(log::Level::Debug))
+    {
         log::info!("WASM logger initialized");
     }
     log::info!("WASM: module started {:?}", std::thread::current().id());
