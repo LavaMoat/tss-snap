@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 use curv::elliptic::curves::secp256_k1::Secp256k1;
+use round_based::{StateMachine, Msg};
 
 use crate::Parameters;
 use cggmp_threshold_ecdsa::refresh::state_machine;
@@ -38,5 +39,14 @@ impl KeyRefresh {
                 params.parties,
             )?,
         })
+    }
+
+    /// Handle an incoming message.
+    #[wasm_bindgen(js_name = "handleIncoming")]
+    pub fn handle_incoming(&mut self, message: JsValue) -> Result<(), JsError> {
+        let message: Msg<<state_machine::KeyRefresh as StateMachine>::MessageBody> =
+            serde_wasm_bindgen::from_value(message)?;
+        self.inner.handle_incoming(message)?;
+        Ok(())
     }
 }

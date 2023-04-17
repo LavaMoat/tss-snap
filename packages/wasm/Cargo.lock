@@ -192,17 +192,18 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "cggmp-threshold-ecdsa"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/cggmp-threshold-ecdsa.git#48bd21bd225f00ba1d80ded0c6401d0b2e75050f"
+source = "git+https://github.com/tmpfs/cggmp-threshold-ecdsa.git?branch=wasm-serde#e0af3ced3913c16a6507f3d836e8d036474d9d7f"
 dependencies = [
  "bincode",
  "centipede",
  "curv-kzen",
+ "digest 0.9.0",
  "fs-dkr",
+ "generic-array 0.14.6",
  "kzen-paillier",
  "multi-party-ecdsa",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
- "rayon",
  "round-based",
  "serde",
  "sha2 0.9.9",
