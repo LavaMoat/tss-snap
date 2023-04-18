@@ -1,13 +1,12 @@
 //! Key generation.
-use curv::elliptic::curves::secp256_k1::Secp256k1;
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{
-    Keygen, LocalKey, ProtocolMessage,
+    Keygen, ProtocolMessage,
 };
 
 use wasm_bindgen::prelude::*;
 
-use crate::Parameters;
-use serde::{Deserialize, Serialize};
+use crate::{KeyShare, Parameters, PartySignup};
+use serde::Serialize;
 
 use round_based::{Msg, StateMachine};
 
@@ -39,28 +38,6 @@ impl RoundMsg {
             })
             .collect::<Vec<_>>()
     }
-}
-
-/// Session information for a single party.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct PartySignup {
-    /// Unique index for the party.
-    pub number: u16,
-    /// Session identifier.
-    pub uuid: String,
-}
-
-/// Generated key share.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct KeyShare {
-    /// The secret private key.
-    #[serde(rename = "localKey")]
-    pub local_key: LocalKey<Secp256k1>,
-    /// The public key.
-    #[serde(rename = "publicKey")]
-    pub public_key: Vec<u8>,
-    /// Address generated from the public key.
-    pub address: String,
 }
 
 /// Round-based key share generator.
@@ -114,12 +91,7 @@ impl KeyGenerator {
     /// Create the key share.
     pub fn create(&mut self) -> Result<JsValue, JsError> {
         let local_key = self.inner.pick_output().unwrap()?;
-        let public_key = local_key.public_key().to_bytes(false).to_vec();
-        let key_share = KeyShare {
-            local_key,
-            address: crate::utils::address(&public_key),
-            public_key,
-        };
+        let key_share: KeyShare = local_key.into();
         Ok(serde_wasm_bindgen::to_value(&key_share)?)
     }
 }

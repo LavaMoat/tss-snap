@@ -1,13 +1,44 @@
+use serde::Serialize;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 use curv::elliptic::curves::secp256_k1::Secp256k1;
 use round_based::{Msg, StateMachine};
 
-use crate::Parameters;
-use cggmp_threshold_ecdsa::refresh::state_machine;
+use crate::{KeyShare, Parameters};
+use cggmp_threshold_ecdsa::refresh::state_machine::{self, ProtocolMessage};
 
 use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::LocalKey;
+
+/// Wrapper for a round `Msg` that includes the round
+/// number so that we can ensure round messages are grouped
+/// together and out of order messages can thus be handled correctly.
+#[derive(Serialize)]
+struct RoundMsg {
+    round: u16,
+    sender: u16,
+    receiver: Option<u16>,
+    body: ProtocolMessage,
+}
+
+impl RoundMsg {
+    fn from_round(
+        round: u16,
+        messages: Vec<
+            Msg<<state_machine::KeyRefresh as StateMachine>::MessageBody>,
+        >,
+    ) -> Vec<Self> {
+        messages
+            .into_iter()
+            .map(|m| RoundMsg {
+                round,
+                sender: m.sender,
+                receiver: m.receiver,
+                body: m.body,
+            })
+            .collect::<Vec<_>>()
+    }
+}
 
 /// Key refresh.
 #[wasm_bindgen]
@@ -55,5 +86,21 @@ impl KeyRefresh {
         > = serde_wasm_bindgen::from_value(message)?;
         self.inner.handle_incoming(message)?;
         Ok(())
+    }
+
+    /// Proceed to the next round.
+    pub fn proceed(&mut self) -> Result<JsValue, JsError> {
+        self.inner.proceed()?;
+        let messages = self.inner.message_queue().drain(..).collect();
+        let round = self.inner.current_round();
+        let messages = RoundMsg::from_round(round, messages);
+        Ok(serde_wasm_bindgen::to_value(&(round, &messages))?)
+    }
+
+    /// Get the key share.
+    pub fn create(&mut self) -> Result<JsValue, JsError> {
+        let local_key = self.inner.pick_output().unwrap()?;
+        let key_share: KeyShare = local_key.into();
+        Ok(serde_wasm_bindgen::to_value(&key_share)?)
     }
 }
