@@ -1,16 +1,14 @@
-//! Key generation.
-use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::{
-    Keygen, ProtocolMessage,
-};
-
+use serde::Serialize;
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-use crate::{KeyShare, Parameters, PartySignup};
-use serde::Serialize;
-
+use curv::elliptic::curves::secp256_k1::Secp256k1;
 use round_based::{Msg, StateMachine};
 
-//use crate::{console_log, log};
+use crate::{KeyShare, Parameters};
+use cggmp_threshold_ecdsa::refresh::state_machine::{self, ProtocolMessage};
+
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::state_machine::keygen::LocalKey;
 
 /// Wrapper for a round `Msg` that includes the round
 /// number so that we can ensure round messages are grouped
@@ -26,7 +24,9 @@ struct RoundMsg {
 impl RoundMsg {
     fn from_round(
         round: u16,
-        messages: Vec<Msg<<Keygen as StateMachine>::MessageBody>>,
+        messages: Vec<
+            Msg<<state_machine::KeyRefresh as StateMachine>::MessageBody>,
+        >,
     ) -> Vec<Self> {
         messages
             .into_iter()
@@ -40,27 +40,35 @@ impl RoundMsg {
     }
 }
 
-/// Round-based key share generator.
+/// Key refresh.
 #[wasm_bindgen]
-pub struct KeyGenerator {
-    inner: Keygen,
+pub struct KeyRefresh {
+    inner: state_machine::KeyRefresh,
 }
 
 #[wasm_bindgen]
-impl KeyGenerator {
-    /// Create a key generator.
+impl KeyRefresh {
+    /// Create a key refresh.
     #[wasm_bindgen(constructor)]
     pub fn new(
         parameters: JsValue,
-        party_signup: JsValue,
-    ) -> Result<KeyGenerator, JsError> {
+        local_key: JsValue,
+        new_party_index: JsValue,
+        old_to_new: JsValue,
+    ) -> Result<KeyRefresh, JsError> {
         let params: Parameters = serde_wasm_bindgen::from_value(parameters)?;
-        let PartySignup { number, uuid } =
-            serde_wasm_bindgen::from_value(party_signup)?;
-        let (party_num_int, _uuid) = (number, uuid);
+        let local_key: Option<LocalKey<Secp256k1>> =
+            serde_wasm_bindgen::from_value(local_key)?;
+        let new_party_index: Option<u16> =
+            serde_wasm_bindgen::from_value(new_party_index)?;
+        let old_to_new: HashMap<u16, u16> =
+            serde_wasm_bindgen::from_value(old_to_new)?;
+
         Ok(Self {
-            inner: Keygen::new(
-                party_num_int,
+            inner: state_machine::KeyRefresh::new(
+                local_key,
+                new_party_index,
+                &old_to_new,
                 params.threshold,
                 params.parties,
             )?,
@@ -73,8 +81,9 @@ impl KeyGenerator {
         &mut self,
         message: JsValue,
     ) -> Result<(), JsError> {
-        let message: Msg<<Keygen as StateMachine>::MessageBody> =
-            serde_wasm_bindgen::from_value(message)?;
+        let message: Msg<
+            <state_machine::KeyRefresh as StateMachine>::MessageBody,
+        > = serde_wasm_bindgen::from_value(message)?;
         self.inner.handle_incoming(message)?;
         Ok(())
     }
@@ -88,7 +97,7 @@ impl KeyGenerator {
         Ok(serde_wasm_bindgen::to_value(&(round, &messages))?)
     }
 
-    /// Create the key share.
+    /// Get the key share.
     pub fn create(&mut self) -> Result<JsValue, JsError> {
         let local_key = self.inner.pick_output().unwrap()?;
         let key_share: KeyShare = local_key.into();
