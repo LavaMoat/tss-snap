@@ -6,7 +6,7 @@ use curv::elliptic::curves::secp256_k1::Secp256k1;
 use round_based::{Msg, StateMachine};
 
 use crate::{Parameters, KeyShare};
-use cggmp_threshold_ecdsa::refresh::presign::{self, ProtocolMessage};
+use cggmp_threshold_ecdsa::presign::{self, ProtocolMessage};
 
 /// Wrapper for a round `Msg` that includes the round
 /// number so that we can ensure round messages are grouped
