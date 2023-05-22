@@ -6,8 +6,12 @@ use curv::{elliptic::curves::secp256_k1::Secp256k1, BigInt};
 use round_based::{Msg, StateMachine};
 
 use cggmp_threshold_ecdsa::presign::{
+    PresigningOutput, PresigningTranscript, SSID,
+};
+
+use cggmp_threshold_ecdsa::sign::{
     state_machine::{self, ProtocolMessage},
-    PreSigningSecrets, PresigningOutput, PresigningTranscript, SSID,
+    SigningOutput,
 };
 
 /// Wrapper for a round `Msg` that includes the round
@@ -25,7 +29,7 @@ impl RoundMsg {
     fn from_round(
         round: u16,
         messages: Vec<
-            Msg<<state_machine::PreSigning as StateMachine>::MessageBody>,
+            Msg<<state_machine::Signing as StateMachine>::MessageBody>,
         >,
     ) -> Vec<Self> {
         messages
@@ -40,35 +44,30 @@ impl RoundMsg {
     }
 }
 
-/// Pre signing wrapper.
+/// Sign using a presignature.
 #[wasm_bindgen]
-pub struct PreSigning {
-    inner: state_machine::PreSigning,
+pub struct SignPresignature {
+    inner: state_machine::Signing,
 }
 
 #[wasm_bindgen]
-impl PreSigning {
+impl SignPresignature {
     /// Create a presignature state machine.
     #[wasm_bindgen(constructor)]
     pub fn new(
         ssid: JsValue,
-        secrets: JsValue,
-        s: JsValue,
-        t: JsValue,
-        n_hats: JsValue,
         l: usize,
-    ) -> Result<PreSigning, JsError> {
+        m: JsValue,
+        presigning_data: JsValue,
+    ) -> Result<SignPresignature, JsError> {
         let ssid: SSID<Secp256k1> = serde_wasm_bindgen::from_value(ssid)?;
-        let secrets: PreSigningSecrets =
-            serde_wasm_bindgen::from_value(secrets)?;
-        let s: HashMap<u16, BigInt> = serde_wasm_bindgen::from_value(s)?;
-        let t: HashMap<u16, BigInt> = serde_wasm_bindgen::from_value(t)?;
-        let n_hats: HashMap<u16, BigInt> =
-            serde_wasm_bindgen::from_value(n_hats)?;
+        let m: BigInt = serde_wasm_bindgen::from_value(m)?;
+        let presigning_data: HashMap<
+            u16,
+            (PresigningOutput<Secp256k1>, PresigningTranscript<Secp256k1>),
+        > = serde_wasm_bindgen::from_value(presigning_data)?;
         Ok(Self {
-            inner: state_machine::PreSigning::new(
-                ssid, secrets, s, t, n_hats, l,
-            )?,
+            inner: state_machine::Signing::new(ssid, l, m, presigning_data)?,
         })
     }
 
@@ -79,7 +78,7 @@ impl PreSigning {
         message: JsValue,
     ) -> Result<(), JsError> {
         let message: Msg<
-            <state_machine::PreSigning as StateMachine>::MessageBody,
+            <state_machine::Signing as StateMachine>::MessageBody,
         > = serde_wasm_bindgen::from_value(message)?;
         self.inner.handle_incoming(message)?;
         Ok(())
@@ -94,17 +93,15 @@ impl PreSigning {
         Ok(serde_wasm_bindgen::to_value(&(round, &messages))?)
     }
 
-    /// Get the presignature.
-    pub fn presignature(&mut self) -> Result<JsValue, JsError> {
+    /// Get the signature.
+    pub fn signature(&mut self) -> Result<JsValue, JsError> {
         // Type declaration for clarity
-        let presignature: Option<(
-            PresigningOutput<Secp256k1>,
-            PresigningTranscript<Secp256k1>,
-        )> = self.inner.pick_output().unwrap()?;
-        if let Some(presignature) = presignature {
-            Ok(serde_wasm_bindgen::to_value(&presignature)?)
+        let signature: Option<SigningOutput<Secp256k1>> =
+            self.inner.pick_output().unwrap()?;
+        if let Some(signature) = signature {
+            Ok(serde_wasm_bindgen::to_value(&signature)?)
         } else {
-            Err(JsError::new("presignature not available"))
+            Err(JsError::new("signature not available"))
         }
     }
 }
