@@ -11,9 +11,7 @@ extern crate wasm_bindgen_test;
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
-    if let Ok(_) =
-        wasm_log::try_init(wasm_log::Config::new(log::Level::Debug))
-    {
+    if wasm_log::try_init(wasm_log::Config::new(log::Level::Debug)).is_ok() {
         log::info!("WASM logger initialized");
     }
     log::info!("WASM: module started {:?}", std::thread::current().id());
@@ -33,6 +31,6 @@ pub use utils::*;
 pub fn keccak256(message: JsValue) -> Result<JsValue, JsError> {
     use sha3::{Digest, Keccak256};
     let message: Vec<u8> = serde_wasm_bindgen::from_value(message)?;
-    let digest = Keccak256::digest(&message).to_vec();
+    let digest = Keccak256::digest(message).to_vec();
     Ok(serde_wasm_bindgen::to_value(&digest)?)
 }

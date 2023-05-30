@@ -83,7 +83,7 @@ impl Signer {
         let local_key: LocalKey<Secp256k1> =
             serde_wasm_bindgen::from_value(local_key)?;
         Ok(Signer {
-            inner: OfflineStage::new(index, participants.clone(), local_key)?,
+            inner: OfflineStage::new(index, participants, local_key)?,
             completed: None,
         })
     }
@@ -144,7 +144,7 @@ impl Signer {
         let pk = completed_offline_stage.public_key().clone();
 
         let (sign, _partial) =
-            SignManual::new(data.clone(), completed_offline_stage.clone())?;
+            SignManual::new(data.clone(), completed_offline_stage)?;
 
         let signature = sign.complete(&partials)?;
         verify(&signature, &pk, &data).map_err(|e| {
