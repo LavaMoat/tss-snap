@@ -20,7 +20,7 @@ console_error_panic_hook = "0.1.6"
 sha3 = "0.10"
 serde = {version = "1", features = ["derive"]}
 hex = "0.4"
-round-based = "0.1.4"
+round-based = "0.1"
 log = "0.4"
 wasm-log = "0.3"
 
