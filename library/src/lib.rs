@@ -1,4 +1,16 @@
-//! Websocket server for MPC key generation and signing using JSON-RPC.
+//! # Hazmat
+//!
+//! DO NOT use this in production without end-to-end encryption as it is
+//! vulnerable to a MITM attack if the server is compromised.
+//!
+//! Instead you can should use a
+//! [framework](https://github.com/mpc-sdk/framework) with
+//! end-to-end encryption.
+//!
+//! # About
+//!
+//! Experimental websocket server for MPC key generation and
+//! signing using JSON-RPC.
 //!
 //! The library has been designed so that the messages transferred
 //! between parties are only stored in memory for the shortest lifetime;
