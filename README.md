@@ -4,6 +4,8 @@ THIS CODE IS OBSOLETE, NOT MAINTAINED AND SHOULD NOT BE USED IN PRODUCTION.
 
 See [mpc-sdk/tss-snap](https://github.com/mpc-sdk/tss-snap/) for the replacement.
 
+---
+
 A snap for MetaMask that supports threshold signatures using the GG2020 protocol exposed by the [multi-party-ecdsa][] library.
 
 Developers may wish to read [INSTALL](/INSTALL.md).
